@@ -9,8 +9,8 @@ class PersonaModel extends Model
     protected $table      = 'personas';
     protected $primaryKey = 'idpersona';
     protected $allowedFields = [
-        'apellido',
-        'nombre',
+        'apellidos',
+        'nombres',
         'tipodoc',
         'numerodoc',
         'telefono',

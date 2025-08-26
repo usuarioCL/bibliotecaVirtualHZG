@@ -12,10 +12,19 @@ class RecursoModel extends Model
         'idtiporecurso', 'urlLibro'
     ];
 
-    public function buscar($query)
+    public function buscarPorTituloAutorOCategoria($query)
     {
-        return $this->like('titulo', $query)
-                    ->orLike('isbn', $query)
-                    ->findAll();
+        $builder = $this->db->table($this->table);
+        $builder->select('recursos.*, categorias.categoria, autores.nomautor, autores.apeautor');
+        $builder->join('subcategorias', 'subcategorias.idsubcategoria = recursos.idsubcategoria', 'left');
+        $builder->join('categorias', 'categorias.idcategoria = subcategorias.idcategoria', 'left');
+        $builder->join('autores', 'autores.idautor = recursos.idautor', 'left');
+        $builder->groupStart()
+            ->like('recursos.titulo', $query)
+            ->orLike('autores.nomautor', $query)
+            ->orLike('autores.apeautor', $query)
+            ->orLike('categorias.categoria', $query)
+        ->groupEnd();
+        return $builder->get()->getResultArray();
     }
 }

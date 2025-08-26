@@ -9,8 +9,8 @@
     <!-- Custom CSS -->
     <link rel="stylesheet" href="/css/css.css">
 </head>
-<body>
-    <nav class="navbar navbar-expand-lg bg-light">
+<body class="d-flex flex-column min-vh-100">
+    <nav class="navbar navbar-expand-lg bg-light w-100">
         <div class="container-fluid m-5">
             <a class="navbar-brand fs-3" href="#">Biblioteca Virtual HZG</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"

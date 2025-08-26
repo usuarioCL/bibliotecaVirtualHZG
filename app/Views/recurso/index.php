@@ -1,54 +1,45 @@
 <?= $header ?>
-<div class="container m-5">
-    <h2>Resultados para: <em><?= esc($query) ?></em></h2>
-
-    <?php if (!empty($resultados['categorias'])): ?>
-        <h4>Categorías</h4>
-        <ul>
-            <?php foreach ($resultados['categorias'] as $cat): ?>
-                <li><?= esc($cat['categoria']) ?></li>
-            <?php endforeach; ?>
-        </ul>
-    <?php endif; ?>
-
-    <?php if (!empty($resultados['subcategorias'])): ?>
-        <h4>Subcategorías</h4>
-        <ul>
-            <?php foreach ($resultados['subcategorias'] as $sub): ?>
-                <li><?= esc($sub['subcategoria']) ?></li>
-            <?php endforeach; ?>
-        </ul>
-    <?php endif; ?>
-
-    <?php if (!empty($resultados['editoriales'])): ?>
-        <h4>Editoriales</h4>
-        <ul>
-            <?php foreach ($resultados['editoriales'] as $ed): ?>
-                <li><?= esc($ed['editorial']) ?></li>
-            <?php endforeach; ?>
-        </ul>
-    <?php endif; ?>
-
-    <?php if (!empty($resultados['tiporecursos'])): ?>
-        <h4>Tipos de Recurso</h4>
-        <ul>
-            <?php foreach ($resultados['tiporecursos'] as $tipo): ?>
-                <li><?= esc($tipo['tiporecurso']) ?></li>
-            <?php endforeach; ?>
-        </ul>
-    <?php endif; ?>
-
-    <?php if (!empty($resultados['recursos'])): ?>
-        <h4>Recursos</h4>
-        <ul>
-            <?php foreach ($resultados['recursos'] as $recurso): ?>
-                <li><?= esc($recurso['titulo']) ?></li>
-            <?php endforeach; ?>
-        </ul>
-    <?php endif; ?>
-
-    <?php if (empty(array_filter($resultados))): ?>
-        <div class="alert alert-warning mt-4">No se encontraron resultados.</div>
-    <?php endif; ?>
+<div class="m-5 mt-4 bg-light">
+    <div class="container">
+	    <h2 class="mb-4 text-center">Resultados de la búsqueda</h2>
+        <div class="row ">
+            <div class="col-md-2 mb-4 bg-secondary">
+                <div class="card-body">
+                    <h5 class="card-title">Título del Recurso</h5>
+                    <p class="card-text">Descripción breve del recurso.</p>
+                </div>
+            </div>
+            <div class="col-md-10 bg-primary">
+                <?php if (isset($recursos) && count($recursos) > 0): ?>
+                    <?php foreach ($recursos as $recurso): ?>
+                        <div class="col-md-4 mb-4">
+                            <div class="card h-100">
+                                <?php if (!empty($recurso['rutaPortada'])): ?>
+                                    <img src="<?= esc($recurso['rutaPortada']) ?>" class="card-img-top" alt="Portada del recurso">
+                                <?php endif; ?>
+                                <div class="card-body">
+                                    <h5 class="card-title"><?= esc($recurso['titulo']) ?></h5>
+                                    <p class="card-text">
+                                        <strong>Autor:</strong> <?= esc(($recurso['apeautor'] ?? '').' '.($recurso['nomautor'] ?? '')) ?><br>
+                                        <strong>Categoría:</strong> <?= esc($recurso['categoria'] ?? '') ?><br>
+                                        <strong>Año:</strong> <?= esc($recurso['año']) ?><br>
+                                        <strong>Estado:</strong> <?= esc($recurso['estado']) ?><br>
+                                        <strong>Stock:</strong> <?= esc($recurso['stock']) ?><br>
+                                    </p>
+                                </div>
+                                <div class="card-footer text-center">
+                                    <a href="<?= esc($recurso['urlLibro']) ?>" class="btn btn-primary" target="_blank">Ver recurso</a>
+                                </div>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <div class="col-12">
+                        <div class="alert alert-info">No se encontraron recursos.</div>
+                    </div>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
 </div>
 <?= $footer ?>

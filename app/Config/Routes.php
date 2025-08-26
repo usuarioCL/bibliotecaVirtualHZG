@@ -8,7 +8,7 @@ use CodeIgniter\Router\RouteCollection;
 $routes->get('/', 'Home::index');
 
 //Libros
-$routes->get('/recurso', 'RecursoController::index');
+$routes->get('/recurso', 'RecursoController::buscar');
 
 
 $routes->get('/login', 'LoginController::loginInterfaz');

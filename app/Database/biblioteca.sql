@@ -214,6 +214,10 @@ CREATE TABLE recursos (
     FOREIGN KEY (idtiporecurso) REFERENCES tiporecursos(idtiporecurso)
 )ENGINE = INNODB;
 
+ALTER TABLE recursos
+ADD COLUMN idautor INT AFTER idrecurso,
+ADD CONSTRAINT fk_recursos_autor FOREIGN KEY (idautor) REFERENCES autores(idautor);
+
 INSERT INTO recursos (titulo,año,numeroPaginas,encuadernacion,isbn,numeroEdicion,rutaPortada,rutaIndice,estado,stock,idsubcategoria,ideditorial,idtiporecurso,urlLibro) VALUES
 ('Álgebra Básica','2020-01-01',200,'Tapa dura','9781234567890','2020-01-01','/portadas/algebra.jpg','/indices/algebra.pdf','Disponible',10,1,1,1,'/libros/algebra.pdf'),
 ('Historia del Perú','2019-01-01',300,'Tapa blanda','9789876543210','2019-01-01','/portadas/historia.jpg','/indices/historia.pdf','Prestado',5,2,2,1,'/libros/historia.pdf'),

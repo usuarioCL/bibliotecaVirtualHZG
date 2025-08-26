@@ -12,30 +12,16 @@ use App\Models\EditorialModel;
 
 class RecursoController extends Controller
 {
-    public function index()
+    public function buscar()
     {
         $query = $this->request->getGet('q');
-        $resultados = [];
-        // Lógica para manejar la búsqueda
-        $grupoModel = new GrupoModel();
-        $categoriaModel = new CategoriaModel();
         $recursoModel = new RecursoModel();
-        $subcategoriaModel = new SubcategoriaModel();
-        $tipoRecursoModel = new TipoRecursoModel();
-        $editorialModel = new EditorialModel();
-
-        // Filtros
-        $resultados['grupos'] = $grupoModel->buscar($query);
-        $resultados['categorias'] = $categoriaModel->buscar($query);
-        $resultados['recursos'] = $recursoModel->buscar($query);
-        $resultados['subcategorias'] = $subcategoriaModel->buscar($query);
-        $resultados['tipos'] = $tipoRecursoModel->buscar($query);
-        $resultados['editoriales'] = $editorialModel->buscar($query);
+        $recursos = $recursoModel->buscarPorTituloAutorOCategoria($query);
 
         $datos = [
             'header' => view('layouts/header'),
             'footer' => view('layouts/footer'),
-            'resultados' => $resultados,
+            'recursos' => $recursos,
             'query' => $query
         ];
 
