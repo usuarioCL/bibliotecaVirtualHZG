@@ -10,7 +10,7 @@ use App\Models\SubcategoriaModel;
 use App\Models\TipoRecursoModel;
 use App\Models\EditorialModel;
 
-class BuscarController extends Controller
+class RecursoController extends Controller
 {
     public function index()
     {
@@ -39,6 +39,6 @@ class BuscarController extends Controller
             'query' => $query
         ];
 
-        return view('busqueda/index', $datos);
+        return view('recurso/index', $datos);
     }
 }
