@@ -1,8 +1,11 @@
 CREATE DATABASE IF NOT EXISTS biblioteca;
 USE biblioteca;
 
+<<<<<<< HEAD
+=======
 
 DF
+>>>>>>> 16d3f1f7dcf4a6578efc0064eda2a38f190683fd
 -- TABLA personas
 CREATE TABLE personas (
     idpersona 	INT AUTO_INCREMENT PRIMARY KEY,
@@ -21,6 +24,8 @@ INSERT INTO personas (apellidos, nombres, tipodoc, numerodoc, telefono, direccio
 ('Ramirez','Juan','DNI','2345678','987654322','Jr. Peru 456','juan@example.com','Masculino'),
 ('Lopez','Ana','DNI','3456789','987654323','Av. Grau 789','ana@example.com','Femenino');
 
+<<<<<<< HEAD
+=======
 -- TABLA autores
 CREATE TABLE autores (
     idautor 		INT AUTO_INCREMENT PRIMARY KEY,
@@ -34,6 +39,7 @@ INSERT INTO autores (apeautor, nacionalidad, nomautor) VALUES
 ('Cervantes', 'Español', 'Miguel'),
 ('Allende', 'Chilena', 'Isabel');
 
+>>>>>>> 16d3f1f7dcf4a6578efc0064eda2a38f190683fd
 -- TABLA grupos
 CREATE TABLE grupos (
     idgrupo 	INT AUTO_INCREMENT PRIMARY KEY,
@@ -198,6 +204,20 @@ INSERT INTO tiporecursos (tiporecurso) VALUES
 CREATE TABLE recursos (
     idrecurso 			INT AUTO_INCREMENT PRIMARY KEY,
     titulo 				VARCHAR(50) NOT NULL,
+<<<<<<< HEAD
+    año 					DATE NOT NULL,
+    numeroPaginas 	INT NOT NULL,
+    encuadernacion 	VARCHAR(50),
+    isbn 				CHAR(13),
+    numeroEdicion 	DATE NOT NULL,
+    rutaPortada 		VARCHAR(80),
+    rutaIndice 		VARCHAR(80),
+    estado 				VARCHAR(30) NOT NULL,
+    stock 				INT NOT NULL,
+    idsubcategoria 	INT NOT NULL,
+    ideditorial 		INT NOT NULL,
+    idtiporecurso 	INT NOT NULL,
+=======
     año 			    DATE NOT NULL,
     numeroPaginas 	    INT NOT NULL,
     encuadernacion 	    VARCHAR(50),
@@ -210,20 +230,26 @@ CREATE TABLE recursos (
     idsubcategoria 	    INT NOT NULL,
     ideditorial 		INT NOT NULL,
     idtiporecurso 	    INT NOT NULL,
+>>>>>>> 16d3f1f7dcf4a6578efc0064eda2a38f190683fd
     urlLibro 			VARCHAR(80) NOT NULL,
     FOREIGN KEY (idsubcategoria) REFERENCES subcategorias(idsubcategoria),
     FOREIGN KEY (ideditorial) REFERENCES editoriales(ideditorial),
     FOREIGN KEY (idtiporecurso) REFERENCES tiporecursos(idtiporecurso)
 )ENGINE = INNODB;
 
+<<<<<<< HEAD
+=======
 ALTER TABLE recursos
 ADD COLUMN idautor INT AFTER idrecurso,
 ADD CONSTRAINT fk_recursos_autor FOREIGN KEY (idautor) REFERENCES autores(idautor);
 
+>>>>>>> 16d3f1f7dcf4a6578efc0064eda2a38f190683fd
 INSERT INTO recursos (titulo,año,numeroPaginas,encuadernacion,isbn,numeroEdicion,rutaPortada,rutaIndice,estado,stock,idsubcategoria,ideditorial,idtiporecurso,urlLibro) VALUES
 ('Álgebra Básica','2020-01-01',200,'Tapa dura','9781234567890','2020-01-01','/portadas/algebra.jpg','/indices/algebra.pdf','Disponible',10,1,1,1,'/libros/algebra.pdf'),
 ('Historia del Perú','2019-01-01',300,'Tapa blanda','9789876543210','2019-01-01','/portadas/historia.jpg','/indices/historia.pdf','Prestado',5,2,2,1,'/libros/historia.pdf'),
 ('Cien Años de Soledad','2018-01-01',400,'Tapa dura','9781122334455','2018-01-01','/portadas/soledad.jpg','/indices/soledad.pdf','Disponible',3,3,3,2,'/libros/soledad.pdf');
+<<<<<<< HEAD
+=======
 
 -- TABLA comentarios
 CREATE TABLE comentarios (
@@ -295,3 +321,4 @@ INSERT INTO favoritos (idpersona, idrecurso) VALUES
 (1, 1),
 (2, 3),
 (3, 2);
+>>>>>>> 16d3f1f7dcf4a6578efc0064eda2a38f190683fd
