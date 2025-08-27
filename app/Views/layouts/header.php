@@ -34,6 +34,12 @@
                     <li class="nav-item">
                         <a class="nav-link  fs-5" href="#">Contacto</a>
                     </li>
+                    <li class="nav-item">
+                        <a class="btn btn-success fs-5 d-flex" href="<?= base_url('admin'); ?>">
+                            <i class="bi bi-speedometer2 me-0"></i>
+                        Dashboard
+                        </a>
+                    </li>
                 </ul>
                 <form class="d-flex " role="login">
                     <a href="#" class="btn btn-primary me-2 fs-5">Iniciar Sesión</a>
