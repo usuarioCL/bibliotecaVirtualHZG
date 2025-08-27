@@ -9,35 +9,35 @@
     <!-- Custom CSS -->
     <link rel="stylesheet" href="/css/css.css">
 </head>
-<body>
-<nav class="navbar navbar-expand-lg m-5">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="#">Biblioteca Virtual</a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
-            aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse " id="navbarNav">
-            <ul class="navbar-nav ms-auto mb-4 mb-lg-0 me-3">
-                <li class="nav-item">
-                    <a class="nav-link" href="#">Inicio</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#">Catálogo</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#">Autores</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#">Temas</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#">Contacto</a>
-                </li>
-            </ul>
-            <form class="d-flex " role="login">
-                <a href="#" class="btn btn-primary me-2">Iniciar Sesión</a>
-            </form>
+<body class="d-flex flex-column min-vh-100">
+    <nav class="navbar navbar-expand-lg bg-light w-100">
+        <div class="container-fluid m-5">
+            <a class="navbar-brand fs-3" href="#">Biblioteca Virtual HZG</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse " id="navbarNav">
+                <ul class="navbar-nav ms-auto mb-4 mb-lg-0 me-3">
+                    <li class="nav-item" >
+                        <a class="nav-link  fs-5" href="/">Inicio</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link  fs-5" href="#">Catálogo</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link  fs-5" href="#">Autores</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link  fs-5" href="#">Temas</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link  fs-5" href="#">Contacto</a>
+                    </li>
+                </ul>
+                <form class="d-flex " role="login">
+                    <a href="#" class="btn btn-primary me-2 fs-5">Iniciar Sesión</a>
+                </form>
+            </div>
         </div>
-    </div>
-</nav>
+    </nav>
