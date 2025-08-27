@@ -23,11 +23,17 @@ $routes->post('/registro', 'RegistroController::Registro');
 $routes->get('/admin', 'AdminController::dashboard');
 // Rutas para el panel del docente
 //$routes->get('/docente', 'DocenteController::dashboard');
+
 //Libros
 $routes->get('/recurso', 'RecursoController::buscar');
 
 
-$routes->get('/login', 'LoginController::loginInterfaz');
+$routes->get('/login', 'LoginController::loginForm');
 $routes->post('/login', 'LoginController::login');
 $routes->get('/registro', 'LoginController::Registro');
+
 $routes->post('/registro', 'LoginController::guardarRegistro');
+$routes->post('/registro', 'LoginController::guardarRegistro');
+
+//admin
+$routes->get('/admin', 'AdminController::dashboard');
