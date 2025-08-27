@@ -6,9 +6,6 @@ class AdminController extends BaseController
 {
     public function dashboard()
     {
-        $datos['header'] = view('layouts/header');
-        $datos['footer'] = view('layouts/footer');
-
-        return view('nivelAcceso/Administradores/dashboard', $datos);
+        return view('Administrador/flexy-bootstrap-lite-1.0.0/index');
     }
 }
