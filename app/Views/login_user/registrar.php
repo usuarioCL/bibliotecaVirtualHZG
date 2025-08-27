@@ -1,6 +1,6 @@
 <?= $header ?>
 <main>
-<div class="container mt-5">
+<div class="container mt-5 mb-5">
     <div class="row justify-content-center">
         <div class="col-md-6">
             <h2 class="mb-4 text-center">Registro de Usuario</h2>
@@ -12,6 +12,17 @@
                 <div class="mb-3">
                     <label for="apellido" class="form-label">Apellido:</label>
                     <input type="text" id="apellido" name="apellido" class="form-control" required>
+                </div>
+                 <div class="mb-3">
+                    <label for="tipodoc" class="form-label">Tipo de Documento:</label>
+                    <select id="tipodoc" name="tipodoc" class="form-select" required>
+                        <option value="">Seleccione</option>
+                        <option value="DNI">DNI</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="numerodoc" class="form-label">Numero de Documento:</label>
+                    <input type="text" id="numerodoc" name="numerodoc" class="form-control" required>
                 </div>
                 <div class="mb-3">
                     <label for="contrasena" class="form-label">Contraseña:</label>

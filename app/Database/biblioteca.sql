@@ -1,6 +1,8 @@
 CREATE DATABASE IF NOT EXISTS biblioteca;
 USE biblioteca;
 
+
+DF
 -- TABLA personas
 CREATE TABLE personas (
     idpersona 	INT AUTO_INCREMENT PRIMARY KEY,

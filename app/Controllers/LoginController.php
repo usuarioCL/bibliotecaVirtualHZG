@@ -6,7 +6,7 @@ use App\Models\usuarioModel;
 
 class LoginController extends BaseController
 {
-    public function loginInterfaz()
+    public function loginForm()
     {
         $datos['header'] = view('layouts/header');
         $datos['footer'] = view('layouts/footer');
@@ -14,38 +14,54 @@ class LoginController extends BaseController
 
         return view('login_user/login', $datos);
     }
+    //Verificacion de contraseña por Hash(Primera version)
+    /*if ($usuario && password_verify($pass, $usuario['passuser'])) {
+        session()->set('usuario', $usuario);
+        return redirect()->to('/');
+    }*/
 
     public function login()
     {
-       $usuarioModel = new usuarioModel();
-       $nomuser = $this->request->getPost('nomuser');
-       $passuser = $this->request->getPost('passuser');
-       $nivelAcceso = $this->request->getPost('nivelAcceso');
+        $usuarioModel = new usuarioModel();
 
-       $usuario = $usuarioModel->where('nomuser', $nomuser)->first();
+        // Capturar datos del formulario
+        $nomuser   = $this->request->getPost('nomuser');
+        $passuser  = $this->request->getPost('passuser');
 
+        // Buscar usuario por nombre
+        $usuario = $usuarioModel->where('nomuser', $nomuser)->first();
 
-       //Verificacion de contraseña por Hash
-       /*if ($usuario && password_verify($pass, $usuario['passuser'])) {
-           session()->set('usuario', $usuario);
-           return redirect()->to('/');
-       }*/
+        if ($usuario) {
+            //if(password_verify($passuser, $usuario['passuser']))
+            // Si las contraseñas coinciden (aquí sin hash)
+            if ($passuser === $usuario['passuser']) {
 
-        
-         //Verificacion de contraseña sin Hash
-        if ($usuario && $passuser == $usuario['passuser']) {
-            session()->set('usuario', $usuario);
-            return redirect()->to('/');
-       }
-       return redirect()->back()->with('error', 'Credenciales inválidas');
+                // Guardamos en sesión
+                session()->set([
+                    'usuario'    => $usuario['nomuser'],
+                    'nivel'      => $usuario['nivelAcceso'],
+                    'logged_in'  => true
+                ]);
+
+                // Redirigir según el rol
+                switch ($usuario['nivelAcceso']) {
+                    case 'Admin':
+                        return redirect()->to('/admin');
+                    case 'Alumno':
+                        return redirect()->to('/');
+                    case 'Docente':
+                        return redirect()->to('/docente');
+                    default:
+                        return redirect()->to('/login');
+                }
+            }
+        }
+
+        // Si no encontró usuario o contraseña incorrecta
+        return redirect()->back()->with('error', 'Nombre de usuario o contraseña incorrectos');
     }
 
-    public function Registro()
-    {
-        $datos['header'] = view('layouts/header');
-        $datos['footer'] = view('layouts/footer');
 
-        return view('login_user/registrar', $datos);
-    }
+    
     
 }
