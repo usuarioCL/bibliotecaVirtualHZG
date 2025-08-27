@@ -7,7 +7,8 @@ use CodeIgniter\Router\RouteCollection;
  */
 $routes->get('/', 'Home::index');
 
-<<<<<<< HEAD
+//Libros
+$routes->get('/recurso', 'RecursoController::buscar');
 // Inicio de sesión
 $routes->get('/login', 'LoginController::loginForm');
 // Procesar inicio de sesión
@@ -24,13 +25,4 @@ $routes->post('/registro', 'RegistroController::Registro');
 $routes->get('/admin', 'AdminController::dashboard');
 // Rutas para el panel del docente
 //$routes->get('/docente', 'DocenteController::dashboard');
-=======
-//Libros
-$routes->get('/recurso', 'RecursoController::buscar');
 
-
-$routes->get('/login', 'LoginController::loginInterfaz');
-$routes->post('/login', 'LoginController::login');
-$routes->get('/registro', 'LoginController::Registro');
-$routes->post('/registro', 'LoginController::guardarRegistro');
->>>>>>> 5dc13039effd9afa6e1a96caa9cc538c4d002b64
