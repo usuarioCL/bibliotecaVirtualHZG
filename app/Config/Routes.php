@@ -20,5 +20,5 @@ $routes->get('/admin', 'AdminController::dashboard');
 $routes->get('/admin/login', 'AdminController::login');
 $routes->get('/admin/register', 'AdminController::register');
 
-// Libros
-$routes->get('/recurso', 'RecursoController::buscar');
+//Recursos
+$routes->get('/recursos', 'RecursoController::index');
