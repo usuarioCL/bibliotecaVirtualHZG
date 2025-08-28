@@ -10,13 +10,23 @@ $routes->get('/', 'Home::index');
 //Libros
 $routes->get('/recurso', 'RecursoController::buscar');
 
+// Inicio de sesión
+$routes->get('/login', 'LoginController::loginForm'); // Muestra el formulario de login
+$routes->post('/login', 'LoginController::login');    // Procesa el login
 
-$routes->get('/login', 'LoginController::loginForm');
-$routes->post('/login', 'LoginController::login');
-$routes->get('/registro', 'LoginController::Registro');
+// Registro de Usuarios
+$routes->get('/registro', 'RegistroController::RegistroForm'); // Muestra el formulario de registro
+$routes->post('/registro', 'RegistroController::Registro');    // Procesa el registro
 
-$routes->post('/registro', 'LoginController::guardarRegistro');
-$routes->post('/registro', 'LoginController::guardarRegistro');
-
-//admin
+// Panel de administración
 $routes->get('/admin', 'AdminController::dashboard');
+$routes->get('/admin/login', 'AdminController::login');
+$routes->get('/admin/register', 'AdminController::register');
+
+//Recursos
+$routes->get('/recursos', 'RecursoController::index');
+$routes->get('/recursos/crear', 'RecursoController::crear');
+$routes->post('/recursos/guardar', 'RecursoController::guardar');
+$routes->get('/recursos/editar/(:num)', 'RecursoController::editar/$1'); 
+$routes->post('/recursos/actualizar/(:num)', 'RecursoController::actualizar/$1');
+$routes->get('/recursos/eliminar/(:num)', 'RecursoController::eliminar/$1');

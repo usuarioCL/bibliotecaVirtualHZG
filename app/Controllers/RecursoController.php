@@ -2,29 +2,101 @@
 namespace App\Controllers;
 
 use CodeIgniter\Controller;
-use App\Models\AutorModel;
-use App\Models\GrupoModel;
-use App\Models\CategoriaModel;
+
 use App\Models\RecursoModel;
-use App\Models\SubcategoriaModel;
-use App\Models\TipoRecursoModel;
-use App\Models\EditorialModel;
+
 
 class RecursoController extends Controller
 {
-    public function buscar()
+    // Lista de recursos
+    public function index(): string
     {
-        $query = $this->request->getGet('q');
+        $recurso = new RecursoModel();
+        $datos['recursos'] = $recurso->orderBy('idrecurso', 'ASC')->findAll();
+    
+        $datos['header'] = view('layouts/header');
+        $datos['footer'] = view('layouts/footer');
+
+        return view('recursos/listar', $datos);
+    }
+
+    // Crear recurso
+    public function crear(): string
+    {
         $recursoModel = new RecursoModel();
-        $recursos = $recursoModel->buscarPorTituloAutorOCategoria($query);
+
+        $query = $recursoModel->query("SHOW COLUMNS FROM recursos LIKE 'estado'");
+        $row = $query->getRow();
+        $estados = str_replace(["enum('", "')"], "", $row->Type);
+        $datos['estados'] = explode("','", $estados);
+
+
+        $datos['header'] = view('layouts/header');
+        $datos['footer'] = view('layouts/footer');
+
+        return view('recursos/crear', $datos);
+    }
+    // Guardar recurso
+    public function guardar()
+    {
+        $recursoModel = new RecursoModel();
 
         $datos = [
-            'header' => view('layouts/header'),
-            'footer' => view('layouts/footer'),
-            'recursos' => $recursos,
-            'query' => $query
+            'titulo' => $this->request->getVar('titulo'),
+            'anio' => $this->request->getVar('anio'),
+            'numpaginas' => $this->request->getVar('numpaginas'),
+            'encuadernacion' => $this->request->getVar('encuadernacion'),
+            'isbn' => $this->request->getVar('isbn'),
+            'numedicion' => $this->request->getVar('numedicion'),
+            'estado' => $this->request->getVar('estado'),
+            'stock' => $this->request->getVar('stock'),
         ];
 
-        return view('recurso/index', $datos);
+        $recursoModel->insert($datos);
+
+        return $this->response->redirect(base_url('recursos'));
+    }
+    // Formulario para editar
+    public function editar($idrecurso = null)
+    {
+        $recursoModel = new RecursoModel();
+        $datos['recurso'] = $recursoModel->find($idrecurso);
+
+        $query = $recursoModel->query("SHOW COLUMNS FROM recursos LIKE 'estado'");
+        $row = $query->getRow();
+        $estados = str_replace(["enum('", "')"], "", $row->Type);
+        $datos['estados'] = explode("','", $estados);
+
+        $datos['header'] = view('layouts/header');
+        $datos['footer'] = view('layouts/footer');
+
+        return view('recursos/editar', $datos);
+    }
+    // Actualizar recurso
+    public function actualizar($idrecurso)
+    {
+        $recursoModel = new RecursoModel();
+
+        $datos = [
+            'titulo'        => $this->request->getVar('titulo'),
+            'anio'          => $this->request->getVar('anio'),
+            'numpaginas'    => $this->request->getVar('numpaginas'),
+            'encuadernacion'=> $this->request->getVar('encuadernacion'),
+            'isbn'          => $this->request->getVar('isbn'),
+            'numedicion'    => $this->request->getVar('numedicion'),
+            'estado'        => $this->request->getVar('estado'),
+            'stock'         => $this->request->getVar('stock'),
+        ];
+
+        $recursoModel->update($idrecurso, $datos);
+        
+        return redirect()->to(base_url('recursos'));
+    }
+
+    public function eliminar($idrecurso = null)
+    {
+        $recursoModel = new RecursoModel();
+        $recursoModel->delete($idrecurso);
+        return $this->response->redirect(base_url('recursos'));
     }
 }
