@@ -24,4 +24,20 @@ class RecursoModel extends Model
         'ideditorial',
         'idtiporecurso'
     ];
+
+    public function buscarRecursos($query)
+    {
+        return $this->select('recursos.*, autores.nomautor, subcategorias.subcategoria')
+            ->join('detautores', 'detautores.idrecurso = recursos.idrecurso', 'left')
+            ->join('autores', 'autores.idautor = detautores.idautor', 'left')
+            ->join('subcategorias', 'subcategorias.idsubcategoria = recursos.idsubcategoria', 'left')
+            // Si quieres mostrar la categoría principal, descomenta la siguiente línea y ajusta el select:
+            // ->join('categorias', 'categorias.idcategoria = subcategorias.idcategoria', 'left')
+            ->groupStart()
+                ->like('recursos.titulo', $query)
+                ->orLike('autores.nomautor', $query)
+                ->orLike('subcategorias.subcategoria', $query)
+            ->groupEnd()
+            ->findAll();
+    }
 }

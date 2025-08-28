@@ -2,11 +2,11 @@
 <!-- Hero section con buscador -->
 <div class="hero-section m-5 bg-light p-4">
     <h1 class="display-4 d-flex justify-content-center align-items-center">Bienvenido a la Biblioteca Virtual</h1>
-    <form action="#" method="get" class="d-flex justify-content-center align-items-center mt-4">
+    <form action="<?= base_url('recursos/buscarRecursos') ?>" method="get" class="d-flex justify-content-center align-items-center mt-4">
         <div class="input-group input-group-lg w-50 ">
             <input 
                 type="search" 
-                name="q" 
+                name="query" 
                 class="form-control rounded-start-pill border-primary" 
                 placeholder="Buscar libros, autores o temas..." 
                 aria-label="Buscar" 

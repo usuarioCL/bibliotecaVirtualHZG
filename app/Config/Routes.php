@@ -30,3 +30,4 @@ $routes->post('/recursos/guardar', 'RecursoController::guardar');
 $routes->get('/recursos/editar/(:num)', 'RecursoController::editar/$1'); 
 $routes->post('/recursos/actualizar/(:num)', 'RecursoController::actualizar/$1');
 $routes->get('/recursos/eliminar/(:num)', 'RecursoController::eliminar/$1');
+$routes->get('/recursos/buscarRecursos', 'RecursoController::buscarRecursos');
