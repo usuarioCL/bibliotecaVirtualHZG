@@ -23,7 +23,7 @@
                         <a class="nav-link  fs-5" href="/">Inicio</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link  fs-5" href="#">Catálogo</a>
+                        <a class="nav-link  fs-5" href="/catalogo">Catálogo</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link  fs-5" href="#">Autores</a>
