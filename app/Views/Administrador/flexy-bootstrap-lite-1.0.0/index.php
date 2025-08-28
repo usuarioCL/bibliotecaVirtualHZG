@@ -203,7 +203,7 @@
                   <span class="d-flex">
                     <i class="ti ti-basket"></i>
                   </span>
-                  <span class="hide-menu">Ecommerce</span>
+                  <span class="hide-menu">Gestión Interna</span>
                 </div>
                 
               </a>
@@ -215,11 +215,11 @@
                       <div class="round-16 d-flex align-items-center justify-content-center">
                         <i class="ti ti-circle"></i>
                       </div>
-                      <span class="hide-menu">Shop</span>
+                       <a class="hide-menu text-decoration-none" href="<?= base_url('recursos'); ?>">Recursos</a>
                     </div>
-                    
                   </a>
                 </li>
+
                 <li class="sidebar-item">
                   <a class="sidebar-link justify-content-between"  
                     href="#">
@@ -227,11 +227,12 @@
                       <div class="round-16 d-flex align-items-center justify-content-center">
                         <i class="ti ti-circle"></i>
                       </div>
-                      <span class="hide-menu">Details</span>
+                      <span class="hide-menu">Usuarios</span>
                     </div>
                     
                   </a>
                 </li>
+
                 <li class="sidebar-item">
                   <a class="sidebar-link justify-content-between"  
                     href="#">

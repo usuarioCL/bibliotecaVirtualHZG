@@ -27,4 +27,17 @@ class RecursoController extends Controller
 
         return view('recurso/index', $datos);
     }
+
+    // Lista de recursos
+    public function index(): string
+    {
+        $recurso = new RecursoModel();
+        $datos['recursos'] = $recurso->orderBy('idrecurso', 'ASC')->findAll();
+    
+        $datos['header'] = view('layouts/header');
+        $datos['footer'] = view('layouts/footer');
+
+        return view('recursos/listar', $datos);
+    }
+
 }
