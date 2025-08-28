@@ -101,4 +101,17 @@ class RecursoController extends Controller
         $recursoModel->delete($idrecurso);
         return $this->response->redirect(base_url('recursos'));
     }
+
+    public function buscarRecursos()
+    {
+        $recursoModel = new RecursoModel();
+        $query = $this->request->getVar('query');
+
+        
+        $datos['recursos'] = $recursoModel->buscarRecursos($query);
+        $datos['header'] = view('layouts/header');
+        $datos['footer'] = view('layouts/footer');
+
+        return view('recursos/listarBuscados', $datos);
+    }
 }

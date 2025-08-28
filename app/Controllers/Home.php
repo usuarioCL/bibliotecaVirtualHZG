@@ -2,7 +2,6 @@
 
 namespace App\Controllers;
 
-use App\Models\GrupoModel;
 use App\Models\CategoriaModel;
 use CodeIgniter\Controller;
 
@@ -10,11 +9,11 @@ class Home extends Controller
 {
     public function index(): string
     {   
-        $grupoModel = new GrupoModel();
-        $categoriaModel = new CategoriaModel();
-        //Obtener niveles
-        $niveles = $grupoModel->distinct()->findColumn('nivel');
 
+        $categoriaModel = new CategoriaModel();
+
+        //Mostrar niveles
+        $niveles = ['Inicial','Primaria', 'Secundaria'];
         //Obtener categorias
         $categorias = $categoriaModel->findAll();
 
