@@ -75,6 +75,13 @@
     </table>
   </div>
 
+    <!-- Paginación -->
+  <div class="d-flex justify-content-center mt-4">
+    <?= $pager->links('recursos', 'paginacion') ?>
+  </div>
+
+
+
   <!-- Botón registrar -->
   <div class="mt-3 text-center">
     <a href="<?= base_url("recursos/crear"); ?>" class="btn btn-success">
