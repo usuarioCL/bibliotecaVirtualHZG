@@ -62,7 +62,7 @@
                class="btn btn-sm btn-warning me-1">
               Editar
             </a>
-            <!-- Cambio en el nombre base_url('recursos/borrar/') por: base_url('recursos/eliminar/') -->
+            <!-- Cambio en el nombre en la url -->
             <a href="<?= base_url('recursos/eliminar/') ?><?= $recurso['idrecurso'] ?>" 
                class="btn btn-sm btn-danger"
                onclick="return confirm('¿Seguro que deseas eliminar este recurso?');">

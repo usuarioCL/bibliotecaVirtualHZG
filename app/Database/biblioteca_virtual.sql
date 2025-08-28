@@ -109,7 +109,7 @@ CREATE TABLE recursos (
     FOREIGN KEY (idtiporecurso) REFERENCES tiporecursos(idtiporecurso)
 );
 
-SHOW COLUMNS FROM recursos LIKE 'estado';
+
 
 -- ==============================
 -- TABLAS: Autores y Detalle

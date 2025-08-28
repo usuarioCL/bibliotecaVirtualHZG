@@ -20,7 +20,7 @@ class RecursoController extends Controller
         return view('recursos/listar', $datos);
     }
 
-    // Crear recurso
+    // Formulario para crear
     public function crear(): string
     {
         $recursoModel = new RecursoModel();
@@ -36,20 +36,20 @@ class RecursoController extends Controller
 
         return view('recursos/crear', $datos);
     }
-    // Guardar recurso
+    // Guardar datos del Formulario
     public function guardar()
     {
         $recursoModel = new RecursoModel();
 
         $datos = [
-            'titulo' => $this->request->getVar('titulo'),
-            'anio' => $this->request->getVar('anio'),
-            'numpaginas' => $this->request->getVar('numpaginas'),
+            'titulo'         => $this->request->getVar('titulo'),
+            'anio'           => $this->request->getVar('anio'),
+            'numpaginas'     => $this->request->getVar('numpaginas'),
             'encuadernacion' => $this->request->getVar('encuadernacion'),
-            'isbn' => $this->request->getVar('isbn'),
-            'numedicion' => $this->request->getVar('numedicion'),
-            'estado' => $this->request->getVar('estado'),
-            'stock' => $this->request->getVar('stock'),
+            'isbn'           => $this->request->getVar('isbn'),
+            'numedicion'     => $this->request->getVar('numedicion'),
+            'estado'         => $this->request->getVar('estado'),
+            'stock'          => $this->request->getVar('stock'),
         ];
 
         $recursoModel->insert($datos);
@@ -72,7 +72,7 @@ class RecursoController extends Controller
 
         return view('recursos/editar', $datos);
     }
-    // Actualizar recurso
+    // Actualizar datos
     public function actualizar($idrecurso)
     {
         $recursoModel = new RecursoModel();
