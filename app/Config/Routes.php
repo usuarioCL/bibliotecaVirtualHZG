@@ -8,32 +8,17 @@ use CodeIgniter\Router\RouteCollection;
 $routes->get('/', 'Home::index');
 
 // Inicio de sesión
-$routes->get('/login', 'LoginController::loginForm');
-// Procesar inicio de sesión
-$routes->post('/login', 'LoginController::login');
+$routes->get('/login', 'LoginController::loginForm'); // Muestra el formulario de login
+$routes->post('/login', 'LoginController::login');    // Procesa el login
 
 // Registro de Usuarios
-// Ruta para el registro
-$routes->get('/registro', 'RegistroController::RegistroForm');
-// Procesar registro
-$routes->post('/registro', 'RegistroController::Registro');
+$routes->get('/registro', 'RegistroController::RegistroForm'); // Muestra el formulario de registro
+$routes->post('/registro', 'RegistroController::Registro');    // Procesa el registro
 
-// Rutas por nivel de Usuario
-// Rutas para el panel de administración
+// Panel de administración
 $routes->get('/admin', 'AdminController::dashboard');
-// Rutas para el panel del docente
-//$routes->get('/docente', 'DocenteController::dashboard');
+$routes->get('/admin/login', 'AdminController::login');
+$routes->get('/admin/register', 'AdminController::register');
 
-//Libros
+// Libros
 $routes->get('/recurso', 'RecursoController::buscar');
-
-
-$routes->get('/login', 'LoginController::loginForm');
-$routes->post('/login', 'LoginController::login');
-$routes->get('/registro', 'LoginController::Registro');
-
-$routes->post('/registro', 'LoginController::guardarRegistro');
-$routes->post('/registro', 'LoginController::guardarRegistro');
-
-//admin
-$routes->get('/admin', 'AdminController::dashboard');
