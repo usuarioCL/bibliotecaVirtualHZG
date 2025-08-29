@@ -35,3 +35,7 @@ $routes->get('/recursos/eliminar/(:num)', 'RecursoController::eliminar/$1');
 // Buscar recursos
 $routes->get('/recursos/buscarRecursos', 'RecursoController::buscarRecursos');
 $routes->get('/recursos/filtrosBusqueda', 'RecursoController::filtrosBusqueda');
+
+// Catalogo
+$routes->get('/catalogo', 'CatalogoController::index');
+$routes->get('catalogo/subcategorias/(:num)', 'CatalogoController::getSubcategoriasPorCategoria/$1');

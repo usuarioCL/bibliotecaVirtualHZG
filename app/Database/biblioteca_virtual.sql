@@ -113,7 +113,7 @@ CREATE TABLE recursos (
 
 -- ==============================
 -- TABLAS: Autores y Detalle
--- ==============================
+-- ==============================   
 CREATE TABLE autores (
     idautor INT AUTO_INCREMENT PRIMARY KEY,
     apeautor VARCHAR(50),
