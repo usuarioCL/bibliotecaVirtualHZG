@@ -32,7 +32,8 @@ class CatalogoController extends BaseController
         'categorias' => $categorias,
         'subcategorias' => $datosSub,
         'header' => view('layouts/header'),
-        'footer' => view('layouts/footer')
+        'footer' => view('layouts/footer'),
+        'navbar' => view('layouts/navbar')
     ];
 
     return view('Catalogo/catalogo', $datos);

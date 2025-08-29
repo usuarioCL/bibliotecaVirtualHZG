@@ -1,5 +1,5 @@
 <?= $header ?>
-
+<?= $navbar ?>
 <div class="container mt-4">
     <h2 class="text-center mb-4">Catálogo de Libros</h2>
 

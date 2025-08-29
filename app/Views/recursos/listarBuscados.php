@@ -99,13 +99,17 @@
                 <?= form_reset('reset', 'Borrar filtros', ['class' => 'btn btn-secondary w-100 mt-2', 'id' => 'reset-filtros']) ?>
             </form>
         </div>
-        <!-- Resultados de la búsqueda -->
-        <div class="col-9" id="resultados-busqueda">
-            <h4 class="fw-bold text-primary text-center mb-4  pb-2">
-            Resultados de la búsqueda
-            </h4>
-            <?php include(APPPATH . 'Views/recursos/resultadosBusqueda.php'); ?>
-        </div>
+        <div class="col-9">
+            <div class="row">
+                <h4 class="fw-bold text-primary text-center mb-4  pb-2">
+                    Resultados de la búsqueda
+                </h4>
+            </div>
+            <!-- Resultados de la búsqueda -->
+            <div class="row" id="resultados-busqueda">
+                <?php include(APPPATH . 'Views/recursos/resultadosBusqueda.php'); ?>
+            </div>
+        </div>  
     </div>
 </div>
 <script>
