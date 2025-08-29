@@ -29,7 +29,7 @@
                 </li>
             </ul>
             <form class="d-flex " role="login">
-                <a href="#" class="btn btn-primary me-2 fs-5">Iniciar Sesión</a>
+                <a href="/login" class="btn btn-primary me-2 fs-5">Iniciar Sesión</a>
             </form>
         </div>
     </div>

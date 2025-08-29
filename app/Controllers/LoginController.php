@@ -10,6 +10,7 @@ class LoginController extends BaseController
     {
         $datos['header'] = view('layouts/header');
         $datos['footer'] = view('layouts/footer');
+        $datos['navbar'] = view('layouts/navbar');
 
 
         return view('login_user/login', $datos);
@@ -39,15 +40,15 @@ class LoginController extends BaseController
                 // Guardamos en sesión
                 session()->set([
                     'usuario'    => $usuario['nomuser'],
-                    'nivel'      => $usuario['nivelAcceso'],
+                    'nivel'      => $usuario['nivelacceso'],
                     'logged_in'  => true
                 ]);
 
                 // Redirigir según el rol
-                switch ($usuario['nivelAcceso']) {
+                switch ($usuario['nivelacceso']) {
                     case 'Admin':
                         return redirect()->to('/admin');
-                    case 'Alumno':
+                    case 'estudiante':
                         return redirect()->to('/');
                     case 'Docente':
                         return redirect()->to('/docente');
