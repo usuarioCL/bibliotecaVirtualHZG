@@ -22,6 +22,7 @@ $routes->post('/registro', 'RegistroController::Registro');    // Procesa el reg
 $routes->get('/admin', 'AdminController::dashboard');
 $routes->get('/admin/login', 'AdminController::login');
 $routes->get('/admin/register', 'AdminController::register');
+$routes->get('/admin/usuariosRoles', 'AdminController::usuariosRoles'); // Nueva ruta para la vista de usuarios y roles
 
 //Recursos
 $routes->get('/recursos', 'RecursoController::index');
@@ -30,12 +31,7 @@ $routes->post('/recursos/guardar', 'RecursoController::guardar');
 $routes->get('/recursos/editar/(:num)', 'RecursoController::editar/$1'); 
 $routes->post('/recursos/actualizar/(:num)', 'RecursoController::actualizar/$1');
 $routes->get('/recursos/eliminar/(:num)', 'RecursoController::eliminar/$1');
-<<<<<<< HEAD
-$routes->get('/recursos/buscarRecursos', 'RecursoController::buscarRecursos');
 
-//Vistas
-$routes->get('admin/usuarios-roles', 'AdminController::usuariosRoles');
-=======
-
+// Buscar recursos
 $routes->get('/recursos/buscarRecursos', 'RecursoController::buscarRecursos');
->>>>>>> 1e58c8facc6af3292b83bcd1fffc270ebdc4f4f1
+$routes->get('/recursos/filtrosBusqueda', 'RecursoController::filtrosBusqueda');

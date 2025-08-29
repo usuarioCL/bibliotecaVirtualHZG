@@ -15,7 +15,8 @@ class RecursoController extends Controller
 
         $datos['recursos'] = $recurso->orderBy('idrecurso', 'ASC')->paginate(10, 'recursos');
         $datos['pager']    = $recurso->pager;
-    
+
+        $datos['navbar'] = view('layouts/navbar');
         $datos['header'] = view('layouts/header');
         $datos['footer'] = view('layouts/footer');
 
@@ -32,7 +33,7 @@ class RecursoController extends Controller
         $estados = str_replace(["enum('", "')"], "", $row->Type);
         $datos['estados'] = explode("','", $estados);
 
-
+        $datos['navbar'] = view('layouts/navbar');
         $datos['header'] = view('layouts/header');
         $datos['footer'] = view('layouts/footer');
 
@@ -69,6 +70,7 @@ class RecursoController extends Controller
         $estados = str_replace(["enum('", "')"], "", $row->Type);
         $datos['estados'] = explode("','", $estados);
 
+        $datos['navbar'] = view('layouts/navbar');
         $datos['header'] = view('layouts/header');
         $datos['footer'] = view('layouts/footer');
 
@@ -107,8 +109,41 @@ class RecursoController extends Controller
         $recursoModel = new RecursoModel();
         $query = $this->request->getVar('query');
 
-        
         $datos['recursos'] = $recursoModel->buscarRecursos($query);
+         $datos['categorias'] = model('CategoriaModel')->findAll();
+        $datos['subcategorias'] = model('SubcategoriaModel')->findAll();
+        $datos['editoriales'] = model('EditorialModel')->findAll();
+        $datos['tiposrecurso'] = model('TiporecursoModel')->findAll();
+        $datos['autores'] = model('AutorModel')->findAll();
+        $datos['filtros'] = [];
+
+        $datos['navbar'] = view('layouts/navbar');
+        $datos['header'] = view('layouts/header');
+        $datos['footer'] = view('layouts/footer');
+
+        return view('recursos/listarBuscados', $datos);
+    }
+
+    public function filtrosBusqueda()
+    {
+        $recursoModel = new RecursoModel();
+        $filtros = $this->request->getVar();
+
+        $datos['recursos'] = $recursoModel->filtrosBusqueda($filtros);
+
+        if ($this->request->isAJAX()) {
+            // Devolver solo el HTML de la lista de resultados
+            return view('recursos/resultadosBusqueda', $datos);
+        }
+
+        $datos['categorias'] = model('CategoriaModel')->findAll();
+        $datos['subcategorias'] = model('SubcategoriaModel')->findAll();
+        $datos['editoriales'] = model('EditorialModel')->findAll();
+        $datos['tiposrecurso'] = model('TiporecursoModel')->findAll();
+        $datos['autores'] = model('AutorModel')->findAll();
+        $datos['filtros'] = $filtros;
+
+        $datos['navbar'] = view('layouts/navbar');  
         $datos['header'] = view('layouts/header');
         $datos['footer'] = view('layouts/footer');
 

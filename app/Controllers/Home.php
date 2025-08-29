@@ -19,6 +19,7 @@ class Home extends Controller
 
         $data = ['header' => view('layouts/header'),
                  'footer' => view('layouts/footer'),
+                 'navbar' => view('layouts/navbar'),
                  'niveles' => $niveles,
                  'categorias' => $categorias];
         return view('paginaPrincipal', $data);
