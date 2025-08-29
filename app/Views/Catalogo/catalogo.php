@@ -3,35 +3,96 @@
 <div class="container mt-4">
     <h2 class="text-center mb-4">Catálogo de Libros</h2>
 
-    <div class="row">
+    <!-- Botones de categoría -->
+    <div class="mb-4">
         <?php foreach ($categorias as $cat): ?>
-            <div class="col-md-3 mb-3">
-                <button class="btn btn-primary w-100"
-                        type="button"
-                        data-bs-toggle="collapse"
-                        data-bs-target="#subcat<?= $cat['idcategoria'] ?>"
-                        aria-expanded="false"
-                        aria-controls="subcat<?= $cat['idcategoria'] ?>">
-                    <?= $cat['categoria'] ?>
-                </button>
+            <button class="btn btn-primary btn-categoria me-2" data-id="<?= $cat['idcategoria'] ?>">
+                <?= $cat['categoria'] ?>
+            </button>
+        <?php endforeach; ?>
+        <button class="btn btn-secondary btn-categoria" data-id="0">Todos</button>
+    </div>
 
-                <div class="collapse mt-2" id="subcat<?= $cat['idcategoria'] ?>">
-                    <div class="list-group">
-                        <?php if (isset($subcategorias[$cat['idcategoria']])): ?>
-                            <?php foreach ($subcategorias[$cat['idcategoria']] as $sub): ?>
-                                <a href="<?= base_url('catalogo/subcategoria/'.$sub['idsubcategoria']) ?>"
-                                   class="list-group-item list-group-item-action">
-                                    <?= $sub['subcategoria'] ?>
-                                </a>
-                            <?php endforeach; ?>
-                        <?php else: ?>
-                            <p class="text-muted text-center">Sin subcategorías</p>
-                        <?php endif; ?>
-                    </div>
-                </div>
+    <!-- Contenedor de subcategorías y libros -->
+    <div id="contenido">
+        <?php foreach ($subcategorias as $sub): ?>
+            <h4><?= $sub['subcategoria'] ?></h4>
+            <div class="row mb-3">
+                <?php if(count($sub['libros']) > 0): ?>
+                    <?php foreach($sub['libros'] as $lib): ?>
+                        <div class="col-md-4">
+                            <div class="card mb-3">
+                                <img src="<?= $lib['rutaportada'] ?>" class="card-img-top" alt="Portada" style="height:200px; object-fit:cover;">
+                                <div class="card-body">
+                                    <h5 class="card-title"><?= $lib['titulo'] ?></h5>
+                                    <p class="card-text">
+                                        <strong>Autores:</strong> <?= isset($lib['autores']) ? $lib['autores'] : 'Sin autores' ?>
+                                    </p>
+                                    <p class="card-text"><strong>Año:</strong> <?= $lib['anio'] ?> | <strong>ISBN:</strong> <?= $lib['isbn'] ?></p>
+                                    <p class="card-text"><strong>Edición:</strong> <?= $lib['numedicion'] ?> | <strong>Estado:</strong> <?= $lib['estado'] ?></p>
+                                    <p class="card-text"><strong>Stock:</strong> <?= $lib['stock'] ?></p>
+                                </div>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <p class="text-muted ms-3">No hay libros</p>
+                <?php endif; ?>
             </div>
         <?php endforeach; ?>
     </div>
 </div>
+
+<script>
+function cargarSubcategorias(idCat){
+    let url = idCat == 0 ? '/catalogo' : `/catalogo/subcategorias/${idCat}`;
+
+    fetch(url)
+        .then(res => res.json())
+        .then(data => {
+            let cont = document.getElementById("contenido");
+            cont.innerHTML = "";
+
+            data.forEach(sub => {
+                let html = `<h4>${sub.subcategoria}</h4><div class="row mb-3">`;
+
+                if(sub.libros.length > 0){
+                    sub.libros.forEach(lib => {
+                        html += `
+                        <div class="col-md-4">
+                            <div class="card mb-3">
+                                <img src="${lib.rutaportada}" class="card-img-top" style="height:200px; object-fit:cover;">
+                                <div class="card-body">
+                                    <h5 class="card-title">${lib.titulo}</h5>
+                                    <p class="card-text"><strong>Autores:</strong> ${lib.autores}</p>
+                                    <p class="card-text"><strong>Año:</strong> ${lib.anio} | <strong>ISBN:</strong> ${lib.isbn}</p>
+                                    <p class="card-text"><strong>Edición:</strong> ${lib.numedicion} | <strong>Estado:</strong> ${lib.estado}</p>
+                                    <p class="card-text"><strong>Stock:</strong> ${lib.stock}</p>
+                                </div>
+                            </div>
+                        </div>`;
+                    });
+                } else {
+                    html += `<p class="text-muted ms-3">No hay libros</p>`;
+                }
+
+                html += "</div>";
+                cont.innerHTML += html;
+            });
+        });
+}
+
+// Botones
+document.querySelectorAll(".btn-categoria").forEach(btn => {
+    btn.addEventListener("click", function() {
+        cargarSubcategorias(this.dataset.id);
+    });
+});
+
+// Cargar todas al inicio
+cargarSubcategorias(0);
+</script>
+
+
 
 <?= $footer ?>
