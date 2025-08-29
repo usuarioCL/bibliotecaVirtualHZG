@@ -239,16 +239,30 @@
               <ul aria-expanded="false" class="collapse first-level">
 
                 <li class="sidebar-item">
-                  <a class="sidebar-link d-flex align-items-center gap-3" href="<?= base_url('admin/usuarios-roles'); ?>">
+                  <a class="sidebar-link d-flex align-items-center gap-3" href="<?= base_url('Administrador/vistas/UsuariosRoles'); ?>">
                     <i class="ti ti-checks fs-5"></i>
                     <span class="hide-menu">Roles de usuarios</span>
                   </a>
                 </li>
 
                 <li class="sidebar-item">
-                  <a class="sidebar-link d-flex align-items-center gap-3" href="<?= base_url('admin/prestamos-alumno'); ?>">
-                    <i class="ti ti-pencil fs-5"></i>
-                    <span class="hide-menu">Prestamos de los alumnos</span>
+                  <a class="sidebar-link d-flex align-items-center gap-3" href="<?= base_url('Administrador/vistas/PrestamosAlumnos'); ?>">
+                    <i class="ti ti-book-2 fs-5"></i>
+                    <span class="hide-menu">Prestamos realizados</span>
+                  </a>
+                </li>
+
+                <li class="sidebar-item">
+                  <a class="sidebar-link d-flex align-items-center gap-3" href="<?= base_url('Administrador/vistas/ReaccionesUsuarios'); ?>">
+                    <i class="ti ti-hearts fs-5"></i>
+                    <span class="hide-menu">Reaccion de los usuarios</span>
+                  </a>
+                </li>
+
+                <li class="sidebar-item">
+                  <a class="sidebar-link d-flex align-items-center gap-3" href="<?= base_url('Administrador/vistas/AlumnosSancionados'); ?>">
+                    <i class="ti ti-ban fs-5"></i>
+                    <span class="hide-menu">Alumnos Sancionados</span>
                   </a>
                 </li>
 

@@ -22,7 +22,12 @@ $routes->post('/registro', 'RegistroController::Registro');    // Procesa el reg
 $routes->get('/admin', 'AdminController::dashboard');
 $routes->get('/admin/login', 'AdminController::login');
 $routes->get('/admin/register', 'AdminController::register');
-$routes->get('/admin/usuariosRoles', 'AdminController::usuariosRoles'); // Nueva ruta para la vista de usuarios y roles
+
+//Vistas de administrador
+$routes->get('Administrador/vistas/UsuariosRoles', 'AdminController::VistaUsuariosRoles');
+$routes->get('Administrador/vistas/PrestamosAlumnos', 'AdminController::VistaPrestamosAlumnos');
+$routes->get('Administrador/vistas/ReaccionesUsuarios', 'AdminController::VistaReaccionesUsuarios');
+$routes->get('Administrador/vistas/AlumnosSancionados', 'AdminController::VistaAlumnosSancionados');
 
 //Recursos
 $routes->get('/recursos', 'RecursoController::index');
@@ -35,3 +40,5 @@ $routes->get('/recursos/eliminar/(:num)', 'RecursoController::eliminar/$1');
 // Buscar recursos
 $routes->get('/recursos/buscarRecursos', 'RecursoController::buscarRecursos');
 $routes->get('/recursos/filtrosBusqueda', 'RecursoController::filtrosBusqueda');
+
+
