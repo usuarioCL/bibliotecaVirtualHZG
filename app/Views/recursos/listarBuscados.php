@@ -1,9 +1,9 @@
 <?php helper('form'); ?>
 <?= $header; ?>
-<div class="container mt-4">
 <?= $navbar; ?>
+<div class="container">
     <!-- Hero section con buscador -->
-    <div class="mt-4 p-4">
+    <div class="p-4">
         <form action="<?= base_url('recursos/buscarRecursos') ?>" method="get" class="d-flex justify-content-end align-items-center">
             <div class="input-group input-group-lg w-50 ">
                 <input 

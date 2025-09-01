@@ -1,6 +1,6 @@
 <?= $header ?>
-<div class=" m-5">
 <?= $navbar; ?>
+<div class="container">
 <!-- Hero section con buscador -->
 <div class="hero-section p-4 mt-4">
     <h1 class="display-4 d-flex justify-content-center align-items-center">Bienvenido a la Biblioteca Virtual</h1>
@@ -37,7 +37,7 @@
     <?php endif; ?>
 </div>
 <!-- Sección de categorías -->
-<div class="row justify-content-center">
+<div class="row justify-content-center mt-4">
     <?php if (!empty($categorias)): ?>
         <?php foreach ($categorias as $categoria): ?>
             <div class="col-md-3">

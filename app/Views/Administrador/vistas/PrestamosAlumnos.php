@@ -1,16 +1,4 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Préstamos</title>
-
-    <!-- Bootstrap 5.3.0 CSS -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-</head>
-<body>
-
-<div class="container mt-4">
+<div class="container">
     <div class="card shadow-lg border-0 rounded-3">
         <div class="card-header bg-primary text-white text-center">
             <h2 class="mb-0">Préstamos con Información del Alumno</h2>
@@ -42,7 +30,3 @@
     </div>
 </div>
 
-<!-- Bootstrap 5.3.0 JS (bundle con Popper) -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>

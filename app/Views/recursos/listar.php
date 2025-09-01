@@ -1,4 +1,3 @@
-<?= $header; ?>
 
 <div class="container mt-4">
   <!-- Título -->
@@ -90,4 +89,3 @@
   </div>
 </div>
 
-<?= $footer; ?>
