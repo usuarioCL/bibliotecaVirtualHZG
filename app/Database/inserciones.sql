@@ -10,9 +10,9 @@ INSERT INTO personas (apellidos, nombres, tipodoc, numerodoc, telefono, direccio
 
 -- Usuarios (3 ejemplos, uno por persona)
 INSERT INTO usuarios (nomuser, passuser, nivelacceso, idpersona) VALUES
-('anagarcia', 'passhash1', 'admin', 1),
-('luisp', 'passhash2', 'docente', 2),
-('elenat', 'passhash3', 'estudiante', 3);
+('admin', '123', 'admin', 1),
+('docente', '123', 'docente', 2),
+('estudiante', '123', 'estudiante', 3);
 
 -- Grupos (3 ejemplos)
 INSERT INTO grupos (aniolectivo, grado, seccion, nivel) VALUES

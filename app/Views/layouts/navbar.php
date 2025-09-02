@@ -17,15 +17,24 @@
                     <a class="nav-link  " href="#">Sobre La Plataforma
                     </a>
                 </li>
+                <?php if (session()->get('logged_in') && session()->get('nivel') === 'admin'): ?>
                 <li class="nav-item">
                     <a class="nav-link  " href="<?= base_url('admin'); ?>">
                         Dashboard
                     </a>
                 </li>
+                <?php endif; ?>
             </ul>
+            <?php if (session()->get('logged_in')): ?>
+            <div class="d-flex align-items-center">
+                <span class="nav-link  fs-5 me-3">Hola, <?= session()->get('usuario'); ?></span>
+                <a href="/logout" class="nav-link ">Cerrar Sesión</a>
+            </div>
+            <?php else: ?>
             <form class="d-flex " role="login">
                 <a href="/login" class="btn btn-primary me-2 fs-5">Iniciar Sesión</a>
             </form>
+            <?php endif; ?>
         </div>
     </div>
 </nav>

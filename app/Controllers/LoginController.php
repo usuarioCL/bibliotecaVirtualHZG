@@ -15,11 +15,6 @@ class LoginController extends BaseController
 
         return view('login_user/login', $datos);
     }
-    //Verificacion de contraseña por Hash(Primera version)
-    /*if ($usuario && password_verify($pass, $usuario['passuser'])) {
-        session()->set('usuario', $usuario);
-        return redirect()->to('/');
-    }*/
 
     public function login()
     {
@@ -33,7 +28,6 @@ class LoginController extends BaseController
         $usuario = $usuarioModel->where('nomuser', $nomuser)->first();
 
         if ($usuario) {
-            //if(password_verify($passuser, $usuario['passuser']))
             // Si las contraseñas coinciden (aquí sin hash)
             if ($passuser === $usuario['passuser']) {
 
@@ -44,17 +38,8 @@ class LoginController extends BaseController
                     'logged_in'  => true
                 ]);
 
-                // Redirigir según el rol
-                switch ($usuario['nivelacceso']) {
-                    case 'Admin':
-                        return redirect()->to('/admin');
-                    case 'estudiante':
-                        return redirect()->to('/');
-                    case 'Docente':
-                        return redirect()->to('/docente');
-                    default:
-                        return redirect()->to('/login');
-                }
+            // Redirigir todos los roles a la página principal
+            return redirect()->to('/');
             }
         }
 
@@ -62,7 +47,12 @@ class LoginController extends BaseController
         return redirect()->back()->with('error', 'Nombre de usuario o contraseña incorrectos');
     }
 
+    public function logout()
+    {
+        // Eliminar datos de sesión
+        session()->destroy();
 
-    
-    
+        // Redirigir a la página de inicio
+        return redirect()->to('/');
+    }
 }

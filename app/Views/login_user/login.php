@@ -1,6 +1,5 @@
 <?= $header ?>
-    <div class="m-5">
-        <?= $navbar ?>
+<?= $navbar ?>
         <div class="container mt-5 ">
             <?php if (session('error')): ?>
             <div class="alert alert-danger"><?= session('error') ?></div>
@@ -22,5 +21,4 @@
                 </div>
             </div>
         </div>
-    </div>
 <?= $footer ?>

@@ -13,6 +13,7 @@ $routes->get('/recurso', 'RecursoController::buscar');
 // Inicio de sesión
 $routes->get('/login', 'LoginController::loginForm'); // Muestra el formulario de login
 $routes->post('/login', 'LoginController::login');    // Procesa el login
+$routes->get('/logout', 'LoginController::logout');   // Cierra la sesión
 
 // Registro de Usuarios
 $routes->get('/registro', 'RegistroController::RegistroForm'); // Muestra el formulario de registro
