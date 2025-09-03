@@ -88,4 +88,47 @@ class RecursoModel extends Model
 
         return $builder->findAll();
     }
+
+    public function obtenerDetallesCompletos($id)
+    {
+        return $this->select('recursos.*, autores.nomautor, subcategorias.subcategoria, categorias.categoria, editoriales.editorial, tiporecursos.tiporecurso')
+            ->join('detautores', 'detautores.idrecurso = recursos.idrecurso', 'left')
+            ->join('autores', 'autores.idautor = detautores.idautor', 'left')
+            ->join('subcategorias', 'subcategorias.idsubcategoria = recursos.idsubcategoria', 'left')
+            ->join('categorias', 'categorias.idcategoria = subcategorias.idcategoria', 'left')
+            ->join('editoriales', 'editoriales.ideditorial = recursos.ideditorial', 'left')
+            ->join('tiporecursos', 'tiporecursos.idtiporecurso = recursos.idtiporecurso', 'left')
+            ->where('recursos.idrecurso', $id)
+            ->first();
+    }
+
+    public function obtenerRecursosDestacados($limite = 8)
+    {
+        return $this->select('recursos.*, autores.nomautor, subcategorias.subcategoria, categorias.categoria, editoriales.editorial, tiporecursos.tiporecurso')
+            ->join('detautores', 'detautores.idrecurso = recursos.idrecurso', 'left')
+            ->join('autores', 'autores.idautor = detautores.idautor', 'left')
+            ->join('subcategorias', 'subcategorias.idsubcategoria = recursos.idsubcategoria', 'left')
+            ->join('categorias', 'categorias.idcategoria = subcategorias.idcategoria', 'left')
+            ->join('editoriales', 'editoriales.ideditorial = recursos.ideditorial', 'left')
+            ->join('tiporecursos', 'tiporecursos.idtiporecurso = recursos.idtiporecurso', 'left')
+            ->where('recursos.estado', 'disponible')
+            ->orderBy('recursos.idrecurso', 'DESC')
+            ->limit($limite)
+            ->findAll();
+    }
+
+    public function obtenerLibrosPopulares($limite = 6)
+    {
+        return $this->select('recursos.*, autores.nomautor, subcategorias.subcategoria, categorias.categoria')
+            ->join('detautores', 'detautores.idrecurso = recursos.idrecurso', 'left')
+            ->join('autores', 'autores.idautor = detautores.idautor', 'left')
+            ->join('subcategorias', 'subcategorias.idsubcategoria = recursos.idsubcategoria', 'left')
+            ->join('categorias', 'categorias.idcategoria = subcategorias.idcategoria', 'left')
+            ->where('recursos.estado', 'disponible')
+            ->where('recursos.stock >', 0)
+            ->orderBy('recursos.anio', 'DESC')
+            ->orderBy('recursos.stock', 'DESC')
+            ->limit($limite)
+            ->findAll();
+    }
 }

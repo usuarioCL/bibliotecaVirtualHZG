@@ -161,5 +161,38 @@
             });
         }, 50);
     });
+
+    // Manejar clic en libros para mostrar modal con detalles
+    document.addEventListener('click', function(e) {
+        const libroItem = e.target.closest('.libro-item');
+        if (libroItem) {
+            const libroId = libroItem.getAttribute('data-libro-id');
+            
+            // Mostrar loading en el modal
+            document.getElementById('modalContent').innerHTML = `
+                <div class="text-center">
+                    <div class="spinner-border" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                </div>
+            `;
+            
+            // Cargar detalles del libro
+            fetch('<?= base_url('recursos/detalles') ?>/' + libroId, {
+                headers: {'X-Requested-With': 'XMLHttpRequest'}
+            })
+            .then(response => response.text())
+            .then(html => {
+                document.getElementById('modalContent').innerHTML = html;
+            })
+            .catch(error => {
+                document.getElementById('modalContent').innerHTML = `
+                    <div class="alert alert-danger">
+                        Error al cargar los detalles del libro.
+                    </div>
+                `;
+            });
+        }
+    });
 </script>
 <?= $footer; ?>

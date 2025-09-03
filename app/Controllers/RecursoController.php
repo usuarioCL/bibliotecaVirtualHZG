@@ -149,4 +149,22 @@ class RecursoController extends Controller
 
         return view('recursos/listarBuscados', $datos);
     }
+
+    public function detalles($id)
+    {
+        $recursoModel = new RecursoModel();
+        $recurso = $recursoModel->obtenerDetallesCompletos($id);
+        
+        if (!$recurso) {
+            return '<div class="alert alert-danger">Libro no encontrado.</div>';
+        }
+
+        $datos['recurso'] = $recurso;
+        
+        if ($this->request->isAJAX()) {
+            return view('recursos/detallesModal', $datos);
+        }
+        
+        return view('recursos/detalles', $datos);
+    }
 }

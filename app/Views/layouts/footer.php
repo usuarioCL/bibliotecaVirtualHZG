@@ -1,4 +1,4 @@
-    <footer class="bg-light text-center p-3 mb-1 mt-auto">
+    <footer class="text-center p-3 mt-auto border-top">
         <p>&copy; <?= date('Y') ?> Biblioteca Virtual HZG. Todos los derechos reservados.</p>
     </footer>    
     <!-- Bootstrap JS -->

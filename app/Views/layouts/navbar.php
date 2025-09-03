@@ -13,27 +13,35 @@
                 <li class="nav-item">
                     <a class="nav-link  " href="/catalogo">Catálogo</a>
                 </li>
-                <li class="nav-item me-2">
-                    <a class="nav-link  " href="#">Sobre La Plataforma
-                    </a>
-                </li>
-                <?php if (session()->get('logged_in') && session()->get('nivel') === 'admin'): ?>
+                <?php if (session()->get('logged_in')): ?>
                 <li class="nav-item">
-                    <a class="nav-link  " href="<?= base_url('admin'); ?>">
-                        Dashboard
-                    </a>
+                    <a class="nav-link" href="#"><i class="fas fa-book"></i> Mis Préstamos</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#"><i class="fas fa-heart"></i> Favoritos</a>
                 </li>
                 <?php endif; ?>
+                <li class="nav-item me-2">
+                    <a class="nav-link  " href="/sobre-plataforma">Sobre La Plataforma
+                    </a>
+                </li>
             </ul>
             <?php if (session()->get('logged_in')): ?>
-            <div class="d-flex align-items-center">
-                <span class="nav-link  fs-5 me-3">Hola, <?= session()->get('usuario'); ?></span>
-                <a href="/logout" class="nav-link ">Cerrar Sesión</a>
+            <div class="dropdown">
+                <a class="btn btn-outline-primary dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                    <?= session()->get('usuario'); ?>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li><a class="dropdown-item" href="/perfil"><i class="fas fa-user-edit"></i> Mi Perfil</a></li>
+                    <?php if (session()->get('nivel') === 'admin'): ?>
+                    <li><a class="dropdown-item" href="<?= base_url('admin'); ?>"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+                    <?php endif; ?>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="/logout"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</a></li>
+                </ul>
             </div>
             <?php else: ?>
-            <form class="d-flex " role="login">
-                <a href="/login" class="btn btn-primary me-2 fs-5">Iniciar Sesión</a>
-            </form>
+            <a href="/login" class="btn btn-primary">Iniciar Sesión</a>
             <?php endif; ?>
         </div>
     </div>
