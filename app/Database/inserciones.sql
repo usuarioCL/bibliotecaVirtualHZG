@@ -75,29 +75,32 @@ INSERT INTO autores (apeautor, nomautor, nacionalidad) VALUES
 ('Dostoievski', 'Fiódor', 'Rusa'),
 ('Cervantes', 'Miguel', 'Española');
 
--- Recursos (20 ejemplos)
-INSERT INTO recursos (titulo, anio, numpaginas, encuadernacion, isbn, numedicion, rutaportada, estado, stock, urlLibro, idsubcategoria, ideditorial, idtiporecurso)
+-- Recursos (23 ejemplos - incluyendo más para Inicial y Primaria)
+INSERT INTO recursos (titulo, anio, numpaginas, encuadernacion, isbn, numedicion, rutaportada, estado, stock, urlLibro, nivel, idsubcategoria, ideditorial, idtiporecurso)
 VALUES
-('Fundamentos de Física', 2015, 800, 'Tapa dura', '9788408000001', '3ra', 'fotos/fisica.jpg', 'disponible', 7, NULL, 1, 1, 1),
-('Química Básica', 2018, 600, 'Tapa blanda', '9788408000002', '2da', 'fotos/quimica.jpg', 'disponible', 4, NULL, 2, 2, 1),
-('Harry Potter y la piedra filosofal', 2001, 320, 'Tapa dura', '9788408000003', '1ra', 'fotos/hp1.jpg', 'disponible', 10, 'libros/hp1.pdf', 3, 3, 2),
-('Rayuela', 1963, 480, 'Tapa blanda', '9788408000004', '1ra', 'fotos/rayuela.jpg', 'disponible', 3, NULL, 3, 1, 1),
-('Breve historia del tiempo', 1988, 256, 'Tapa dura', '9788408000005', '5ta', 'fotos/historia_tiempo.jpg', 'disponible', 2, NULL, 1, 2, 1),
-('La casa de los espíritus', 1982, 400, 'Tapa dura', '9788408000006', '2da', 'fotos/casa_espiritus.jpg', 'disponible', 5, NULL, 3, 1, 1),
-('It', 1986, 1138, 'Tapa blanda', '9788408000007', '1ra', 'fotos/it.jpg', 'disponible', 2, NULL, 3, 3, 1),
-('Oliver Twist', 1839, 352, 'Tapa blanda', '9788408000008', '1ra', 'fotos/oliver.jpg', 'disponible', 3, NULL, 3, 2, 1),
-('Cien años de soledad', 1967, 471, 'Tapa dura', '9788408000009', '2da', 'fotos/soledad.jpg', 'disponible', 8, NULL, 3, 1, 1),
-('Cosmos', 1980, 365, 'Tapa dura', '9788408000010', '3ra', 'fotos/cosmos.jpg', 'disponible', 4, NULL, 1, 3, 1),
-('El cuervo', 1845, 64, 'Tapa blanda', '9788408000011', '1ra', 'fotos/cuervo.jpg', 'disponible', 1, NULL, 4, 2, 1),
-('Fervor de Buenos Aires', 1923, 74, 'Tapa blanda', '9788408000012', '1ra', 'fotos/fervor.jpg', 'disponible', 2, NULL, 4, 1, 1),
-('El libro de los abrazos', 1989, 232, 'Tapa dura', '9788408000013', '1ra', 'fotos/abrazos.jpg', 'disponible', 3, NULL, 4, 2, 1),
-('El nombre de la rosa', 1980, 512, 'Tapa dura', '9788408000014', '3ra', 'fotos/rosa.jpg', 'disponible', 2, NULL, 3, 3, 1),
-('Así habló Zaratustra', 1883, 288, 'Tapa blanda', '9788408000015', '1ra', 'fotos/zaratustra.jpg', 'disponible', 2, NULL, 5, 1, 1),
-('Ulises', 1922, 730, 'Tapa dura', '9788408000016', '2da', 'fotos/ulises.jpg', 'disponible', 1, NULL, 5, 2, 1),
-('Guerra y paz', 1869, 1225, 'Tapa dura', '9788408000017', '1ra', 'fotos/guerra_paz.jpg', 'disponible', 2, NULL, 5, 3, 1),
-('La metamorfosis', 1915, 74, 'Tapa blanda', '9788408000018', '1ra', 'fotos/metamorfosis.jpg', 'disponible', 3, NULL, 5, 1, 1),
-('Orgullo y prejuicio', 1813, 432, 'Tapa dura', '9788408000019', '2da', 'fotos/orgullo.jpg', 'disponible', 2, NULL, 5, 2, 1),
-('Don Quijote de la Mancha', 1605, 863, 'Tapa dura', '9788408000020', '4ta', 'fotos/quijote.jpg', 'disponible', 6, NULL, 5, 3, 1);
+('Fundamentos de Física', 2015, 800, 'Tapa dura', '9788408000001', '3ra', 'fotos/fisica.jpg', 'disponible', 7, NULL, 'Secundaria', 1, 1, 1),
+('Química Básica', 2018, 600, 'Tapa blanda', '9788408000002', '2da', 'fotos/quimica.jpg', 'disponible', 4, NULL, 'Secundaria', 2, 2, 1),
+('Harry Potter y la piedra filosofal', 2001, 320, 'Tapa dura', '9788408000003', '1ra', 'fotos/hp1.jpg', 'disponible', 10, 'libros/hp1.pdf', 'Primaria', 3, 3, 2),
+('Rayuela', 1963, 480, 'Tapa blanda', '9788408000004', '1ra', 'fotos/rayuela.jpg', 'disponible', 3, NULL, 'Secundaria', 3, 1, 1),
+('Breve historia del tiempo', 1988, 256, 'Tapa dura', '9788408000005', '5ta', 'fotos/historia_tiempo.jpg', 'disponible', 2, NULL, 'Secundaria', 1, 2, 1),
+('La casa de los espíritus', 1982, 400, 'Tapa dura', '9788408000006', '2da', 'fotos/casa_espiritus.jpg', 'disponible', 5, NULL, 'Secundaria', 3, 1, 1),
+('It', 1986, 1138, 'Tapa blanda', '9788408000007', '1ra', 'fotos/it.jpg', 'disponible', 2, NULL, 'Secundaria', 3, 3, 1),
+('Oliver Twist', 1839, 352, 'Tapa blanda', '9788408000008', '1ra', 'fotos/oliver.jpg', 'disponible', 3, NULL, 'Primaria', 3, 2, 1),
+('Cien años de soledad', 1967, 471, 'Tapa dura', '9788408000009', '2da', 'fotos/soledad.jpg', 'disponible', 8, NULL, 'Secundaria', 3, 1, 1),
+('Cosmos', 1980, 365, 'Tapa dura', '9788408000010', '3ra', 'fotos/cosmos.jpg', 'disponible', 4, NULL, 'Secundaria', 1, 3, 1),
+('El cuervo', 1845, 64, 'Tapa blanda', '9788408000011', '1ra', 'fotos/cuervo.jpg', 'disponible', 1, NULL, 'Primaria', 4, 2, 1),
+('Fervor de Buenos Aires', 1923, 74, 'Tapa blanda', '9788408000012', '1ra', 'fotos/fervor.jpg', 'disponible', 2, NULL, 'Secundaria', 4, 1, 1),
+('El libro de los abrazos', 1989, 232, 'Tapa dura', '9788408000013', '1ra', 'fotos/abrazos.jpg', 'disponible', 3, NULL, 'Primaria', 4, 2, 1),
+('El nombre de la rosa', 1980, 512, 'Tapa dura', '9788408000014', '3ra', 'fotos/rosa.jpg', 'disponible', 2, NULL, 'Secundaria', 3, 3, 1),
+('Así habló Zaratustra', 1883, 288, 'Tapa blanda', '9788408000015', '1ra', 'fotos/zaratustra.jpg', 'disponible', 2, NULL, 'Secundaria', 5, 1, 1),
+('Ulises', 1922, 730, 'Tapa dura', '9788408000016', '2da', 'fotos/ulises.jpg', 'disponible', 1, NULL, 'Secundaria', 5, 2, 1),
+('Guerra y paz', 1869, 1225, 'Tapa dura', '9788408000017', '1ra', 'fotos/guerra_paz.jpg', 'disponible', 2, NULL, 'Secundaria', 5, 3, 1),
+('La metamorfosis', 1915, 74, 'Tapa blanda', '9788408000018', '1ra', 'fotos/metamorfosis.jpg', 'disponible', 3, NULL, 'Secundaria', 5, 1, 1),
+('Orgullo y prejuicio', 1813, 432, 'Tapa dura', '9788408000019', '2da', 'fotos/orgullo.jpg', 'disponible', 2, NULL, 'Secundaria', 5, 2, 1),
+('Don Quijote de la Mancha', 1605, 863, 'Tapa dura', '9788408000020', '4ta', 'fotos/quijote.jpg', 'disponible', 6, NULL, 'Secundaria', 5, 3, 1),
+('Mi primer libro de colores', 2020, 32, 'Tapa dura', '9788408000021', '1ra', 'fotos/colores.jpg', 'disponible', 15, NULL, 'Inicial', 3, 1, 1),
+('Números divertidos', 2019, 48, 'Tapa dura', '9788408000022', '1ra', 'fotos/numeros.jpg', 'disponible', 12, NULL, 'Inicial', 5, 2, 1),
+('Matemática para niños', 2021, 96, 'Tapa blanda', '9788408000023', '2da', 'fotos/mate_ninos.jpg', 'disponible', 8, NULL, 'Primaria', 5, 3, 1);
 
 -- Detalle de autores (varias relaciones)
 INSERT INTO detautores (idautor, idrecurso) VALUES

@@ -3,7 +3,7 @@
 <?= $navbar; ?>
 <div class="container">
     <!-- Hero section con buscador -->
-    <div class="p-4">
+    <div class="py-4 border-bottom">
         <form action="<?= base_url('recursos/buscarRecursos') ?>" method="get" class="d-flex justify-content-end align-items-center">
             <div class="input-group input-group-lg w-50 ">
                 <input 
@@ -18,8 +18,8 @@
             </div>
         </form>
     </div>
-    <hr>
-    <div class="row">
+    <!-- Fin de sección de búsqueda -->
+    <div class="row mt-4">
         <!-- Filtros de búsqueda -->
         <div class="col-3">
             <h4 accesskey="f" class="fw-bold text-primary">Filtros de búsqueda</h4>
@@ -99,17 +99,19 @@
                 <?= form_reset('reset', 'Borrar filtros', ['class' => 'btn btn-secondary w-100 mt-2', 'id' => 'reset-filtros']) ?>
             </form>
         </div>
+        <!-- Fin de filtros de búsqueda -->
+        <!-- Resultados de la búsqueda -->
         <div class="col-9">
             <div class="row">
                 <h4 class="fw-bold text-primary text-center mb-4  pb-2">
                     Resultados de la búsqueda
                 </h4>
             </div>
-            <!-- Resultados de la búsqueda -->
             <div class="row" id="resultados-busqueda">
                 <?php include(APPPATH . 'Views/recursos/resultadosBusqueda.php'); ?>
             </div>
-        </div>  
+        </div>
+        <!-- Fin de sección de búsqueda -->
     </div>
 </div>
 <script>

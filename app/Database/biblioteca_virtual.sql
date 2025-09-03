@@ -101,6 +101,7 @@ CREATE TABLE recursos (
     estado ENUM('disponible','prestado','perdido') DEFAULT 'disponible',
     stock SMALLINT UNSIGNED NOT NULL,
     urlLibro VARCHAR(200), -- para libros digitales
+    nivel ENUM('Inicial','Primaria','Secundaria'),
     idsubcategoria INT,
     ideditorial INT,
     idtiporecurso INT,
