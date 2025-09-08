@@ -18,7 +18,27 @@ $routes->get('/logout', 'LoginController::logout');   // Cierra la sesión
 
 // Registro de Usuarios
 $routes->get('/registro', 'RegistroController::RegistroForm'); // Muestra el formulario de registro
-$routes->post('/registro', 'RegistroController::Registro');    // Procesa el registro
+$routes->post('/registro', 'RegistroController::procesarRegistro');    // Procesa el registro
+$routes->post('/registro/buscar-persona', 'RegistroController::buscarPersona'); // Busca persona por documento
+$routes->post('/registro/validar-usuario', 'RegistroController::validarNombreUsuario'); // Valida disponibilidad de usuario
+
+// Gestión de Usuarios con Validación de Matrícula
+$routes->get('usuarios', 'UsuarioController::index');                     // Página principal de usuarios
+$routes->group('usuarios', function($routes) {
+    $routes->get('crear', 'UsuarioController::crear');                    // Formulario de creación
+    $routes->post('crear', 'UsuarioController::crear');                   // Procesar creación
+    $routes->post('crear-completo', 'UsuarioController::crearCompleto');   // Crear persona y usuario completo
+    $routes->get('listar', 'UsuarioController::listar');                  // Listar usuarios (JSON)
+    $routes->get('obtener/(:num)', 'UsuarioController::obtener/$1');      // Obtener usuario por ID
+    $routes->get('verificar-elegibilidad', 'UsuarioController::verificarElegibilidad'); // Verificar si puede crear usuario
+    $routes->get('info-matricula/(:num)', 'UsuarioController::infoMatricula/$1'); // Info matrícula de persona
+});
+
+// API para validaciones AJAX
+$routes->group('api/usuarios', function($routes) {
+    $routes->get('elegibilidad', 'UsuarioController::verificarElegibilidad');
+    $routes->get('matricula/(:num)', 'UsuarioController::infoMatricula/$1');
+});
 
 // Panel de administración
 $routes->get('/admin', 'AdminController::dashboard');
