@@ -2,9 +2,8 @@
 namespace App\Controllers;
 
 use CodeIgniter\Controller;
-
 use App\Models\RecursoModel;
-
+use App\Models\DetAutorModel;
 
 class RecursoController extends Controller
 {
@@ -23,15 +22,29 @@ class RecursoController extends Controller
         return view('recursos/listar', $datos);
     }
 
-    // Formulario para crear
     public function crear(): string
     {
         $recursoModel = new RecursoModel();
+        $autorModel = new \App\Models\AutorModel();
 
+        // Obtener valores ENUM de estado
         $query = $recursoModel->query("SHOW COLUMNS FROM recursos LIKE 'estado'");
         $row = $query->getRow();
         $estados = str_replace(["enum('", "')"], "", $row->Type);
         $datos['estados'] = explode("','", $estados);
+
+        // Obtener valores ENUM de nivel
+        $query = $recursoModel->query("SHOW COLUMNS FROM recursos LIKE 'nivel'");
+        $row = $query->getRow();
+        $niveles = str_replace(["enum('", "')"], "", $row->Type);
+        $datos['niveles'] = explode("','", $niveles);
+
+        // Obtener datos para los selects
+        $datos['autores'] = $autorModel->findAll();
+        $datos['categorias'] = model('CategoriaModel')->findAll();
+        $datos['subcategorias'] = model('SubcategoriaModel')->findAll();
+        $datos['editoriales'] = model('EditorialModel')->findAll();
+        $datos['tiposrecurso'] = model('TiporecursoModel')->findAll();
 
         $datos['navbar'] = view('layouts/navbar');
         $datos['header'] = view('layouts/header');
@@ -39,36 +52,78 @@ class RecursoController extends Controller
 
         return view('recursos/crear', $datos);
     }
+    
     // Guardar datos del Formulario
     public function guardar()
     {
         $recursoModel = new RecursoModel();
+        $detAutorModel = new DetAutorModel();
 
-        $datos = [
+        // Datos para la tabla recursos (SIN idautor)
+        $datosRecurso = [
             'titulo'         => $this->request->getVar('titulo'),
             'anio'           => $this->request->getVar('anio'),
             'numpaginas'     => $this->request->getVar('numpaginas'),
             'encuadernacion' => $this->request->getVar('encuadernacion'),
             'isbn'           => $this->request->getVar('isbn'),
             'numedicion'     => $this->request->getVar('numedicion'),
+            'rutaportada'    => $this->request->getVar('rutaportada'),
             'estado'         => $this->request->getVar('estado'),
             'stock'          => $this->request->getVar('stock'),
+            'urlLibro'       => $this->request->getVar('urlLibro'),
+            'nivel'          => $this->request->getVar('nivel'),
+            'idsubcategoria' => $this->request->getVar('idsubcategoria'),
+            'ideditorial'    => $this->request->getVar('ideditorial'),
+            'idtiporecurso'  => $this->request->getVar('idtiporecurso')
         ];
 
-        $recursoModel->insert($datos);
+        // 1. Insertar el recurso
+        $idRecurso = $recursoModel->insert($datosRecurso);
+        
+        // 2. Insertar la relación autor-recurso en detautores
+        $idAutor = $this->request->getVar('idautor');
+        if ($idAutor && $idRecurso) {
+            $detAutorModel->insert([
+                'idautor' => $idAutor,
+                'idrecurso' => $idRecurso
+            ]);
+        }
 
         return $this->response->redirect(base_url('recursos'));
     }
+
     // Formulario para editar
     public function editar($idrecurso = null)
     {
         $recursoModel = new RecursoModel();
+        $detAutorModel = new DetAutorModel();
         $datos['recurso'] = $recursoModel->find($idrecurso);
 
+        if (!$datos['recurso']) {
+            throw new \CodeIgniter\Exceptions\PageNotFoundException('Recurso no encontrado');
+        }
+
+        // Obtener el autor actual del recurso
+        $autorActual = $detAutorModel->getAutoresByRecurso($idrecurso);
+        $datos['autorActual'] = !empty($autorActual) ? $autorActual[0]['idautor'] : null;
+
+        // Obtener valores ENUM
         $query = $recursoModel->query("SHOW COLUMNS FROM recursos LIKE 'estado'");
         $row = $query->getRow();
         $estados = str_replace(["enum('", "')"], "", $row->Type);
         $datos['estados'] = explode("','", $estados);
+
+        $query = $recursoModel->query("SHOW COLUMNS FROM recursos LIKE 'nivel'");
+        $row = $query->getRow();
+        $niveles = str_replace(["enum('", "')"], "", $row->Type);
+        $datos['niveles'] = explode("','", $niveles);
+
+        // Obtener datos para los selects
+        $datos['autores'] = model('AutorModel')->findAll();
+        $datos['categorias'] = model('CategoriaModel')->findAll();
+        $datos['subcategorias'] = model('SubcategoriaModel')->findAll();
+        $datos['editoriales'] = model('EditorialModel')->findAll();
+        $datos['tiposrecurso'] = model('TiporecursoModel')->findAll();
 
         $datos['navbar'] = view('layouts/navbar');
         $datos['header'] = view('layouts/header');
@@ -76,23 +131,46 @@ class RecursoController extends Controller
 
         return view('recursos/editar', $datos);
     }
+
     // Actualizar datos
     public function actualizar($idrecurso)
     {
         $recursoModel = new RecursoModel();
+        $detAutorModel = new DetAutorModel();
 
-        $datos = [
-            'titulo'        => $this->request->getVar('titulo'),
-            'anio'          => $this->request->getVar('anio'),
-            'numpaginas'    => $this->request->getVar('numpaginas'),
-            'encuadernacion'=> $this->request->getVar('encuadernacion'),
-            'isbn'          => $this->request->getVar('isbn'),
-            'numedicion'    => $this->request->getVar('numedicion'),
-            'estado'        => $this->request->getVar('estado'),
-            'stock'         => $this->request->getVar('stock'),
+        // Datos para actualizar en recursos
+        $datosRecurso = [
+            'titulo'         => $this->request->getVar('titulo'),
+            'anio'           => $this->request->getVar('anio'),
+            'numpaginas'     => $this->request->getVar('numpaginas'),
+            'encuadernacion' => $this->request->getVar('encuadernacion'),
+            'isbn'           => $this->request->getVar('isbn'),
+            'numedicion'     => $this->request->getVar('numedicion'),
+            'rutaportada'    => $this->request->getVar('rutaportada'),
+            'estado'         => $this->request->getVar('estado'),
+            'stock'          => $this->request->getVar('stock'),
+            'urlLibro'       => $this->request->getVar('urlLibro'),
+            'nivel'          => $this->request->getVar('nivel'),
+            'idsubcategoria' => $this->request->getVar('idsubcategoria'),
+            'ideditorial'    => $this->request->getVar('ideditorial'),
+            'idtiporecurso'  => $this->request->getVar('idtiporecurso')
         ];
 
-        $recursoModel->update($idrecurso, $datos);
+        // 1. Actualizar el recurso
+        $recursoModel->update($idrecurso, $datosRecurso);
+        
+        // 2. Actualizar la relación autor-recurso
+        $idAutor = $this->request->getVar('idautor');
+        if ($idAutor) {
+            // Eliminar relaciones anteriores
+            $detAutorModel->deleteByRecurso($idrecurso);
+            
+            // Insertar nueva relación
+            $detAutorModel->insert([
+                'idautor' => $idAutor,
+                'idrecurso' => $idrecurso
+            ]);
+        }
         
         return redirect()->to(base_url('recursos'));
     }
@@ -100,7 +178,14 @@ class RecursoController extends Controller
     public function eliminar($idrecurso = null)
     {
         $recursoModel = new RecursoModel();
+        $detAutorModel = new DetAutorModel();
+        
+        // Eliminar primero las relaciones en detautores
+        $detAutorModel->deleteByRecurso($idrecurso);
+        
+        // Luego eliminar el recurso
         $recursoModel->delete($idrecurso);
+        
         return $this->response->redirect(base_url('recursos'));
     }
 
@@ -110,7 +195,7 @@ class RecursoController extends Controller
         $query = $this->request->getVar('query');
 
         $datos['recursos'] = $recursoModel->buscarRecursos($query);
-         $datos['categorias'] = model('CategoriaModel')->findAll();
+        $datos['categorias'] = model('CategoriaModel')->findAll();
         $datos['subcategorias'] = model('SubcategoriaModel')->findAll();
         $datos['editoriales'] = model('EditorialModel')->findAll();
         $datos['tiposrecurso'] = model('TiporecursoModel')->findAll();
