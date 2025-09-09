@@ -11,14 +11,11 @@ class RecursoController extends Controller
     public function index(): string
     {
         $recurso = new RecursoModel();
-
         $datos['recursos'] = $recurso->orderBy('idrecurso', 'ASC')->paginate(10, 'recursos');
         $datos['pager']    = $recurso->pager;
-
         $datos['navbar'] = view('layouts/navbar');
         $datos['header'] = view('layouts/header');
         $datos['footer'] = view('layouts/footer');
-
         return view('recursos/listar', $datos);
     }
 

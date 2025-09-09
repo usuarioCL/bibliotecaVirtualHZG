@@ -197,7 +197,7 @@
           <!--  Row 1 -->
           <div class="row" >
             <div id="contenedor-principal">
-
+              <?php include __DIR__ . '/default.php'; ?>
             </div>
           </div>
           <div class="py-6 px-6 text-center">
