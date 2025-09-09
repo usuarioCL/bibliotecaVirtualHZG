@@ -1,4 +1,3 @@
-
 <div class="container">
     <!-- Encabezado de la página -->
     <div class="d-flex justify-content-between align-items-center">
@@ -113,3 +112,51 @@
 <!-- Incluir directamente el modal de crear recurso -->
 <?= view('recursos/crear') ?>
 
+<script>
+$(document).ready(function() {
+    // Interceptar los clics en los enlaces de paginación
+    $('.pagination .page-link').on('click', function(e) {
+        e.preventDefault();
+        var url = $(this).attr('href');
+        
+        // Hacer la petición AJAX
+        $.get(url, function(response) {
+            // Actualizar solo el contenido de la tabla y la paginación
+            var newContent = $(response).find('.table-responsive').html();
+            var newPagination = $(response).find('.pagination').html();
+            
+            $('.table-responsive').html(newContent);
+            $('.pagination').html(newPagination);
+
+            // Actualizar la URL sin recargar la página
+            window.history.pushState({}, '', url);
+            
+            // Volver a bindear los eventos a los nuevos enlaces de paginación
+            bindPaginationEvents();
+        });
+    });
+});
+
+function bindPaginationEvents() {
+    $('.pagination .page-link').on('click', function(e) {
+        e.preventDefault();
+        var url = $(this).attr('href');
+        
+        $.get(url, function(response) {
+            var newContent = $(response).find('.table-responsive').html();
+            var newPagination = $(response).find('.pagination').html();
+            
+            $('.table-responsive').html(newContent);
+            $('.pagination').html(newPagination);
+            
+            window.history.pushState({}, '', url);
+            bindPaginationEvents();
+        });
+    });
+}
+</script>
+
+<?php
+echo $footer;
+?>
+>>>>>>> 669ec88e6eaf3dad4e70fd8a4e4f14ae50817120

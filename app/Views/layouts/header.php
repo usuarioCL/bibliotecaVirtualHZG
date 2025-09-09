@@ -10,5 +10,25 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <!-- Custom CSS -->
     <link rel="stylesheet" href="/css/css.css">
+    <style>
+        .sidebar {
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            z-index: 100;
+            padding: 0;
+            box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
+        }
+        .main-content {
+            margin-left: 16.666667%;
+        }
+        .table {
+            margin-bottom: 0;
+        }
+        .table-responsive {
+            margin-bottom: 1rem;
+        }
+    </style>
 </head>
 <body class="d-flex flex-column min-vh-100">
