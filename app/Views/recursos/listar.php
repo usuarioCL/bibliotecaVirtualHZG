@@ -1,91 +1,112 @@
 
 <div class="container">
-  <!-- Título -->
-  <div class="mb-3">
-    <h3 class="fw-bold text-primary text-center mb-4 border-bottom pb-2">
-      Lista de Recursos
-    </h3>
-  </div>
+    <!-- Encabezado de la página -->
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h4 class="mb-0">Gestión de Recursos</h4>
+            <p class="text-muted mb-0">Recursos bibliográficos del sistema</p>
+        </div>
+        <a href="<?= base_url("recursos/crear"); ?>" class="btn btn-primary">
+            <i class="ti ti-plus"></i> Nuevo Recurso
+        </a>
+    </div>
 
-  <!-- Tabla -->
-  <div class="table-responsive shadow-sm rounded">
-    <table class="table table-striped table-hover align-middle">
-      <colgroup>
-        <col width="5%"><!--Id-->
-        <col width="13%"><!--Titulo-->
-        <col width="10%"><!--Año-->
-        <col width="5%"><!--Paginas-->
-        <col width="10%"><!--Encuadernación-->
-        <col width="10%"><!--ISBN-->
-        <col width="7%"><!--Edición-->
-        <col width="10%"><!--Estado-->
-        <col width="10%"><!--Stock-->
-        <col width="15%"><!--Acciones-->
-      </colgroup>
-      <thead class="table-primary text-center">
-        <tr>
-          <th>ID</th>
-          <th>Título</th>
-          <th>Año</th>
-          <th>Páginas</th>
-          <th>Encuadernación</th>
-          <th>ISBN</th>
-          <th>Edición</th>
-          <th>Estado</th>
-          <th>Stock</th>
-          <th>Acciones</th>
-        </tr>
-      </thead>
-      <tbody class="text-center">
-        <?php foreach($recursos as $recurso): ?>
-        <tr>
-          <td><?= $recurso['idrecurso'] ?></td>
-          <td><?= $recurso['titulo'] ?></td>
-          <td><?= $recurso['anio'] ?></td>
-          <td><?= $recurso['numpaginas'] ?></td>
-          <td><?= $recurso['encuadernacion'] ?></td>
-          <td><?= $recurso['isbn'] ?></td>
-          <td><?= $recurso['numedicion'] ?></td>
-          <td>
-            <span class="badge 
-              <?php if($recurso['estado'] === 'disponible') echo 'bg-success';
-                    elseif($recurso['estado'] === 'prestado') echo 'bg-warning text-dark';
-                    else echo 'bg-danger'; ?>">
-              <?= ucfirst($recurso['estado']) ?>
-           </span>
-           </td>
-          <td><?= $recurso['stock'] ?></td>
-          
-          <td>
-            <a href="<?= base_url('recursos/editar/') ?><?= $recurso['idrecurso'] ?>" 
-               class="btn btn-sm btn-warning me-1">
-              Editar
-            </a>
-            <!-- Cambio en el nombre en la url -->
-            <a href="<?= base_url('recursos/eliminar/') ?><?= $recurso['idrecurso'] ?>" 
-               class="btn btn-sm btn-danger"
-               onclick="return confirm('¿Seguro que deseas eliminar este recurso?');">
-              Eliminar
-            </a>
-          </td>
-        </tr>
-        <?php endforeach; ?>
-      </tbody>
-    </table>
-  </div>
+    <!-- Tabla de recursos -->
+    <div class="card mt-1">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>ID</th>
+                            <th>Título</th>
+                            <th>Año</th>
+                            <th>Páginas</th>
+                            <th>Encuadernación</th>
+                            <th>ISBN</th>
+                            <th>Edición</th>
+                            <th>Estado</th>
+                            <th>Stock</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php if (!empty($recursos)): ?>
+                            <?php foreach($recursos as $recurso): ?>
+                            <tr>
+                                <td><?= $recurso['idrecurso'] ?></td>
+                                <td>
+                                    <div class="fw-bold"><?= esc($recurso['titulo']) ?></div>
+                                    <?php if(!empty($recurso['subtitulo'])): ?>
+                                        <small class="text-muted"><?= esc($recurso['subtitulo']) ?></small>
+                                    <?php endif; ?>
+                                </td>
+                                <td><?= esc($recurso['anio']) ?></td>
+                                <td><?= esc($recurso['numpaginas']) ?></td>
+                                <td><?= esc($recurso['encuadernacion']) ?></td>
+                                <td>
+                                    <?php if(!empty($recurso['isbn'])): ?>
+                                        <?= esc($recurso['isbn']) ?>
+                                    <?php else: ?>
+                                        <span class="text-muted">Sin ISBN</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td><?= esc($recurso['numedicion']) ?></td>
+                                <td>
+                                    <?php if($recurso['estado'] === 'disponible'): ?>
+                                        <span class="badge bg-success">Disponible</span>
+                                    <?php elseif($recurso['estado'] === 'prestado'): ?>
+                                        <span class="badge bg-warning text-dark">Prestado</span>
+                                    <?php else: ?>
+                                        <span class="badge bg-danger">No disponible</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <?php if($recurso['stock'] > 0): ?>
+                                        <span class="badge bg-primary"><?= $recurso['stock'] ?></span>
+                                    <?php else: ?>
+                                        <span class="badge bg-danger">0</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <a href="<?= base_url('recursos/editar/') ?><?= $recurso['idrecurso'] ?>" 
+                                           class="btn btn-sm btn-warning" 
+                                           title="Editar">
+                                            <i class="ti ti-edit"></i>
+                                        </a>
+                                        <a href="<?= base_url('recursos/eliminar/') ?><?= $recurso['idrecurso'] ?>" 
+                                           class="btn btn-sm btn-danger"
+                                           title="Eliminar"
+                                           onclick="return confirm('¿Seguro que deseas eliminar este recurso?');">
+                                            <i class="ti ti-trash"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <tr>
+                                <td colspan="10" class="text-center py-4">
+                                    <div class="text-muted">
+                                        <i class="ti ti-inbox fs-1 mb-3"></i>
+                                        <h5>No hay recursos registrados</h5>
+                                        <p>Comienza agregando tu primer recurso bibliográfico</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 
     <!-- Paginación -->
-  <div class="d-flex justify-content-center mt-4">
-    <?= $pager->links('recursos', 'paginacion') ?>
-  </div>
-
-
-
-  <!-- Botón registrar -->
-  <div class="mt-3 text-center">
-    <a href="<?= base_url("recursos/crear"); ?>" class="btn btn-success">
-      Registrar recurso
-    </a>
-  </div>
+    <?php if(!empty($recursos)): ?>
+        <div class="d-flex justify-content-center mt-4">
+            <?= $pager->links('recursos', 'paginacion') ?>
+        </div>
+    <?php endif; ?>
 </div>
 

@@ -42,6 +42,7 @@ $routes->group('api/usuarios', function($routes) {
 
 // Panel de administración
 $routes->get('/admin', 'AdminController::dashboard');
+$routes->get('/admin/dashboard-default', 'AdminController::dashboardDefault');
 $routes->get('/admin/login', 'AdminController::login');
 $routes->get('/admin/register', 'AdminController::register');
 
@@ -50,6 +51,12 @@ $routes->get('Administrador/vistas/UsuariosRoles', 'AdminController::VistaUsuari
 $routes->get('Administrador/vistas/PrestamosAlumnos', 'AdminController::VistaPrestamosAlumnos');
 $routes->get('Administrador/vistas/ReaccionesUsuarios', 'AdminController::VistaReaccionesUsuarios');
 $routes->get('Administrador/vistas/AlumnosSancionados', 'AdminController::VistaAlumnosSancionados');
+
+// Importación de datos
+$routes->get('admin/importar-datos', 'AdminController::importarDatos');
+$routes->get('admin/descargar-plantilla/(:segment)', 'AdminController::descargarPlantilla/$1');
+$routes->post('admin/preview-csv', 'AdminController::previewCsv');
+$routes->post('admin/procesar-importacion', 'AdminController::procesarImportacion');
 
 //Recursos
 $routes->get('/recursos', 'RecursoController::index');

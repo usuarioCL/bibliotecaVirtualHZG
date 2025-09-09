@@ -4,7 +4,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Flexy Free Bootstrap Admin Template by WrapPixel</title>
+  <title>Panel de Administración</title>
   <link rel="shortcut icon" type="image/png" href="<?= base_url('./assets/images/logos/favicon.png') ?>" />
   <link rel="stylesheet" href="<?= base_url('./assets/css/styles.min.css') ?>">
 </head>
@@ -33,7 +33,7 @@
               <span class="hide-menu">Home</span>
             </li>
             <li class="sidebar-item">
-              <a class="sidebar-link" href="/admin" aria-expanded="false">
+              <a class="sidebar-link dashboard-link" href="<?= base_url('admin'); ?>" aria-expanded="false">
                 <i class="ti ti-atom"></i>
                 <span class="hide-menu">Dashboard</span>
               </a>
@@ -56,7 +56,6 @@
                   </span>
                   <span class="hide-menu">Gestión Interna</span>
                 </div>
-                
               </a>
               <ul aria-expanded="false" class="collapse first-level">
                 
@@ -74,14 +73,12 @@
                   </a>
                 </li>
 
-                <li class="sidebar-item">
-                  <a class="sidebar-link d-flex align-items-center gap-3 ajax-link" href="<?= base_url('usuarios'); ?>">
+              <li class="sidebar-item">
+                  <a class="sidebar-link d-flex align-items-center gap-3 ajax-link" href="<?= base_url('autores'); ?>">
                     <i class="ti ti-pencil fs-5"></i>
                     <span class="hide-menu">Autores</span>
                   </a>
                 </li>
-                    
-          
               </ul>
             </li>
             <li class="sidebar-item">
@@ -126,6 +123,21 @@
 
               </ul>
             </li>
+            <li>
+              <span class="sidebar-divider lg"></span>
+            </li>
+            <li class="nav-small-cap">
+              <iconify-icon icon="solar:menu-dots-linear" class="nav-small-cap-icon fs-4"></iconify-icon>
+              <span class="hide-menu">Herramientas</span>
+            </li>
+            <li class="sidebar-item">
+              <a class="sidebar-link ajax-link" href="<?= base_url('admin/importar-datos'); ?>" aria-expanded="false">
+                <i class="ti ti-file-upload"></i>
+                <span class="hide-menu">Importar Datos</span>
+              </a>
+            </li>
+          </ul>
+            
         </nav>
         <!-- End Sidebar navigation -->
       </div>
@@ -200,16 +212,32 @@
 
             </div>
           </div>
-          <div class="py-6 px-6 text-center">
-            <p class="mb-0 fs-4">Design and Developed by <a href="#"
-                class="pe-1 text-primary text-decoration-underline">Wrappixel.com</a> Distributed by <a href="https://themewagon.com" target="_blank" >ThemeWagon</a></p>
-          </div>
         </div>
       </div>
+      <!-- Footer -->
+      <footer class="py-6 px-6 text-center mt-auto">
+        <p class="mb-0 fs-4">Design and Developed by <a href="#"
+            class="pe-1 text-primary text-decoration-underline">Wrappixel.com</a> Distributed by <a href="https://themewagon.com" target="_blank" >ThemeWagon</a></p>
+      </footer>
     </div>
   </div>
   <script src="<?= base_url('./assets/libs/jquery/dist/jquery.min.js') ?>"></script>
   <script>
+  // Cargar contenido por defecto al inicializar
+  $(document).ready(function() {
+    cargarContenidoDefault();
+  });
+
+  // Función para cargar contenido por defecto
+  function cargarContenidoDefault() {
+    $('#contenedor-principal').html('<div class="text-center py-5">Cargando dashboard...</div>');
+    $.get('<?= base_url("admin/dashboard-default") ?>', function(data) {
+      $('#contenedor-principal').html(data);
+    }).fail(function() {
+      $('#contenedor-principal').html('<div class="text-danger text-center py-5">Error al cargar el dashboard.</div>');
+    });
+  }
+
   $(document).on('click', '.ajax-link', function(e) {
     e.preventDefault();
     var url = $(this).attr('href');
@@ -222,6 +250,12 @@
     }).fail(function() {
       $('#contenedor-principal').html('<div class="text-danger">Error al cargar el contenido.</div>');
     });
+  });
+
+  // Hacer que el enlace del Dashboard también cargue el contenido por defecto
+  $(document).on('click', '.dashboard-link', function(e) {
+    e.preventDefault();
+    cargarContenidoDefault();
   });
   </script>
   <script src="<?= base_url('./assets/libs/bootstrap/dist/js/bootstrap.bundle.min.js') ?>"></script>
