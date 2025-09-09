@@ -61,6 +61,7 @@ $routes->post('admin/procesar-importacion', 'AdminController::procesarImportacio
 //Recursos
 $routes->get('/recursos', 'RecursoController::index');
 $routes->get('/recursos/crear', 'RecursoController::crear');
+$routes->get('/recursos/crear-modal', 'RecursoController::crearModal');
 $routes->post('/recursos/guardar', 'RecursoController::guardar');
 $routes->get('/recursos/editar/(:num)', 'RecursoController::editar/$1'); 
 $routes->post('/recursos/actualizar/(:num)', 'RecursoController::actualizar/$1');

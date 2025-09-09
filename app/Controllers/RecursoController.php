@@ -11,9 +11,30 @@ class RecursoController extends Controller
     public function index(): string
     {
         $recurso = new RecursoModel();
+        $autorModel = new \App\Models\AutorModel();
 
         $datos['recursos'] = $recurso->orderBy('idrecurso', 'ASC')->paginate(10, 'recursos');
         $datos['pager']    = $recurso->pager;
+
+        // Agregar datos necesarios para el modal de crear
+        // Obtener valores ENUM de estado
+        $query = $recurso->query("SHOW COLUMNS FROM recursos LIKE 'estado'");
+        $row = $query->getRow();
+        $estados = str_replace(["enum('", "')"], "", $row->Type);
+        $datos['estados'] = explode("','", $estados);
+
+        // Obtener valores ENUM de nivel
+        $query = $recurso->query("SHOW COLUMNS FROM recursos LIKE 'nivel'");
+        $row = $query->getRow();
+        $niveles = str_replace(["enum('", "')"], "", $row->Type);
+        $datos['niveles'] = explode("','", $niveles);
+
+        // Obtener datos para los selects del modal
+        $datos['autores'] = $autorModel->findAll();
+        $datos['categorias'] = model('CategoriaModel')->findAll();
+        $datos['subcategorias'] = model('SubcategoriaModel')->findAll();
+        $datos['editoriales'] = model('EditorialModel')->findAll();
+        $datos['tiposrecurso'] = model('TiporecursoModel')->findAll();
 
         $datos['navbar'] = view('layouts/navbar');
         $datos['header'] = view('layouts/header');
@@ -45,6 +66,11 @@ class RecursoController extends Controller
         $datos['subcategorias'] = model('SubcategoriaModel')->findAll();
         $datos['editoriales'] = model('EditorialModel')->findAll();
         $datos['tiposrecurso'] = model('TiporecursoModel')->findAll();
+
+        // Si la petición es para modal, devolver solo la vista sin layouts
+        if ($this->request->getGet('modal') === 'true') {
+            return view('recursos/crear', $datos);
+        }
 
         $datos['navbar'] = view('layouts/navbar');
         $datos['header'] = view('layouts/header');
@@ -251,5 +277,43 @@ class RecursoController extends Controller
         }
         
         return view('recursos/detalles', $datos);
+    }
+
+    public function crearModal(): string
+    {
+        $recursoModel = new RecursoModel();
+        $autorModel = new \App\Models\AutorModel();
+
+        try {
+            // Obtener valores ENUM de estado
+            $query = $recursoModel->query("SHOW COLUMNS FROM recursos LIKE 'estado'");
+            $row = $query->getRow();
+            $estados = str_replace(["enum('", "')"], "", $row->Type);
+            $datos['estados'] = explode("','", $estados);
+
+            // Obtener valores ENUM de nivel
+            $query = $recursoModel->query("SHOW COLUMNS FROM recursos LIKE 'nivel'");
+            $row = $query->getRow();
+            $niveles = str_replace(["enum('", "')"], "", $row->Type);
+            $datos['niveles'] = explode("','", $niveles);
+
+            // Obtener datos para los selects
+            $datos['autores'] = $autorModel->findAll();
+            $datos['categorias'] = model('CategoriaModel')->findAll();
+            $datos['subcategorias'] = model('SubcategoriaModel')->findAll();
+            $datos['editoriales'] = model('EditorialModel')->findAll();
+            $datos['tiposrecurso'] = model('TiporecursoModel')->findAll();
+
+            // Forzar que sea tratado como modal
+            $_GET['modal'] = 'true';
+
+            return view('recursos/crear', $datos);
+            
+        } catch (\Exception $e) {
+            return json_encode([
+                'error' => true,
+                'message' => 'Error al cargar los datos: ' . $e->getMessage()
+            ]);
+        }
     }
 }

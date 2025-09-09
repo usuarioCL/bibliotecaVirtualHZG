@@ -6,9 +6,9 @@
             <h4 class="mb-0">Gestión de Recursos</h4>
             <p class="text-muted mb-0">Recursos bibliográficos del sistema</p>
         </div>
-        <a href="<?= base_url("recursos/crear"); ?>" class="btn btn-primary">
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalCrearRecurso">
             <i class="ti ti-plus"></i> Nuevo Recurso
-        </a>
+        </button>
     </div>
 
     <!-- Tabla de recursos -->
@@ -109,4 +109,7 @@
         </div>
     <?php endif; ?>
 </div>
+
+<!-- Incluir directamente el modal de crear recurso -->
+<?= view('recursos/crear') ?>
 
