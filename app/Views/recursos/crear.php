@@ -176,13 +176,13 @@
                         </div>
                     </div>
 
-                    <!-- Campo URL para libros digitales -->
-                    <div class="row" id="campoUrlLibro" style="display: none;">
+                    <!-- Campo PDF solo para libros digitales -->
+                    <div class="row" id="campoPdfLibro" style="display: none;">
                         <div class="col-md-12">
                             <div class="mb-3">
-                                <label for="urlLibro" class="form-label">URL del Libro Digital</label>
-                                <input type="url" class="form-control" id="urlLibro" name="urlLibro" maxlength="200" placeholder="https://ejemplo.com/libro.pdf">
-                                <div class="form-text">Solo para libros digitales</div>
+                                <label for="archivo_pdf" class="form-label">Archivo PDF del Libro (opcional)</label>
+                                <input type="file" class="form-control" id="archivo_pdf" name="archivo_pdf" accept="application/pdf">
+                                <div class="form-text">Formatos: PDF. Tamaño máximo &lt;= 5MB a 10MB</div>
                             </div>
                         </div>
                     </div>
@@ -200,7 +200,8 @@
 
 <script>
 // Cargar subcategorías basadas en la categoría seleccionada
-function cargarSubcategorias() {
+function cargarSubcategorias() 
+{
     const categoriaId = document.getElementById('idcategoria').value;
     const subcategoriaSelect = document.getElementById('idsubcategoria');
     
@@ -223,21 +224,24 @@ function cargarSubcategorias() {
 }
 
 // Mostrar/ocultar campo URL para libros digitales
-function toggleCamposDigital() {
+function toggleCamposDigital() 
+{
     const tipoSelect = document.getElementById('idtiporecurso');
     const tipoTexto = tipoSelect.options[tipoSelect.selectedIndex].text.toLowerCase();
-    const campoUrl = document.getElementById('campoUrlLibro');
+    const campoPdf = document.getElementById('campoPdfLibro');
     
     if (tipoTexto.includes('digital')) {
-        campoUrl.style.display = 'block';
+        campoPdf.style.display = 'block';
     } else {
-        campoUrl.style.display = 'none';
-        document.getElementById('urlLibro').value = '';
+        campoPdf.style.display = 'none';
+        const pdfInput = document.getElementById('archivo_pdf');
+        if (pdfInput) pdfInput.value = '';
     }
 }
 
 // Validación de ISBN
-document.getElementById('isbn').addEventListener('input', function() {
+document.getElementById('isbn').addEventListener('input', function() 
+{
     let isbn = this.value.replace(/[^0-9X]/g, '');
     if (isbn.length > 13) {
         isbn = isbn.substring(0, 13);
@@ -246,7 +250,8 @@ document.getElementById('isbn').addEventListener('input', function() {
 });
 
 // Función para registrar recurso
-function registrarRecurso() {
+function registrarRecurso() 
+{
     const form = document.getElementById('formNuevoRecurso');
     const formData = new FormData(form);
     const alerta = document.getElementById('alertaValidacionRecurso');

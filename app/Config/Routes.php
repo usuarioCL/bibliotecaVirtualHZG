@@ -62,6 +62,7 @@ $routes->post('admin/procesar-importacion', 'AdminController::procesarImportacio
 $routes->get('/recursos', 'RecursoController::index');
 $routes->get('/recursos/crear', 'RecursoController::crear');
 $routes->get('/recursos/crear-modal', 'RecursoController::crearModal');
+$routes->get('/recursos/pdf', 'RecursoController::exportarPdf');
 $routes->post('/recursos/guardar', 'RecursoController::guardar');
 $routes->get('/recursos/editar/(:num)', 'RecursoController::editar/$1'); 
 $routes->post('/recursos/actualizar/(:num)', 'RecursoController::actualizar/$1');
@@ -69,8 +70,8 @@ $routes->get('/recursos/eliminar/(:num)', 'RecursoController::eliminar/$1');
 $routes->get('/recursos/detalles/(:num)', 'RecursoController::detalles/$1');
 
 
-// Ruta PDF
-$routes->get('recurso/ver/(:num)', 'RecursoController::ver/$1');
+// Ruta PDF (deshabilitada temporalmente)
+// $routes->get('recurso/ver/(:num)', 'RecursoController::ver/$1');
 
 
 // Buscar recursos

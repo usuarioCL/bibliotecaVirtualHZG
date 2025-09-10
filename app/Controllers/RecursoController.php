@@ -4,6 +4,8 @@ namespace App\Controllers;
 use CodeIgniter\Controller;
 use App\Models\RecursoModel;
 use App\Models\DetAutorModel;
+use Dompdf\Dompdf;
+use Dompdf\Options;
 
 class RecursoController extends Controller
 {
@@ -68,7 +70,7 @@ class RecursoController extends Controller
         $datos['editoriales'] = model('EditorialModel')->findAll();
         $datos['tiposrecurso'] = model('TiporecursoModel')->findAll();
 
-        
+
         // Si la petición es para modal, devolver solo la vista sin layouts
         if ($this->request->getGet('modal') === 'true') {
             return view('recursos/crear', $datos);
@@ -96,9 +98,11 @@ class RecursoController extends Controller
             'encuadernacion' => $this->request->getVar('encuadernacion'),
             'isbn'           => $this->request->getVar('isbn'),
             'numedicion'     => $this->request->getVar('numedicion'),
+            // Nota: 'rutaportada' si se maneja como archivo debería procesarse similar a PDF. Por ahora se deja tal cual llega.
             'rutaportada'    => $this->request->getVar('rutaportada'),
             'estado'         => $this->request->getVar('estado'),
             'stock'          => $this->request->getVar('stock'),
+            // urlLibro puede ser actualizado luego si suben PDF
             'urlLibro'       => $this->request->getVar('urlLibro'),
             'nivel'          => $this->request->getVar('nivel'),
             'idsubcategoria' => $this->request->getVar('idsubcategoria'),
@@ -108,6 +112,46 @@ class RecursoController extends Controller
 
         // 1. Insertar el recurso
         $idRecurso = $recursoModel->insert($datosRecurso);
+        
+        // 1.1 Manejo de PDF SOLO si el tipo de recurso es digital
+        try {
+            $idTipo = $this->request->getVar('idtiporecurso');
+            $esDigital = false;
+            if ($idTipo) {
+                $tipo = model('TiporecursoModel')->find($idTipo);
+                if ($tipo && isset($tipo['tiporecurso']) && stripos($tipo['tiporecurso'], 'digital') !== false) {
+                    $esDigital = true;
+                }
+            }
+
+            if ($idRecurso && $esDigital) {
+                $pdfFile = $this->request->getFile('archivo_pdf');
+                if ($pdfFile && $pdfFile->isValid() && !$pdfFile->hasMoved()) {
+                    helper('text');
+                    $carpetaRecurso = FCPATH . 'libros' . DIRECTORY_SEPARATOR . $idRecurso . DIRECTORY_SEPARATOR;
+                    if (!is_dir($carpetaRecurso)) {
+                        @mkdir($carpetaRecurso, 0775, true);
+                    }
+                    $nombreBase = url_title($datosRecurso['titulo'] ?: 'libro', '-', true);
+                    $nombreArchivo = $nombreBase . '-' . $idRecurso . '.pdf';
+                    // Mover archivo a carpeta pública
+                    $pdfFile->move($carpetaRecurso, $nombreArchivo, true);
+                    $rutaRelativa = 'libros/' . $idRecurso . '/' . $nombreArchivo;
+                    // Actualizar campo urlLibro con la ruta relativa servible
+                    $recursoModel->update($idRecurso, ['urlLibro' => $rutaRelativa]);
+                }
+            } else {
+                // Si no es digital, ignorar cualquier PDF subido
+                // Opcional: limpiar urlLibro si vino algo pero no es digital
+                if ($idRecurso && !$esDigital) {
+                    // Si deseas forzar vaciar urlLibro para no guardar rutas no digitales:
+                    // $recursoModel->update($idRecurso, ['urlLibro' => null]);
+                }
+            }
+        } catch (\Throwable $e) {
+            // Loguear si es necesario pero no interrumpir el flujo del guardado básico
+            log_message('error', 'Error subiendo PDF: ' . $e->getMessage());
+        }
         
         // 2. Insertar la relación autor-recurso en detautores
         $idAutor = $this->request->getVar('idautor');
@@ -238,6 +282,39 @@ class RecursoController extends Controller
         return view('recursos/listarBuscados', $datos);
     }
 
+    /**
+     * Exportar listado de recursos a PDF
+     * Requiere dependencia: dompdf/dompdf 
+     */
+    public function exportarPdf()
+    {
+        // Preparar datos sin paginación
+        $recurso = new RecursoModel();
+        $recursos = $recurso->orderBy('idrecurso', 'ASC')->findAll();
+
+        // Cargar vista como HTML
+        $html = view('recursos/pdf_list', [
+            'recursos' => $recursos,
+            'titulo'   => 'Listado de Recursos'
+        ]);
+
+        // Configurar Dompdf
+        $options = new Options();
+        $options->set('isRemoteEnabled', true);
+        $options->set('defaultFont', 'DejaVu Sans');
+        $dompdf = new Dompdf($options);
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+
+        // Enviar al navegador en línea
+        $filename = 'recursos-' . date('Ymd-His') . '.pdf';
+        return $this->response
+            ->setHeader('Content-Type', 'application/pdf')
+            ->setHeader('Content-Disposition', 'inline; filename="' . $filename . '"')
+            ->setBody($dompdf->output());
+    }
+
     public function filtrosBusqueda()
     {
         $recursoModel = new RecursoModel();
@@ -319,26 +396,24 @@ class RecursoController extends Controller
             ]);
         }
     }
+    // Funcion para ver el pdf(Sin usar aun 18%)
     public function ver($id){
         $model = new RecursoModel();
         $recurso = $model->find($id);
-
+    
         if (!$recurso) {
             throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound("Recurso no encontrado");
         }
-
-        // Construir la URL del PDF desde la ruta almacenada en BD (campo 'urlLibro')
-        // Ejemplo de BD: 'libros/hp1.pdf' (relativo a public/)
+    
         $path = $recurso['urlLibro'] ?? '';
         if (!$path) {
             throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound("El recurso no tiene PDF asociado");
         }
-
-        // Si viene absoluta, úsala tal cual; si es relativa, usar base_url()
+    
         $pdfUrl = (stripos($path, 'http://') === 0 || stripos($path, 'https://') === 0)
             ? $path
             : base_url($path);
-
+    
         return view('recursos/verPdf', ['pdfUrl' => $pdfUrl]);
     }
 }

@@ -5,9 +5,14 @@
             <h4 class="mb-0">Gestión de Recursos</h4>
             <p class="text-muted mb-0">Recursos bibliográficos del sistema</p>
         </div>
-        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalCrearRecurso">
-            <i class="ti ti-plus"></i> Nuevo Recurso
-        </button>
+        <div class="d-flex gap-2">
+            <a href="<?= base_url('/recursos/pdf') ?>" class="btn btn-outline-secondary">
+                <i class="ti ti-file-type-pdf"></i> Exportar PDF
+            </a>
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalCrearRecurso">
+                <i class="ti ti-plus"></i> Nuevo Recurso
+            </button>
+        </div>
     </div>
 
     <!-- Tabla de recursos -->
@@ -80,13 +85,6 @@
                                            onclick="return confirm('¿Seguro que deseas eliminar este recurso?');">
                                             <i class="ti ti-trash"></i>
                                         </a>
-                                        <?php if (!empty($recurso['urlLibro'])): ?>
-                                            <a href="<?= base_url('recurso/ver/' . $recurso['idrecurso']) ?>"
-                                               class="btn btn-sm btn-info"
-                                               title="Ver PDF" target="_blank" rel="noopener">
-                                                <i class="ti ti-file-text"></i>
-                                            </a>
-                                        <?php endif; ?>
                                     </div>
                                 </td>
                             </tr>
