@@ -68,10 +68,12 @@ class RecursoController extends Controller
         $datos['editoriales'] = model('EditorialModel')->findAll();
         $datos['tiposrecurso'] = model('TiporecursoModel')->findAll();
 
+        
         // Si la petición es para modal, devolver solo la vista sin layouts
         if ($this->request->getGet('modal') === 'true') {
             return view('recursos/crear', $datos);
         }
+
 
         $datos['navbar'] = view('layouts/navbar');
         $datos['header'] = view('layouts/header');
