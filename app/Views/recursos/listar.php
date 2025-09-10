@@ -80,6 +80,13 @@
                                            onclick="return confirm('¿Seguro que deseas eliminar este recurso?');">
                                             <i class="ti ti-trash"></i>
                                         </a>
+                                        <?php if (!empty($recurso['urlLibro'])): ?>
+                                            <a href="<?= base_url('recurso/ver/' . $recurso['idrecurso']) ?>"
+                                               class="btn btn-sm btn-info"
+                                               title="Ver PDF" target="_blank" rel="noopener">
+                                                <i class="ti ti-file-text"></i>
+                                            </a>
+                                        <?php endif; ?>
                                     </div>
                                 </td>
                             </tr>
@@ -159,4 +166,3 @@ function bindPaginationEvents() {
 <?php
 echo $footer;
 ?>
->>>>>>> 669ec88e6eaf3dad4e70fd8a4e4f14ae50817120

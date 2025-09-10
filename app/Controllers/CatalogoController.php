@@ -6,7 +6,7 @@ use App\Models\CategoriaModel;
 use App\Models\SubcategoriaModel;
 use App\Models\RecursoModel;
 use App\Models\AutorModel;
-use App\Models\DetautoresModel; // para obtener autores
+use App\Models\DetAutorModel; // para obtener autores
 
 class CatalogoController extends BaseController
 {
@@ -86,8 +86,8 @@ class CatalogoController extends BaseController
             
             $this->response->setContentType('application/json');
             return $this->response->setJSON($resultado);
-            
-        } catch (Exception $e) {
+    
+        } catch (\Exception $e) {
             log_message('error', 'Error en getAllSubcategorias: ' . $e->getMessage());
             $this->response->setContentType('application/json');
             return $this->response->setJSON([
@@ -101,7 +101,7 @@ class CatalogoController extends BaseController
     private function obtenerAutoresLibro($idRecurso)
     {
         try {
-            $detAutorModel = new DetautoresModel();
+            $detAutorModel = new DetAutorModel();
             $autorModel = new AutorModel();
 
             $autores = $detAutorModel->where('idrecurso', $idRecurso)->findAll();
@@ -115,7 +115,7 @@ class CatalogoController extends BaseController
             }
             
             return implode(', ', $nombresAutores) ?: 'Sin autores';
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             log_message('error', "Error obteniendo autores para libro {$idRecurso}: " . $e->getMessage());
             return 'Error obteniendo autores';
         }
@@ -157,7 +157,7 @@ class CatalogoController extends BaseController
             log_message('info', 'Resultado enviado con ' . count($resultado) . ' subcategorías');
             return $this->response->setJSON($resultado);
             
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             log_message('error', 'Error en getSubcategoriasPorCategoria: ' . $e->getMessage());
             $this->response->setContentType('application/json');
             return $this->response->setJSON([

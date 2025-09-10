@@ -317,4 +317,26 @@ class RecursoController extends Controller
             ]);
         }
     }
+    public function ver($id){
+        $model = new RecursoModel();
+        $recurso = $model->find($id);
+
+        if (!$recurso) {
+            throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound("Recurso no encontrado");
+        }
+
+        // Construir la URL del PDF desde la ruta almacenada en BD (campo 'urlLibro')
+        // Ejemplo de BD: 'libros/hp1.pdf' (relativo a public/)
+        $path = $recurso['urlLibro'] ?? '';
+        if (!$path) {
+            throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound("El recurso no tiene PDF asociado");
+        }
+
+        // Si viene absoluta, úsala tal cual; si es relativa, usar base_url()
+        $pdfUrl = (stripos($path, 'http://') === 0 || stripos($path, 'https://') === 0)
+            ? $path
+            : base_url($path);
+
+        return view('recursos/verPdf', ['pdfUrl' => $pdfUrl]);
+    }
 }
