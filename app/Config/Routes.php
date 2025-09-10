@@ -72,6 +72,7 @@ $routes->get('/recursos/detalles/(:num)', 'RecursoController::detalles/$1');
 // Ruta PDF
 $routes->get('recurso/ver/(:num)', 'RecursoController::ver/$1');
 
+
 // Buscar recursos
 $routes->get('/recursos/buscarRecursos', 'RecursoController::buscarRecursos');
 $routes->get('/recursos/filtrosBusqueda', 'RecursoController::filtrosBusqueda');
