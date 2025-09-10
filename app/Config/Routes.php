@@ -47,3 +47,18 @@ $routes->get('/recursos/filtrosBusqueda', 'RecursoController::filtrosBusqueda');
 // Catalogo
 $routes->get('/catalogo', 'CatalogoController::index');
 $routes->get('catalogo/subcategorias/(:num)', 'CatalogoController::getSubcategoriasPorCategoria/$1');
+
+// Sanciones
+$routes->get('/sanciones', 'SancionController::index');
+$routes->get('/sanciones/crear', 'SancionController::crear');
+$routes->post('/sanciones/guardar', 'SancionController::guardar');
+$routes->get('/sanciones/editar/(:num)', 'SancionController::editar/$1');
+$routes->post('/sanciones/actualizar/(:num)', 'SancionController::actualizar/$1');
+$routes->post('/sanciones/eliminar/(:num)', 'SancionController::eliminar/$1');
+$routes->get('/sanciones/ver/(:num)', 'SancionController::ver/$1');
+$routes->get('/sanciones/buscar', 'SancionController::buscar');
+
+// Tipos de sanción
+$routes->get('/sanciones/tipos', 'SancionController::tiposSancion');
+$routes->post('/sanciones/crear-tipo', 'SancionController::crearTipo');
+$routes->post('/sanciones/eliminar-tipo/(:num)', 'SancionController::eliminarTipo/$1');

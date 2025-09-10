@@ -80,6 +80,13 @@
                     <span class="hide-menu">Autores</span>
                   </a>
                 </li>
+
+                <li class="sidebar-item">
+                  <a class="sidebar-link d-flex align-items-center gap-3 ajax-link" href="<?= base_url('sanciones'); ?>">
+                    <i class="ti ti-ban fs-5"></i>
+                    <span class="hide-menu">Sanciones</span>
+                  </a>
+                </li>
                     
           
               </ul>
