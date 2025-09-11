@@ -1,9 +1,9 @@
 <div class="row">
     <div class="col-md-4">
         <?php if (!empty($recurso['rutaportada'])): ?>
-            <img src="<?= base_url('public/' . $recurso['rutaportada']) ?>" class="img-fluid rounded" alt="Portada">
+            <img src="<?= base_url(esc($recurso['rutaportada'])) ?>" class="img-fluid rounded" alt="Portada">
         <?php else: ?>
-            <img src="<?= base_url('public/img/portada_default.png') ?>" class="img-fluid rounded" alt="Sin portada">
+            <img src="<?= base_url('img/portada_default.png') ?>" class="img-fluid rounded" alt="Sin portada">
         <?php endif; ?>
     </div>
     <div class="col-md-8">
