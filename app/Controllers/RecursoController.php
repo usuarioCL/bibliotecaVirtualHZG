@@ -284,155 +284,126 @@ class RecursoController extends Controller
         return view('recursos/modal_editar', $datos);
     }
 
-    // Actualizar datos
-    public function actualizar($idrecurso)
-    {
-        $recursoModel = new RecursoModel();
-        $detAutorModel = new DetAutorModel();
+public function actualizar($idrecurso)
+{
+    $recursoModel = new RecursoModel();
+    $detAutorModel = new DetAutorModel();
 
-<<<<<<< HEAD
-        try {
-            // Datos para actualizar el recurso
-            $datosRecurso = [
-                'titulo'         => $this->request->getVar('titulo'),
-                'anio'           => $this->request->getVar('anio'),
-                'numpaginas'     => $this->request->getVar('numpaginas'),
-                'encuadernacion' => $this->request->getVar('encuadernacion'),
-                'isbn'           => $this->request->getVar('isbn'),
-                'numedicion'     => $this->request->getVar('numedicion'),
-                'estado'         => $this->request->getVar('estado'),
-                'stock'          => $this->request->getVar('stock'),
-                'urlLibro'       => $this->request->getVar('urlLibro'),
-                'nivel'          => $this->request->getVar('nivel'),
-                'idsubcategoria' => $this->request->getVar('idsubcategoria'),
-                'ideditorial'    => $this->request->getVar('ideditorial'),
-                'idtiporecurso'  => $this->request->getVar('idtiporecurso')
-            ];
+    // Datos para actualizar en recursos
+    $datosRecurso = [
+        'titulo'         => $this->request->getVar('titulo'),
+        'anio'           => $this->request->getVar('anio'),
+        'numpaginas'     => $this->request->getVar('numpaginas'),
+        'encuadernacion' => $this->request->getVar('encuadernacion'),
+        'isbn'           => $this->request->getVar('isbn'),
+        'numedicion'     => $this->request->getVar('numedicion'),
+        'rutaportada'    => $this->request->getVar('rutaportada'),
+        'estado'         => $this->request->getVar('estado'),
+        'stock'          => $this->request->getVar('stock'),
+        'nivel'          => $this->request->getVar('nivel'),
+        'idsubcategoria' => $this->request->getVar('idsubcategoria'),
+        'ideditorial'    => $this->request->getVar('ideditorial'),
+        'idtiporecurso'  => $this->request->getVar('idtiporecurso')
+    ];
 
-            // Actualizar el recurso
-            $resultado = $recursoModel->update($idrecurso, $datosRecurso);
-=======
-        // Datos para actualizar en recursos
-        $datosRecurso = [
-            'titulo'         => $this->request->getVar('titulo'),
-            'anio'           => $this->request->getVar('anio'),
-            'numpaginas'     => $this->request->getVar('numpaginas'),
-            'encuadernacion' => $this->request->getVar('encuadernacion'),
-            'isbn'           => $this->request->getVar('isbn'),
-            'numedicion'     => $this->request->getVar('numedicion'),
-            'rutaportada'    => $this->request->getVar('rutaportada'),
-            'estado'         => $this->request->getVar('estado'),
-            'stock'          => $this->request->getVar('stock'),
-            'nivel'          => $this->request->getVar('nivel'),
-            'idsubcategoria' => $this->request->getVar('idsubcategoria'),
-            'ideditorial'    => $this->request->getVar('ideditorial'),
-            'idtiporecurso'  => $this->request->getVar('idtiporecurso')
-        ];
+    // 1. Actualizar el recurso (sin tocar aún portada ni PDF)
+    $recursoModel->update($idrecurso, $datosRecurso);
 
-        // 1. Actualizar el recurso (sin tocar urlLibro aún)
-        $recursoModel->update($idrecurso, $datosRecurso);
+    // 1.1 Manejo de portada (imagen)
+    try {
+        $portada = $this->request->getFile('rutaportada');
+        if ($portada && $portada->isValid() && !$portada->hasMoved()) {
+            $mime = $portada->getMimeType();
+            if (strpos($mime, 'image/') === 0) {
+                helper('text');
+                $recursoExistente = $recursoModel->find($idrecurso);
+                $tituloSlug = url_title(($recursoExistente['titulo'] ?? 'portada'), '-', true);
+                $ext = strtolower($portada->getExtension());
+                $nombreArchivo = $tituloSlug . '-' . $idrecurso . '.' . $ext;
+                $carpetaPublica = FCPATH . 'img' . DIRECTORY_SEPARATOR . 'portadas' . DIRECTORY_SEPARATOR;
 
-        // 1.0 Manejo de portada (imagen)
-        try {
-            $portada = $this->request->getFile('rutaportada');
-            if ($portada && $portada->isValid() && !$portada->hasMoved()) {
-                $mime = $portada->getMimeType();
-                if (strpos($mime, 'image/') === 0) {
-                    helper('text');
-                    $recursoExistente = $recursoModel->find($idrecurso);
-                    $tituloSlug = url_title(($recursoExistente['titulo'] ?? 'portada'), '-', true);
-                    $ext = strtolower($portada->getExtension());
-                    $nombreArchivo = $tituloSlug . '-' . $idrecurso . '.' . $ext;
-                    $carpetaPublica = FCPATH . 'img' . DIRECTORY_SEPARATOR . 'portadas' . DIRECTORY_SEPARATOR;
-                    if (!is_dir($carpetaPublica)) {
-                        @mkdir($carpetaPublica, 0775, true);
-                    }
-                    $portada->move($carpetaPublica, $nombreArchivo, true);
-                    $rutaRelativaPortada = 'img/portadas/' . $nombreArchivo;
-                    $recursoModel->update($idrecurso, ['rutaportada' => $rutaRelativaPortada]);
+                if (!is_dir($carpetaPublica)) {
+                    @mkdir($carpetaPublica, 0775, true);
                 }
+
+                $portada->move($carpetaPublica, $nombreArchivo, true);
+                $rutaRelativaPortada = 'img/portadas/' . $nombreArchivo;
+                $recursoModel->update($idrecurso, ['rutaportada' => $rutaRelativaPortada]);
             }
-        } catch (\Throwable $e) {
-            log_message('error', 'Error subiendo portada: ' . $e->getMessage());
+        }
+    } catch (\Throwable $e) {
+        log_message('error', 'Error subiendo portada: ' . $e->getMessage());
+    }
+
+    // 1.2 Manejo de PDF si el recurso es digital
+    try {
+        $idTipo = $this->request->getVar('idtiporecurso');
+        $esDigital = false;
+
+        if ($idTipo) {
+            $tipo = model('TiporecursoModel')->find($idTipo);
+            if ($tipo && isset($tipo['tiporecurso']) && stripos($tipo['tiporecurso'], 'digital') !== false) {
+                $esDigital = true;
+            }
         }
 
-        // 1.1 Manejo de PDF SOLO si el tipo de recurso es digital
-        try {
-            $idTipo = $this->request->getVar('idtiporecurso');
-            $esDigital = false;
-            if ($idTipo) {
-                $tipo = model('TiporecursoModel')->find($idTipo);
-                if ($tipo && isset($tipo['tiporecurso']) && stripos($tipo['tiporecurso'], 'digital') !== false) {
-                    $esDigital = true;
-                }
-            }
+        if ($esDigital) {
+            $pdfFile = $this->request->getFile('archivo_pdf');
+            if ($pdfFile && $pdfFile->isValid() && !$pdfFile->hasMoved()) {
+                helper('text');
+                $carpetaRecurso = FCPATH . 'libros' . DIRECTORY_SEPARATOR . $idrecurso . DIRECTORY_SEPARATOR;
 
-            if ($esDigital) {
-                $pdfFile = $this->request->getFile('archivo_pdf');
-                if ($pdfFile && $pdfFile->isValid() && !$pdfFile->hasMoved()) {
-                    helper('text');
-                    $carpetaRecurso = FCPATH . 'libros' . DIRECTORY_SEPARATOR . $idrecurso . DIRECTORY_SEPARATOR;
-                    if (!is_dir($carpetaRecurso)) {
-                        @mkdir($carpetaRecurso, 0775, true);
-                    }
-                    $recursoExistente = $recursoModel->find($idrecurso);
-                    $nombreBase = url_title(($recursoExistente['titulo'] ?? 'libro'), '-', true);
-                    $nombreArchivo = $nombreBase . '-' . $idrecurso . '.pdf';
-                    $pdfFile->move($carpetaRecurso, $nombreArchivo, true);
-                    $rutaRelativa = 'libros/' . $idrecurso . '/' . $nombreArchivo;
-                    $recursoModel->update($idrecurso, ['urlLibro' => $rutaRelativa]);
+                if (!is_dir($carpetaRecurso)) {
+                    @mkdir($carpetaRecurso, 0775, true);
                 }
-            } else {
-                // Si no es digital, no modificar urlLibro a menos que expresamente lo envíen
-                $urlManual = $this->request->getVar('urlLibro');
-                if ($urlManual !== null && $urlManual !== '') {
-                    $recursoModel->update($idrecurso, ['urlLibro' => $urlManual]);
-                }
+
+                $recursoExistente = $recursoModel->find($idrecurso);
+                $nombreBase = url_title(($recursoExistente['titulo'] ?? 'libro'), '-', true);
+                $nombreArchivo = $nombreBase . '-' . $idrecurso . '.pdf';
+                $pdfFile->move($carpetaRecurso, $nombreArchivo, true);
+                $rutaRelativa = 'libros/' . $idrecurso . '/' . $nombreArchivo;
+
+                $recursoModel->update($idrecurso, ['urlLibro' => $rutaRelativa]);
             }
-        } catch (\Throwable $e) {
-            log_message('error', 'Error actualizando PDF: ' . $e->getMessage());
+        } else {
+            // Si no es digital, permitir modificación manual si se envía
+            $urlManual = $this->request->getVar('urlLibro');
+            if (!empty($urlManual)) {
+                $recursoModel->update($idrecurso, ['urlLibro' => $urlManual]);
+            }
         }
-        
-        // 2. Actualizar la relación autor-recurso
+    } catch (\Throwable $e) {
+        log_message('error', 'Error actualizando PDF: ' . $e->getMessage());
+    }
+
+    // 2. Actualizar relación autor-recurso
+    try {
         $idAutor = $this->request->getVar('idautor');
+
         if ($idAutor) {
             // Eliminar relaciones anteriores
-            $detAutorModel->deleteByRecurso($idrecurso);
->>>>>>> 22fc2e5996fdf0f9d5ea4a7f33832eb55c4138c1
-            
-            if (!$resultado) {
-                return $this->response->setJSON([
-                    'status' => 'error',
-                    'message' => 'Error al actualizar el recurso'
-                ]);
-            }
+            $detAutorModel->where('idrecurso', $idrecurso)->delete();
 
-            // Actualizar la relación autor-recurso
-            $idAutor = $this->request->getVar('idautor');
-            if ($idAutor) {
-                // Eliminar relación anterior
-                $detAutorModel->where('idrecurso', $idrecurso)->delete();
-                
-                // Insertar nueva relación
-                $detAutorModel->insert([
-                    'idautor' => $idAutor,
-                    'idrecurso' => $idrecurso
-                ]);
-            }
-
-            return $this->response->setJSON([
-                'status' => 'success',
-                'message' => 'Recurso actualizado exitosamente',
-                'titulo' => $datosRecurso['titulo']
-            ]);
-
-        } catch (\Throwable $e) {
-            return $this->response->setJSON([
-                'status' => 'error',
-                'message' => 'Error al procesar la actualización: ' . $e->getMessage()
+            // Insertar nueva relación
+            $detAutorModel->insert([
+                'idautor' => $idAutor,
+                'idrecurso' => $idrecurso
             ]);
         }
+
+        return $this->response->setJSON([
+            'status' => 'success',
+            'message' => 'Recurso actualizado exitosamente',
+            'titulo' => $datosRecurso['titulo']
+        ]);
+    } catch (\Throwable $e) {
+        return $this->response->setJSON([
+            'status' => 'error',
+            'message' => 'Error al procesar la actualización: ' . $e->getMessage()
+        ]);
     }
+}
+
 
     public function eliminar($idrecurso = null)
     {

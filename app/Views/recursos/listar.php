@@ -83,14 +83,8 @@
                                 </td>
                                 <td>
                                     <div class="btn-group" role="group">
-<<<<<<< HEAD
                                         <a href="<?= base_url('recursos/editar/') ?><?= $recurso['idrecurso'] ?>" 
                                            class="btn btn-sm btn-warning ajax-link" 
-=======
-                                        <a href="#" 
-                                           data-url="<?= base_url('recursos/editar/') ?><?= $recurso['idrecurso'] ?>"
-                                           class="btn btn-sm btn-warning btn-edit" 
->>>>>>> 22fc2e5996fdf0f9d5ea4a7f33832eb55c4138c1
                                            title="Editar">
                                             <i class="ti ti-edit"></i>
                                         </a>
