@@ -1,0 +1,50 @@
+/* Colores inspirados en el logo institucional */
+/* Sidebar elegante, tonos suaves inspirados en el logo */
+/* Sidebar elegante, mejor combinación de colores */
+
+.sidebar-hzg {
+  background: #e9dac6 !important; /* Crema más oscura */
+  color: #fff !important;
+}
+  color: #fff !important;
+  font-size: 1.05rem;
+  font-weight: bold;
+  letter-spacing: 0.5px;
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+  opacity: 1;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.08);
+}
+.sidebar-hzg .sidebar-divider {
+  border-color: #ffd54f !important;
+  opacity: 0.5;
+}
+  color: #fff !important;
+  background: transparent;
+}
+  background: #fff !important;
+  color: #a93226 !important;
+  font-weight: bold;
+  box-shadow: 0 2px 8px 0 rgba(0,0,0,0.04);
+}
+  background: #fffbe7 !important;
+  color: #a93226 !important;
+}
+.sidebar-hzg .sidebar-nav .sidebar-item i {
+  color: #bfa100 !important; /* Amarillo oscuro */
+}
+.sidebar-hzg .brand-logo {
+  border-bottom: 2px solid #ffd54f;
+  padding-bottom: 10px;
+}
+.sidebar-hzg .sidebar-nav .sidebar-item {
+  margin-bottom: 0.2rem;
+}
+.sidebar-hzg .sidebar-nav .sidebar-item a {
+  border-radius: 6px;
+  padding: 0.55rem 1rem;
+  transition: background 0.2s, color 0.2s;
+}
+.sidebar-hzg .sidebar-nav .sidebar-item a:active {
+  background: #ffd54f !important;
+}

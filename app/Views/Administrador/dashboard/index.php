@@ -14,12 +14,13 @@
   <div class="page-wrapper" id="main-wrapper" data-layout="vertical" data-navbarbg="skin6" data-sidebartype="full"
     data-sidebar-position="fixed" data-header-position="fixed">
     <!-- Sidebar Start -->
-    <aside class="left-sidebar">
+  <link rel="stylesheet" href="<?= base_url('assets/css/sidebar-hzg.css') ?>">
+  <aside class="left-sidebar sidebar-hzg">
       <!-- Sidebar scroll-->
       <div>
-        <div class="brand-logo d-flex align-items-center justify-content-between">
+  <div class="brand-logo d-flex align-items-center justify-content-center">
           <a href="index.php" class="text-nowrap logo-img">
-            <img src="<?= base_url('./assets/images/logos/logo-wrappixel.svg') ?>" alt="./assets/images/logos/logo-wrappixel.svg" />
+            <img src="<?= base_url('./assets/images/logos/hzg.png') ?>" alt="./assets/images/logos/hzg.png" style="max-width: 120px; height: auto; display: block; margin: 0 auto;" />
           </a>
           <div class="close-btn d-xl-none d-block sidebartoggler cursor-pointer" id="sidebarCollapse">
             <i class="ti ti-x fs-6"></i>
