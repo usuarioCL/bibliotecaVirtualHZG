@@ -89,10 +89,10 @@
                                            title="Editar">
                                             <i class="ti ti-edit"></i>
                                         </a>
-                                        <a href="<?= base_url('recursos/eliminar/') ?><?= $recurso['idrecurso'] ?>" 
-                                           class="btn btn-sm btn-danger"
-                                           title="Eliminar"
-                                           onclick="return confirm('¿Seguro que deseas eliminar este recurso?');">
+                                        <a href="#" 
+                                           data-url="<?= base_url('recursos/eliminar/') ?><?= $recurso['idrecurso'] ?>" 
+                                           class="btn btn-sm btn-danger btn-delete"
+                                           title="Eliminar">
                                             <i class="ti ti-trash"></i>
                                         </a>
                                     </div>
@@ -115,13 +115,6 @@
             </div>
         </div>
     </div>
-
-    <!-- Paginación -->
-    <?php if(!empty($recursos)): ?>
-        <div class="d-flex justify-content-center mt-4">
-            <?= $pager->links('recursos', 'paginacion') ?>
-        </div>
-    <?php endif; ?>
 </div>
 
 <!-- Incluir directamente el modal de crear recurso -->
@@ -129,6 +122,43 @@
 
 <script>
 $(document).ready(function() {
+    // Función para recargar solo la lista de recursos
+    function recargarListaRecursos() {
+        // Mostrar indicador de carga en el contenedor principal
+        $('#contenedor-principal').html(`
+            <div class="text-center py-5">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Cargando...</span>
+                </div>
+                <p class="mt-3">Actualizando lista de recursos...</p>
+            </div>
+        `);
+        
+        // Hacer petición AJAX para recargar solo la lista de recursos
+        $.get('<?= base_url("recursos") ?>', function(data) {
+            $('#contenedor-principal').html(data);
+            
+            // Re-inicializar cualquier funcionalidad específica si es necesaria
+            if (typeof window.initRecursosList === 'function') {
+                window.initRecursosList();
+            }
+        }).fail(function() {
+            $('#contenedor-principal').html(`
+                <div class="text-danger text-center py-5">
+                    <i class="ti ti-alert-circle fs-1 mb-3"></i>
+                    <h5>Error al cargar la lista de recursos</h5>
+                    <p>Por favor, inténtalo de nuevo.</p>
+                    <button class="btn btn-primary" onclick="recargarListaRecursos()">
+                        <i class="ti ti-refresh"></i> Reintentar
+                    </button>
+                </div>
+            `);
+        });
+    }
+    
+    // Hacer la función disponible globalmente
+    window.recargarListaRecursos = recargarListaRecursos;
+
     // Cargar SweetAlert2 si no existe
     function loadSweetAlert2(callback) {
         if (window.Swal) {
@@ -179,48 +209,90 @@ $(document).ready(function() {
         });
     });
 
-    // Interceptar los clics en los enlaces de paginación
-    $('.pagination .page-link').on('click', function(e) {
+    // Delegar click para botón Eliminar: confirmar con SweetAlert2
+    $(document).on('click', '.btn-delete', function(e) {
         e.preventDefault();
-        var url = $(this).attr('href');
-        
-        // Hacer la petición AJAX
-        $.get(url, function(response) {
-            // Actualizar solo el contenido de la tabla y la paginación
-            var newContent = $(response).find('.table-responsive').html();
-            var newPagination = $(response).find('.pagination').html();
-            
-            $('.table-responsive').html(newContent);
-            $('.pagination').html(newPagination);
-
-            // Actualizar la URL sin recargar la página
-            window.history.pushState({}, '', url);
-            
-            // Volver a bindear los eventos a los nuevos enlaces de paginación
-            bindPaginationEvents();
+        var url = $(this).data('url');
+        // Asegurar SweetAlert2 disponible
+        loadSweetAlert2(function() {
+            Swal.fire({
+                title: '¿Estás seguro?',
+                text: 'Esta acción eliminará permanentemente este recurso y no se puede deshacer.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Sí, eliminar',
+                cancelButtonText: 'Cancelar',
+                reverseButtons: true
+            }).then(function(result) {
+                if (result.isConfirmed) {
+                    // Mostrar loading mientras se procesa
+                    Swal.fire({
+                        title: 'Eliminando...',
+                        text: 'Por favor espera mientras se elimina el recurso',
+                        allowOutsideClick: false,
+                        allowEscapeKey: false,
+                        showConfirmButton: false,
+                        didOpen: function() {
+                            Swal.showLoading();
+                        }
+                    });
+                    
+                    // Hacer petición AJAX para eliminar
+                    $.ajax({
+                        url: url,
+                        type: 'POST',
+                        dataType: 'json',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        success: function(response) {
+                            console.log('Respuesta del servidor:', response);
+                            
+                            // Verificar si la respuesta es exitosa
+                            if (response && response.success) {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: '¡Eliminado!',
+                                    text: response.message || 'El recurso ha sido eliminado correctamente.',
+                                    timer: 1500,
+                                    showConfirmButton: false,
+                                    timerProgressBar: true
+                                }).then(function() {
+                                    // Recargar solo el contenido de recursos manteniendo el diseño
+                                    recargarListaRecursos();
+                                });
+                            } else {
+                                // Si la respuesta indica error
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Error al eliminar',
+                                    text: response.message || 'No se pudo eliminar el recurso.'
+                                });
+                            }
+                        },
+                        error: function(xhr, status, error) {
+                            console.log('Error AJAX:', xhr, status, error);
+                            console.log('Response Text:', xhr.responseText);
+                            
+                            var errorMessage = 'No se pudo eliminar el recurso. Por favor, inténtalo de nuevo.';
+                            
+                            // Si hay respuesta JSON con error
+                            if (xhr.responseJSON && xhr.responseJSON.message) {
+                                errorMessage = xhr.responseJSON.message;
+                            }
+                            
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error al eliminar',
+                                text: errorMessage
+                            });
+                        }
+                    });
+                }
+            });
         });
     });
 });
-
-function bindPaginationEvents() {
-    $('.pagination .page-link').on('click', function(e) {
-        e.preventDefault();
-        var url = $(this).attr('href');
-        
-        $.get(url, function(response) {
-            var newContent = $(response).find('.table-responsive').html();
-            var newPagination = $(response).find('.pagination').html();
-            
-            $('.table-responsive').html(newContent);
-            $('.pagination').html(newPagination);
-            
-            window.history.pushState({}, '', url);
-            bindPaginationEvents();
-        });
-    });
-}
 </script>
-
-<?php
-echo $footer;
-?>

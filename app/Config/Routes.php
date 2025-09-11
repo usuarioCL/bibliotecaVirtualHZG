@@ -68,6 +68,7 @@ $routes->get('/recursos/editar/(:num)', 'RecursoController::editar/$1');
 $routes->get('/recursos/modal-editar/(:num)', 'RecursoController::modalEditar/$1');
 $routes->post('/recursos/actualizar/(:num)', 'RecursoController::actualizar/$1');
 $routes->get('/recursos/eliminar/(:num)', 'RecursoController::eliminar/$1');
+$routes->post('/recursos/eliminar/(:num)', 'RecursoController::eliminar/$1');
 $routes->get('/recursos/detalles/(:num)', 'RecursoController::detalles/$1');
 
 // Autores (CRUD)

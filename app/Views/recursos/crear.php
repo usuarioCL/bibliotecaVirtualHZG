@@ -21,9 +21,10 @@
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label for="idautor" class="form-label">Autor</label>
-                                <div class="border rounded p-2" style="max-height:180px;overflow-y:auto;">
+                                <input type="text" class="form-control mb-2" id="buscadorAutores" placeholder="Buscar autor...">
+                                <div class="border rounded p-2" id="listaAutores" style="max-height:180px;overflow-y:auto;">
                                     <?php foreach ($autores as $autor): ?>
-                                        <div class="form-check mb-1">
+                                        <div class="form-check mb-1 autor-item">
                                             <input class="form-check-input" type="checkbox" name="idautor[]" id="autor<?= esc($autor['idautor']) ?>" value="<?= esc($autor['idautor']) ?>">
                                             <label class="form-check-label" for="autor<?= esc($autor['idautor']) ?>">
                                                 <i class="ti ti-user"></i> <?= esc($autor['apeautor']) ?>, <?= esc($autor['nomautor']) ?>
@@ -34,6 +35,29 @@
                                         </div>
                                     <?php endforeach; ?>
                                 </div>
+<!-- Script de búsqueda de autores -->
+<script>
+function activarBuscadorAutores() {
+    var buscador = document.getElementById('buscadorAutores');
+    if (buscador) {
+        buscador.addEventListener('input', function() {
+            var filtro = this.value.toLowerCase();
+            document.querySelectorAll('#listaAutores .autor-item').forEach(function(item) {
+                var texto = item.textContent.toLowerCase();
+                item.style.display = texto.includes(filtro) ? '' : 'none';
+            });
+        });
+    }
+}
+// Ejecutar al cargar el DOM y cada vez que se muestre el modal
+document.addEventListener('DOMContentLoaded', activarBuscadorAutores);
+var modal = document.getElementById('modalCrearRecurso');
+if (modal) {
+    modal.addEventListener('shown.bs.modal', function() {
+        activarBuscadorAutores();
+    });
+}
+</script>
                                 <small class="form-text text-muted">Marca uno o más autores para este recurso.</small>
                             </div>
                         </div>

@@ -9,6 +9,13 @@ use App\Models\CategoriaModel;
 use App\Models\SubcategoriaModel;
 use App\Models\EditorialModel;
 use App\Models\TiporecursoModel;
+use App\Models\UbicacionModel;
+use App\Models\PrestamoModel;
+use App\Models\SolicitudModel;
+use App\Models\ComentarioModel;
+use App\Models\ReaccionModel;
+use App\Models\CompartidoModel;
+use App\Models\FavoritoModel;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 
@@ -20,8 +27,8 @@ class RecursoController extends Controller
         $recurso = new RecursoModel();
         $autorModel = new AutorModel();
 
-        $datos['recursos'] = $recurso->orderBy('idrecurso', 'ASC')->paginate(10, 'recursos');
-        $datos['pager']    = $recurso->pager;
+        // Obtener todos los recursos sin paginación
+        $datos['recursos'] = $recurso->orderBy('idrecurso', 'ASC')->findAll();
 
         // Agregar datos necesarios para el modal de crear
         // Obtener valores ENUM de estado
@@ -43,8 +50,6 @@ class RecursoController extends Controller
         $datos['editoriales'] = model('EditorialModel')->findAll();
         $datos['tiposrecurso'] = model('TiporecursoModel')->findAll();
 
-        $datos['recursos'] = $recurso->orderBy('idrecurso', 'ASC')->paginate(10, 'recursos');
-        $datos['pager']    = $recurso->pager;
         $datos['navbar'] = view('layouts/navbar');
         $datos['header'] = view('layouts/header');
         $datos['footer'] = view('layouts/footer');
@@ -416,14 +421,100 @@ public function actualizar($idrecurso)
     {
         $recursoModel = new RecursoModel();
         $detAutorModel = new DetAutorModel();
+        $ubicacionModel = new UbicacionModel();
+        $prestamoModel = new PrestamoModel();
+        $solicitudModel = new SolicitudModel();
+        $comentarioModel = new ComentarioModel();
+        $reaccionModel = new ReaccionModel();
+        $compartidoModel = new CompartidoModel();
+        $favoritoModel = new FavoritoModel();
         
-        // Eliminar primero las relaciones en detautores
-        $detAutorModel->deleteByRecurso($idrecurso);
+        // Log para debug
+        log_message('info', 'Intentando eliminar recurso ID: ' . $idrecurso);
+        log_message('info', 'Es petición AJAX: ' . ($this->request->isAJAX() ? 'SI' : 'NO'));
         
-        // Luego eliminar el recurso
-        $recursoModel->delete($idrecurso);
-        
-        return $this->response->redirect(base_url('recursos'));
+        try {
+            // Verificar que el recurso existe
+            $recurso = $recursoModel->find($idrecurso);
+            if (!$recurso) {
+                if ($this->request->isAJAX()) {
+                    return $this->response
+                        ->setContentType('application/json')
+                        ->setJSON([
+                            'success' => false,
+                            'message' => 'El recurso no existe'
+                        ]);
+                }
+                return $this->response->redirect(base_url('recursos'));
+            }
+            
+            // Eliminar registros relacionados en orden correcto
+            // 1. Eliminar favoritos
+            $favoritosEliminados = $favoritoModel->deleteByRecurso($idrecurso);
+            log_message('info', 'Favoritos eliminados: ' . $favoritosEliminados);
+            
+            // 2. Eliminar compartidos
+            $compartidosEliminados = $compartidoModel->deleteByRecurso($idrecurso);
+            log_message('info', 'Compartidos eliminados: ' . $compartidosEliminados);
+            
+            // 3. Eliminar reacciones
+            $reaccionesEliminadas = $reaccionModel->deleteByRecurso($idrecurso);
+            log_message('info', 'Reacciones eliminadas: ' . $reaccionesEliminadas);
+            
+            // 4. Eliminar comentarios
+            $comentariosEliminados = $comentarioModel->deleteByRecurso($idrecurso);
+            log_message('info', 'Comentarios eliminados: ' . $comentariosEliminados);
+            
+            // 5. Eliminar solicitudes (ANTES de eliminar préstamos)
+            $solicitudesEliminadas = $solicitudModel->deleteByRecurso($idrecurso);
+            log_message('info', 'Solicitudes eliminadas: ' . $solicitudesEliminadas);
+            
+            // 6. Eliminar préstamos
+            $prestamosEliminados = $prestamoModel->deleteByRecurso($idrecurso);
+            log_message('info', 'Préstamos eliminados: ' . $prestamosEliminados);
+            
+            // 7. Eliminar ubicaciones
+            $ubicacionesEliminadas = $ubicacionModel->deleteByRecurso($idrecurso);
+            log_message('info', 'Ubicaciones eliminadas: ' . $ubicacionesEliminadas);
+            
+            // 8. Eliminar relaciones autor-recurso
+            $relacionesEliminadas = $detAutorModel->deleteByRecurso($idrecurso);
+            log_message('info', 'Relaciones autor-recurso eliminadas: ' . $relacionesEliminadas);
+            
+            // 9. Finalmente eliminar el recurso
+            $recursoEliminado = $recursoModel->delete($idrecurso);
+            log_message('info', 'Recurso eliminado: ' . ($recursoEliminado ? 'SI' : 'NO'));
+            
+            // Si es una petición AJAX, devolver JSON
+            if ($this->request->isAJAX()) {
+                return $this->response
+                    ->setContentType('application/json')
+                    ->setJSON([
+                        'success' => true,
+                        'message' => 'Recurso eliminado correctamente'
+                    ]);
+            }
+            
+            // Si no es AJAX, redirigir (por compatibilidad)
+            return $this->response->redirect(base_url('recursos'));
+            
+        } catch (\Exception $e) {
+            log_message('error', 'Error al eliminar recurso: ' . $e->getMessage());
+            
+            // Si es una petición AJAX, devolver error JSON
+            if ($this->request->isAJAX()) {
+                return $this->response
+                    ->setContentType('application/json')
+                    ->setJSON([
+                        'success' => false,
+                        'message' => 'Error al eliminar el recurso: ' . $e->getMessage()
+                    ]);
+            }
+            
+            // Si no es AJAX, redirigir con error
+            session()->setFlashdata('error', 'Error al eliminar el recurso');
+            return $this->response->redirect(base_url('recursos'));
+        }
     }
 
     public function buscarRecursos()

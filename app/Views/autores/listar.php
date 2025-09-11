@@ -55,10 +55,6 @@
         </tbody>
       </table>
     </div>
-
-    <div class="d-flex justify-content-center">
-      <?= isset($pager) ? $pager->links('autores', 'paginacion') : '' ?>
-    </div>
   </div>
 </div>
 
