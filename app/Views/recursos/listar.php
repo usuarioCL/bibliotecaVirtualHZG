@@ -83,9 +83,8 @@
                                 </td>
                                 <td>
                                     <div class="btn-group" role="group">
-                                        <a href="#" 
-                                           data-url="<?= base_url('recursos/editar/') ?><?= $recurso['idrecurso'] ?>"
-                                           class="btn btn-sm btn-warning btn-edit" 
+                                        <a href="<?= base_url('recursos/editar/') ?><?= $recurso['idrecurso'] ?>" 
+                                           class="btn btn-sm btn-warning ajax-link" 
                                            title="Editar">
                                             <i class="ti ti-edit"></i>
                                         </a>
@@ -267,3 +266,6 @@ $(document).ready(function() {
 });
 </script>
 
+<?php
+echo $footer;
+?>

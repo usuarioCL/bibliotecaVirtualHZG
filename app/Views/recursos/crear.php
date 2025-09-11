@@ -21,17 +21,20 @@
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label for="idautor" class="form-label">Autor</label>
-                                <select class="form-select" id="idautor" name="idautor" required>
-                                    <option value="">Seleccionar autor</option>
+                                <div class="border rounded p-2" style="max-height:180px;overflow-y:auto;">
                                     <?php foreach ($autores as $autor): ?>
-                                        <option value="<?= esc($autor['idautor']) ?>">
-                                            <?= esc($autor['apeautor']) ?>, <?= esc($autor['nomautor']) ?> 
-                                            <?php if (!empty($autor['nacionalidad'])): ?>
-                                                (<?= esc($autor['nacionalidad']) ?>)
-                                            <?php endif; ?>
-                                        </option>
+                                        <div class="form-check mb-1">
+                                            <input class="form-check-input" type="checkbox" name="idautor[]" id="autor<?= esc($autor['idautor']) ?>" value="<?= esc($autor['idautor']) ?>">
+                                            <label class="form-check-label" for="autor<?= esc($autor['idautor']) ?>">
+                                                <i class="ti ti-user"></i> <?= esc($autor['apeautor']) ?>, <?= esc($autor['nomautor']) ?>
+                                                <?php if (!empty($autor['nacionalidad'])): ?>
+                                                    <span class="text-muted">(<?= esc($autor['nacionalidad']) ?>)</span>
+                                                <?php endif; ?>
+                                            </label>
+                                        </div>
                                     <?php endforeach; ?>
-                                </select>
+                                </div>
+                                <small class="form-text text-muted">Marca uno o más autores para este recurso.</small>
                             </div>
                         </div>
                     </div>

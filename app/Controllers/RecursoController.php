@@ -171,12 +171,19 @@ class RecursoController extends Controller
             }
             
             // 2. Insertar la relación autor-recurso en detautores
-            $idAutor = $this->request->getVar('idautor');
-            if ($idAutor && $idRecurso) {
-                $detAutorModel->insert([
-                    'idautor' => $idAutor,
-                    'idrecurso' => $idRecurso
-                ]);
+            $idAutores = $this->request->getVar('idautor');
+            if ($idAutores && $idRecurso) {
+                if (!is_array($idAutores)) {
+                    $idAutores = [$idAutores];
+                }
+                foreach ($idAutores as $idAutor) {
+                    if ($idAutor) {
+                        $detAutorModel->insert([
+                            'idautor' => $idAutor,
+                            'idrecurso' => $idRecurso
+                        ]);
+                    }
+                }
             }
 
             return $this->response->setJSON([
