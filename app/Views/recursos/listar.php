@@ -23,6 +23,7 @@
                     <thead class="table-light">
                         <tr>
                             <th>ID</th>
+                            <th>Portada</th>
                             <th>Título</th>
                             <th>Año</th>
                             <th>Páginas</th>
@@ -39,6 +40,14 @@
                             <?php foreach($recursos as $recurso): ?>
                             <tr>
                                 <td><?= $recurso['idrecurso'] ?></td>
+                                <td>
+                                    <?php if (!empty($recurso['rutaportada'])): ?>
+                                        <img src="<?= base_url(esc($recurso['rutaportada'])) ?>" alt="Portada" style="height:60px;width:auto;border-radius:4px;border:1px solid #e5e5e5;object-fit:cover;"
+                                             onerror="this.onerror=null;this.src='<?= base_url('img/portada_default.png') ?>';">
+                                    <?php else: ?>
+                                        <img src="<?= base_url('img/portada_default.png') ?>" alt="Sin portada" style="height:60px;width:auto;border-radius:4px;border:1px solid #e5e5e5;object-fit:cover;">
+                                    <?php endif; ?>
+                                </td>
                                 <td>
                                     <div class="fw-bold"><?= esc($recurso['titulo']) ?></div>
                                     <?php if(!empty($recurso['subtitulo'])): ?>
@@ -74,8 +83,9 @@
                                 </td>
                                 <td>
                                     <div class="btn-group" role="group">
-                                        <a href="<?= base_url('recursos/editar/') ?><?= $recurso['idrecurso'] ?>" 
-                                           class="btn btn-sm btn-warning" 
+                                        <a href="#" 
+                                           data-url="<?= base_url('recursos/editar/') ?><?= $recurso['idrecurso'] ?>"
+                                           class="btn btn-sm btn-warning btn-edit" 
                                            title="Editar">
                                             <i class="ti ti-edit"></i>
                                         </a>
@@ -91,7 +101,7 @@
                             <?php endforeach; ?>
                         <?php else: ?>
                             <tr>
-                                <td colspan="10" class="text-center py-4">
+                                <td colspan="11" class="text-center py-4">
                                     <div class="text-muted">
                                         <i class="ti ti-inbox fs-1 mb-3"></i>
                                         <h5>No hay recursos registrados</h5>
@@ -119,6 +129,64 @@
 
 <script>
 $(document).ready(function() {
+    // Cargar SweetAlert2 si no existe
+    function loadSweetAlert2(callback) {
+        if (window.Swal) {
+            if (typeof callback === 'function') callback();
+            return;
+        }
+        var script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/sweetalert2@11';
+        script.onload = function() { if (typeof callback === 'function') callback(); };
+        document.head.appendChild(script);
+    }
+
+    // Delegar click para botón Editar: confirmar con SweetAlert2 y cargar modal por AJAX (como Crear)
+    $(document).on('click', '.btn-edit', function(e) {
+        e.preventDefault();
+        var url = $(this).data('url');
+        // Asegurar SweetAlert2 disponible
+        loadSweetAlert2(function() {
+            Swal.fire({
+                title: 'Editar recurso',
+                text: 'Vas a editar este recurso. ¿Deseas continuar?',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Sí, editar',
+                cancelButtonText: 'Cancelar'
+            }).then(function(result) {
+                if (!result.isConfirmed) return;
+                $.get(url, function(response) {
+                    // Eliminar instancia previa del modal si existe para evitar duplicados
+                    $('#modalEditarRecurso').remove();
+                    // Extraer solo el nodo del modal en caso de que la vista tenga otros contenidos
+                    var temp = document.createElement('div');
+                    temp.innerHTML = response;
+                    var modalNode = temp.querySelector('#modalEditarRecurso');
+                    if (modalNode) {
+                        document.body.appendChild(modalNode);
+                        var modalEl = document.getElementById('modalEditarRecurso');
+                        var modal = new bootstrap.Modal(modalEl, { backdrop: 'static' });
+                        modal.show();
+                        $(modalEl).on('hidden.bs.modal', function() { $(this).remove(); });
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'No se pudo abrir',
+                            text: 'No se encontró el contenido del modal.'
+                        });
+                    }
+                }).fail(function() {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error de conexión',
+                        text: 'No se pudo cargar el formulario de edición.'
+                    });
+                });
+            });
+        });
+    });
+
     // Interceptar los clics en los enlaces de paginación
     $('.pagination .page-link').on('click', function(e) {
         e.preventDefault();
