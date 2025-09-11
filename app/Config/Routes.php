@@ -65,14 +65,24 @@ $routes->get('/recursos/crear-modal', 'RecursoController::crearModal');
 $routes->get('/recursos/pdf', 'RecursoController::exportarPdf');
 $routes->post('/recursos/guardar', 'RecursoController::guardar');
 $routes->get('/recursos/editar/(:num)', 'RecursoController::editar/$1'); 
+$routes->get('/recursos/modal-editar/(:num)', 'RecursoController::modalEditar/$1');
 $routes->post('/recursos/actualizar/(:num)', 'RecursoController::actualizar/$1');
 $routes->get('/recursos/eliminar/(:num)', 'RecursoController::eliminar/$1');
 $routes->get('/recursos/detalles/(:num)', 'RecursoController::detalles/$1');
 
+// Autores (CRUD)
+$routes->group('autores', function($routes) {
+    $routes->get('/', 'AutorController::index');
+    $routes->get('crear', 'AutorController::crear');
+    $routes->post('guardar', 'AutorController::guardar');
+    $routes->get('editar/(:num)', 'AutorController::editar/$1');
+    $routes->post('actualizar/(:num)', 'AutorController::actualizar/$1');
+    $routes->post('eliminar/(:num)', 'AutorController::eliminar/$1');
+    $routes->get('buscar', 'AutorController::buscar');
+});
 
 // Ruta PDF (deshabilitada temporalmente)
 // $routes->get('recurso/ver/(:num)', 'RecursoController::ver/$1');
-
 
 // Buscar recursos
 $routes->get('/recursos/buscarRecursos', 'RecursoController::buscarRecursos');
@@ -81,7 +91,6 @@ $routes->get('/recursos/filtrosBusqueda', 'RecursoController::filtrosBusqueda');
 // Catalogo
 $routes->get('/catalogo', 'CatalogoController::index');
 $routes->get('catalogo/subcategorias/(:num)', 'CatalogoController::getSubcategoriasPorCategoria/$1');
-
 
 // Sanciones
 $routes->get('/sanciones', 'SancionController::index');
@@ -97,4 +106,3 @@ $routes->get('/sanciones/buscar', 'SancionController::buscar');
 $routes->get('/sanciones/tipos', 'SancionController::tiposSancion');
 $routes->post('/sanciones/crear-tipo', 'SancionController::crearTipo');
 $routes->post('/sanciones/eliminar-tipo/(:num)', 'SancionController::eliminarTipo/$1');
-

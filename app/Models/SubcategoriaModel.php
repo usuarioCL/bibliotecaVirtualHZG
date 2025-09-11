@@ -7,6 +7,7 @@ use CodeIgniter\Model;
 class SubcategoriaModel extends Model
 {
     protected $table = 'subcategorias';
-    protected $primaryKey = 'id';
-    protected $allowedFields = ['subcategoria', 'categoria_id'];
+    protected $primaryKey = 'idsubcategoria';
+    protected $returnType = 'array';
+    protected $allowedFields = ['subcategoria', 'idcategoria'];
 }

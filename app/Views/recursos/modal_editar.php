@@ -1,21 +1,23 @@
-<!-- Modal para nuevo recurso -->
-<div class="modal fade" id="modalCrearRecurso" tabindex="-1">
+<!-- Modal para editar recurso -->
+<div class="modal fade" id="modalEditarRecurso" tabindex="-1">
     <div class="modal-dialog modal-xl">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Registrar Nuevo Recurso</h5>
+                <h5 class="modal-title">Editar Recurso</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
 
-                <form id="formNuevoRecurso" enctype="multipart/form-data">
+                <form id="formEditarRecurso" enctype="multipart/form-data">
+                    <input type="hidden" id="idrecurso" name="idrecurso" value="<?= $recurso['idrecurso'] ?>">
+                    
                     <!-- Información básica del recurso -->
                     <h6 class="text-primary mb-3">Información Básica</h6>
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label for="titulo" class="form-label">Título</label>
-                                <input type="text" class="form-control" id="titulo" name="titulo" required maxlength="150">
+                                <input type="text" class="form-control" id="titulo" name="titulo" required maxlength="150" value="<?= esc($recurso['titulo']) ?>">
                             </div>
                         </div>
                         <div class="col-md-6">
@@ -24,7 +26,7 @@
                                 <select class="form-select" id="idautor" name="idautor" required>
                                     <option value="">Seleccionar autor</option>
                                     <?php foreach ($autores as $autor): ?>
-                                        <option value="<?= esc($autor['idautor']) ?>">
+                                        <option value="<?= esc($autor['idautor']) ?>" <?= $autorActual == $autor['idautor'] ? 'selected' : '' ?>>
                                             <?= esc($autor['apeautor']) ?>, <?= esc($autor['nomautor']) ?> 
                                             <?php if (!empty($autor['nacionalidad'])): ?>
                                                 (<?= esc($autor['nacionalidad']) ?>)
@@ -40,10 +42,10 @@
                         <div class="col-md-4">
                             <div class="mb-3">
                                 <label for="idcategoria" class="form-label">Categoría</label>
-                                <select class="form-select" id="idcategoria" name="idcategoria" onchange="cargarSubcategorias()">
+                                <select class="form-select" id="idcategoria" name="idcategoria" onchange="cargarSubcategoriasEditar()">
                                     <option value="">Seleccionar categoría</option>
                                     <?php foreach ($categorias as $categoria): ?>
-                                        <option value="<?= esc($categoria['idcategoria']) ?>">
+                                        <option value="<?= esc($categoria['idcategoria']) ?>" <?= $categoriaActual == $categoria['idcategoria'] ? 'selected' : '' ?>>
                                             <?= esc($categoria['categoria']) ?>
                                         </option>
                                     <?php endforeach; ?>
@@ -54,7 +56,12 @@
                             <div class="mb-3">
                                 <label for="idsubcategoria" class="form-label">Subcategoría</label>
                                 <select class="form-select" id="idsubcategoria" name="idsubcategoria">
-                                    <option value="">Primero seleccione una categoría</option>
+                                    <option value="">Seleccionar subcategoría</option>
+                                    <?php foreach ($subcategorias as $subcategoria): ?>
+                                        <option value="<?= esc($subcategoria['idsubcategoria']) ?>" <?= $recurso['idsubcategoria'] == $subcategoria['idsubcategoria'] ? 'selected' : '' ?>>
+                                            <?= esc($subcategoria['subcategoria']) ?>
+                                        </option>
+                                    <?php endforeach; ?>
                                 </select>
                             </div>
                         </div>
@@ -64,7 +71,7 @@
                                 <select class="form-select" id="ideditorial" name="ideditorial">
                                     <option value="">Seleccionar editorial</option>
                                     <?php foreach ($editoriales as $editorial): ?>
-                                        <option value="<?= esc($editorial['ideditorial']) ?>">
+                                        <option value="<?= esc($editorial['ideditorial']) ?>" <?= $recurso['ideditorial'] == $editorial['ideditorial'] ? 'selected' : '' ?>>
                                             <?= esc($editorial['editorial']) ?>
                                         </option>
                                     <?php endforeach; ?>
@@ -77,10 +84,10 @@
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label for="idtiporecurso" class="form-label">Tipo de Recurso</label>
-                                <select class="form-select" id="idtiporecurso" name="idtiporecurso" onchange="toggleCamposDigital()">
+                                <select class="form-select" id="idtiporecurso" name="idtiporecurso">
                                     <option value="">Seleccionar tipo</option>
                                     <?php foreach ($tiposrecurso as $tipo): ?>
-                                        <option value="<?= esc($tipo['idtiporecurso']) ?>">
+                                        <option value="<?= esc($tipo['idtiporecurso']) ?>" <?= $recurso['idtiporecurso'] == $tipo['idtiporecurso'] ? 'selected' : '' ?>>
                                             <?= esc($tipo['tiporecurso']) ?>
                                         </option>
                                     <?php endforeach; ?>
@@ -93,7 +100,7 @@
                                 <select class="form-select" id="nivel" name="nivel">
                                     <option value="">Seleccionar nivel</option>
                                     <?php foreach ($niveles as $nivel): ?>
-                                        <option value="<?= esc($nivel) ?>"><?= esc(ucfirst($nivel)) ?></option>
+                                        <option value="<?= esc($nivel) ?>" <?= $recurso['nivel'] == $nivel ? 'selected' : '' ?>><?= esc(ucfirst($nivel)) ?></option>
                                     <?php endforeach; ?>
                                 </select>
                             </div>
@@ -108,26 +115,30 @@
                         <div class="col-md-3">
                             <div class="mb-3">
                                 <label for="anio" class="form-label">Año</label>
-                                <input type="number" class="form-control" id="anio" name="anio" min="1000" max="<?= date('Y') ?>" value="<?= date('Y') ?>">
+                                <input type="number" class="form-control" id="anio" name="anio" min="1000" max="<?= date('Y') ?>" value="<?= esc($recurso['anio']) ?>">
                             </div>
                         </div>
                         <div class="col-md-3">
                             <div class="mb-3">
                                 <label for="numpaginas" class="form-label">Número de Páginas</label>
-                                <input type="number" class="form-control" id="numpaginas" name="numpaginas" required min="1">
+                                <input type="number" class="form-control" id="numpaginas" name="numpaginas" required min="1" value="<?= esc($recurso['numpaginas']) ?>">
                             </div>
                         </div>
                         <div class="col-md-3">
                             <div class="mb-3">
                                 <label for="stock" class="form-label">Stock</label>
-                                <input type="number" class="form-control" id="stock" name="stock" required min="0" value="1">
+                                <input type="number" class="form-control" id="stock" name="stock" required min="0" value="<?= esc($recurso['stock']) ?>">
                             </div>
                         </div>
                         <div class="col-md-3">
                             <div class="mb-3">
                                 <label for="estado" class="form-label">Estado</label>
                                 <select class="form-select" id="estado" name="estado" required>
-                                    <option value="disponible" selected>Disponible</option>
+                                    <?php foreach ($estados as $estado): ?>
+                                        <option value="<?= esc($estado) ?>" <?= $recurso['estado'] == $estado ? 'selected' : '' ?>>
+                                            <?= esc(ucfirst($estado)) ?>
+                                        </option>
+                                    <?php endforeach; ?>
                                 </select>
                             </div>
                         </div>
@@ -139,18 +150,18 @@
                                 <label for="encuadernacion" class="form-label">Encuadernación</label>
                                 <select class="form-select" id="encuadernacion" name="encuadernacion">
                                     <option value="">Seleccionar opción</option>
-                                    <option value="Tapa dura">Tapa dura</option>
-                                    <option value="Tapa blanda">Tapa blanda</option>
-                                    <option value="Rústica">Rústica</option>
-                                    <option value="Espiral">Espiral</option>
-                                    <option value="Digital">Digital</option>
+                                    <option value="Tapa dura" <?= $recurso['encuadernacion'] == 'Tapa dura' ? 'selected' : '' ?>>Tapa dura</option>
+                                    <option value="Tapa blanda" <?= $recurso['encuadernacion'] == 'Tapa blanda' ? 'selected' : '' ?>>Tapa blanda</option>
+                                    <option value="Rústica" <?= $recurso['encuadernacion'] == 'Rústica' ? 'selected' : '' ?>>Rústica</option>
+                                    <option value="Espiral" <?= $recurso['encuadernacion'] == 'Espiral' ? 'selected' : '' ?>>Espiral</option>
+                                    <option value="Digital" <?= $recurso['encuadernacion'] == 'Digital' ? 'selected' : '' ?>>Digital</option>
                                 </select>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label for="isbn" class="form-label">ISBN</label>
-                                <input type="text" class="form-control" id="isbn" name="isbn" maxlength="13" placeholder="978-XXXXXXXXX">
+                                <input type="text" class="form-control" id="isbn" name="isbn" maxlength="13" placeholder="978-XXXXXXXXX" value="<?= esc($recurso['isbn']) ?>">
                             </div>
                         </div>
                     </div>
@@ -159,43 +170,31 @@
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label for="numedicion" class="form-label">Número de Edición</label>
-                                <input type="text" class="form-control" id="numedicion" name="numedicion" maxlength="50" placeholder="1ra edición">
+                                <input type="text" class="form-control" id="numedicion" name="numedicion" maxlength="50" placeholder="1ra edición" value="<?= esc($recurso['numedicion']) ?>">
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label for="rutaportada" class="form-label">Portada</label>
-                                <input type="file" class="form-control" id="rutaportada" name="rutaportada" accept="image/*">
-                                <div class="form-text">Formatos: JPG, PNG, GIF. Máximo 2MB</div>
+                                <label for="urlLibro" class="form-label">URL del Libro (si es digital)</label>
+                                <input type="url" class="form-control" id="urlLibro" name="urlLibro" placeholder="https://..." value="<?= esc($recurso['urlLibro']) ?>">
                             </div>
                         </div>
                     </div>
 
-                    <!-- Campo PDF solo para libros digitales -->
-                    <div class="row" id="campoPdfLibro" style="display: none;">
-                        <div class="col-md-12">
-                            <div class="mb-3">
-                                <label for="archivo_pdf" class="form-label">Archivo PDF del Libro (opcional)</label>
-                                <input type="file" class="form-control" id="archivo_pdf" name="archivo_pdf" accept="application/pdf">
-                                <div class="form-text">Formatos: PDF. Tamaño máximo &lt;= 5MB a 10MB</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div id="alertaValidacionRecurso" class="alert d-none"></div>
+                    <div id="alertaValidacionRecursoEditar" class="alert d-none"></div>
                 </form>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-primary" onclick="registrarRecurso()">Registrar Recurso</button>
+                <button type="button" class="btn btn-primary" onclick="actualizarRecurso()">Actualizar Recurso</button>
             </div>
         </div>
     </div>
 </div>
 
 <script>
-// Cargar subcategorías basadas en la categoría seleccionada
-function cargarSubcategorias() 
+// Cargar subcategorías basadas en la categoría seleccionada (para editar)
+function cargarSubcategoriasEditar() 
 {
     const categoriaId = document.getElementById('idcategoria').value;
     const subcategoriaSelect = document.getElementById('idsubcategoria');
@@ -208,48 +207,24 @@ function cargarSubcategorias()
         return;
     }
 
-    // Filtrar subcategorías (necesitarás pasar todas las subcategorías al frontend)
+    // Filtrar subcategorías
     const todasSubcategorias = <?= json_encode($subcategorias) ?>;
     const subcategoriasFiltradas = todasSubcategorias.filter(sub => sub.idcategoria == categoriaId);
     
     subcategoriaSelect.innerHTML = '<option value="">Seleccione una subcategoría</option>';
     subcategoriasFiltradas.forEach(sub => {
-        subcategoriaSelect.innerHTML += `<option value="${sub.idsubcategoria}">${sub.subcategoria}</option>`;
+        const selected = sub.idsubcategoria == <?= $recurso['idsubcategoria'] ?? 0 ?> ? 'selected' : '';
+        subcategoriaSelect.innerHTML += `<option value="${sub.idsubcategoria}" ${selected}>${sub.subcategoria}</option>`;
     });
 }
 
-// Mostrar/ocultar campo URL para libros digitales
-function toggleCamposDigital() 
+// Función para actualizar recurso
+function actualizarRecurso() 
 {
-    const tipoSelect = document.getElementById('idtiporecurso');
-    const tipoTexto = tipoSelect.options[tipoSelect.selectedIndex].text.toLowerCase();
-    const campoPdf = document.getElementById('campoPdfLibro');
-    
-    if (tipoTexto.includes('digital')) {
-        campoPdf.style.display = 'block';
-    } else {
-        campoPdf.style.display = 'none';
-        const pdfInput = document.getElementById('archivo_pdf');
-        if (pdfInput) pdfInput.value = '';
-    }
-}
-
-// Validación de ISBN
-document.getElementById('isbn').addEventListener('input', function() 
-{
-    let isbn = this.value.replace(/[^0-9X]/g, '');
-    if (isbn.length > 13) {
-        isbn = isbn.substring(0, 13);
-    }
-    this.value = isbn;
-});
-
-// Función para registrar recurso
-function registrarRecurso() 
-{
-    const form = document.getElementById('formNuevoRecurso');
+    const form = document.getElementById('formEditarRecurso');
     const formData = new FormData(form);
-    const alerta = document.getElementById('alertaValidacionRecurso');
+    const alerta = document.getElementById('alertaValidacionRecursoEditar');
+    const idrecurso = document.getElementById('idrecurso').value;
     
     // Limpiar alertas previas
     alerta.classList.add('d-none');
@@ -268,7 +243,7 @@ function registrarRecurso()
         return;
     }
     
-    fetch('<?= base_url('recursos/guardar') ?>', {
+    fetch(`<?= base_url('recursos/actualizar') ?>/${idrecurso}`, {
         method: 'POST',
         body: formData
     })
@@ -277,14 +252,14 @@ function registrarRecurso()
         if (data.status === 'success') {
             alerta.className = 'alert alert-success';
             alerta.innerHTML = `
-                <strong>¡Registro exitoso!</strong><br>
-                Recurso creado: <strong>${data.titulo || titulo}</strong>
+                <strong>¡Actualización exitosa!</strong><br>
+                Recurso actualizado: <strong>${data.titulo || titulo}</strong>
             `;
             alerta.classList.remove('d-none');
             
             // Cerrar modal después de 2 segundos y recargar vista de recursos en el dashboard
             setTimeout(() => {
-                const modalElement = document.getElementById('modalCrearRecurso');
+                const modalElement = document.getElementById('modalEditarRecurso');
                 const modalInstance = bootstrap.Modal.getInstance(modalElement);
                 
                 // Cerrar modal correctamente
@@ -311,7 +286,7 @@ function registrarRecurso()
             }, 2000);
         } else {
             alerta.className = 'alert alert-danger';
-            alerta.textContent = data.message || 'Error al registrar recurso';
+            alerta.textContent = data.message || 'Error al actualizar recurso';
             alerta.classList.remove('d-none');
         }
     })
@@ -322,19 +297,20 @@ function registrarRecurso()
     });
 }
 
-// Limpiar formulario cuando se cierre el modal
-document.getElementById('modalCrearRecurso').addEventListener('hidden.bs.modal', function() {
-    document.getElementById('formNuevoRecurso').reset();
-    document.getElementById('idsubcategoria').innerHTML = '<option value="">Primero seleccione una categoría</option>';
-    document.getElementById('campoUrlLibro').style.display = 'none';
-    document.getElementById('alertaValidacionRecurso').classList.add('d-none');
+// Cargar subcategorías al inicializar si ya hay una categoría seleccionada
+document.addEventListener('DOMContentLoaded', function() {
+    const categoriaSelect = document.getElementById('idcategoria');
+    if (categoriaSelect.value) {
+        cargarSubcategoriasEditar();
+    }
 });
 
-// Validación de tipo de recurso al cargar
+// Mostrar el modal automáticamente cuando se carga la vista (Bootstrap 5 nativo)
 document.addEventListener('DOMContentLoaded', function() {
-    // Establecer valores por defecto
-    document.getElementById('anio').value = new Date().getFullYear();
-    document.getElementById('stock').value = 1;
-    document.getElementById('estado').value = 'disponible';
+    var modalEl = document.getElementById('modalEditarRecurso');
+    if (modalEl) {
+        var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        modal.show();
+    }
 });
 </script>

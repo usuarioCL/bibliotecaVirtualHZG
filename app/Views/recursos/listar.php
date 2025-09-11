@@ -75,7 +75,7 @@
                                 <td>
                                     <div class="btn-group" role="group">
                                         <a href="<?= base_url('recursos/editar/') ?><?= $recurso['idrecurso'] ?>" 
-                                           class="btn btn-sm btn-warning" 
+                                           class="btn btn-sm btn-warning ajax-link" 
                                            title="Editar">
                                             <i class="ti ti-edit"></i>
                                         </a>
