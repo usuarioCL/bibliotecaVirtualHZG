@@ -83,21 +83,16 @@
                                 </td>
                                 <td>
                                     <div class="btn-group" role="group">
-<<<<<<< HEAD
-                                        <a href="<?= base_url('recursos/editar/') ?><?= $recurso['idrecurso'] ?>" 
-                                           class="btn btn-sm btn-warning ajax-link" 
-=======
                                         <a href="#" 
                                            data-url="<?= base_url('recursos/editar/') ?><?= $recurso['idrecurso'] ?>"
                                            class="btn btn-sm btn-warning btn-edit" 
->>>>>>> 22fc2e5996fdf0f9d5ea4a7f33832eb55c4138c1
                                            title="Editar">
                                             <i class="ti ti-edit"></i>
                                         </a>
-                                        <a href="<?= base_url('recursos/eliminar/') ?><?= $recurso['idrecurso'] ?>" 
-                                           class="btn btn-sm btn-danger"
-                                           title="Eliminar"
-                                           onclick="return confirm('¿Seguro que deseas eliminar este recurso?');">
+                                        <a href="#" 
+                                           data-url="<?= base_url('recursos/eliminar/') ?><?= $recurso['idrecurso'] ?>" 
+                                           class="btn btn-sm btn-danger btn-delete"
+                                           title="Eliminar">
                                             <i class="ti ti-trash"></i>
                                         </a>
                                     </div>
@@ -120,13 +115,6 @@
             </div>
         </div>
     </div>
-
-    <!-- Paginación -->
-    <?php if(!empty($recursos)): ?>
-        <div class="d-flex justify-content-center mt-4">
-            <?= $pager->links('recursos', 'paginacion') ?>
-        </div>
-    <?php endif; ?>
 </div>
 
 <!-- Incluir directamente el modal de crear recurso -->
@@ -192,48 +180,90 @@ $(document).ready(function() {
         });
     });
 
-    // Interceptar los clics en los enlaces de paginación
-    $('.pagination .page-link').on('click', function(e) {
+    // Delegar click para botón Eliminar: confirmar con SweetAlert2
+    $(document).on('click', '.btn-delete', function(e) {
         e.preventDefault();
-        var url = $(this).attr('href');
-        
-        // Hacer la petición AJAX
-        $.get(url, function(response) {
-            // Actualizar solo el contenido de la tabla y la paginación
-            var newContent = $(response).find('.table-responsive').html();
-            var newPagination = $(response).find('.pagination').html();
-            
-            $('.table-responsive').html(newContent);
-            $('.pagination').html(newPagination);
-
-            // Actualizar la URL sin recargar la página
-            window.history.pushState({}, '', url);
-            
-            // Volver a bindear los eventos a los nuevos enlaces de paginación
-            bindPaginationEvents();
+        var url = $(this).data('url');
+        // Asegurar SweetAlert2 disponible
+        loadSweetAlert2(function() {
+            Swal.fire({
+                title: '¿Estás seguro?',
+                text: 'Esta acción eliminará permanentemente este recurso y no se puede deshacer.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Sí, eliminar',
+                cancelButtonText: 'Cancelar',
+                reverseButtons: true
+            }).then(function(result) {
+                if (result.isConfirmed) {
+                    // Mostrar loading mientras se procesa
+                    Swal.fire({
+                        title: 'Eliminando...',
+                        text: 'Por favor espera mientras se elimina el recurso',
+                        allowOutsideClick: false,
+                        allowEscapeKey: false,
+                        showConfirmButton: false,
+                        didOpen: function() {
+                            Swal.showLoading();
+                        }
+                    });
+                    
+                    // Hacer petición AJAX para eliminar
+                    $.ajax({
+                        url: url,
+                        type: 'POST',
+                        dataType: 'json',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        success: function(response) {
+                            console.log('Respuesta del servidor:', response);
+                            
+                            // Verificar si la respuesta es exitosa
+                            if (response && response.success) {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: '¡Eliminado!',
+                                    text: response.message || 'El recurso ha sido eliminado correctamente.',
+                                    timer: 2000,
+                                    showConfirmButton: false
+                                }).then(function() {
+                                    // Recargar la página para actualizar la lista
+                                    window.location.reload();
+                                });
+                            } else {
+                                // Si la respuesta indica error
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Error al eliminar',
+                                    text: response.message || 'No se pudo eliminar el recurso.'
+                                });
+                            }
+                        },
+                        error: function(xhr, status, error) {
+                            console.log('Error AJAX:', xhr, status, error);
+                            console.log('Response Text:', xhr.responseText);
+                            
+                            var errorMessage = 'No se pudo eliminar el recurso. Por favor, inténtalo de nuevo.';
+                            
+                            // Si hay respuesta JSON con error
+                            if (xhr.responseJSON && xhr.responseJSON.message) {
+                                errorMessage = xhr.responseJSON.message;
+                            }
+                            
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error al eliminar',
+                                text: errorMessage
+                            });
+                        }
+                    });
+                }
+            });
         });
     });
 });
-
-function bindPaginationEvents() {
-    $('.pagination .page-link').on('click', function(e) {
-        e.preventDefault();
-        var url = $(this).attr('href');
-        
-        $.get(url, function(response) {
-            var newContent = $(response).find('.table-responsive').html();
-            var newPagination = $(response).find('.pagination').html();
-            
-            $('.table-responsive').html(newContent);
-            $('.pagination').html(newPagination);
-            
-            window.history.pushState({}, '', url);
-            bindPaginationEvents();
-        });
-    });
-}
 </script>
 
-<?php
-echo $footer;
-?>

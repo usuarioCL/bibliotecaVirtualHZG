@@ -21,8 +21,7 @@ class AutorController extends Controller
         }
 
         $datos['q'] = $q;
-        $datos['autores'] = $model->orderBy('idautor', 'ASC')->paginate(10, 'autores');
-        $datos['pager']   = $model->pager;
+        $datos['autores'] = $model->orderBy('idautor', 'ASC')->findAll();
 
         return view('autores/listar', $datos);
     }
