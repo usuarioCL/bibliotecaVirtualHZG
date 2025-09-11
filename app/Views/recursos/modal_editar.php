@@ -23,17 +23,21 @@
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label for="idautor" class="form-label">Autor</label>
-                                <select class="form-select" id="idautor" name="idautor" required>
-                                    <option value="">Seleccionar autor</option>
+                                <div class="border rounded p-2" style="max-height:180px;overflow-y:auto;">
                                     <?php foreach ($autores as $autor): ?>
-                                        <option value="<?= esc($autor['idautor']) ?>" <?= $autorActual == $autor['idautor'] ? 'selected' : '' ?>>
-                                            <?= esc($autor['apeautor']) ?>, <?= esc($autor['nomautor']) ?> 
-                                            <?php if (!empty($autor['nacionalidad'])): ?>
-                                                (<?= esc($autor['nacionalidad']) ?>)
-                                            <?php endif; ?>
-                                        </option>
+                                        <div class="form-check mb-1">
+                                            <?php $checked = (isset($autorActual) && (string)$autorActual === (string)$autor['idautor']) ? 'checked' : ''; ?>
+                                            <input class="form-check-input" type="checkbox" name="idautor[]" id="autor<?= esc($autor['idautor']) ?>" value="<?= esc($autor['idautor']) ?>" <?= $checked ?>>
+                                            <label class="form-check-label" for="autor<?= esc($autor['idautor']) ?>">
+                                                <i class="ti ti-user"></i> <?= esc($autor['apeautor']) ?>, <?= esc($autor['nomautor']) ?>
+                                                <?php if (!empty($autor['nacionalidad'])): ?>
+                                                    <span class="text-muted">(<?= esc($autor['nacionalidad']) ?>)</span>
+                                                <?php endif; ?>
+                                            </label>
+                                        </div>
                                     <?php endforeach; ?>
-                                </select>
+                                </div>
+                                <small class="form-text text-muted">Marca uno o más autores para este recurso.</small>
                             </div>
                         </div>
                     </div>
@@ -84,10 +88,10 @@
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label for="idtiporecurso" class="form-label">Tipo de Recurso</label>
-                                <select class="form-select" id="idtiporecurso" name="idtiporecurso">
+                                <select class="form-select" id="idtiporecurso" name="idtiporecurso" onchange="toggleCamposDigitalEditar()">
                                     <option value="">Seleccionar tipo</option>
                                     <?php foreach ($tiposrecurso as $tipo): ?>
-                                        <option value="<?= esc($tipo['idtiporecurso']) ?>" <?= $recurso['idtiporecurso'] == $tipo['idtiporecurso'] ? 'selected' : '' ?>>
+                                        <option value="<?= esc($tipo['idtiporecurso']) ?>" data-digital="<?= (stripos($tipo['tiporecurso'] ?? '', 'Libro digital') !== false) ? '1' : '0' ?>" <?= $recurso['idtiporecurso'] == $tipo['idtiporecurso'] ? 'selected' : '' ?>>
                                             <?= esc($tipo['tiporecurso']) ?>
                                         </option>
                                     <?php endforeach; ?>
@@ -175,8 +179,20 @@
                         </div>
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label for="urlLibro" class="form-label">URL del Libro (si es digital)</label>
-                                <input type="url" class="form-control" id="urlLibro" name="urlLibro" placeholder="https://..." value="<?= esc($recurso['urlLibro']) ?>">
+                                <label for="rutaportada" class="form-label">Portada</label>
+                                <input type="file" class="form-control" id="rutaportada" name="rutaportada" accept="image/*">
+                                <div class="form-text">Formatos: JPG, PNG, GIF. Máximo 2MB</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Campo PDF solo para libros digitales -->
+                    <div class="row" id="campoPdfLibroEditar" style="display: none;">
+                        <div class="col-md-12">
+                            <div class="mb-3">
+                                <label for="archivo_pdf" class="form-label">Archivo PDF del Libro (opcional)</label>
+                                <input type="file" class="form-control" id="archivo_pdf" name="archivo_pdf" accept="application/pdf">
+                                <div class="form-text">Formatos: PDF. Tamaño máximo <= 5MB a 10MB</div>
                             </div>
                         </div>
                     </div>
@@ -218,6 +234,30 @@ function cargarSubcategoriasEditar()
     });
 }
 
+// Mostrar/ocultar campo PDF según tipo de recurso
+function toggleCamposDigitalEditar() 
+{
+    // Lista de IDs "digitales" calculada en servidor
+    const digitalTypeIds = <?= json_encode(array_values(array_map(function($t){ return $t['idtiporecurso']; }, array_filter($tiposrecurso ?? [], function($t){ return stripos($t['tiporecurso'] ?? '', 'digital') !== false; })))) ?>;
+    const tipoSelect = document.getElementById('idtiporecurso');
+    const selectedVal = tipoSelect ? String(tipoSelect.value) : '';
+    const selectedOpt = tipoSelect && tipoSelect.selectedIndex >= 0 ? tipoSelect.options[tipoSelect.selectedIndex] : null;
+    const campoPdf = document.getElementById('campoPdfLibroEditar');
+
+    const isDigitalById = digitalTypeIds.map(String).includes(selectedVal);
+    const isDigitalByData = selectedOpt && selectedOpt.getAttribute('data-digital') === '1';
+
+    if (isDigitalById || isDigitalByData) {
+        if (campoPdf) campoPdf.style.display = 'block';
+    } else {
+        if (campoPdf) {
+            campoPdf.style.display = 'none';
+            const pdfInput = document.getElementById('archivo_pdf');
+            if (pdfInput) pdfInput.value = '';
+        }
+    }
+}
+
 // Función para actualizar recurso
 function actualizarRecurso() 
 {
@@ -231,17 +271,19 @@ function actualizarRecurso()
     
     // Validar campos requeridos
     const titulo = document.getElementById('titulo').value.trim();
-    const autor = document.getElementById('idautor').value;
+    const autoresMarcados = Array.from(document.querySelectorAll('input[name="idautor[]"]:checked')).map(el => el.value);
     const numpaginas = document.getElementById('numpaginas').value;
     const estado = document.getElementById('estado').value;
     const stock = document.getElementById('stock').value;
     
-    if (!titulo || !autor || !numpaginas || !estado || !stock) {
+    if (!titulo || autoresMarcados.length === 0 || !numpaginas || !estado || !stock) {
         alerta.className = 'alert alert-danger';
-        alerta.textContent = 'Por favor complete todos los campos requeridos';
+        alerta.textContent = 'Por favor complete todos los campos requeridos y seleccione al menos un autor';
         alerta.classList.remove('d-none');
         return;
     }
+    // Enviar primer autor como 'idautor' por compatibilidad con el backend
+    formData.append('idautor', autoresMarcados[0]);
     
     fetch(`<?= base_url('recursos/actualizar') ?>/${idrecurso}`, {
         method: 'POST',
@@ -303,6 +345,8 @@ document.addEventListener('DOMContentLoaded', function() {
     if (categoriaSelect.value) {
         cargarSubcategoriasEditar();
     }
+    // Ajustar campos de digital/físico al abrir el modal
+    toggleCamposDigitalEditar();
 });
 
 // Mostrar el modal automáticamente cuando se carga la vista (Bootstrap 5 nativo)

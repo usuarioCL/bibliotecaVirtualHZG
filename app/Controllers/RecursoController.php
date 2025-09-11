@@ -18,7 +18,7 @@ class RecursoController extends Controller
     public function index(): string
     {
         $recurso = new RecursoModel();
-        $autorModel = new \App\Models\AutorModel();
+        $autorModel = new AutorModel();
 
         $datos['recursos'] = $recurso->orderBy('idrecurso', 'ASC')->paginate(10, 'recursos');
         $datos['pager']    = $recurso->pager;
@@ -54,7 +54,7 @@ class RecursoController extends Controller
     public function crear(): string
     {
         $recursoModel = new RecursoModel();
-        $autorModel = new \App\Models\AutorModel();
+        $autorModel = new AutorModel();
 
         // Obtener valores ENUM de estado
         $query = $recursoModel->query("SHOW COLUMNS FROM recursos LIKE 'estado'");

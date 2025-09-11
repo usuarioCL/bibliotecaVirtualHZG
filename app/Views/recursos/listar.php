@@ -83,8 +83,9 @@
                                 </td>
                                 <td>
                                     <div class="btn-group" role="group">
-                                        <a href="<?= base_url('recursos/editar/') ?><?= $recurso['idrecurso'] ?>" 
-                                           class="btn btn-sm btn-warning ajax-link" 
+                                        <a href="#" 
+                                           class="btn btn-sm btn-warning btn-edit" 
+                                           data-url="<?= base_url('recursos/modal-editar/' . $recurso['idrecurso']) ?>"
                                            title="Editar">
                                             <i class="ti ti-edit"></i>
                                         </a>
@@ -140,49 +141,41 @@ $(document).ready(function() {
         document.head.appendChild(script);
     }
 
-    // Delegar click para botón Editar: confirmar con SweetAlert2 y cargar modal por AJAX (como Crear)
+    // Delegar click para botón Editar: cargar modal por AJAX directamente
     $(document).on('click', '.btn-edit', function(e) {
         e.preventDefault();
         var url = $(this).data('url');
-        // Asegurar SweetAlert2 disponible
-        loadSweetAlert2(function() {
-            Swal.fire({
-                title: 'Editar recurso',
-                text: 'Vas a editar este recurso. ¿Deseas continuar?',
-                icon: 'question',
-                showCancelButton: true,
-                confirmButtonText: 'Sí, editar',
-                cancelButtonText: 'Cancelar'
-            }).then(function(result) {
-                if (!result.isConfirmed) return;
-                $.get(url, function(response) {
-                    // Eliminar instancia previa del modal si existe para evitar duplicados
-                    $('#modalEditarRecurso').remove();
-                    // Extraer solo el nodo del modal en caso de que la vista tenga otros contenidos
-                    var temp = document.createElement('div');
-                    temp.innerHTML = response;
-                    var modalNode = temp.querySelector('#modalEditarRecurso');
-                    if (modalNode) {
-                        document.body.appendChild(modalNode);
-                        var modalEl = document.getElementById('modalEditarRecurso');
-                        var modal = new bootstrap.Modal(modalEl, { backdrop: 'static' });
-                        modal.show();
-                        $(modalEl).on('hidden.bs.modal', function() { $(this).remove(); });
-                    } else {
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'No se pudo abrir',
-                            text: 'No se encontró el contenido del modal.'
-                        });
-                    }
-                }).fail(function() {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error de conexión',
-                        text: 'No se pudo cargar el formulario de edición.'
-                    });
-                });
-            });
+        $.get(url, function(response) {
+            // Eliminar instancia previa del modal si existe para evitar duplicados
+            $('#modalEditarRecurso').remove();
+            // Extraer solo el nodo del modal en caso de que la vista tenga otros contenidos
+            var temp = document.createElement('div');
+            temp.innerHTML = response;
+            var modalNode = temp.querySelector('#modalEditarRecurso');
+            if (modalNode) {
+                document.body.appendChild(modalNode);
+                var modalEl = document.getElementById('modalEditarRecurso');
+                var modal = new bootstrap.Modal(modalEl, { backdrop: 'static' });
+                modal.show();
+                $(modalEl).on('hidden.bs.modal', function() { $(this).remove(); });
+            } else {
+                alert('No se encontró el contenido del modal.');
+            }
+        }).fail(function() {
+            alert('No se pudo cargar el formulario de edición.');
+        });
+    });
+
+    // Delegar click en Editar para cargar la vista de edición sin recargar la página
+    $(document).on('click', '.ajax-edit', function(e) {
+        e.preventDefault();
+        var url = $(this).attr('href');
+        // Cargar la vista de edición y renderizarla en el contenedor principal del dashboard
+        $.get(url, function(html) {
+            $('#contenedor-principal').html(html);
+        }).fail(function() {
+            // Fallback: navegar normal si falla AJAX
+            window.location.href = url;
         });
     });
 
