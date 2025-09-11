@@ -11,6 +11,7 @@ use App\Models\EditorialModel;
 use App\Models\TiporecursoModel;
 use App\Models\UbicacionModel;
 use App\Models\PrestamoModel;
+use App\Models\SolicitudModel;
 use App\Models\ComentarioModel;
 use App\Models\ReaccionModel;
 use App\Models\CompartidoModel;
@@ -422,6 +423,7 @@ public function actualizar($idrecurso)
         $detAutorModel = new DetAutorModel();
         $ubicacionModel = new UbicacionModel();
         $prestamoModel = new PrestamoModel();
+        $solicitudModel = new SolicitudModel();
         $comentarioModel = new ComentarioModel();
         $reaccionModel = new ReaccionModel();
         $compartidoModel = new CompartidoModel();
@@ -463,19 +465,23 @@ public function actualizar($idrecurso)
             $comentariosEliminados = $comentarioModel->deleteByRecurso($idrecurso);
             log_message('info', 'Comentarios eliminados: ' . $comentariosEliminados);
             
-            // 5. Eliminar préstamos
+            // 5. Eliminar solicitudes (ANTES de eliminar préstamos)
+            $solicitudesEliminadas = $solicitudModel->deleteByRecurso($idrecurso);
+            log_message('info', 'Solicitudes eliminadas: ' . $solicitudesEliminadas);
+            
+            // 6. Eliminar préstamos
             $prestamosEliminados = $prestamoModel->deleteByRecurso($idrecurso);
             log_message('info', 'Préstamos eliminados: ' . $prestamosEliminados);
             
-            // 6. Eliminar ubicaciones (la que causaba el error)
+            // 7. Eliminar ubicaciones
             $ubicacionesEliminadas = $ubicacionModel->deleteByRecurso($idrecurso);
             log_message('info', 'Ubicaciones eliminadas: ' . $ubicacionesEliminadas);
             
-            // 7. Eliminar relaciones autor-recurso
+            // 8. Eliminar relaciones autor-recurso
             $relacionesEliminadas = $detAutorModel->deleteByRecurso($idrecurso);
             log_message('info', 'Relaciones autor-recurso eliminadas: ' . $relacionesEliminadas);
             
-            // 8. Finalmente eliminar el recurso
+            // 9. Finalmente eliminar el recurso
             $recursoEliminado = $recursoModel->delete($idrecurso);
             log_message('info', 'Recurso eliminado: ' . ($recursoEliminado ? 'SI' : 'NO'));
             

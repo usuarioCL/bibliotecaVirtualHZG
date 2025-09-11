@@ -121,6 +121,43 @@
 
 <script>
 $(document).ready(function() {
+    // Función para recargar solo la lista de recursos
+    function recargarListaRecursos() {
+        // Mostrar indicador de carga en el contenedor principal
+        $('#contenedor-principal').html(`
+            <div class="text-center py-5">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Cargando...</span>
+                </div>
+                <p class="mt-3">Actualizando lista de recursos...</p>
+            </div>
+        `);
+        
+        // Hacer petición AJAX para recargar solo la lista de recursos
+        $.get('<?= base_url("recursos") ?>', function(data) {
+            $('#contenedor-principal').html(data);
+            
+            // Re-inicializar cualquier funcionalidad específica si es necesaria
+            if (typeof window.initRecursosList === 'function') {
+                window.initRecursosList();
+            }
+        }).fail(function() {
+            $('#contenedor-principal').html(`
+                <div class="text-danger text-center py-5">
+                    <i class="ti ti-alert-circle fs-1 mb-3"></i>
+                    <h5>Error al cargar la lista de recursos</h5>
+                    <p>Por favor, inténtalo de nuevo.</p>
+                    <button class="btn btn-primary" onclick="recargarListaRecursos()">
+                        <i class="ti ti-refresh"></i> Reintentar
+                    </button>
+                </div>
+            `);
+        });
+    }
+    
+    // Hacer la función disponible globalmente
+    window.recargarListaRecursos = recargarListaRecursos;
+
     // Cargar SweetAlert2 si no existe
     function loadSweetAlert2(callback) {
         if (window.Swal) {
@@ -226,11 +263,12 @@ $(document).ready(function() {
                                     icon: 'success',
                                     title: '¡Eliminado!',
                                     text: response.message || 'El recurso ha sido eliminado correctamente.',
-                                    timer: 2000,
-                                    showConfirmButton: false
+                                    timer: 1500,
+                                    showConfirmButton: false,
+                                    timerProgressBar: true
                                 }).then(function() {
-                                    // Recargar la página para actualizar la lista
-                                    window.location.reload();
+                                    // Recargar solo el contenido de recursos manteniendo el diseño
+                                    recargarListaRecursos();
                                 });
                             } else {
                                 // Si la respuesta indica error
@@ -265,7 +303,3 @@ $(document).ready(function() {
     });
 });
 </script>
-
-<?php
-echo $footer;
-?>
