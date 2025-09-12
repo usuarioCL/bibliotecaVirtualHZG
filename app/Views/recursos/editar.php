@@ -25,9 +25,10 @@
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label for="idautor" class="form-label">Autor</label>
-                                <div class="border rounded p-2" style="max-height:180px;overflow-y:auto;">
+                                <input type="text" class="form-control mb-2" id="buscadorAutoresEditar" placeholder="Buscar autor...">
+                                <div class="border rounded p-2" id="listaAutoresEditar" style="max-height:180px;overflow-y:auto;">
                                     <?php foreach ($autores as $autor): ?>
-                                        <div class="form-check mb-1">
+                                        <div class="form-check mb-1 autor-item">
                                             <?php $checked = (isset($autorActual) && (string)$autorActual === (string)$autor['idautor']) ? 'checked' : ''; ?>
                                             <input class="form-check-input" type="checkbox" name="idautor[]" id="autor<?= esc($autor['idautor']) ?>" value="<?= esc($autor['idautor']) ?>" <?= $checked ?>>
                                             <label class="form-check-label" for="autor<?= esc($autor['idautor']) ?>">
@@ -39,6 +40,28 @@
                                         </div>
                                     <?php endforeach; ?>
                                 </div>
+                                <!-- Script de búsqueda de autores (igual que en crear, adaptado a editar) -->
+                                <script>
+                                function activarBuscadorAutoresEditar() {
+                                    var buscador = document.getElementById('buscadorAutoresEditar');
+                                    if (buscador) {
+                                        buscador.addEventListener('input', function() {
+                                            var filtro = this.value.toLowerCase();
+                                            document.querySelectorAll('#listaAutoresEditar .autor-item').forEach(function(item) {
+                                                var texto = item.textContent.toLowerCase();
+                                                item.style.display = texto.includes(filtro) ? '' : 'none';
+                                            });
+                                        });
+                                    }
+                                }
+                                document.addEventListener('DOMContentLoaded', activarBuscadorAutoresEditar);
+                                var modalEditar = document.getElementById('modalEditarRecurso');
+                                if (modalEditar) {
+                                    modalEditar.addEventListener('shown.bs.modal', function() {
+                                        activarBuscadorAutoresEditar();
+                                    });
+                                }
+                                </script>
                                 <small class="form-text text-muted">Marca uno o más autores para este recurso.</small>
                             </div>
                         </div>
@@ -108,7 +131,8 @@
                                 <select class="form-select" id="nivel" name="nivel">
                                     <option value="">Seleccionar nivel</option>
                                     <?php foreach ($niveles as $nivel): ?>
-                                        <option value="<?= esc($nivel) ?>" <?= (isset($recurso['nivel']) && (string)$recurso['nivel'] === (string)$nivel) ? 'selected' : '' ?>><?= esc(ucfirst($nivel)) ?></option>
+                                        <?php $isSelectedNivel = isset($recurso['nivel']) && strcasecmp(trim((string)$recurso['nivel']), trim((string)$nivel)) === 0; ?>
+                                        <option value="<?= esc($nivel) ?>" <?= $isSelectedNivel ? 'selected' : '' ?>><?= esc(ucfirst($nivel)) ?></option>
                                     <?php endforeach; ?>
                                 </select>
                             </div>
@@ -241,27 +265,19 @@ function cargarSubcategorias()
     });
 }
 
-// Mostrar/ocultar campos según tipo de recurso
+// Mostrar/ocultar campos según tipo de recurso (por ID fijo del tipo 'Libro digital' = 2)
 function toggleCamposDigital() 
 {
-    // Lista de IDs considerados "digital" calculada en servidor
-    const digitalTypeIds = <?= json_encode(array_values(array_map(function($t){ return $t['idtiporecurso']; }, array_filter($tiposrecurso ?? [], function($t){ return stripos($t['tiporecurso'] ?? '', 'digital') !== false; })))) ?>;
     const tipoSelect = document.getElementById('idtiporecurso');
     const selectedVal = tipoSelect ? String(tipoSelect.value) : '';
-    const selectedOpt = tipoSelect && tipoSelect.selectedIndex >= 0 ? tipoSelect.options[tipoSelect.selectedIndex] : null;
     const campoPdf = document.getElementById('campoPdfLibro');
     
-    const isDigitalById = digitalTypeIds.map(String).includes(selectedVal);
-    const isDigitalByData = selectedOpt && selectedOpt.getAttribute('data-digital') === '1';
-
-    if (isDigitalById || isDigitalByData) {
-        if (campoPdf) campoPdf.style.display = 'block';
+    if (selectedVal === '2') {
+        campoPdf.style.display = 'block';
     } else {
-        if (campoPdf) {
-            campoPdf.style.display = 'none';
-            const pdfInput = document.getElementById('archivo_pdf');
-            if (pdfInput) pdfInput.value = '';
-        }
+        campoPdf.style.display = 'none';
+        const pdfInput = document.getElementById('archivo_pdf');
+        if (pdfInput) pdfInput.value = '';
     }
 }
 
@@ -282,7 +298,6 @@ function actualizarRecurso()
     const formData = new FormData(form);
     const alerta = document.getElementById('alertaValidacionRecurso');
     const idrecurso = document.getElementById('idrecurso').value;
-    
     // Limpiar alertas previas
     alerta.classList.add('d-none');
     
@@ -362,8 +377,12 @@ document.addEventListener('DOMContentLoaded', function() {
     if (categoriaSelect && categoriaSelect.value) {
         cargarSubcategorias();
     }
-    // Ajustar campos según tipo de recurso
+    // Ajustar campos según tipo de recurso y enlazar cambios
     toggleCamposDigital();
+    var tipoSelectEl = document.getElementById('idtiporecurso');
+    if (tipoSelectEl) {
+        tipoSelectEl.addEventListener('change', toggleCamposDigital);
+    }
     // Mostrar el modal automáticamente cuando se carga la vista (Bootstrap 5)
     var modalEl = document.getElementById('modalEditarRecurso');
     if (modalEl && typeof bootstrap !== 'undefined') {

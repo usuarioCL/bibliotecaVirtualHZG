@@ -91,7 +91,7 @@
                                 <select class="form-select" id="idtiporecurso" name="idtiporecurso" onchange="toggleCamposDigitalEditar()">
                                     <option value="">Seleccionar tipo</option>
                                     <?php foreach ($tiposrecurso as $tipo): ?>
-                                        <option value="<?= esc($tipo['idtiporecurso']) ?>" data-digital="<?= (stripos($tipo['tiporecurso'] ?? '', 'Libro digital') !== false) ? '1' : '0' ?>" <?= $recurso['idtiporecurso'] == $tipo['idtiporecurso'] ? 'selected' : '' ?>>
+                                        <option value="<?= esc($tipo['idtiporecurso']) ?>" data-digital="<?= (stripos($tipo['tiporecurso'] ?? '', 'digital') !== false) ? '1' : '0' ?>" <?= $recurso['idtiporecurso'] == $tipo['idtiporecurso'] ? 'selected' : '' ?>>
                                             <?= esc($tipo['tiporecurso']) ?>
                                         </option>
                                     <?php endforeach; ?>
@@ -104,7 +104,8 @@
                                 <select class="form-select" id="nivel" name="nivel">
                                     <option value="">Seleccionar nivel</option>
                                     <?php foreach ($niveles as $nivel): ?>
-                                        <option value="<?= esc($nivel) ?>" <?= $recurso['nivel'] == $nivel ? 'selected' : '' ?>><?= esc(ucfirst($nivel)) ?></option>
+                                        <?php $isSelectedNivel = isset($recurso['nivel']) && strcasecmp(trim((string)$recurso['nivel']), trim((string)$nivel)) === 0; ?>
+                                        <option value="<?= esc($nivel) ?>" <?= $isSelectedNivel ? 'selected' : '' ?>><?= esc(ucfirst($nivel)) ?></option>
                                     <?php endforeach; ?>
                                 </select>
                             </div>
@@ -237,14 +238,14 @@ function cargarSubcategoriasEditar()
 // Mostrar/ocultar campo PDF según tipo de recurso
 function toggleCamposDigitalEditar() 
 {
-    // Lista de IDs "digitales" calculada en servidor
-    const digitalTypeIds = <?= json_encode(array_values(array_map(function($t){ return $t['idtiporecurso']; }, array_filter($tiposrecurso ?? [], function($t){ return stripos($t['tiporecurso'] ?? '', 'digital') !== false; })))) ?>;
+    // Detección por ID del tipo digital (calculado en servidor) y respaldo por data-digital
+    const digitalTypeIds = <?= json_encode(array_values(array_map(function($t){ return (string)$t['idtiporecurso']; }, array_filter($tiposrecurso ?? [], function($t){ return stripos($t['tiporecurso'] ?? '', 'digital') !== false; })))) ?>;
     const tipoSelect = document.getElementById('idtiporecurso');
     const selectedVal = tipoSelect ? String(tipoSelect.value) : '';
     const selectedOpt = tipoSelect && tipoSelect.selectedIndex >= 0 ? tipoSelect.options[tipoSelect.selectedIndex] : null;
     const campoPdf = document.getElementById('campoPdfLibroEditar');
 
-    const isDigitalById = digitalTypeIds.map(String).includes(selectedVal);
+    const isDigitalById = digitalTypeIds.includes(selectedVal);
     const isDigitalByData = selectedOpt && selectedOpt.getAttribute('data-digital') === '1';
 
     if (isDigitalById || isDigitalByData) {

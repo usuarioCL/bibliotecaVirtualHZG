@@ -185,6 +185,102 @@ $(document).ready(function() {
             if (modalNode) {
                 document.body.appendChild(modalNode);
                 var modalEl = document.getElementById('modalEditarRecurso');
+                // Definir y exponer globalmente el toggle del PDF del modal (los <script> internos no se ejecutan al inyectar HTML)
+                window.toggleCamposDigitalEditar = function(){
+                    try {
+                        var sel = modalEl.querySelector('#idtiporecurso');
+                        var campo = modalEl.querySelector('#campoPdfLibroEditar');
+                        if (!sel || !campo) return;
+                        var val = String(sel.value || '');
+                        var isDigital = (val === '2'); // ID fijo para 'Libro digital'
+                        if (!isDigital) {
+                            var opt = sel.options[sel.selectedIndex];
+                            isDigital = opt && opt.getAttribute('data-digital') === '1';
+                        }
+                        campo.style.display = isDigital ? 'block' : 'none';
+                        if (!isDigital) {
+                            var pdf = modalEl.querySelector('#archivo_pdf');
+                            if (pdf) pdf.value = '';
+                        }
+                    } catch(e) { console.warn('toggleCamposDigitalEditar error:', e); }
+                };
+                // Enlazar change y disparar una vez
+                var selTipo = modalEl.querySelector('#idtiporecurso');
+                if (selTipo) {
+                    selTipo.addEventListener('change', window.toggleCamposDigitalEditar);
+                }
+                // Llamada inicial para estado actual
+                window.toggleCamposDigitalEditar();
+
+                // Exponer globalmente actualizarRecurso para el botón onclick dentro del modal
+                window.actualizarRecurso = function() {
+                    try {
+                        var form = modalEl.querySelector('#formEditarRecurso');
+                        var alerta = modalEl.querySelector('#alertaValidacionRecursoEditar');
+                        var idrecurso = modalEl.querySelector('#idrecurso').value;
+                        var formData = new FormData(form);
+
+                        // Validaciones mínimas
+                        var titulo = (modalEl.querySelector('#titulo')?.value || '').trim();
+                        var numpaginas = modalEl.querySelector('#numpaginas')?.value;
+                        var estado = modalEl.querySelector('#estado')?.value;
+                        var stock = modalEl.querySelector('#stock')?.value;
+                        var autoresMarcados = Array.from(modalEl.querySelectorAll('input[name="idautor[]"]:checked')).map(function(el){return el.value;});
+
+                        alerta.classList.add('d-none');
+                        if (!titulo || autoresMarcados.length === 0 || !numpaginas || !estado || !stock) {
+                            alerta.className = 'alert alert-danger';
+                            alerta.textContent = 'Por favor complete todos los campos requeridos y seleccione al menos un autor';
+                            alerta.classList.remove('d-none');
+                            return;
+                        }
+
+                        // Compatibilidad backend: enviar un idautor simple
+                        formData.append('idautor', autoresMarcados[0]);
+
+                        fetch('<?= base_url('recursos/actualizar') ?>/' + idrecurso, {
+                            method: 'POST',
+                            body: formData
+                        })
+                        .then(function(r){ return r.json(); })
+                        .then(function(data){
+                            if (data && data.status === 'success') {
+                                alerta.className = 'alert alert-success';
+                                alerta.innerHTML = '<strong>¡Actualización exitosa!</strong><br>Recurso actualizado: <strong>' + (data.titulo || titulo) + '</strong>';
+                                alerta.classList.remove('d-none');
+                                setTimeout(function(){
+                                    var bsModal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+                                    bsModal.hide();
+                                    setTimeout(function(){
+                                        var backdrop = document.querySelector('.modal-backdrop');
+                                        if (backdrop) backdrop.remove();
+                                        document.body.classList.remove('modal-open');
+                                        document.body.style.overflow = '';
+                                        document.body.style.paddingRight = '';
+                                        // refrescar lista si existe helper
+                                        if (typeof window.recargarListaRecursos === 'function') {
+                                            window.recargarListaRecursos();
+                                        } else {
+                                            // fallback: recargar toda la página
+                                            location.reload();
+                                        }
+                                    }, 300);
+                                }, 1200);
+                            } else {
+                                alerta.className = 'alert alert-danger';
+                                alerta.textContent = (data && data.message) ? data.message : 'Error al actualizar recurso';
+                                alerta.classList.remove('d-none');
+                            }
+                        })
+                        .catch(function(){
+                            alerta.className = 'alert alert-danger';
+                            alerta.textContent = 'Error de conexión';
+                            alerta.classList.remove('d-none');
+                        });
+                    } catch (e) {
+                        console.warn('actualizarRecurso error:', e);
+                    }
+                };
                 var modal = new bootstrap.Modal(modalEl, { backdrop: 'static' });
                 modal.show();
                 $(modalEl).on('hidden.bs.modal', function() { $(this).remove(); });
