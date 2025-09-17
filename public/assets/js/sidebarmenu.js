@@ -53,23 +53,36 @@ $(function () {
   $(document).on('click', '#sidebarnav .has-arrow', function (e) {
     e.preventDefault();
     var $this = $(this);
-    var isActive = $this.hasClass('active');
+    var submenu = $this.next('ul');
     var parentUl = $this.closest('ul');
-    if (!isActive) {
-      parentUl.find('ul').removeClass('in');
-      parentUl.find('a').removeClass('active');
-      var submenu = $this.next('ul');
-      if (submenu.length) {
-        submenu.addClass('in');
-      }
-      $this.addClass('active');
+    // Cierra todos los submenús abiertos excepto el actual
+    parentUl.find('ul.in').not(submenu).removeClass('in');
+    parentUl.find('.has-arrow.active').not($this).removeClass('active');
+    // Alterna el submenú actual
+    submenu.toggleClass('in');
+    $this.toggleClass('active');
+    // Marca el padre como seleccionado si está abierto
+    if (submenu.hasClass('in')) {
+      $this.parent().addClass('selected');
     } else {
-      $this.removeClass('active');
-      parentUl.removeClass('active');
-      var submenu = $this.next('ul');
-      if (submenu.length) {
-        submenu.removeClass('in');
-      }
+      $this.parent().removeClass('selected');
     }
   });
+
+  // Mantener el estado activo al navegar dinámicamente
+  window.initSidebarMenu = function () {
+    $("ul#sidebarnav a").removeClass("active");
+    $("ul#sidebarnav li").removeClass("selected");
+    var currentUrl = window.location.href;
+    var anchors = document.querySelectorAll("#sidebarnav a");
+    anchors.forEach(function (a) {
+      if (a.href === currentUrl) {
+        a.classList.add("active");
+        var parentLi = a.closest("li.sidebar-item");
+        if (parentLi) parentLi.classList.add("selected");
+        var parentUl = a.closest("ul.collapse");
+        if (parentUl) parentUl.classList.add("in");
+      }
+    });
+  };
 });

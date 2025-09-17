@@ -55,8 +55,10 @@ $routes->get('Administrador/vistas/AlumnosSancionados', 'AdminController::VistaA
 // Importación de datos
 $routes->get('admin/importar-datos', 'AdminController::importarDatos');
 $routes->get('admin/descargar-plantilla/(:segment)', 'AdminController::descargarPlantilla/$1');
+$routes->post('admin/preview-excel', 'AdminController::previewExcel');
 $routes->post('admin/preview-csv', 'AdminController::previewCsv');
 $routes->post('admin/procesar-importacion', 'AdminController::procesarImportacion');
+$routes->post('admin/procesar-importacion-excel', 'AdminController::procesarImportacionExcel');
 
 //Recursos
 $routes->get('/recursos', 'RecursoController::index');
