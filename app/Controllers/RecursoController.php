@@ -109,8 +109,8 @@ class RecursoController extends Controller
                 'encuadernacion' => $this->request->getVar('encuadernacion'),
                 'isbn'           => $this->request->getVar('isbn'),
                 'numedicion'     => $this->request->getVar('numedicion'),
-                // Nota: 'rutaportada' si se maneja como archivo debería procesarse similar a PDF. Por ahora se deja tal cual llega.
-                'rutaportada'    => $this->request->getVar('rutaportada'),
+                // Procesar el archivo de portada
+                'rutaportada'    => null, // Se actualizará después si hay imagen
                 'estado'         => $this->request->getVar('estado'),
                 'stock'          => $this->request->getVar('stock'),
                 // urlLibro puede ser actualizado luego si suben PDF
