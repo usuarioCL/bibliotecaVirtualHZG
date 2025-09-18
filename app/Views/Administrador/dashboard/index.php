@@ -234,7 +234,7 @@
                     </a>
                   </li>
                   <li class="sidebar-item">
-                    <a class="sidebar-link d-flex align-items-center gap-3 ajax-link" href="<?= base_url('reportes/recursos-populares'); ?>">
+                    <a class="sidebar-link d-flex align-items-center gap-3 ajax-link" href="<?= base_url('Administrador/vistas/RecursosPopulares'); ?>">
                       <i class="ti ti-trending-up fs-5"></i>
                       <span class="hide-menu">Recursos más Populares</span>
                     </a>

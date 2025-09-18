@@ -51,6 +51,7 @@ $routes->get('Administrador/vistas/UsuariosRoles', 'AdminController::VistaUsuari
 $routes->get('Administrador/vistas/PrestamosAlumnos', 'AdminController::VistaPrestamosAlumnos');
 $routes->get('Administrador/vistas/ReaccionesUsuarios', 'AdminController::VistaReaccionesUsuarios');
 $routes->get('Administrador/vistas/AlumnosSancionados', 'AdminController::VistaAlumnosSancionados');
+$routes->get('Administrador/vistas/RecursosPopulares', 'AdminController::VistaRecursosPopulares');
 
 // Importación de datos
 $routes->get('admin/importar-datos', 'AdminController::importarDatos');

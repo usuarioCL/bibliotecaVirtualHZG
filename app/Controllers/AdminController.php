@@ -49,6 +49,29 @@ class AdminController extends BaseController
         return view('Administrador/vistas/PrestamosAlumnos', $data);
     }
 
+    public function VistaRecursosPopulares()
+    {
+        $query = $this->db->query("
+            SELECT r.titulo,
+                   GROUP_CONCAT(DISTINCT a.nomautor SEPARATOR ', ') AS autor,
+                   e.editorial,
+                   c.categoria,
+                   COUNT(p.idprestamo) AS veces_prestado
+            FROM recursos r
+            LEFT JOIN prestamos p ON r.idrecurso = p.idrecurso
+            LEFT JOIN detautores da ON da.idrecurso = r.idrecurso
+            LEFT JOIN autores a ON a.idautor = da.idautor
+            LEFT JOIN editoriales e ON e.ideditorial = r.ideditorial
+            LEFT JOIN subcategorias sc ON sc.idsubcategoria = r.idsubcategoria
+            LEFT JOIN categorias c ON c.idcategoria = sc.idcategoria
+            GROUP BY r.idrecurso
+            ORDER BY veces_prestado DESC
+            LIMIT 10
+        ");
+        $data['recursosPopulares'] = $query->getResult();
+        return view('Administrador/vistas/RecursosPopulares', $data);
+    }
+
     public function VistaReaccionesUsuarios()
     {
         $query = $this->db->query("
