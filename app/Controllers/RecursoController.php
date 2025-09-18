@@ -130,6 +130,29 @@ class RecursoController extends Controller
                     'message' => 'Error al guardar el recurso'
                 ]);
             }
+
+            // Procesar la imagen de portada
+            try {
+                $imagenFile = $this->request->getFile('rutaportada');
+                if ($imagenFile && $imagenFile->isValid() && !$imagenFile->hasMoved()) {
+                    helper('text');
+                    $carpetaRecurso = FCPATH . 'img' . DIRECTORY_SEPARATOR . 'portadas' . DIRECTORY_SEPARATOR;
+                    if (!is_dir($carpetaRecurso)) {
+                        @mkdir($carpetaRecurso, 0775, true);
+                    }
+                    $nombreBase = url_title($datosRecurso['titulo'] ?: 'portada', '-', true);
+                    $extension = $imagenFile->getExtension();
+                    $nombreArchivo = $nombreBase . '-' . $idRecurso . '.' . $extension;
+                    // Mover archivo a carpeta pública
+                    $imagenFile->move($carpetaRecurso, $nombreArchivo, true);
+                    $rutaRelativa = 'img/portadas/' . $nombreArchivo;
+                    // Actualizar campo rutaportada con la ruta relativa
+                    $recursoModel->update($idRecurso, ['rutaportada' => $rutaRelativa]);
+                }
+            } catch (\Throwable $e) {
+                // Loguear el error pero continuar con el proceso
+                log_message('error', 'Error subiendo portada: ' . $e->getMessage());
+            }
             
             // 1.1 Manejo de PDF SOLO si el tipo de recurso es digital
             try {
