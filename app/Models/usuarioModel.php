@@ -11,7 +11,7 @@ class UsuarioModel extends Model
     protected $allowedFields = [
         'nomuser',
         'passuser',
-        'nivelacceso', // Corregido: debe ser nivelacceso (minúscula según la BD)
+        'nivelacceso',
         'idpersona'
     ];
 
@@ -57,13 +57,6 @@ class UsuarioModel extends Model
 
         // Verificar que la persona existe
         $persona = $personaModel->find($idpersona);
-        if (!$persona) {
-            return [
-                'valido' => false,
-                'mensaje' => 'La persona especificada no existe en el sistema'
-            ];
-        }
-
         // Verificar que la persona no tenga ya un usuario
         $usuarioExistente = $this->where('idpersona', $idpersona)->first();
         if ($usuarioExistente) {
@@ -73,43 +66,7 @@ class UsuarioModel extends Model
             ];
         }
 
-        switch ($nivelacceso) {
-            case 'estudiante':
-                // Los estudiantes deben estar matriculados
-                if (!$matriculaModel->personaEstaMatriculada($idpersona)) {
-                    return [
-                        'valido' => false,
-                        'mensaje' => 'Solo estudiantes matriculados pueden crear usuarios de tipo estudiante'
-                    ];
-                }
-                break;
-
-            case 'docente':
-                // Los docentes deben existir en la tabla personas
-                // Aquí podrías agregar validaciones adicionales como verificar en una tabla de empleados
-                if (!$persona) {
-                    return [
-                        'valido' => false,
-                        'mensaje' => 'Solo personal docente puede crear usuarios de tipo docente'
-                    ];
-                }
-                break;
-
-            case 'admin':
-                // Los administradores requieren validación especial
-                // Solo otros administradores deberían poder crear usuarios admin
-                return [
-                    'valido' => false,
-                    'mensaje' => 'La creación de usuarios administradores requiere permisos especiales'
-                ];
-
-            default:
-                return [
-                    'valido' => false,
-                    'mensaje' => 'Nivel de acceso no válido'
-                ];
-        }
-
+        // Si todas las validaciones pasan, retornar éxito
         return [
             'valido' => true,
             'mensaje' => 'La persona es elegible para crear un usuario'
@@ -168,19 +125,4 @@ class UsuarioModel extends Model
                     ->first();
     }
 
-    /**
-     * Obtiene la matrícula de un usuario si es estudiante
-     * @param int $idusuario
-     * @return array|null
-     */
-    public function getMatriculaUsuario($idusuario)
-    {
-        $usuario = $this->find($idusuario);
-        if (!$usuario || $usuario['nivelacceso'] !== 'estudiante') {
-            return null;
-        }
-
-        $matriculaModel = new \App\Models\MatriculaModel();
-        return $matriculaModel->getMatriculaActiva($usuario['idpersona']);
-    }
 }
