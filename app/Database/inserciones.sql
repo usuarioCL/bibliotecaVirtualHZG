@@ -1,179 +1,149 @@
--- ==========================================
--- INSERCIONES DE EJEMPLO PARA BIBLIOTECA VIRTUAL ESCOLAR
--- ==========================================
-
--- Personas (3 ejemplos)
+-- Personas
 INSERT INTO personas (apellidos, nombres, tipodoc, numerodoc, telefono, direccion, email, genero) VALUES
-('García', 'Ana', 'DNI', '12345678', '987654321', 'Calle 1', 'ana.garcia@mail.com', 'Femenino'),
-('Pérez', 'Luis', 'CE', '87654321', '912345678', 'Calle 2', 'luis.perez@mail.com', 'Masculino'),
-('Torres', 'Elena', 'Pasaporte', 'AB1234567', '934567890', 'Calle 3', 'elena.torres@mail.com', 'Femenino');
+('Pérez', 'Juan', 'DNI', '12345678', '987654321', 'Av. Lima 123', 'juanperez@mail.com', 'Masculino'),
+('García', 'María', 'DNI', '23456789', '987111222', 'Jr. Arequipa 456', 'maria@mail.com', 'Femenino'),
+('Lopez', 'Carlos', 'CE', '87654321', '965432198', 'Av. Grau 789', 'carlos@mail.com', 'Masculino'),
+('Torres', 'Ana', 'Pasaporte', 'A1234567', '999888777', 'Calle Unión 321', 'ana@mail.com', 'Femenino');
 
--- Usuarios (3 ejemplos, uno por persona)
+-- Usuarios
 INSERT INTO usuarios (nomuser, passuser, nivelacceso, idpersona) VALUES
-('admin', '123', 'admin', 1),
-('docente', '123', 'docente', 2),
-('estudiante', '123', 'estudiante', 3);
+('admin1', 'hashpass1', 'admin', 1),
+('docente1', 'hashpass2', 'docente', 2),
+('estu1', 'hashpass3', 'estudiante', 3),
+('estu2', 'hashpass4', 'estudiante', 4);
 
--- Grupos (3 ejemplos)
+-- Grupos
 INSERT INTO grupos (aniolectivo, grado, seccion, nivel) VALUES
 (2025, '1', 'A', 'Primaria'),
 (2025, '2', 'B', 'Primaria'),
-(2025, '1', 'C', 'Secundaria');
+(2025, '3', 'C', 'Secundaria'),
+(2025, '4', 'A', 'Secundaria');
 
--- Matriculas (3 ejemplos)
+-- Matriculas
 INSERT INTO matriculas (idgrupo, idpersona, fechamatricula, estadomatricula) VALUES
 (1, 1, '2025-03-01', TRUE),
 (2, 2, '2025-03-02', TRUE),
-(3, 3, '2025-03-03', TRUE);
+(3, 3, '2025-03-03', TRUE),
+(4, 4, '2025-03-04', TRUE);
 
--- Tipos de Recurso (2 ejemplos)
+-- TipoRecursos
 INSERT INTO tiporecursos (tiporecurso) VALUES
-('Libro físico'),
-('Libro digital');
+('Libro Físico'),
+('Libro Digital'),
+('Revista'),
+('Artículo Académico');
 
--- Categorías (3 ejemplos)
+-- Categorias
 INSERT INTO categorias (categoria) VALUES
-('Ciencias'),
 ('Literatura'),
-('Matemática');
+('Matemáticas'),
+('Informática'),
+('Historia');
 
--- Subcategorías (6 ejemplos)
+-- Subcategorias
 INSERT INTO subcategorias (subcategoria, idcategoria) VALUES
-('Física', 1),
-('Química', 1),
-('Novela', 2),
-('Poesía', 2),
-('Álgebra', 3),
-('Geometría', 3);
+('Novela', 1),
+('Álgebra', 2),
+('Programación', 3),
+('Historia del Perú', 4);
 
--- Editoriales (3 ejemplos)
+-- Editoriales
 INSERT INTO editoriales (editorial) VALUES
+('Alfaguara'),
 ('Santillana'),
-('Norma'),
-('SM');
+('O’Reilly Media'),
+('UNMSM Press');
 
--- Autores (20 ejemplos)
+-- Recursos 
+INSERT INTO recursos (titulo, anio, numpaginas, isbn, numedicion, estado, stock, nivel, idsubcategoria, ideditorial, idtiporecurso) VALUES
+('Cien Años de Soledad', 1967, 471, '1234567890123', '1ra', 'disponible', 5, 'Secundaria', 1, 1, 1),
+('Matemáticas Básicas', 2015, 320, '2345678901234', '2da', 'disponible', 10, 'Primaria', 2, 2, 1),
+('Learning Python', 2013, 1600, '3456789012345', '5ta', 'disponible', 3, 'Secundaria', 3, 3, 2),
+('Historia del Perú', 2005, 520, '4567890123456', '1ra', 'disponible', 4, 'Secundaria', 4, 4, 2);
+
+-- Recursos fisicos
+INSERT INTO recursos_fisicos (idrecurso, portada, encuadernacion) VALUES
+(1, 'portadas/cien_anos.jpg', 'Tapa dura'),
+(2, 'portadas/matematicas.jpg', 'Tapa blanda');
+
+
+-- Recursos digitales
+INSERT INTO recursos_digitales (idrecurso, portada, archivo) VALUES
+(3, 'portadas/python.jpg', 'archivos/python.pdf'),
+(4, NULL, 'archivos/historia_peru.pdf');
+
+
+-- Autores
 INSERT INTO autores (apeautor, nomautor, nacionalidad) VALUES
-('Asimov', 'Isaac', 'Rusa'),
-('Rowling', 'J.K.', 'Británica'),
-('Cortázar', 'Julio', 'Argentina'),
-('Hawking', 'Stephen', 'Británica'),
-('Allende', 'Isabel', 'Chilena'),
-('King', 'Stephen', 'Estadounidense'),
-('Dickens', 'Charles', 'Británica'),
 ('García Márquez', 'Gabriel', 'Colombiana'),
-('Sagan', 'Carl', 'Estadounidense'),
-('Poe', 'Edgar Allan', 'Estadounidense'),
-('Borges', 'Jorge Luis', 'Argentina'),
-('Galeano', 'Eduardo', 'Uruguaya'),
-('Eco', 'Umberto', 'Italiana'),
-('Nietzsche', 'Friedrich', 'Alemana'),
-('Joyce', 'James', 'Irlandesa'),
-('Tolstói', 'León', 'Rusa'),
-('Kafka', 'Franz', 'Austrohúngara'),
-('Austen', 'Jane', 'Británica'),
-('Dostoievski', 'Fiódor', 'Rusa'),
-('Cervantes', 'Miguel', 'Española');
+('Lutz', 'Mark', 'Estadounidense'),
+('Contreras', 'Carlos', 'Peruana'),
+('Smith', 'John', 'Británica');
 
--- Recursos (23 ejemplos - incluyendo más para Inicial y Primaria)
-INSERT INTO recursos (titulo, anio, numpaginas, encuadernacion, isbn, numedicion, rutaportada, estado, stock, urlLibro, nivel, idsubcategoria, ideditorial, idtiporecurso)
-VALUES
-('Fundamentos de Física', 2015, 800, 'Tapa dura', '9788408000001', '3ra', 'fotos/fisica.jpg', 'disponible', 7, NULL, 'Secundaria', 1, 1, 1),
-('Química Básica', 2018, 600, 'Tapa blanda', '9788408000002', '2da', 'fotos/quimica.jpg', 'disponible', 4, NULL, 'Secundaria', 2, 2, 1),
-('Harry Potter y la piedra filosofal', 2001, 320, 'Tapa dura', '9788408000003', '1ra', 'fotos/hp1.jpg', 'disponible', 10, 'libros/hp1.pdf', 'Primaria', 3, 3, 2),
-('Rayuela', 1963, 480, 'Tapa blanda', '9788408000004', '1ra', 'fotos/rayuela.jpg', 'disponible', 3, NULL, 'Secundaria', 3, 1, 1),
-('Breve historia del tiempo', 1988, 256, 'Tapa dura', '9788408000005', '5ta', 'fotos/historia_tiempo.jpg', 'disponible', 2, NULL, 'Secundaria', 1, 2, 1),
-('La casa de los espíritus', 1982, 400, 'Tapa dura', '9788408000006', '2da', 'fotos/casa_espiritus.jpg', 'disponible', 5, NULL, 'Secundaria', 3, 1, 1),
-('It', 1986, 1138, 'Tapa blanda', '9788408000007', '1ra', 'fotos/it.jpg', 'disponible', 2, NULL, 'Secundaria', 3, 3, 1),
-('Oliver Twist', 1839, 352, 'Tapa blanda', '9788408000008', '1ra', 'fotos/oliver.jpg', 'disponible', 3, NULL, 'Primaria', 3, 2, 1),
-('Cien años de soledad', 1967, 471, 'Tapa dura', '9788408000009', '2da', 'fotos/soledad.jpg', 'disponible', 8, NULL, 'Secundaria', 3, 1, 1),
-('Cosmos', 1980, 365, 'Tapa dura', '9788408000010', '3ra', 'fotos/cosmos.jpg', 'disponible', 4, NULL, 'Secundaria', 1, 3, 1),
-('El cuervo', 1845, 64, 'Tapa blanda', '9788408000011', '1ra', 'fotos/cuervo.jpg', 'disponible', 1, NULL, 'Primaria', 4, 2, 1),
-('Fervor de Buenos Aires', 1923, 74, 'Tapa blanda', '9788408000012', '1ra', 'fotos/fervor.jpg', 'disponible', 2, NULL, 'Secundaria', 4, 1, 1),
-('El libro de los abrazos', 1989, 232, 'Tapa dura', '9788408000013', '1ra', 'fotos/abrazos.jpg', 'disponible', 3, NULL, 'Primaria', 4, 2, 1),
-('El nombre de la rosa', 1980, 512, 'Tapa dura', '9788408000014', '3ra', 'fotos/rosa.jpg', 'disponible', 2, NULL, 'Secundaria', 3, 3, 1),
-('Así habló Zaratustra', 1883, 288, 'Tapa blanda', '9788408000015', '1ra', 'fotos/zaratustra.jpg', 'disponible', 2, NULL, 'Secundaria', 5, 1, 1),
-('Ulises', 1922, 730, 'Tapa dura', '9788408000016', '2da', 'fotos/ulises.jpg', 'disponible', 1, NULL, 'Secundaria', 5, 2, 1),
-('Guerra y paz', 1869, 1225, 'Tapa dura', '9788408000017', '1ra', 'fotos/guerra_paz.jpg', 'disponible', 2, NULL, 'Secundaria', 5, 3, 1),
-('La metamorfosis', 1915, 74, 'Tapa blanda', '9788408000018', '1ra', 'fotos/metamorfosis.jpg', 'disponible', 3, NULL, 'Secundaria', 5, 1, 1),
-('Orgullo y prejuicio', 1813, 432, 'Tapa dura', '9788408000019', '2da', 'fotos/orgullo.jpg', 'disponible', 2, NULL, 'Secundaria', 5, 2, 1),
-('Don Quijote de la Mancha', 1605, 863, 'Tapa dura', '9788408000020', '4ta', 'fotos/quijote.jpg', 'disponible', 6, NULL, 'Secundaria', 5, 3, 1),
-('Mi primer libro de colores', 2020, 32, 'Tapa dura', '9788408000021', '1ra', 'fotos/colores.jpg', 'disponible', 15, NULL, 'Inicial', 3, 1, 1),
-('Números divertidos', 2019, 48, 'Tapa dura', '9788408000022', '1ra', 'fotos/numeros.jpg', 'disponible', 12, NULL, 'Inicial', 5, 2, 1),
-('Matemática para niños', 2021, 96, 'Tapa blanda', '9788408000023', '2da', 'fotos/mate_ninos.jpg', 'disponible', 8, NULL, 'Primaria', 5, 3, 1);
-
--- Detalle de autores (varias relaciones)
+-- Detalle Autores 
 INSERT INTO detautores (idautor, idrecurso) VALUES
-(1, 1),    -- Asimov - Fundamentos de Física
-(2, 3),    -- Rowling - Harry Potter
-(3, 4),    -- Cortázar - Rayuela
-(4, 5),    -- Hawking - Breve historia del tiempo
-(5, 6),    -- Allende - La casa de los espíritus
-(6, 7),    -- King - It
-(7, 8),    -- Dickens - Oliver Twist
-(8, 9),    -- García Márquez - Cien años de soledad
-(9, 10),   -- Sagan - Cosmos
-(10, 11),  -- Poe - El cuervo
-(11, 12),  -- Borges - Fervor de Buenos Aires
-(12, 13),  -- Galeano - El libro de los abrazos
-(13, 14),  -- Eco - El nombre de la rosa
-(14, 15),  -- Nietzsche - Así habló Zaratustra
-(15, 16),  -- Joyce - Ulises
-(16, 17),  -- Tolstói - Guerra y paz
-(17, 18),  -- Kafka - La metamorfosis
-(18, 19),  -- Austen - Orgullo y prejuicio
-(19, 20),  -- Dostoievski - Don Quijote de la Mancha
-(20, 20);  -- Cervantes - Don Quijote de la Mancha
+(1, 1),
+(2, 3),
+(3, 4),
+(4, 2);
 
--- Ubicaciones (para algunos recursos físicos)
-INSERT INTO ubicaciones (ubicacion, idrecurso) VALUES
-('Estante A1', 1),
-('Estante A2', 2),
-('Estante B1', 4),
-('Estante C1', 9),
-('Estante D1', 20);
+-- Prestamos 
+INSERT INTO prestamos (idmatricula, idusuario, idrecurso, fechaprestamo, fechadevolucion) VALUES
+(1, 1, 1, '2025-04-01 10:00:00', '2025-04-10 10:00:00'),
+(2, 2, 2, '2025-04-02 11:00:00', '2025-04-11 11:00:00'),
+(3, 3, 3, '2025-04-03 12:00:00', '2025-04-12 12:00:00'),
+(4, 4, 4, '2025-04-04 13:00:00', '2025-04-13 13:00:00');
 
--- Tipos de sanción (2 ejemplos)
+-- Solicitudes 
+INSERT INTO solicitud (validado, idprestamo) VALUES
+(TRUE, 1),
+(FALSE, 2),
+(TRUE, 3),
+(FALSE, 4);
+
+-- Tipo sanciones
 INSERT INTO tiposancion (tiposancion) VALUES
-('Retraso en devolución'),
-('Libro perdido');
+('Retraso'),
+('Pérdida'),
+('Mal uso'),
+('Incumplimiento de normas');
 
 -- Sanciones
 INSERT INTO sanciones (idtiposancion, idpersona, detallesancion) VALUES
-(1, 1, 'Devolvió el libro con 5 días de retraso'),
-(2, 2, 'Perdió el libro prestado');
+(1, 1, 'Retraso de 3 días'),
+(2, 2, 'Libro perdido'),
+(3, 3, 'Páginas dañadas'),
+(4, 4, 'Incumplió reglamento');
 
--- Préstamos (3 ejemplos)
-INSERT INTO prestamos (idmatricula, idusuario, idrecurso, fechaprestamo, fechadevolucion) VALUES
-(1, 1, 1, '2025-04-01 10:00:00', '2025-04-15 10:00:00'),
-(2, 2, 3, '2025-04-02 11:00:00', '2025-04-16 11:00:00'),
-(3, 3, 5, '2025-04-03 09:30:00', '2025-04-17 09:30:00');
+-- Ubicaciones 
+INSERT INTO ubicaciones (ubicacion, idrecurso) VALUES
+('Estante A1', 1),
+('Estante B2', 2);
 
--- Solicitudes de préstamo
-INSERT INTO solicitud (validado, idprestamo) VALUES
-(TRUE, 1),
-(FALSE, 2);
-
--- Comentarios (3 ejemplos)
+-- Comentarios 
 INSERT INTO comentarios (comentario, idusuario, idrecurso) VALUES
-('Excelente libro, muy recomendable.', 1, 3),
-('La narración es un poco lenta.', 2, 4),
-('Perfecto para estudiantes.', 3, 1);
+('Excelente libro', 1, 1),
+('Muy útil para clases', 2, 2),
+('Recomendado para programadores', 3, 3),
+('Gran aporte histórico', 4, 4);
 
--- Reacciones (3 ejemplos)
+-- Reacciones 
 INSERT INTO reacciones (tiporeaccion, idusuario, idrecurso) VALUES
-('like', 1, 3),
-('estrella', 2, 4),
-('dislike', 3, 1);
+('like', 1, 1),
+('estrella', 2, 2),
+('like', 3, 3),
+('dislike', 4, 4);
 
--- Compartidos (3 ejemplos)
+-- Compartidos
 INSERT INTO compartidos (idusuario, idrecurso) VALUES
-(1, 3),
-(2, 4),
-(3, 1);
+(1, 1),
+(2, 2),
+(3, 3),
+(4, 4);
 
--- Favoritos (3 ejemplos)
+-- Favoritos
 INSERT INTO favoritos (idusuario, idrecurso) VALUES
-(1, 3),
-(2, 4),
-(3, 1);
+(1, 1),
+(2, 2),
+(3, 3),
+(4, 4);

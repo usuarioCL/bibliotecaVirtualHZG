@@ -87,20 +87,17 @@ CREATE TABLE editoriales (
 );
 
 -- ==============================
--- TABLA: Recursos
+-- TABLA: Recursos (Base General)
 -- ==============================
 CREATE TABLE recursos (
     idrecurso INT AUTO_INCREMENT PRIMARY KEY,
     titulo VARCHAR(150) NOT NULL,
     anio SMALLINT,
-    numpaginas SMALLINT UNSIGNED NOT NULL,
-    encuadernacion VARCHAR(50),
+    numpaginas SMALLINT UNSIGNED,
     isbn CHAR(13) UNIQUE,
     numedicion VARCHAR(50),
-    rutaportada VARCHAR(200),
     estado ENUM('disponible','prestado','perdido') DEFAULT 'disponible',
-    stock SMALLINT UNSIGNED NOT NULL,
-    urlLibro VARCHAR(200), -- para libros digitales
+    stock SMALLINT UNSIGNED NOT NULL DEFAULT 1,
     nivel ENUM('Inicial','Primaria','Secundaria'),
     idsubcategoria INT,
     ideditorial INT,
@@ -110,6 +107,25 @@ CREATE TABLE recursos (
     FOREIGN KEY (idtiporecurso) REFERENCES tiporecursos(idtiporecurso)
 );
 
+-- ==============================
+-- TABLA: Recursos Físicos
+-- ==============================
+CREATE TABLE recursos_fisicos (
+    idrecurso INT PRIMARY KEY,
+    portada VARCHAR(200), -- imagen de la portada
+    encuadernacion VARCHAR(50),
+    FOREIGN KEY (idrecurso) REFERENCES recursos(idrecurso)
+);
+
+-- ==============================
+-- TABLA: Recursos Digitales
+-- ==============================
+CREATE TABLE recursos_digitales (
+    idrecurso INT PRIMARY KEY,
+    portada VARCHAR(200), -- opcional: imagen de la carátula
+    archivo VARCHAR(200) NOT NULL, -- ruta del PDF/EPUB
+    FOREIGN KEY (idrecurso) REFERENCES recursos(idrecurso)
+);
 
 
 -- ==============================
@@ -222,3 +238,4 @@ CREATE TABLE favoritos (
     FOREIGN KEY (idusuario) REFERENCES usuarios(idusuario),
     FOREIGN KEY (idrecurso) REFERENCES recursos(idrecurso)
 );
+-- =========================================
