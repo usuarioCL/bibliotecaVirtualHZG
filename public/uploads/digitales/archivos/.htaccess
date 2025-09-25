@@ -17,8 +17,3 @@ AddType application/pdf .pdf
     Header always set Access-Control-Allow-Headers "Origin, X-Requested-With, Content-Type, Accept, Authorization"
     Header always set Access-Control-Max-Age "3600"
 </FilesMatch>
-
-# Permitir descarga de otros archivos
-<FilesMatch "\.(doc|docx|txt|epub)$">
-    Header set Content-Disposition "attachment"
-</FilesMatch>

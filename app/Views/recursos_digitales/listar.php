@@ -141,13 +141,36 @@
                         <i class="ti ti-external-link" aria-hidden="true"></i> Abrir PDF
                     </button>
                 </div>
+                <!-- Canvas oculto para PDF.js -->
+                <canvas id="pdfCanvas" style="display: none;"></canvas>
             </div>
         </div>
         <div class="custom-modal-footer">
-            <a id="descargarPDF" href="#" target="_blank" class="btn btn-primary" aria-label="Descargar PDF">
-                <i class="ti ti-download" aria-hidden="true"></i> Descargar PDF
-            </a>
-            <button type="button" class="btn btn-secondary" onclick="cerrarModalPDF()" aria-label="Cerrar modal">Cerrar</button>
+            <!-- Controles de voz -->
+            <div class="voice-controls">
+                <button id="btnVoicePlay" type="button" class="btn btn-success btn-sm" onclick="toggleVoiceReading()" aria-label="Reproducir voz">
+                    <i class="ti ti-speakerphone" aria-hidden="true"></i> <span id="voiceText">Leer PDF</span>
+                </button>
+                <button id="btnVoicePause" type="button" class="btn btn-warning btn-sm" onclick="pauseVoiceReading()" style="display: none;" aria-label="Pausar voz">
+                    <i class="ti ti-player-pause" aria-hidden="true"></i> Pausar
+                </button>
+                <button id="btnVoiceStop" type="button" class="btn btn-danger btn-sm" onclick="stopVoiceReading()" style="display: none;" aria-label="Detener voz">
+                    <i class="ti ti-player-stop" aria-hidden="true"></i> Detener
+                </button>
+                <div class="voice-speed-control">
+                    <label for="voiceSpeed" class="form-label">Velocidad:</label>
+                    <input type="range" id="voiceSpeed" class="form-range" min="0.5" max="2" step="0.1" value="1" onchange="changeVoiceSpeed(this.value)">
+                    <span id="speedValue">1x</span>
+                </div>
+            </div>
+            
+            <!-- Botones principales -->
+            <div class="main-controls">
+                <a id="descargarPDF" href="#" target="_blank" class="btn btn-primary" aria-label="Descargar PDF">
+                    <i class="ti ti-download" aria-hidden="true"></i> Descargar PDF
+                </a>
+                <button type="button" class="btn btn-secondary" onclick="cerrarModalPDF()" aria-label="Cerrar modal">Cerrar</button>
+            </div>
         </div>
     </div>
 </div>
@@ -218,10 +241,48 @@
 
 .custom-modal-footer {
     display: flex;
-    justify-content: flex-end;
-    gap: 0.5rem;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
     padding: 1rem;
     border-top: 1px solid #dee2e6;
+    background-color: #f8f9fa;
+}
+
+.voice-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.voice-speed-control {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-left: 1rem;
+}
+
+.voice-speed-control label {
+    margin: 0;
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+
+.voice-speed-control input[type="range"] {
+    width: 80px;
+}
+
+.voice-speed-control span {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #495057;
+    min-width: 30px;
+}
+
+.main-controls {
+    display: flex;
+    gap: 0.5rem;
 }
 
 @media (max-width: 768px) {
@@ -283,6 +344,75 @@
 
 <script>
 var currentPDFUrl = '';
+var speechSynthesis = window.speechSynthesis;
+var currentUtterance = null;
+var isVoiceReading = false;
+var isVoicePaused = false;
+var currentVoiceSpeed = 1;
+
+// Variables para PDF.js
+var pdfDoc = null;
+var pdfTextContent = '';
+var isPdfLoaded = false;
+var pdfjsLibLoaded = false;
+
+// Función para cargar PDF.js dinámicamente con múltiples CDNs
+function loadPDFJSLibrary() {
+    return new Promise(function(resolve, reject) {
+        if (typeof pdfjsLib !== 'undefined') {
+            pdfjsLibLoaded = true;
+            resolve();
+            return;
+        }
+        
+        // Lista de CDNs alternativos (incluyendo versiones más estables)
+        var cdnUrls = [
+            'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js',
+            'https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.min.js',
+            'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.min.js',
+            'https://unpkg.com/pdfjs-dist@4.4.168/build/pdf.min.js',
+            'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.4.168/build/pdf.min.js'
+        ];
+        
+        var workerUrls = [
+            'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js',
+            'https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js',
+            'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.worker.min.js',
+            'https://unpkg.com/pdfjs-dist@4.4.168/build/pdf.worker.min.js',
+            'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.4.168/build/pdf.worker.min.js'
+        ];
+        
+        var currentIndex = 0;
+        
+        function tryLoadScript() {
+            if (currentIndex >= cdnUrls.length) {
+                reject(new Error('No se pudo cargar PDF.js desde ningún CDN'));
+                return;
+            }
+            
+            var script = document.createElement('script');
+            script.src = cdnUrls[currentIndex];
+            
+            script.onload = function() {
+                pdfjsLibLoaded = true;
+                // Configurar PDF.js worker con el mismo índice
+                pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrls[currentIndex];
+                console.log('PDF.js cargado desde:', cdnUrls[currentIndex]);
+                resolve();
+            };
+            
+            script.onerror = function() {
+                console.warn('Error cargando PDF.js desde:', cdnUrls[currentIndex]);
+                currentIndex++;
+                tryLoadScript();
+            };
+            
+            document.head.appendChild(script);
+        }
+        
+        tryLoadScript();
+    });
+}
 
 function verPDF(url, titulo) {
     currentPDFUrl = url;
@@ -316,6 +446,18 @@ function verPDF(url, titulo) {
     if (firstButton) {
         firstButton.focus();
     }
+    
+    // Cargar PDF.js dinámicamente y luego extraer texto
+    loadPDFJSLibrary().then(function() {
+        console.log('PDF.js cargado exitosamente, iniciando extracción de texto...');
+        loadPDFForTextExtraction(secureUrl);
+    }).catch(function(error) {
+        console.error('Error cargando PDF.js:', error);
+        // Usar texto de ejemplo si falla la carga de PDF.js
+        pdfTextContent = 'No se pudo cargar la librería PDF.js desde ningún CDN. Esto puede deberse a restricciones de red o CORS. La funcionalidad de voz está disponible con texto de ejemplo.';
+        isPdfLoaded = true;
+        console.log('Usando texto de ejemplo para la funcionalidad de voz');
+    });
     
     // Manejar la carga del iframe
     iframe.onload = function() {
@@ -411,6 +553,251 @@ function eliminarRecurso(id) {
         // Aquí puedes implementar la lógica para eliminar
         alert('Eliminar recurso #' + id);
     }
+}
+
+// ===== FUNCIONES DE VOZ =====
+
+function toggleVoiceReading() {
+    if (isVoiceReading) {
+        pauseVoiceReading();
+    } else {
+        startVoiceReading();
+    }
+}
+
+function startVoiceReading() {
+    // Detener cualquier lectura anterior
+    stopVoiceReading();
+    
+    // Verificar si el PDF aún se está cargando
+    if (!isPdfLoaded) {
+        alert('El PDF aún se está cargando. Por favor espera un momento e intenta nuevamente.');
+        return;
+    }
+    
+    // Obtener el texto del PDF
+    var pdfText = extractTextFromPDF();
+    
+    if (!pdfText || pdfText.trim() === '') {
+        alert('No se pudo extraer texto del PDF para la lectura de voz.');
+        return;
+    }
+    
+    // Verificar si el texto es muy corto (posible error)
+    if (pdfText.length < 10) {
+        alert('El texto extraído del PDF es muy corto. Es posible que el PDF esté protegido o no contenga texto.');
+        return;
+    }
+    
+    // Crear utterance
+    currentUtterance = new SpeechSynthesisUtterance(pdfText);
+    currentUtterance.rate = currentVoiceSpeed;
+    currentUtterance.pitch = 1;
+    currentUtterance.volume = 0.8;
+    
+    // Configurar idioma (español)
+    currentUtterance.lang = 'es-ES';
+    
+    // Eventos
+    currentUtterance.onstart = function() {
+        isVoiceReading = true;
+        isVoicePaused = false;
+        updateVoiceButtons();
+        console.log('Iniciando lectura de voz del PDF...');
+    };
+    
+    currentUtterance.onend = function() {
+        isVoiceReading = false;
+        isVoicePaused = false;
+        updateVoiceButtons();
+        console.log('Lectura de voz completada.');
+    };
+    
+    currentUtterance.onerror = function(event) {
+        console.error('Error en speech synthesis:', event.error);
+        isVoiceReading = false;
+        isVoicePaused = false;
+        updateVoiceButtons();
+        alert('Error al reproducir la voz: ' + event.error);
+    };
+    
+    // Iniciar lectura
+    speechSynthesis.speak(currentUtterance);
+}
+
+function pauseVoiceReading() {
+    if (isVoiceReading && !isVoicePaused) {
+        speechSynthesis.pause();
+        isVoicePaused = true;
+        updateVoiceButtons();
+    } else if (isVoicePaused) {
+        speechSynthesis.resume();
+        isVoicePaused = false;
+        updateVoiceButtons();
+    }
+}
+
+function stopVoiceReading() {
+    speechSynthesis.cancel();
+    isVoiceReading = false;
+    isVoicePaused = false;
+    currentUtterance = null;
+    updateVoiceButtons();
+}
+
+function changeVoiceSpeed(speed) {
+    currentVoiceSpeed = parseFloat(speed);
+    document.getElementById('speedValue').textContent = speed + 'x';
+    
+    if (currentUtterance) {
+        currentUtterance.rate = currentVoiceSpeed;
+    }
+}
+
+function updateVoiceButtons() {
+    var playBtn = document.getElementById('btnVoicePlay');
+    var pauseBtn = document.getElementById('btnVoicePause');
+    var stopBtn = document.getElementById('btnVoiceStop');
+    var voiceText = document.getElementById('voiceText');
+    
+    if (isVoiceReading) {
+        playBtn.style.display = 'none';
+        pauseBtn.style.display = 'inline-block';
+        stopBtn.style.display = 'inline-block';
+        voiceText.textContent = isVoicePaused ? 'Reanudar' : 'Pausar';
+    } else {
+        playBtn.style.display = 'inline-block';
+        pauseBtn.style.display = 'none';
+        stopBtn.style.display = 'none';
+        voiceText.textContent = 'Leer PDF';
+    }
+}
+
+// ===== FUNCIONES DE PDF.js =====
+
+function loadPDFForTextExtraction(url) {
+    // Verificar que PDF.js esté cargado
+    if (!pdfjsLibLoaded || typeof pdfjsLib === 'undefined') {
+        console.error('PDF.js no está cargado');
+        pdfTextContent = 'PDF.js no está disponible. Usando texto de ejemplo para demostrar la funcionalidad de voz.';
+        isPdfLoaded = true;
+        return;
+    }
+    
+    // Resetear estado
+    pdfDoc = null;
+    pdfTextContent = '';
+    isPdfLoaded = false;
+    
+    console.log('Iniciando carga de PDF con PDF.js...');
+    
+    // Cargar PDF con PDF.js
+    pdfjsLib.getDocument(url).promise.then(function(pdf) {
+        pdfDoc = pdf;
+        console.log('PDF cargado con PDF.js:', pdf.numPages, 'páginas');
+        
+        // Extraer texto de todas las páginas
+        extractTextFromAllPages();
+        
+    }).catch(function(error) {
+        console.error('Error cargando PDF con PDF.js:', error);
+        
+        // Verificar si es un error de CORS
+        if (error.name === 'UnknownErrorException' || error.message.includes('CORS') || error.message.includes('fetch')) {
+            pdfTextContent = 'No se pudo acceder al PDF debido a restricciones de CORS. Esto es normal en algunos servidores. La funcionalidad de voz está disponible con texto de ejemplo. Para una experiencia completa, el administrador debe configurar los headers CORS en el servidor.';
+        } else {
+            pdfTextContent = 'No se pudo extraer texto del PDF. Usando texto de ejemplo para demostrar la funcionalidad de voz.';
+        }
+        
+        isPdfLoaded = true;
+        console.log('Usando texto de ejemplo debido a error:', error.name || error.message);
+    });
+}
+
+function extractTextFromAllPages() {
+    if (!pdfDoc) {
+        console.error('PDF no cargado');
+        return;
+    }
+    
+    var totalPages = pdfDoc.numPages;
+    var allText = '';
+    var pagesProcessed = 0;
+    
+    console.log('Extrayendo texto de', totalPages, 'páginas...');
+    
+    // Procesar cada página
+    for (var pageNum = 1; pageNum <= totalPages; pageNum++) {
+        pdfDoc.getPage(pageNum).then(function(page) {
+            return page.getTextContent();
+        }).then(function(textContent) {
+            // Extraer texto de la página
+            var pageText = '';
+            for (var i = 0; i < textContent.items.length; i++) {
+                pageText += textContent.items[i].str + ' ';
+            }
+            
+            allText += pageText + '\n\n';
+            pagesProcessed++;
+            
+            // Si hemos procesado todas las páginas
+            if (pagesProcessed === totalPages) {
+                pdfTextContent = allText.trim();
+                isPdfLoaded = true;
+                console.log('Texto extraído del PDF:', pdfTextContent.length, 'caracteres');
+                
+                // Limpiar texto (remover espacios excesivos, saltos de línea múltiples)
+                pdfTextContent = pdfTextContent.replace(/\s+/g, ' ').trim();
+                
+                if (pdfTextContent.length === 0) {
+                    pdfTextContent = 'Este PDF no contiene texto extraíble o está protegido.';
+                }
+            }
+        }).catch(function(error) {
+            console.error('Error extrayendo texto de página:', error);
+            pagesProcessed++;
+            
+            if (pagesProcessed === totalPages) {
+                pdfTextContent = 'Error extrayendo texto del PDF.';
+                isPdfLoaded = true;
+            }
+        });
+    }
+}
+
+function extractTextFromPDF() {
+    if (isPdfLoaded && pdfTextContent) {
+        return pdfTextContent;
+    } else if (isPdfLoaded && !pdfTextContent) {
+        return 'Este PDF no contiene texto extraíble.';
+    } else {
+        return 'Cargando texto del PDF... Por favor espera un momento.';
+    }
+}
+
+// Detener la voz cuando se cierra el modal
+function cerrarModalPDF() {
+    stopVoiceReading();
+    
+    var modal = document.getElementById('modalPDF');
+    modal.style.display = 'none';
+    
+    // Restaurar scroll del body
+    document.body.style.overflow = 'auto';
+    
+    // Limpiar el iframe y resetear estados
+    var iframe = document.getElementById('pdfViewer');
+    iframe.src = '';
+    iframe.onload = null;
+    iframe.onerror = null;
+    
+    // Ocultar todos los elementos del modal
+    document.getElementById('pdfViewer').style.display = 'none';
+    document.getElementById('pdfError').style.display = 'none';
+    document.getElementById('pdfLoading').style.display = 'none';
+    
+    // Limpiar URL actual
+    currentPDFUrl = '';
 }
 </script>
 
