@@ -118,14 +118,20 @@
             </button>
         </div>
         <div class="custom-modal-body">
-            <div id="pdfContainer" style="height: 600px; overflow: auto;">
+            <div id="pdfContainer" style="height: 600px; position: relative;">
+                <div id="pdfLoading" style="display: none; text-align: center; padding: 50px;">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Cargando PDF...</span>
+                    </div>
+                    <p class="mt-3 text-muted">Cargando PDF...</p>
+                </div>
                 <iframe id="pdfViewer" 
                         src="" 
                         width="100%" 
                         height="100%" 
-                        style="border: none;"
-                        onerror="mostrarErrorPDF()"
-                        title="Visor de PDF">
+                        style="border: none; display: none;"
+                        title="Visor de PDF"
+                        allowfullscreen>
                 </iframe>
                 <div id="pdfError" style="display: none; text-align: center; padding: 50px;">
                     <i class="ti ti-file-text fs-1 text-muted mb-3" aria-hidden="true"></i>
@@ -225,6 +231,36 @@
         max-height: 95vh;
     }
 }
+
+/* Mejoras para el visor de PDF */
+#pdfContainer {
+    position: relative;
+    overflow: hidden;
+}
+
+#pdfViewer {
+    transition: opacity 0.3s ease-in-out;
+}
+
+#pdfViewer.loading {
+    opacity: 0.5;
+}
+
+#pdfLoading {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10;
+}
+
+#pdfError {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10;
+}
 </style>
 
 <!-- Modal para ver detalles -->
@@ -251,9 +287,10 @@ var currentPDFUrl = '';
 function verPDF(url, titulo) {
     currentPDFUrl = url;
     
-    // Ocultar mensaje de error si existe
+    // Mostrar loading y ocultar otros elementos
+    document.getElementById('pdfLoading').style.display = 'block';
     document.getElementById('pdfError').style.display = 'none';
-    document.getElementById('pdfViewer').style.display = 'block';
+    document.getElementById('pdfViewer').style.display = 'none';
     
     // Convertir URL a HTTPS si es necesario
     var secureUrl = url;
@@ -262,7 +299,8 @@ function verPDF(url, titulo) {
     }
     
     // Configurar el iframe con el PDF directamente
-    document.getElementById('pdfViewer').src = secureUrl;
+    var iframe = document.getElementById('pdfViewer');
+    iframe.src = secureUrl;
     document.getElementById('modalPDFLabel').textContent = 'Visualizar: ' + titulo;
     document.getElementById('descargarPDF').href = secureUrl;
     
@@ -279,18 +317,37 @@ function verPDF(url, titulo) {
         firstButton.focus();
     }
     
-    // Verificar si el PDF se carga correctamente después de 3 segundos
-    setTimeout(function() {
-        var iframe = document.getElementById('pdfViewer');
-        try {
-            // Si no se puede acceder al contenido del iframe, mostrar error
-            if (iframe.contentDocument === null || iframe.contentDocument.body === null) {
-                mostrarErrorPDF();
+    // Manejar la carga del iframe
+    iframe.onload = function() {
+        // Ocultar loading y mostrar iframe
+        document.getElementById('pdfLoading').style.display = 'none';
+        document.getElementById('pdfViewer').style.display = 'block';
+        
+        // Verificar si realmente se cargó el PDF
+        setTimeout(function() {
+            try {
+                // Intentar acceder al contenido del iframe
+                var iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                if (!iframeDoc || iframeDoc.body === null || iframeDoc.body.innerHTML.trim() === '') {
+                    mostrarErrorPDF();
+                }
+            } catch (e) {
+                // Si hay error de CORS, asumir que se cargó correctamente
+                console.log('PDF cargado (CORS bloqueado, pero asumimos éxito)');
             }
-        } catch (e) {
+        }, 1000);
+    };
+    
+    iframe.onerror = function() {
+        mostrarErrorPDF();
+    };
+    
+    // Timeout de seguridad después de 10 segundos
+    setTimeout(function() {
+        if (document.getElementById('pdfLoading').style.display !== 'none') {
             mostrarErrorPDF();
         }
-    }, 3000);
+    }, 10000);
 }
 
 function cerrarModalPDF() {
@@ -300,11 +357,23 @@ function cerrarModalPDF() {
     // Restaurar scroll del body
     document.body.style.overflow = 'auto';
     
-    // Limpiar el iframe
-    document.getElementById('pdfViewer').src = '';
+    // Limpiar el iframe y resetear estados
+    var iframe = document.getElementById('pdfViewer');
+    iframe.src = '';
+    iframe.onload = null;
+    iframe.onerror = null;
+    
+    // Ocultar todos los elementos del modal
+    document.getElementById('pdfViewer').style.display = 'none';
+    document.getElementById('pdfError').style.display = 'none';
+    document.getElementById('pdfLoading').style.display = 'none';
+    
+    // Limpiar URL actual
+    currentPDFUrl = '';
 }
 
 function mostrarErrorPDF() {
+    document.getElementById('pdfLoading').style.display = 'none';
     document.getElementById('pdfViewer').style.display = 'none';
     document.getElementById('pdfError').style.display = 'block';
 }
