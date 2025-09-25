@@ -27,15 +27,16 @@ class SancionController extends BaseController
         $sanciones = $this->sancionModel->getSancionesCompletas();
         
         $datos = [
-            'sanciones' => $sanciones,
-            'navbar' => view('layouts/navbar'),
-            'header' => view('layouts/header'),
-            'footer' => view('layouts/footer')
+            'sanciones' => $sanciones
         ];
 
         if ($this->request->isAJAX()) {
             return view('Administrador/sanciones/index', $datos);
         }
+
+        $datos['navbar'] = view('layouts/navbar');
+        $datos['header'] = view('layouts/header');
+        $datos['footer'] = view('layouts/footer');
 
         return view('Administrador/sanciones/index', $datos);
     }
@@ -47,15 +48,16 @@ class SancionController extends BaseController
     {
         $datos = [
             'tiposSancion' => $this->tiposancionModel->getTiposSancionOrdenados(),
-            'personas' => $this->personaModel->orderBy('apellidos', 'ASC')->findAll(),
-            'navbar' => view('layouts/navbar'),
-            'header' => view('layouts/header'),
-            'footer' => view('layouts/footer')
+            'personas' => $this->personaModel->orderBy('apellidos', 'ASC')->findAll()
         ];
 
         if ($this->request->isAJAX()) {
             return view('Administrador/sanciones/crear', $datos);
         }
+
+        $datos['navbar'] = view('layouts/navbar');
+        $datos['header'] = view('layouts/header');
+        $datos['footer'] = view('layouts/footer');
 
         return view('Administrador/sanciones/crear', $datos);
     }
@@ -118,15 +120,16 @@ class SancionController extends BaseController
         $datos = [
             'sancion' => $sancion,
             'tiposSancion' => $this->tiposancionModel->getTiposSancionOrdenados(),
-            'personas' => $this->personaModel->orderBy('apellidos', 'ASC')->findAll(),
-            'navbar' => view('layouts/navbar'),
-            'header' => view('layouts/header'),
-            'footer' => view('layouts/footer')
+            'personas' => $this->personaModel->orderBy('apellidos', 'ASC')->findAll()
         ];
 
         if ($this->request->isAJAX()) {
             return view('Administrador/sanciones/editar', $datos);
         }
+
+        $datos['navbar'] = view('layouts/navbar');
+        $datos['header'] = view('layouts/header');
+        $datos['footer'] = view('layouts/footer');
 
         return view('Administrador/sanciones/editar', $datos);
     }
@@ -291,15 +294,16 @@ class SancionController extends BaseController
         $tipos = $this->tiposancionModel->getTiposSancionOrdenados();
         
         $datos = [
-            'tipos' => $tipos,
-            'navbar' => view('layouts/navbar'),
-            'header' => view('layouts/header'),
-            'footer' => view('layouts/footer')
+            'tipos' => $tipos
         ];
 
         if ($this->request->isAJAX()) {
             return view('Administrador/sanciones/tipos', $datos);
         }
+
+        $datos['navbar'] = view('layouts/navbar');
+        $datos['header'] = view('layouts/header');
+        $datos['footer'] = view('layouts/footer');
 
         return view('Administrador/sanciones/tipos', $datos);
     }

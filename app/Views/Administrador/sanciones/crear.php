@@ -95,6 +95,8 @@
     </div>
 </div>
 
+<!-- SweetAlert2 -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('formCrearSancion');
@@ -166,57 +168,44 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                // Mostrar mensaje de éxito
-                const alertDiv = document.createElement('div');
-                alertDiv.className = 'alert alert-success alert-dismissible fade show';
-                alertDiv.innerHTML = `
-                    <i class="ti ti-check me-1"></i>${data.message}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                `;
-                form.insertBefore(alertDiv, form.firstChild);
-                
-                // Limpiar formulario
-                form.reset();
-                actualizarContador();
-                
-                // Opcional: redirigir después de un momento
-                setTimeout(() => {
+                // SweetAlert éxito
+                Swal.fire({
+                    icon: 'success',
+                    title: '¡Éxito!',
+                    text: data.message,
+                    timer: 2000,
+                    showConfirmButton: false
+                }).then(() => {
                     window.location.href = '<?= base_url('sanciones') ?>';
-                }, 2000);
+                });
                 
             } else {
-                // Mostrar errores de validación
+                // Errores de validación
                 if (data.errors) {
                     for (const [field, message] of Object.entries(data.errors)) {
                         const input = document.getElementById(field);
                         const errorDiv = document.getElementById(`error-${field}`);
-                        
                         if (input && errorDiv) {
                             input.classList.add('is-invalid');
                             errorDiv.textContent = message;
                         }
                     }
                 }
-                
-                // Mostrar mensaje de error general
-                const alertDiv = document.createElement('div');
-                alertDiv.className = 'alert alert-danger alert-dismissible fade show';
-                alertDiv.innerHTML = `
-                    <i class="ti ti-alert-circle me-1"></i>Error al guardar la sanción
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                `;
-                form.insertBefore(alertDiv, form.firstChild);
+                // SweetAlert error general
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'No se pudo guardar la sanción. Revisa los campos obligatorios.'
+                });
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            const alertDiv = document.createElement('div');
-            alertDiv.className = 'alert alert-danger alert-dismissible fade show';
-            alertDiv.innerHTML = `
-                <i class="ti ti-alert-circle me-1"></i>Error de conexión. Intente nuevamente.
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            `;
-            form.insertBefore(alertDiv, form.firstChild);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error de conexión',
+                text: 'No se pudo conectar con el servidor. Intenta nuevamente.'
+            });
         })
         .finally(() => {
             // Rehabilitar botón

@@ -21,14 +21,13 @@ use Dompdf\Options;
 
 class RecursoController extends Controller
 {
-    // Lista de recursos
     public function index(): string
     {
         $recurso = new RecursoModel();
         $autorModel = new AutorModel();
 
-        // Obtener todos los recursos sin paginación
-        $datos['recursos'] = $recurso->orderBy('idrecurso', 'ASC')->findAll();
+        // Obtener todos los recursos con información completa (incluyendo datos físicos/digitales)
+        $datos['recursos'] = $recurso->obtenerRecursosCompletos();
 
         // Agregar datos necesarios para el modal de crear
         // Obtener valores ENUM de estado

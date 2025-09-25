@@ -92,6 +92,7 @@ CREATE TABLE editoriales (
 CREATE TABLE recursos (
     idrecurso INT AUTO_INCREMENT PRIMARY KEY,
     titulo VARCHAR(150) NOT NULL,
+    subtitulo VARCHAR(200),
     anio SMALLINT,
     numpaginas SMALLINT UNSIGNED,
     isbn CHAR(13) UNIQUE,
@@ -238,4 +239,13 @@ CREATE TABLE favoritos (
     FOREIGN KEY (idusuario) REFERENCES usuarios(idusuario),
     FOREIGN KEY (idrecurso) REFERENCES recursos(idrecurso)
 );
+
+CREATE TABLE ejemplares (
+    idejemplar INT AUTO_INCREMENT PRIMARY KEY,
+    codigo VARCHAR(20) NOT NULL UNIQUE,
+    idrecurso INT NOT NULL,
+    estado ENUM('disponible','prestado','perdido') DEFAULT 'disponible',
+    FOREIGN KEY (idrecurso) REFERENCES recursos(idrecurso)
+);
+
 -- =========================================

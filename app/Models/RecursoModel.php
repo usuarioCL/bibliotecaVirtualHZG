@@ -12,6 +12,7 @@ class RecursoModel extends Model
 
     protected $allowedFields    = [
         'titulo',
+        'subtitulo',
         'anio',
         'numpaginas',
         'encuadernacion',
@@ -21,6 +22,7 @@ class RecursoModel extends Model
         'estado',
         'stock',
         'urlLibro',
+        'nivel',
         'idsubcategoria',
         'ideditorial',
         'idtiporecurso'
@@ -130,5 +132,30 @@ class RecursoModel extends Model
             ->orderBy('recursos.stock', 'DESC')
             ->limit($limite)
             ->findAll();
+    }
+
+    public function obtenerRecursosCompletos()
+    {
+        return $this->select('
+            recursos.*,
+            autores.nomautor,
+            subcategorias.subcategoria,
+            categorias.categoria,
+            editoriales.editorial,
+            tiporecursos.tiporecurso,
+            rf.encuadernacion,
+            rf.portada,
+            rd.archivo
+        ')
+        ->join('detautores', 'detautores.idrecurso = recursos.idrecurso', 'left')
+        ->join('autores', 'autores.idautor = detautores.idautor', 'left')
+        ->join('subcategorias', 'subcategorias.idsubcategoria = recursos.idsubcategoria', 'left')
+        ->join('categorias', 'categorias.idcategoria = subcategorias.idcategoria', 'left')
+        ->join('editoriales', 'editoriales.ideditorial = recursos.ideditorial', 'left')
+        ->join('tiporecursos', 'tiporecursos.idtiporecurso = recursos.idtiporecurso', 'left')
+        ->join('recursos_fisicos rf', 'rf.idrecurso = recursos.idrecurso', 'left')
+        ->join('recursos_digitales rd', 'rd.idrecurso = recursos.idrecurso', 'left')
+        ->orderBy('recursos.idrecurso', 'ASC')
+        ->findAll();
     }
 }

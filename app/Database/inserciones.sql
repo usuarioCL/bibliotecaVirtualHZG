@@ -55,11 +55,11 @@ INSERT INTO editoriales (editorial) VALUES
 ('UNMSM Press');
 
 -- Recursos 
-INSERT INTO recursos (titulo, anio, numpaginas, isbn, numedicion, estado, stock, nivel, idsubcategoria, ideditorial, idtiporecurso) VALUES
-('Cien Años de Soledad', 1967, 471, '1234567890123', '1ra', 'disponible', 5, 'Secundaria', 1, 1, 1),
-('Matemáticas Básicas', 2015, 320, '2345678901234', '2da', 'disponible', 10, 'Primaria', 2, 2, 1),
-('Learning Python', 2013, 1600, '3456789012345', '5ta', 'disponible', 3, 'Secundaria', 3, 3, 2),
-('Historia del Perú', 2005, 520, '4567890123456', '1ra', 'disponible', 4, 'Secundaria', 4, 4, 2);
+INSERT INTO recursos (titulo, subtitulo, anio, numpaginas, isbn, numedicion, estado, stock, nivel, idsubcategoria, ideditorial, idtiporecurso) VALUES
+('Cien Años de Soledad', 'Primera edición', 1967, 471, '1234567890123', '1ra', 'disponible', 5, 'Secundaria', 1, 1, 1),
+('Matemáticas Básicas', 'Edición escolar', 2015, 320, '2345678901234', '2da', 'disponible', 10, 'Primaria', 2, 2, 1),
+('Learning Python', 'Programming Guide', 2013, 1600, '3456789012345', '5ta', 'disponible', 3, 'Secundaria', 3, 3, 2),
+('Historia del Perú', 'Desde la independencia', 2005, 520, '4567890123456', '1ra', 'disponible', 4, 'Secundaria', 4, 4, 2);
 
 -- Recursos fisicos
 INSERT INTO recursos_fisicos (idrecurso, portada, encuadernacion) VALUES

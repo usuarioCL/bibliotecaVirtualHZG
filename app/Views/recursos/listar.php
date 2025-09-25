@@ -41,8 +41,8 @@
                             <tr>
                                 <td><?= $recurso['idrecurso'] ?></td>
                                 <td>
-                                    <?php if (!empty($recurso['rutaportada'])): ?>
-                                        <img src="<?= base_url(esc($recurso['rutaportada'])) ?>" alt="Portada" style="height:60px;width:auto;border-radius:4px;border:1px solid #e5e5e5;object-fit:cover;"
+                                    <?php if (!empty($recurso['portada'])): ?>
+                                        <img src="<?= base_url(esc($recurso['portada'])) ?>" alt="Portada" style="height:60px;width:auto;border-radius:4px;border:1px solid #e5e5e5;object-fit:cover;"
                                              onerror="this.onerror=null;this.src='<?= base_url('img/portada_default.png') ?>';">
                                     <?php else: ?>
                                         <img src="<?= base_url('img/portada_default.png') ?>" alt="Sin portada" style="height:60px;width:auto;border-radius:4px;border:1px solid #e5e5e5;object-fit:cover;">
@@ -56,7 +56,13 @@
                                 </td>
                                 <td><?= esc($recurso['anio']) ?></td>
                                 <td><?= esc($recurso['numpaginas']) ?></td>
-                                <td><?= esc($recurso['encuadernacion']) ?></td>
+                                <td>
+                                    <?php if(!empty($recurso['encuadernacion'])): ?>
+                                        <?= esc($recurso['encuadernacion']) ?>
+                                    <?php else: ?>
+                                        <span class="text-muted">N/A</span>
+                                    <?php endif; ?>
+                                </td>
                                 <td>
                                     <?php if(!empty($recurso['isbn'])): ?>
                                         <?= esc($recurso['isbn']) ?>
