@@ -283,12 +283,13 @@ function registrarRecurso()
     
     // Validar campos requeridos
     const titulo = document.getElementById('titulo').value.trim();
-    const autor = document.getElementById('idautor').value;
+    // Verificar si al menos un autor está seleccionado
+    const autoresSeleccionados = document.querySelectorAll('input[name="idautor[]"]:checked');
     const numpaginas = document.getElementById('numpaginas').value;
     const estado = document.getElementById('estado').value;
     const stock = document.getElementById('stock').value;
     
-    if (!titulo || !autor || !numpaginas || !estado || !stock) {
+    if (!titulo || autoresSeleccionados.length === 0 || !numpaginas || !estado || !stock) {
         alerta.className = 'alert alert-danger';
         alerta.textContent = 'Por favor complete todos los campos requeridos';
         alerta.classList.remove('d-none');

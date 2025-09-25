@@ -49,6 +49,29 @@ class AdminController extends BaseController
         return view('Administrador/vistas/PrestamosAlumnos', $data);
     }
 
+    public function VistaRecursosPopulares()
+    {
+        $query = $this->db->query("
+            SELECT r.titulo,
+                   GROUP_CONCAT(DISTINCT a.nomautor SEPARATOR ', ') AS autor,
+                   e.editorial,
+                   c.categoria,
+                   COUNT(p.idprestamo) AS veces_prestado
+            FROM recursos r
+            LEFT JOIN prestamos p ON r.idrecurso = p.idrecurso
+            LEFT JOIN detautores da ON da.idrecurso = r.idrecurso
+            LEFT JOIN autores a ON a.idautor = da.idautor
+            LEFT JOIN editoriales e ON e.ideditorial = r.ideditorial
+            LEFT JOIN subcategorias sc ON sc.idsubcategoria = r.idsubcategoria
+            LEFT JOIN categorias c ON c.idcategoria = sc.idcategoria
+            GROUP BY r.idrecurso
+            ORDER BY veces_prestado DESC
+            LIMIT 10
+        ");
+        $data['recursosPopulares'] = $query->getResult();
+        return view('Administrador/vistas/RecursosPopulares', $data);
+    }
+
     public function VistaReaccionesUsuarios()
     {
         $query = $this->db->query("
@@ -82,82 +105,132 @@ class AdminController extends BaseController
     // Descargar plantillas CSV
     public function descargarPlantilla($tipo)
     {
-        $plantillas = [
-            'personas' => [
-                'filename' => 'plantilla_personas.xlsx',
-                'headers' => [
-                    'ID',
-                    'Cód. Estudiante',
-                    'numerodoc',
-                    'nombres',
-                    'apellidos',
-                    'tipodoc',
-                    'telefono',
-                    'direccion',
-                    'email',
-                    'genero'
+        log_message('debug', 'Iniciando descarga de plantilla para tipo: ' . $tipo);
+        try {
+            $plantillas = [
+                'personas' => [
+                    'filename' => 'plantilla_personas.xlsx',
+                    'headers' => [
+                        'ID',
+                        'Cód. Estudiante',
+                        'numerodoc',
+                        'nombres',
+                        'apellidos',
+                        'tipodoc',
+                        'telefono',
+                        'direccion',
+                        'email',
+                        'genero'
+                    ],
+                    'ejemplo' => [
+                        '26710742',
+                        '00000062892482',
+                        '00000062892482',
+                        'NICOLL ALEXANDRA',
+                        'ABURTO MUÑOZ',
+                        'DNI',
+                        '999999999',
+                        'Av. Principal 123',
+                        'nicoll@example.com',
+                        'Femenino'
+                    ]
                 ],
-                'ejemplo' => [
-                    '26710742',
-                    '00000062892482',
-                    '00000062892482',
-                    'NICOLL ALEXANDRA',
-                    'ABURTO MUÑOZ',
-                    'DNI',
-                    '999999999',
-                    'Av. Principal 123',
-                    'nicoll@example.com',
-                    'Femenino'
+                'usuarios' => [
+                    'filename' => 'plantilla_usuarios.xlsx',
+                    'headers' => ['nomuser', 'nombres', 'apellidos', 'email', 'nivelacceso', 'telefono', 'direccion'],
+                    'ejemplo' => ['jperez', 'Juan', 'Pérez', 'juan@example.com', 'estudiante', '123456789', 'Av. Principal 123']
+                ],
+                'recursos' => [
+                    'filename' => 'plantilla_recursos.xlsx',
+                    'headers' => ['titulo', 'subtitulo', 'isbn', 'autor', 'editorial', 'categoria', 'subcategoria', 'tipo_recurso', 'anio_publicacion'],
+                    'ejemplo' => ['El Quijote', 'Primera parte', '978-84-376-0494-7', 'Miguel de Cervantes', 'Planeta', 'Literatura', 'Clásicos', 'Libro', '1605']
+                ],
+                'autores' => [
+                    'filename' => 'plantilla_autores.xlsx',
+                    'headers' => ['nombre_completo', 'biografia', 'nacionalidad', 'fecha_nacimiento'],
+                    'ejemplo' => ['Gabriel García Márquez', 'Escritor colombiano, Premio Nobel de Literatura', 'Colombiana', '1927-03-06']
+                ],
+                'categorias' => [
+                    'filename' => 'plantilla_categorias.xlsx',
+                    'headers' => ['nombre_categoria', 'descripcion'],
+                    'ejemplo' => ['Ciencias', 'Libros relacionados con ciencias exactas y naturales']
+                ],
+                'editoriales' => [
+                    'filename' => 'plantilla_editoriales.xlsx',
+                    'headers' => ['nombre_editorial', 'pais', 'contacto'],
+                    'ejemplo' => ['Penguin Random House', 'España', 'info@penguinrandomhouse.com']
                 ]
-            ],
-            'usuarios' => [
-                'filename' => 'plantilla_usuarios.xlsx',
-                'headers' => ['nomuser', 'nombres', 'apellidos', 'email', 'nivelacceso', 'telefono', 'direccion'],
-                'ejemplo' => ['jperez', 'Juan', 'Pérez', 'juan@example.com', 'estudiante', '123456789', 'Av. Principal 123']
-            ],
-            'recursos' => [
-                'filename' => 'plantilla_recursos.xlsx',
-                'headers' => ['titulo', 'subtitulo', 'isbn', 'autor', 'editorial', 'categoria', 'subcategoria', 'tipo_recurso', 'anio_publicacion'],
-                'ejemplo' => ['El Quijote', 'Primera parte', '978-84-376-0494-7', 'Miguel de Cervantes', 'Planeta', 'Literatura', 'Clásicos', 'Libro', '1605']
-            ],
-            'autores' => [
-                'filename' => 'plantilla_autores.xlsx',
-                'headers' => ['nombre_completo', 'biografia', 'nacionalidad', 'fecha_nacimiento'],
-                'ejemplo' => ['Gabriel García Márquez', 'Escritor colombiano, Premio Nobel de Literatura', 'Colombiana', '1927-03-06']
-            ],
-            'categorias' => [
-                'filename' => 'plantilla_categorias.xlsx',
-                'headers' => ['nombre_categoria', 'descripcion'],
-                'ejemplo' => ['Ciencias', 'Libros relacionados con ciencias exactas y naturales']
-            ],
-            'editoriales' => [
-                'filename' => 'plantilla_editoriales.xlsx',
-                'headers' => ['nombre_editorial', 'pais', 'contacto'],
-                'ejemplo' => ['Penguin Random House', 'España', 'info@penguinrandomhouse.com']
-            ]
-        ];
+            ];
 
-        if (!array_key_exists($tipo, $plantillas)) {
-            return $this->response->setStatusCode(404)->setJSON(['error' => 'Tipo de plantilla no encontrado']);
+            if (!array_key_exists($tipo, $plantillas)) {
+                return $this->response->setStatusCode(404)->setJSON(['error' => 'Tipo de plantilla no encontrado']);
+            }
+
+            $plantilla = $plantillas[$tipo];
+
+            // Limpiar cualquier salida anterior
+            while (ob_get_level()) {
+                ob_end_clean();
+            }
+            log_message('debug', 'Buffer de salida limpiado');
+
+            // Configurar headers para descarga antes de cualquier salida
+            header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            header('Content-Disposition: attachment; filename="' . $plantilla['filename'] . '"');
+            header('Cache-Control: max-age=0');
+            header('Expires: 0');
+            header('Pragma: public');
+
+            log_message('debug', 'Iniciando generación de archivo Excel');
+            // Generar archivo Excel con PhpSpreadsheet
+            $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+            $sheet = $spreadsheet->getActiveSheet();
+            
+            // Dar formato a las columnas
+            foreach (range('A', 'J') as $col) {
+                $sheet->getColumnDimension($col)->setAutoSize(true);
+            }
+            
+            // Agregar encabezados con estilo
+            $sheet->fromArray($plantilla['headers'], NULL, 'A1');
+            $headerStyle = $sheet->getStyle('A1:' . $sheet->getHighestColumn() . '1');
+            $headerStyle->getFont()->setBold(true);
+            
+            // Agregar datos de ejemplo
+            $sheet->fromArray([$plantilla['ejemplo']], NULL, 'A2');
+
+            // Guardar primero en un archivo temporal
+            $tempFile = WRITEPATH . 'temp/' . uniqid() . '_' . $plantilla['filename'];
+            if (!is_dir(WRITEPATH . 'temp')) {
+                mkdir(WRITEPATH . 'temp', 0777, true);
+            }
+            
+            log_message('debug', 'Guardando archivo temporal en: ' . $tempFile);
+            
+            $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+            $writer->save($tempFile);
+            
+            log_message('debug', 'Archivo temporal guardado correctamente');
+            
+            // Leer y enviar el archivo
+            if (file_exists($tempFile)) {
+                $content = file_get_contents($tempFile);
+                unlink($tempFile); // Eliminar el archivo temporal
+                
+                // Enviar el contenido al navegador
+                echo $content;
+                exit();
+            } else {
+                throw new \Exception('No se pudo crear el archivo temporal');
+            }
+
+        } catch (\Exception $e) {
+            log_message('error', 'Error al generar plantilla Excel: ' . $e->getMessage());
+            return $this->response->setStatusCode(500)->setJSON([
+                'error' => 'Error al generar la plantilla',
+                'message' => $e->getMessage()
+            ]);
         }
-
-        $plantilla = $plantillas[$tipo];
-
-        // Generar archivo Excel con PhpSpreadsheet
-        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
-        $sheet = $spreadsheet->getActiveSheet();
-        $sheet->fromArray($plantilla['headers'], NULL, 'A1');
-        $sheet->fromArray($plantilla['ejemplo'], NULL, 'A2');
-
-        // Configurar headers para descarga
-        $filename = $plantilla['filename'];
-        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        header('Content-Disposition: attachment; filename="' . $filename . '"');
-        header('Cache-Control: max-age=0');
-
-        $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
-        $writer->save('php://output');
-        exit;
     }
 
     // Vista previa del archivo Excel
