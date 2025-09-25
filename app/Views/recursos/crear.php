@@ -12,24 +12,29 @@
                     <!-- Información básica del recurso -->
                     <h6 class="text-primary mb-3">Información Básica</h6>
                     <div class="row">
-                        <div class="col-md-6">
+                        <div class="col-md-8">
                             <div class="mb-3">
                                 <label for="titulo" class="form-label">Título</label>
                                 <input type="text" class="form-control" id="titulo" name="titulo" required maxlength="150">
                             </div>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <div class="mb-3">
-                                <label for="subtitulo" class="form-label">Subtítulo</label>
-                                <input type="text" class="form-control" id="subtitulo" name="subtitulo" maxlength="200" disabled>
-                                <small class="form-text text-muted">Campo no disponible en la estructura actual</small>
+                                <label for="idtiporecurso" class="form-label">Tipo de Recurso</label>
+                                <select class="form-select" id="idtiporecurso" name="idtiporecurso" onchange="toggleCamposDigital()" required>
+                                    <option value="">Seleccionar tipo</option>
+                                    <?php foreach ($tiposrecurso as $tipo): ?>
+                                        <option value="<?= esc($tipo['idtiporecurso']) ?>">
+                                            <?= esc($tipo['tiporecurso']) ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
                             </div>
                         </div>
                     </div>
                     
                     <div class="row">
-                        <div class="col-md-6">
-                        <div class="col-md-6">
+                        <div class="col-md-12">
                             <div class="mb-3">
                                 <label for="idautor" class="form-label">Autor</label>
                                 <input type="text" class="form-control mb-2" id="buscadorAutores" placeholder="Buscar autor...">
@@ -46,6 +51,11 @@
                                         </div>
                                     <?php endforeach; ?>
                                 </div>
+                                <small class="form-text text-muted">Marca uno o más autores para este recurso.</small>
+                            </div>
+                        </div>
+                    </div>
+                    
 <!-- Script de búsqueda de autores -->
 <script>
 function activarBuscadorAutores() {
@@ -69,16 +79,12 @@ if (modal) {
     });
 }
 </script>
-                                <small class="form-text text-muted">Marca uno o más autores para este recurso.</small>
-                            </div>
-                        </div>
-                    </div>
                     
                     <div class="row">
                         <div class="col-md-4">
                             <div class="mb-3">
                                 <label for="idcategoria" class="form-label">Categoría</label>
-                                <select class="form-select" id="idcategoria" name="idcategoria" onchange="cargarSubcategorias()">
+                                <select class="form-select" id="idcategoria" name="idcategoria" onchange="cargarSubcategorias()" required>
                                     <option value="">Seleccionar categoría</option>
                                     <?php foreach ($categorias as $categoria): ?>
                                         <option value="<?= esc($categoria['idcategoria']) ?>">
@@ -91,7 +97,7 @@ if (modal) {
                         <div class="col-md-4">
                             <div class="mb-3">
                                 <label for="idsubcategoria" class="form-label">Subcategoría</label>
-                                <select class="form-select" id="idsubcategoria" name="idsubcategoria">
+                                <select class="form-select" id="idsubcategoria" name="idsubcategoria" required>
                                     <option value="">Primero seleccione una categoría</option>
                                 </select>
                             </div>
@@ -99,7 +105,7 @@ if (modal) {
                         <div class="col-md-4">
                             <div class="mb-3">
                                 <label for="ideditorial" class="form-label">Editorial</label>
-                                <select class="form-select" id="ideditorial" name="ideditorial">
+                                <select class="form-select" id="ideditorial" name="ideditorial" required>
                                     <option value="">Seleccionar editorial</option>
                                     <?php foreach ($editoriales as $editorial): ?>
                                         <option value="<?= esc($editorial['ideditorial']) ?>">
@@ -114,19 +120,6 @@ if (modal) {
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label for="idtiporecurso" class="form-label">Tipo de Recurso</label>
-                                <select class="form-select" id="idtiporecurso" name="idtiporecurso" onchange="toggleCamposDigital()">
-                                    <option value="">Seleccionar tipo</option>
-                                    <?php foreach ($tiposrecurso as $tipo): ?>
-                                        <option value="<?= esc($tipo['idtiporecurso']) ?>">
-                                            <?= esc($tipo['tiporecurso']) ?>
-                                        </option>
-                                    <?php endforeach; ?>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
                                 <label for="nivel" class="form-label">Nivel Educativo</label>
                                 <select class="form-select" id="nivel" name="nivel">
                                     <option value="">Seleccionar nivel</option>
@@ -134,6 +127,19 @@ if (modal) {
                                         <option value="<?= esc($nivel) ?>"><?= esc(ucfirst($nivel)) ?></option>
                                     <?php endforeach; ?>
                                 </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="encuadernacion" class="form-label">Encuadernación</label>
+                                <select class="form-select" id="encuadernacion" name="encuadernacion">
+                                    <option value="">Seleccionar opción</option>
+                                    <option value="Tapa dura">Tapa dura</option>
+                                    <option value="Tapa blanda">Tapa blanda</option>
+                                    <option value="Rústica">Rústica</option>
+                                    <option value="Espiral">Espiral</option>
+                                </select>
+                                <small class="form-text text-muted">Solo para recursos físicos</small>
                             </div>
                         </div>
                     </div>
@@ -194,19 +200,6 @@ if (modal) {
                                 <label for="portada" class="form-label">Portada</label>
                                 <input type="file" class="form-control" id="portada" name="portada" accept="image/*">
                                 <div class="form-text">Formatos: JPG, PNG, GIF. Máximo 2MB</div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="encuadernacion" class="form-label">Encuadernación</label>
-                                <select class="form-select" id="encuadernacion" name="encuadernacion">
-                                    <option value="">Seleccionar opción</option>
-                                    <option value="Tapa dura">Tapa dura</option>
-                                    <option value="Tapa blanda">Tapa blanda</option>
-                                    <option value="Rústica">Rústica</option>
-                                    <option value="Espiral">Espiral</option>
-                                </select>
-                                <small class="form-text text-muted">Solo para recursos físicos</small>
                             </div>
                         </div>
                     </div>
