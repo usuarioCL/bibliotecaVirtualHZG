@@ -32,6 +32,7 @@
                             <th>Edición</th>
                             <th>Estado</th>
                             <th>Stock</th>
+                            <th>Tipo</th>
                             <th>Acciones</th>
                         </tr>
                     </thead>
@@ -88,6 +89,17 @@
                                     <?php endif; ?>
                                 </td>
                                 <td>
+                                    <?php if(isset($recurso['tiporecurso']) && stripos($recurso['tiporecurso'], 'digital') !== false): ?>
+                                        <span class="badge bg-info" title="Recurso digital">
+                                            <i class="ti ti-device-desktop me-1"></i>Digital
+                                        </span>
+                                    <?php else: ?>
+                                        <span class="badge bg-dark" title="Recurso físico">
+                                            <i class="ti ti-book me-1"></i>Físico
+                                        </span>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
                                     <div class="btn-group" role="group">
                                         <a href="#" 
                                            class="btn btn-sm btn-warning btn-edit" 
@@ -107,7 +119,7 @@
                             <?php endforeach; ?>
                         <?php else: ?>
                             <tr>
-                                <td colspan="11" class="text-center py-4">
+                                <td colspan="12" class="text-center py-4">
                                     <div class="text-muted">
                                         <i class="ti ti-inbox fs-1 mb-3"></i>
                                         <h5>No hay recursos registrados</h5>
@@ -191,22 +203,104 @@ $(document).ready(function() {
             if (modalNode) {
                 document.body.appendChild(modalNode);
                 var modalEl = document.getElementById('modalEditarRecurso');
-                // Definir y exponer globalmente el toggle del PDF del modal (los <script> internos no se ejecutan al inyectar HTML)
+                // Definir y exponer globalmente el toggle completo del modal (los <script> internos no se ejecutan al inyectar HTML)
                 window.toggleCamposDigitalEditar = function(){
                     try {
                         var sel = modalEl.querySelector('#idtiporecurso');
-                        var campo = modalEl.querySelector('#campoPdfLibroEditar');
-                        if (!sel || !campo) return;
+                        if (!sel) return;
+                        
                         var val = String(sel.value || '');
-                        var isDigital = (val === '2'); // ID fijo para 'Libro digital'
-                        if (!isDigital) {
-                            var opt = sel.options[sel.selectedIndex];
-                            isDigital = opt && opt.getAttribute('data-digital') === '1';
+                        var selectedOpt = sel.selectedIndex >= 0 ? sel.options[sel.selectedIndex] : null;
+                        var isDigital = false;
+                        
+                        // Detectar si es digital por data-digital attribute
+                        if (selectedOpt && selectedOpt.getAttribute('data-digital') === '1') {
+                            isDigital = true;
                         }
-                        campo.style.display = isDigital ? 'block' : 'none';
-                        if (!isDigital) {
-                            var pdf = modalEl.querySelector('#archivo_pdf');
-                            if (pdf) pdf.value = '';
+                        
+                        // Elementos del modal
+                        var campoPdf = modalEl.querySelector('#campoPdfLibroEditar');
+                        var campoStock = modalEl.querySelector('#campoStockEditar');
+                        var campoEstado = modalEl.querySelector('#campoEstadoEditar');
+                        var campoEncuadernacion = modalEl.querySelector('#campoEncuadernacionEditar');
+                        var stockInput = modalEl.querySelector('#stock');
+                        var estadoSelect = modalEl.querySelector('#estado');
+                        var encuadernacionSelect = modalEl.querySelector('#encuadernacion');
+                        var pdfInput = modalEl.querySelector('#archivo_pdf');
+                        
+                        if (isDigital) {
+                            // Para recursos digitales: mostrar PDF, deshabilitar stock, estado y encuadernación
+                            if (campoPdf) campoPdf.style.display = 'block';
+                            if (campoStock) campoStock.style.display = 'block';
+                            if (campoEstado) campoEstado.style.display = 'block';
+                            if (campoEncuadernacion) campoEncuadernacion.style.display = 'block';
+                            
+                            // Deshabilitar campos de stock, estado y encuadernación
+                            if (stockInput) {
+                                stockInput.disabled = true;
+                                stockInput.classList.add('form-control-disabled');
+                                stockInput.removeAttribute('required');
+                            }
+                            if (estadoSelect) {
+                                estadoSelect.disabled = true;
+                                estadoSelect.classList.add('form-select-disabled');
+                                estadoSelect.removeAttribute('required');
+                            }
+                            if (encuadernacionSelect) {
+                                encuadernacionSelect.disabled = true;
+                                encuadernacionSelect.classList.add('form-select-disabled');
+                            }
+                            
+                            // Habilitar PDF y hacerlo requerido para recursos digitales
+                            if (pdfInput) {
+                                pdfInput.disabled = false;
+                                pdfInput.setAttribute('required', 'required');
+                            }
+                            
+                            // Cambiar color del texto de ayuda
+                            var stockHelp = modalEl.querySelector('#stockHelpEditar');
+                            var estadoHelp = modalEl.querySelector('#estadoHelpEditar');
+                            var encuadernacionHelp = modalEl.querySelector('#encuadernacionHelpEditar');
+                            if (stockHelp) stockHelp.style.color = '#6c757d';
+                            if (estadoHelp) estadoHelp.style.color = '#6c757d';
+                            if (encuadernacionHelp) encuadernacionHelp.style.color = '#6c757d';
+                        } else {
+                            // Para recursos físicos: ocultar PDF, habilitar stock, estado y encuadernación
+                            if (campoPdf) {
+                                campoPdf.style.display = 'none';
+                                if (pdfInput) {
+                                    pdfInput.value = '';
+                                    pdfInput.disabled = true;
+                                    pdfInput.removeAttribute('required');
+                                }
+                            }
+                            if (campoStock) campoStock.style.display = 'block';
+                            if (campoEstado) campoEstado.style.display = 'block';
+                            if (campoEncuadernacion) campoEncuadernacion.style.display = 'block';
+                            
+                            // Habilitar campos de stock, estado y encuadernación
+                            if (stockInput) {
+                                stockInput.disabled = false;
+                                stockInput.classList.remove('form-control-disabled');
+                                stockInput.setAttribute('required', 'required');
+                            }
+                            if (estadoSelect) {
+                                estadoSelect.disabled = false;
+                                estadoSelect.classList.remove('form-select-disabled');
+                                estadoSelect.setAttribute('required', 'required');
+                            }
+                            if (encuadernacionSelect) {
+                                encuadernacionSelect.disabled = false;
+                                encuadernacionSelect.classList.remove('form-select-disabled');
+                            }
+                            
+                            // Restaurar color del texto de ayuda
+                            var stockHelp = modalEl.querySelector('#stockHelpEditar');
+                            var estadoHelp = modalEl.querySelector('#estadoHelpEditar');
+                            var encuadernacionHelp = modalEl.querySelector('#encuadernacionHelpEditar');
+                            if (stockHelp) stockHelp.style.color = '';
+                            if (estadoHelp) estadoHelp.style.color = '';
+                            if (encuadernacionHelp) encuadernacionHelp.style.color = '';
                         }
                     } catch(e) { console.warn('toggleCamposDigitalEditar error:', e); }
                 };

@@ -6,7 +6,7 @@
  * - $libro: Array con información del libro
  * 
  * Variables opcionales:
- * - $mostrarDetalles: Array con campos adicionales a mostrar ['isbn', 'edicion', 'estado', 'stock']
+ * - $mostrarDetalles: Array con campos adicionales a mostrar ['isbn', 'edicion', 'estado', 'stock', 'tipo']
  * - $colClasses: Clases CSS para las columnas (default: 'col-lg-2 col-md-4 col-sm-6')
  * - $imagenPrefix: Prefijo para la ruta de imagen (default: '')
  */
@@ -78,6 +78,17 @@ $imagenPrefix = $imagenPrefix ?? '';
             <?php if (in_array('stock', $mostrarDetalles) && isset($libro['stock'])): ?>
                 <p class="card-text text-muted small">
                     <strong>Stock:</strong> <?= esc($libro['stock']) ?>
+                </p>
+            <?php endif; ?>
+            
+            <?php if (in_array('tipo', $mostrarDetalles) && isset($libro['tiporecurso'])): ?>
+                <p class="card-text text-muted small">
+                    <strong>Tipo:</strong> 
+                    <?php if(stripos($libro['tiporecurso'], 'digital') !== false): ?>
+                        <span class="text-info">Digital</span>
+                    <?php else: ?>
+                        <span class="text-dark">Físico</span>
+                    <?php endif; ?>
                 </p>
             <?php endif; ?>
         </div>

@@ -29,6 +29,7 @@
         <th style="width:90px;">Edición</th>
         <th style="width:90px;">Estado</th>
         <th style="width:55px;">Stock</th>
+        <th style="width:60px;">Tipo</th>
       </tr>
     </thead>
     <tbody>
@@ -49,11 +50,18 @@
             <td><?= esc($r['numedicion']) ?></td>
             <td><?= esc(ucfirst($r['estado'])) ?></td>
             <td><?= esc($r['stock']) ?></td>
+            <td>
+                <?php if(isset($r['tiporecurso']) && stripos($r['tiporecurso'], 'digital') !== false): ?>
+                    Digital
+                <?php else: ?>
+                    Físico
+                <?php endif; ?>
+            </td>
           </tr>
         <?php endforeach; ?>
       <?php else: ?>
         <tr>
-          <td colspan="9" style="text-align:center; padding: 16px;">No hay recursos registrados.</td>
+          <td colspan="10" style="text-align:center; padding: 16px;">No hay recursos registrados.</td>
         </tr>
       <?php endif; ?>
     </tbody>

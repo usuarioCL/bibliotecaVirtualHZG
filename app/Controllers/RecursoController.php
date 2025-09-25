@@ -298,8 +298,13 @@ class RecursoController extends Controller
         $editorialModel = new EditorialModel();
         $tiporecursoModel = new TiporecursoModel();
         
-        // Obtener el recurso
-        $recurso = $recursoModel->find($idrecurso);
+        // Obtener el recurso con información completa
+        $recurso = $recursoModel->obtenerRecursosCompletos();
+        $recurso = array_filter($recurso, function($r) use ($idrecurso) {
+            return $r['idrecurso'] == $idrecurso;
+        });
+        $recurso = reset($recurso); // Obtener el primer (y único) elemento
+        
         if (!$recurso) {
             throw new \CodeIgniter\Exceptions\PageNotFoundException('Recurso no encontrado');
         }
