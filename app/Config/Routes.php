@@ -8,6 +8,10 @@ use CodeIgniter\Router\RouteCollection;
 $routes->get('/', 'Home::index');
 $routes->get('/sobre-plataforma', 'Home::sobrePlataforma');
 
+// Archivos con CORS
+$routes->get('/archivo/pdf/(:any)', 'ArchivoController::pdf/$1');
+$routes->get('/archivo/imagen/(:any)', 'ArchivoController::imagen/$1');
+
 //Libros
 $routes->get('/recurso', 'RecursoController::buscar');
 

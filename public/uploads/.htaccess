@@ -1,0 +1,15 @@
+# CORS Headers - Solo para archivos en esta carpeta
+<IfModule mod_headers.c>
+    Header set Access-Control-Allow-Origin "*"
+    Header set Access-Control-Allow-Methods "GET, POST, OPTIONS"
+    Header set Access-Control-Allow-Headers "Content-Type, Authorization, X-Requested-With"
+</IfModule>
+
+# Configurar tipos MIME
+AddType application/pdf .pdf
+
+# Permitir acceso directo a archivos
+<Files "*">
+    Order Allow,Deny
+    Allow from all
+</Files>

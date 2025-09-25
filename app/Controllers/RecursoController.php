@@ -134,7 +134,7 @@ class RecursoController extends Controller
                 $imagenFile = $this->request->getFile('portada');
                 if ($imagenFile && $imagenFile->isValid() && !$imagenFile->hasMoved()) {
                     helper('text');
-                    $carpetaRecurso = FCPATH . 'public' . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'portadas' . DIRECTORY_SEPARATOR;
+                    $carpetaRecurso = FCPATH . 'uploads' . DIRECTORY_SEPARATOR . 'portadas' . DIRECTORY_SEPARATOR;
                     if (!is_dir($carpetaRecurso)) {
                         @mkdir($carpetaRecurso, 0775, true);
                     }
@@ -153,7 +153,7 @@ class RecursoController extends Controller
                 $archivoFile = $this->request->getFile('archivo');
                 if ($archivoFile && $archivoFile->isValid() && !$archivoFile->hasMoved()) {
                     helper('text');
-                    $carpetaRecurso = FCPATH . 'public' . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'digitales' . DIRECTORY_SEPARATOR . 'archivos' . DIRECTORY_SEPARATOR;
+                    $carpetaRecurso = FCPATH . 'uploads' . DIRECTORY_SEPARATOR . 'digitales' . DIRECTORY_SEPARATOR . 'archivos' . DIRECTORY_SEPARATOR;
                     if (!is_dir($carpetaRecurso)) {
                         @mkdir($carpetaRecurso, 0775, true);
                     }
