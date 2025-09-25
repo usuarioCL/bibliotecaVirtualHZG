@@ -20,6 +20,17 @@
                         </div>
                         <div class="col-md-6">
                             <div class="mb-3">
+                                <label for="subtitulo" class="form-label">Subtítulo</label>
+                                <input type="text" class="form-control" id="subtitulo" name="subtitulo" maxlength="200" disabled>
+                                <small class="form-text text-muted">Campo no disponible en la estructura actual</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                        <div class="col-md-6">
+                            <div class="mb-3">
                                 <label for="idautor" class="form-label">Autor</label>
                                 <input type="text" class="form-control mb-2" id="buscadorAutores" placeholder="Buscar autor...">
                                 <div class="border rounded p-2" id="listaAutores" style="max-height:180px;overflow-y:auto;">
@@ -155,56 +166,54 @@ if (modal) {
                                 <label for="estado" class="form-label">Estado</label>
                                 <select class="form-select" id="estado" name="estado" required>
                                     <option value="disponible" selected>Disponible</option>
+                                    <option value="prestado">Prestado</option>
+                                    <option value="perdido">Perdido</option>
                                 </select>
                             </div>
                         </div>
                     </div>
 
                     <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="encuadernacion" class="form-label">Encuadernación</label>
-                                <select class="form-select" id="encuadernacion" name="encuadernacion">
-                                    <option value="">Seleccionar opción</option>
-                                    <option value="Tapa dura">Tapa dura</option>
-                                    <option value="Tapa blanda">Tapa blanda</option>
-                                    <option value="Rústica">Rústica</option>
-                                    <option value="Espiral">Espiral</option>
-                                    <option value="Digital">Digital</option>
-                                </select>
-                            </div>
-                        </div>
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label for="isbn" class="form-label">ISBN</label>
                                 <input type="text" class="form-control" id="isbn" name="isbn" maxlength="13" placeholder="978-XXXXXXXXX">
                             </div>
                         </div>
-                    </div>
-
-                    <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label for="numedicion" class="form-label">Número de Edición</label>
                                 <input type="text" class="form-control" id="numedicion" name="numedicion" maxlength="50" placeholder="1ra edición">
                             </div>
                         </div>
+                    </div>
+
+                    <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label for="rutaportada" class="form-label">Portada</label>
-                                <input type="file" class="form-control" id="rutaportada" name="rutaportada" accept="image/*">
+                                <label for="portada" class="form-label">Portada</label>
+                                <input type="file" class="form-control" id="portada" name="portada" accept="image/*">
                                 <div class="form-text">Formatos: JPG, PNG, GIF. Máximo 2MB</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="encuadernacion" class="form-label">Encuadernación</label>
+                                <select class="form-select" id="encuadernacion" name="encuadernacion" disabled>
+                                    <option value="">Campo no disponible</option>
+                                </select>
+                                <small class="form-text text-muted">Campo no disponible en la estructura actual</small>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Campo PDF solo para libros digitales -->
-                    <div class="row" id="campoPdfLibro" style="display: none;">
+                    <!-- Campo archivo solo para recursos digitales -->
+                    <div class="row" id="campoArchivoDigital" style="display: none;">
                         <div class="col-md-12">
                             <div class="mb-3">
-                                <label for="archivo_pdf" class="form-label">Archivo PDF del Libro (opcional)</label>
-                                <input type="file" class="form-control" id="archivo_pdf" name="archivo_pdf" accept="application/pdf">
-                                <div class="form-text">Formatos: PDF. Tamaño máximo &lt;= 5MB a 10MB</div>
+                                <label for="archivo" class="form-label">Archivo Digital</label>
+                                <input type="file" class="form-control" id="archivo" name="archivo" accept="application/pdf,.epub,.mobi">
+                                <div class="form-text">Formatos: PDF, EPUB, MOBI. Tamaño máximo 10MB</div>
                             </div>
                         </div>
                     </div>
@@ -245,19 +254,19 @@ function cargarSubcategorias()
     });
 }
 
-// Mostrar/ocultar campo URL para libros digitales
+// Mostrar/ocultar campo archivo para recursos digitales
 function toggleCamposDigital() 
 {
     const tipoSelect = document.getElementById('idtiporecurso');
     const tipoTexto = tipoSelect.options[tipoSelect.selectedIndex].text.toLowerCase();
-    const campoPdf = document.getElementById('campoPdfLibro');
+    const campoArchivo = document.getElementById('campoArchivoDigital');
     
     if (tipoTexto.includes('digital')) {
-        campoPdf.style.display = 'block';
+        campoArchivo.style.display = 'block';
     } else {
-        campoPdf.style.display = 'none';
-        const pdfInput = document.getElementById('archivo_pdf');
-        if (pdfInput) pdfInput.value = '';
+        campoArchivo.style.display = 'none';
+        const archivoInput = document.getElementById('archivo');
+        if (archivoInput) archivoInput.value = '';
     }
 }
 
@@ -354,7 +363,7 @@ function registrarRecurso()
 document.getElementById('modalCrearRecurso').addEventListener('hidden.bs.modal', function() {
     document.getElementById('formNuevoRecurso').reset();
     document.getElementById('idsubcategoria').innerHTML = '<option value="">Primero seleccione una categoría</option>';
-    document.getElementById('campoUrlLibro').style.display = 'none';
+    document.getElementById('campoArchivoDigital').style.display = 'none';
     document.getElementById('alertaValidacionRecurso').classList.add('d-none');
 });
 

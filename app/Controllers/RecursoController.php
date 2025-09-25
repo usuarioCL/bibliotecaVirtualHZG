@@ -100,20 +100,15 @@ class RecursoController extends Controller
         $detAutorModel = new DetAutorModel();
 
         try {
-            // Datos para la tabla recursos (SIN idautor)
+            // Datos para la tabla recursos (estructura actual)
             $datosRecurso = [
                 'titulo'         => $this->request->getVar('titulo'),
                 'anio'           => $this->request->getVar('anio'),
                 'numpaginas'     => $this->request->getVar('numpaginas'),
-                'encuadernacion' => $this->request->getVar('encuadernacion'),
                 'isbn'           => $this->request->getVar('isbn'),
                 'numedicion'     => $this->request->getVar('numedicion'),
-                // Procesar el archivo de portada
-                'rutaportada'    => null, // Se actualizará después si hay imagen
                 'estado'         => $this->request->getVar('estado'),
                 'stock'          => $this->request->getVar('stock'),
-                // urlLibro puede ser actualizado luego si suben PDF
-                'urlLibro'       => $this->request->getVar('urlLibro'),
                 'nivel'          => $this->request->getVar('nivel'),
                 'idsubcategoria' => $this->request->getVar('idsubcategoria'),
                 'ideditorial'    => $this->request->getVar('ideditorial'),
@@ -130,68 +125,53 @@ class RecursoController extends Controller
                 ]);
             }
 
-            // Procesar la imagen de portada
+            // Procesar archivos (portada y archivo digital)
+            $portadaPath = null;
+            $archivoPath = null;
+            
+            // Procesar portada
             try {
-                $imagenFile = $this->request->getFile('rutaportada');
+                $imagenFile = $this->request->getFile('portada');
                 if ($imagenFile && $imagenFile->isValid() && !$imagenFile->hasMoved()) {
                     helper('text');
-                    $carpetaRecurso = FCPATH . 'img' . DIRECTORY_SEPARATOR . 'portadas' . DIRECTORY_SEPARATOR;
+                    $carpetaRecurso = FCPATH . 'public' . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'portadas' . DIRECTORY_SEPARATOR;
                     if (!is_dir($carpetaRecurso)) {
                         @mkdir($carpetaRecurso, 0775, true);
                     }
                     $nombreBase = url_title($datosRecurso['titulo'] ?: 'portada', '-', true);
                     $extension = $imagenFile->getExtension();
                     $nombreArchivo = $nombreBase . '-' . $idRecurso . '.' . $extension;
-                    // Mover archivo a carpeta pública
                     $imagenFile->move($carpetaRecurso, $nombreArchivo, true);
-                    $rutaRelativa = 'img/portadas/' . $nombreArchivo;
-                    // Actualizar campo rutaportada con la ruta relativa
-                    $recursoModel->update($idRecurso, ['rutaportada' => $rutaRelativa]);
+                    $portadaPath = 'uploads/portadas/' . $nombreArchivo;
                 }
             } catch (\Throwable $e) {
-                // Loguear el error pero continuar con el proceso
                 log_message('error', 'Error subiendo portada: ' . $e->getMessage());
             }
-            
-            // 1.1 Manejo de PDF SOLO si el tipo de recurso es digital
-            try {
-                $idTipo = $this->request->getVar('idtiporecurso');
-                $esDigital = false;
-                if ($idTipo) {
-                    $tipo = model('TiporecursoModel')->find($idTipo);
-                    if ($tipo && isset($tipo['tiporecurso']) && stripos($tipo['tiporecurso'], 'digital') !== false) {
-                        $esDigital = true;
-                    }
-                }
 
-                if ($idRecurso && $esDigital) {
-                    $pdfFile = $this->request->getFile('archivo_pdf');
-                    if ($pdfFile && $pdfFile->isValid() && !$pdfFile->hasMoved()) {
-                        helper('text');
-                        $carpetaRecurso = FCPATH . 'libros' . DIRECTORY_SEPARATOR . $idRecurso . DIRECTORY_SEPARATOR;
-                        if (!is_dir($carpetaRecurso)) {
-                            @mkdir($carpetaRecurso, 0775, true);
-                        }
-                        $nombreBase = url_title($datosRecurso['titulo'] ?: 'libro', '-', true);
-                        $nombreArchivo = $nombreBase . '-' . $idRecurso . '.pdf';
-                        // Mover archivo a carpeta pública
-                        $pdfFile->move($carpetaRecurso, $nombreArchivo, true);
-                        $rutaRelativa = 'libros/' . $idRecurso . '/' . $nombreArchivo;
-                        // Actualizar campo urlLibro con la ruta relativa servible
-                        $recursoModel->update($idRecurso, ['urlLibro' => $rutaRelativa]);
+            // Procesar archivo digital
+            try {
+                $archivoFile = $this->request->getFile('archivo');
+                if ($archivoFile && $archivoFile->isValid() && !$archivoFile->hasMoved()) {
+                    helper('text');
+                    $carpetaRecurso = FCPATH . 'public' . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'digitales' . DIRECTORY_SEPARATOR . 'archivos' . DIRECTORY_SEPARATOR;
+                    if (!is_dir($carpetaRecurso)) {
+                        @mkdir($carpetaRecurso, 0775, true);
                     }
-                } else {
-                    // Si no es digital, ignorar cualquier PDF subido
-                    // Opcional: limpiar urlLibro si vino algo pero no es digital
-                    if ($idRecurso && !$esDigital) {
-                        // Si deseas forzar vaciar urlLibro para no guardar rutas no digitales:
-                        // $recursoModel->update($idRecurso, ['urlLibro' => null]);
-                    }
+                    $nombreBase = url_title($datosRecurso['titulo'] ?: 'archivo', '-', true);
+                    $extension = $archivoFile->getExtension();
+                    $nombreArchivo = $nombreBase . '-' . $idRecurso . '.' . $extension;
+                    $archivoFile->move($carpetaRecurso, $nombreArchivo, true);
+                    $archivoPath = 'uploads/digitales/archivos/' . $nombreArchivo;
                 }
             } catch (\Throwable $e) {
-                // Loguear si es necesario pero no interrumpir el flujo del guardado básico
-                log_message('error', 'Error subiendo PDF: ' . $e->getMessage());
+                log_message('error', 'Error subiendo archivo digital: ' . $e->getMessage());
             }
+
+            // Los archivos se guardan en las carpetas pero no se almacenan en la BD
+            // ya que la tabla recursos no tiene campos para rutaportada ni urlLibro
+            // Los archivos quedan disponibles en las carpetas:
+            // - Portadas: public/uploads/portadas/
+            // - Archivos digitales: public/uploads/digitales/archivos/
             
             // 2. Insertar la relación autor-recurso en detautores
             $idAutores = $this->request->getVar('idautor');

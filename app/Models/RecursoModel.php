@@ -12,16 +12,12 @@ class RecursoModel extends Model
 
     protected $allowedFields    = [
         'titulo',
-        'subtitulo',
         'anio',
         'numpaginas',
-        'encuadernacion',
         'isbn',
         'numedicion',
-        'rutaportada',
         'estado',
         'stock',
-        'urlLibro',
         'nivel',
         'idsubcategoria',
         'ideditorial',
