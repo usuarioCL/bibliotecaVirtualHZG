@@ -51,7 +51,7 @@
                             </td>
                             <td>
                                 <?php if (!empty($recurso->archivo)): ?>
-                                    <a href="<?= base_url('uploads/digitales/' . esc($recurso->archivo)) ?>" 
+                                    <a href="<?= base_url(esc($recurso->archivo)) ?>" 
                                        target="_blank" 
                                        class="btn btn-sm btn-outline-primary">
                                         <i class="ti ti-download"></i> Descargar
@@ -64,7 +64,7 @@
                                 <?php if (!empty($recurso->archivo)): ?>
                                     <button type="button" 
                                             class="btn btn-sm btn-outline-info" 
-                                            onclick="verPDF('<?= base_url('uploads/digitales/' . esc($recurso->archivo)) ?>', '<?= esc($recurso->titulo) ?>')">
+                                            onclick="verPDF('<?= base_url(esc($recurso->archivo)) ?>', '<?= esc($recurso->titulo) ?>')">
                                         <i class="ti ti-eye"></i>
                                     </button>
                                 <?php else: ?>
