@@ -1,0 +1,13 @@
+# Permitir acceso a archivos PDF
+<Files "*.pdf">
+    Order Allow,Deny
+    Allow from all
+</Files>
+
+# Configurar tipo MIME para PDF
+AddType application/pdf .pdf
+
+# Permitir descarga de archivos
+<FilesMatch "\.(pdf|doc|docx|txt|epub)$">
+    Header set Content-Disposition "attachment"
+</FilesMatch>
