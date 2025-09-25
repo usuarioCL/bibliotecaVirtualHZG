@@ -132,9 +132,9 @@ class RecursoModel extends Model
 
     public function obtenerRecursosCompletos()
     {
-        return $this->select('
+        // Primero obtener los recursos sin autores para evitar duplicados
+        $recursos = $this->select('
             recursos.*,
-            autores.nomautor,
             subcategorias.subcategoria,
             categorias.categoria,
             editoriales.editorial,
@@ -143,8 +143,6 @@ class RecursoModel extends Model
             rf.portada,
             rd.archivo
         ')
-        ->join('detautores', 'detautores.idrecurso = recursos.idrecurso', 'left')
-        ->join('autores', 'autores.idautor = detautores.idautor', 'left')
         ->join('subcategorias', 'subcategorias.idsubcategoria = recursos.idsubcategoria', 'left')
         ->join('categorias', 'categorias.idcategoria = subcategorias.idcategoria', 'left')
         ->join('editoriales', 'editoriales.ideditorial = recursos.ideditorial', 'left')
@@ -153,5 +151,27 @@ class RecursoModel extends Model
         ->join('recursos_digitales rd', 'rd.idrecurso = recursos.idrecurso', 'left')
         ->orderBy('recursos.idrecurso', 'ASC')
         ->findAll();
+        
+        // Ahora agregar los autores a cada recurso
+        foreach ($recursos as &$recurso) {
+            $autores = $this->db->table('detautores da')
+                ->select('a.nomautor, a.apeautor')
+                ->join('autores a', 'a.idautor = da.idautor')
+                ->where('da.idrecurso', $recurso['idrecurso'])
+                ->get()
+                ->getResultArray();
+            
+            // Concatenar todos los autores en un solo string
+            $nombresAutores = [];
+            foreach ($autores as $autor) {
+                $nombreCompleto = trim($autor['apeautor'] . ' ' . $autor['nomautor']);
+                if (!empty($nombreCompleto)) {
+                    $nombresAutores[] = $nombreCompleto;
+                }
+            }
+            $recurso['nomautor'] = implode(', ', $nombresAutores);
+        }
+        
+        return $recursos;
     }
 }
