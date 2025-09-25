@@ -501,9 +501,10 @@ function verPDF(url, titulo) {
     document.getElementById('pdfError').style.display = 'none';
     document.getElementById('pdfViewer').style.display = 'none';
     
-    // Convertir URL a HTTPS si es necesario
+    // Usar la URL tal como viene (no forzar HTTPS en desarrollo local)
     var secureUrl = url;
-    if (url.startsWith('http://')) {
+    // Solo convertir a HTTPS si estamos en producción
+    if (url.startsWith('http://') && !window.location.hostname.includes('localhost') && !window.location.hostname.includes('.test')) {
         secureUrl = url.replace('http://', 'https://');
     }
     

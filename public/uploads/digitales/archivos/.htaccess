@@ -1,4 +1,4 @@
-# CORS Headers - Solo para archivos en esta carpeta
+# CORS Headers para archivos PDF
 <IfModule mod_headers.c>
     Header always set Access-Control-Allow-Origin "*"
     Header always set Access-Control-Allow-Methods "GET, POST, OPTIONS"
@@ -6,22 +6,27 @@
     Header always set Access-Control-Max-Age "3600"
 </IfModule>
 
-# Configurar tipos MIME
+# Configurar tipos MIME para PDFs
 <IfModule mod_mime.c>
     AddType application/pdf .pdf
 </IfModule>
 
-# Permitir acceso directo a archivos
+# Permitir acceso directo a archivos PDF
+<Files "*.pdf">
+    Order Allow,Deny
+    Allow from all
+    Require all granted
+</Files>
+
+# Configuración adicional para archivos
 <Files "*">
     Order Allow,Deny
     Allow from all
     Require all granted
 </Files>
 
-# Configurar cache para archivos
+# Configurar cache para PDFs
 <IfModule mod_expires.c>
     ExpiresActive On
     ExpiresByType application/pdf "access plus 1 hour"
-    ExpiresByType image/jpeg "access plus 1 hour"
-    ExpiresByType image/png "access plus 1 hour"
 </IfModule>

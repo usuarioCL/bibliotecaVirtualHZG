@@ -1,0 +1,23 @@
+# Permitir acceso a archivos estáticos pero proteger el código PHP
+<IfModule authz_core_module>
+	# Denegar acceso a archivos PHP
+	<Files "*.php">
+		Require all denied
+	</Files>
+	# Permitir acceso a otros archivos (imágenes, CSS, JS, etc.)
+	<FilesMatch "\.(css|js|png|jpg|jpeg|gif|ico|svg|pdf|txt|xml|json)$">
+		Require all granted
+	</FilesMatch>
+</IfModule>
+<IfModule !authz_core_module>
+	# Denegar acceso a archivos PHP
+	<Files "*.php">
+		Order Deny,Allow
+		Deny from all
+	</Files>
+	# Permitir acceso a otros archivos
+	<FilesMatch "\.(css|js|png|jpg|jpeg|gif|ico|svg|pdf|txt|xml|json)$">
+		Order Allow,Deny
+		Allow from all
+	</FilesMatch>
+</IfModule>
