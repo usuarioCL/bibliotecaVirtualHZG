@@ -129,15 +129,15 @@
                                 <input type="number" class="form-control" id="numpaginas" name="numpaginas" required min="1" value="<?= esc($recurso['numpaginas']) ?>">
                             </div>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-3" id="campoStockEditar">
                             <div class="mb-3">
-                                <label for="stock" class="form-label">Stock</label>
+                                <label for="stock" class="form-label">Stock <small class="text-muted" id="stockHelpEditar">(No aplica para digitales)</small></label>
                                 <input type="number" class="form-control" id="stock" name="stock" required min="0" value="<?= esc($recurso['stock']) ?>">
                             </div>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-3" id="campoEstadoEditar">
                             <div class="mb-3">
-                                <label for="estado" class="form-label">Estado</label>
+                                <label for="estado" class="form-label">Estado <small class="text-muted" id="estadoHelpEditar">(No aplica para digitales)</small></label>
                                 <select class="form-select" id="estado" name="estado" required>
                                     <?php foreach ($estados as $estado): ?>
                                         <option value="<?= esc($estado) ?>" <?= $recurso['estado'] == $estado ? 'selected' : '' ?>>
@@ -150,9 +150,9 @@
                     </div>
 
                     <div class="row">
-                        <div class="col-md-6">
+                        <div class="col-md-6" id="campoEncuadernacionEditar">
                             <div class="mb-3">
-                                <label for="encuadernacion" class="form-label">Encuadernación</label>
+                                <label for="encuadernacion" class="form-label">Encuadernación <small class="text-muted" id="encuadernacionHelpEditar">(No aplica para digitales)</small></label>
                                 <select class="form-select" id="encuadernacion" name="encuadernacion">
                                     <option value="">Seleccionar opción</option>
                                     <option value="Tapa dura" <?= $recurso['encuadernacion'] == 'Tapa dura' ? 'selected' : '' ?>>Tapa dura</option>
@@ -209,6 +209,33 @@
     </div>
 </div>
 
+<style>
+/* Estilos para campos deshabilitados */
+.form-control-disabled {
+    background-color: #f8f9fa !important;
+    color: #6c757d !important;
+    cursor: not-allowed !important;
+    opacity: 0.7 !important;
+}
+
+.form-select-disabled {
+    background-color: #f8f9fa !important;
+    color: #6c757d !important;
+    cursor: not-allowed !important;
+    opacity: 0.7 !important;
+}
+
+.form-control-disabled:focus {
+    border-color: #ced4da !important;
+    box-shadow: none !important;
+}
+
+.form-select-disabled:focus {
+    border-color: #ced4da !important;
+    box-shadow: none !important;
+}
+</style>
+
 <script>
 // Cargar subcategorías basadas en la categoría seleccionada (para editar)
 function cargarSubcategoriasEditar() 
@@ -235,7 +262,7 @@ function cargarSubcategoriasEditar()
     });
 }
 
-// Mostrar/ocultar campo PDF según tipo de recurso
+// Habilitar/deshabilitar campos según tipo de recurso
 function toggleCamposDigitalEditar() 
 {
     // Detección por ID del tipo digital (calculado en servidor) y respaldo por data-digital
@@ -244,18 +271,91 @@ function toggleCamposDigitalEditar()
     const selectedVal = tipoSelect ? String(tipoSelect.value) : '';
     const selectedOpt = tipoSelect && tipoSelect.selectedIndex >= 0 ? tipoSelect.options[tipoSelect.selectedIndex] : null;
     const campoPdf = document.getElementById('campoPdfLibroEditar');
+    const campoStock = document.getElementById('campoStockEditar');
+    const campoEstado = document.getElementById('campoEstadoEditar');
+    const campoEncuadernacion = document.getElementById('campoEncuadernacionEditar');
+    const stockInput = document.getElementById('stock');
+    const estadoSelect = document.getElementById('estado');
+    const encuadernacionSelect = document.getElementById('encuadernacion');
+    const pdfInput = document.getElementById('archivo_pdf');
 
     const isDigitalById = digitalTypeIds.includes(selectedVal);
     const isDigitalByData = selectedOpt && selectedOpt.getAttribute('data-digital') === '1';
+    const esDigital = isDigitalById || isDigitalByData;
 
-    if (isDigitalById || isDigitalByData) {
+    if (esDigital) {
+        // Para recursos digitales: mostrar PDF, deshabilitar stock, estado y encuadernación
         if (campoPdf) campoPdf.style.display = 'block';
+        if (campoStock) campoStock.style.display = 'block';
+        if (campoEstado) campoEstado.style.display = 'block';
+        if (campoEncuadernacion) campoEncuadernacion.style.display = 'block';
+        
+        // Deshabilitar campos de stock, estado y encuadernación
+        if (stockInput) {
+            stockInput.disabled = true;
+            stockInput.classList.add('form-control-disabled');
+            stockInput.removeAttribute('required');
+        }
+        if (estadoSelect) {
+            estadoSelect.disabled = true;
+            estadoSelect.classList.add('form-select-disabled');
+            estadoSelect.removeAttribute('required');
+        }
+        if (encuadernacionSelect) {
+            encuadernacionSelect.disabled = true;
+            encuadernacionSelect.classList.add('form-select-disabled');
+        }
+        
+        // Cambiar color del texto de ayuda
+        const stockHelp = document.getElementById('stockHelpEditar');
+        const estadoHelp = document.getElementById('estadoHelpEditar');
+        const encuadernacionHelp = document.getElementById('encuadernacionHelpEditar');
+        if (stockHelp) stockHelp.style.color = '#6c757d';
+        if (estadoHelp) estadoHelp.style.color = '#6c757d';
+        if (encuadernacionHelp) encuadernacionHelp.style.color = '#6c757d';
+        
+        // Habilitar PDF y hacerlo requerido para recursos digitales
+        if (pdfInput) {
+            pdfInput.disabled = false;
+            pdfInput.setAttribute('required', 'required');
+        }
     } else {
+        // Para recursos físicos: ocultar PDF, habilitar stock, estado y encuadernación
         if (campoPdf) {
             campoPdf.style.display = 'none';
-            const pdfInput = document.getElementById('archivo_pdf');
-            if (pdfInput) pdfInput.value = '';
+            if (pdfInput) {
+                pdfInput.value = '';
+                pdfInput.disabled = true;
+                pdfInput.removeAttribute('required');
+            }
         }
+        if (campoStock) campoStock.style.display = 'block';
+        if (campoEstado) campoEstado.style.display = 'block';
+        if (campoEncuadernacion) campoEncuadernacion.style.display = 'block';
+        
+        // Habilitar campos de stock, estado y encuadernación
+        if (stockInput) {
+            stockInput.disabled = false;
+            stockInput.classList.remove('form-control-disabled');
+            stockInput.setAttribute('required', 'required');
+        }
+        if (estadoSelect) {
+            estadoSelect.disabled = false;
+            estadoSelect.classList.remove('form-select-disabled');
+            estadoSelect.setAttribute('required', 'required');
+        }
+        if (encuadernacionSelect) {
+            encuadernacionSelect.disabled = false;
+            encuadernacionSelect.classList.remove('form-select-disabled');
+        }
+        
+        // Restaurar color del texto de ayuda
+        const stockHelp = document.getElementById('stockHelpEditar');
+        const estadoHelp = document.getElementById('estadoHelpEditar');
+        const encuadernacionHelp = document.getElementById('encuadernacionHelpEditar');
+        if (stockHelp) stockHelp.style.color = '';
+        if (estadoHelp) estadoHelp.style.color = '';
+        if (encuadernacionHelp) encuadernacionHelp.style.color = '';
     }
 }
 
@@ -274,14 +374,35 @@ function actualizarRecurso()
     const titulo = document.getElementById('titulo').value.trim();
     const autoresMarcados = Array.from(document.querySelectorAll('input[name="idautor[]"]:checked')).map(el => el.value);
     const numpaginas = document.getElementById('numpaginas').value;
-    const estado = document.getElementById('estado').value;
-    const stock = document.getElementById('stock').value;
+    const estado = document.getElementById('estado');
+    const stock = document.getElementById('stock');
+    const archivo = document.getElementById('archivo_pdf');
     
-    if (!titulo || autoresMarcados.length === 0 || !numpaginas || !estado || !stock) {
+    // Verificar si es recurso digital
+    const tipoSelect = document.getElementById('idtiporecurso');
+    const tipoTexto = tipoSelect.options[tipoSelect.selectedIndex].text.toLowerCase();
+    const esDigital = tipoTexto.includes('digital');
+    
+    // Validaciones básicas
+    if (!titulo || autoresMarcados.length === 0 || !numpaginas) {
         alerta.className = 'alert alert-danger';
         alerta.textContent = 'Por favor complete todos los campos requeridos y seleccione al menos un autor';
         alerta.classList.remove('d-none');
         return;
+    }
+    
+    // Validaciones específicas según el tipo de recurso
+    if (esDigital) {
+        // Para recursos digitales: no validar stock y estado (están deshabilitados)
+        // El archivo PDF es opcional en edición
+    } else {
+        // Para recursos físicos: validar stock y estado
+        if (!estado.value || !stock.value) {
+            alerta.className = 'alert alert-danger';
+            alerta.textContent = 'Por favor complete todos los campos requeridos';
+            alerta.classList.remove('d-none');
+            return;
+        }
     }
     // Enviar primer autor como 'idautor' por compatibilidad con el backend
     formData.append('idautor', autoresMarcados[0]);

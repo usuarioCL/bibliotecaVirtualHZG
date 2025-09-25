@@ -129,9 +129,9 @@ if (modal) {
                                 </select>
                             </div>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-6" id="campoEncuadernacion">
                             <div class="mb-3">
-                                <label for="encuadernacion" class="form-label">Encuadernación</label>
+                                <label for="encuadernacion" class="form-label">Encuadernación <small class="text-muted" id="encuadernacionHelp">(No aplica para digitales)</small></label>
                                 <select class="form-select" id="encuadernacion" name="encuadernacion">
                                     <option value="">Seleccionar opción</option>
                                     <option value="Tapa dura">Tapa dura</option>
@@ -139,7 +139,6 @@ if (modal) {
                                     <option value="Rústica">Rústica</option>
                                     <option value="Espiral">Espiral</option>
                                 </select>
-                                <small class="form-text text-muted">Solo para recursos físicos</small>
                             </div>
                         </div>
                     </div>
@@ -161,15 +160,15 @@ if (modal) {
                                 <input type="number" class="form-control" id="numpaginas" name="numpaginas" required min="1">
                             </div>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-3" id="campoStock">
                             <div class="mb-3">
-                                <label for="stock" class="form-label">Stock</label>
+                                <label for="stock" class="form-label">Stock <small class="text-muted" id="stockHelp">(No aplica para digitales)</small></label>
                                 <input type="number" class="form-control" id="stock" name="stock" required min="0" value="1">
                             </div>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-3" id="campoEstado">
                             <div class="mb-3">
-                                <label for="estado" class="form-label">Estado</label>
+                                <label for="estado" class="form-label">Estado <small class="text-muted" id="estadoHelp">(No aplica para digitales)</small></label>
                                 <select class="form-select" id="estado" name="estado" required>
                                     <option value="disponible" selected>Disponible</option>
                                     <option value="prestado">Prestado</option>
@@ -226,6 +225,33 @@ if (modal) {
     </div>
 </div>
 
+<style>
+/* Estilos para campos deshabilitados */
+.form-control-disabled {
+    background-color: #f8f9fa !important;
+    color: #6c757d !important;
+    cursor: not-allowed !important;
+    opacity: 0.7 !important;
+}
+
+.form-select-disabled {
+    background-color: #f8f9fa !important;
+    color: #6c757d !important;
+    cursor: not-allowed !important;
+    opacity: 0.7 !important;
+}
+
+.form-control-disabled:focus {
+    border-color: #ced4da !important;
+    box-shadow: none !important;
+}
+
+.form-select-disabled:focus {
+    border-color: #ced4da !important;
+    box-shadow: none !important;
+}
+</style>
+
 <script>
 // Cargar subcategorías basadas en la categoría seleccionada
 function cargarSubcategorias() 
@@ -251,19 +277,97 @@ function cargarSubcategorias()
     });
 }
 
-// Mostrar/ocultar campo archivo para recursos digitales
+// Habilitar/deshabilitar campos según el tipo de recurso
 function toggleCamposDigital() 
 {
     const tipoSelect = document.getElementById('idtiporecurso');
     const tipoTexto = tipoSelect.options[tipoSelect.selectedIndex].text.toLowerCase();
     const campoArchivo = document.getElementById('campoArchivoDigital');
+    const campoStock = document.getElementById('campoStock');
+    const campoEstado = document.getElementById('campoEstado');
+    const campoEncuadernacion = document.getElementById('campoEncuadernacion');
+    const stockInput = document.getElementById('stock');
+    const estadoSelect = document.getElementById('estado');
+    const encuadernacionSelect = document.getElementById('encuadernacion');
+    const archivoInput = document.getElementById('archivo');
     
     if (tipoTexto.includes('digital')) {
+        // Para recursos digitales: mostrar archivo, deshabilitar stock, estado y encuadernación
         campoArchivo.style.display = 'block';
+        campoStock.style.display = 'block';
+        campoEstado.style.display = 'block';
+        campoEncuadernacion.style.display = 'block';
+        
+        // Deshabilitar campos de stock, estado y encuadernación
+        stockInput.disabled = true;
+        estadoSelect.disabled = true;
+        encuadernacionSelect.disabled = true;
+        
+        // Remover atributo required para evitar validación
+        stockInput.removeAttribute('required');
+        estadoSelect.removeAttribute('required');
+        
+        // Agregar clase para estilo visual
+        stockInput.classList.add('form-control-disabled');
+        estadoSelect.classList.add('form-select-disabled');
+        encuadernacionSelect.classList.add('form-select-disabled');
+        
+        // Cambiar color del texto de ayuda
+        const stockHelp = document.getElementById('stockHelp');
+        const estadoHelp = document.getElementById('estadoHelp');
+        const encuadernacionHelp = document.getElementById('encuadernacionHelp');
+        if (stockHelp) stockHelp.style.color = '#6c757d';
+        if (estadoHelp) estadoHelp.style.color = '#6c757d';
+        if (encuadernacionHelp) encuadernacionHelp.style.color = '#6c757d';
+        
+        // Limpiar valores de stock, estado y encuadernación para recursos digitales
+        stockInput.value = '0';
+        estadoSelect.value = 'disponible';
+        encuadernacionSelect.value = '';
+        
+        // Habilitar archivo y hacerlo requerido para recursos digitales
+        if (archivoInput) {
+            archivoInput.disabled = false;
+            archivoInput.setAttribute('required', 'required');
+        }
     } else {
+        // Para recursos físicos: ocultar archivo, habilitar stock, estado y encuadernación
         campoArchivo.style.display = 'none';
-        const archivoInput = document.getElementById('archivo');
-        if (archivoInput) archivoInput.value = '';
+        campoStock.style.display = 'block';
+        campoEstado.style.display = 'block';
+        campoEncuadernacion.style.display = 'block';
+        
+        // Habilitar campos de stock, estado y encuadernación
+        stockInput.disabled = false;
+        estadoSelect.disabled = false;
+        encuadernacionSelect.disabled = false;
+        
+        // Restaurar atributo required para recursos físicos
+        stockInput.setAttribute('required', 'required');
+        estadoSelect.setAttribute('required', 'required');
+        
+        // Remover clase de estilo
+        stockInput.classList.remove('form-control-disabled');
+        estadoSelect.classList.remove('form-select-disabled');
+        encuadernacionSelect.classList.remove('form-select-disabled');
+        
+        // Restaurar color del texto de ayuda
+        const stockHelp = document.getElementById('stockHelp');
+        const estadoHelp = document.getElementById('estadoHelp');
+        const encuadernacionHelp = document.getElementById('encuadernacionHelp');
+        if (stockHelp) stockHelp.style.color = '';
+        if (estadoHelp) estadoHelp.style.color = '';
+        if (encuadernacionHelp) encuadernacionHelp.style.color = '';
+        
+        // Limpiar archivo y restaurar valores por defecto
+        if (archivoInput) {
+            archivoInput.value = '';
+            archivoInput.disabled = true;
+            archivoInput.removeAttribute('required');
+        }
+        stockInput.value = '1';
+        estadoSelect.value = 'disponible';
+        encuadernacionSelect.value = '';
     }
 }
 
@@ -292,14 +396,40 @@ function registrarRecurso()
     // Verificar si al menos un autor está seleccionado
     const autoresSeleccionados = document.querySelectorAll('input[name="idautor[]"]:checked');
     const numpaginas = document.getElementById('numpaginas').value;
-    const estado = document.getElementById('estado').value;
-    const stock = document.getElementById('stock').value;
+    const estado = document.getElementById('estado');
+    const stock = document.getElementById('stock');
+    const archivo = document.getElementById('archivo');
     
-    if (!titulo || autoresSeleccionados.length === 0 || !numpaginas || !estado || !stock) {
+    // Verificar si es recurso digital
+    const tipoSelect = document.getElementById('idtiporecurso');
+    const tipoTexto = tipoSelect.options[tipoSelect.selectedIndex].text.toLowerCase();
+    const esDigital = tipoTexto.includes('digital');
+    
+    // Validaciones básicas
+    if (!titulo || autoresSeleccionados.length === 0 || !numpaginas) {
         alerta.className = 'alert alert-danger';
         alerta.textContent = 'Por favor complete todos los campos requeridos';
         alerta.classList.remove('d-none');
         return;
+    }
+    
+    // Validaciones específicas según el tipo de recurso
+    if (esDigital) {
+        // Para recursos digitales: validar archivo
+        if (!archivo.files || archivo.files.length === 0) {
+            alerta.className = 'alert alert-danger';
+            alerta.textContent = 'Por favor seleccione un archivo digital';
+            alerta.classList.remove('d-none');
+            return;
+        }
+    } else {
+        // Para recursos físicos: validar stock y estado
+        if (!estado.value || !stock.value) {
+            alerta.className = 'alert alert-danger';
+            alerta.textContent = 'Por favor complete todos los campos requeridos';
+            alerta.classList.remove('d-none');
+            return;
+        }
     }
     
     fetch('<?= base_url('recursos/guardar') ?>', {

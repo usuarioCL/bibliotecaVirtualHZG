@@ -100,6 +100,16 @@ class RecursoController extends Controller
         $detAutorModel = new DetAutorModel();
 
         try {
+            // Determinar si es recurso digital o físico
+            $idTipo = $this->request->getVar('idtiporecurso');
+            $esDigital = false;
+            if ($idTipo) {
+                $tipo = model('TiporecursoModel')->find($idTipo);
+                if ($tipo && isset($tipo['tiporecurso']) && stripos($tipo['tiporecurso'], 'digital') !== false) {
+                    $esDigital = true;
+                }
+            }
+
             // Datos para la tabla recursos (estructura actual)
             $datosRecurso = [
                 'titulo'         => $this->request->getVar('titulo'),
@@ -107,13 +117,21 @@ class RecursoController extends Controller
                 'numpaginas'     => $this->request->getVar('numpaginas'),
                 'isbn'           => $this->request->getVar('isbn'),
                 'numedicion'     => $this->request->getVar('numedicion'),
-                'estado'         => $this->request->getVar('estado'),
-                'stock'          => $this->request->getVar('stock'),
                 'nivel'          => $this->request->getVar('nivel'),
                 'idsubcategoria' => $this->request->getVar('idsubcategoria'),
                 'ideditorial'    => $this->request->getVar('ideditorial'),
                 'idtiporecurso'  => $this->request->getVar('idtiporecurso')
             ];
+
+            // Solo agregar stock y estado para recursos físicos
+            if (!$esDigital) {
+                $datosRecurso['estado'] = $this->request->getVar('estado') ?: 'disponible';
+                $datosRecurso['stock'] = $this->request->getVar('stock') ?: 1;
+            } else {
+                // Para recursos digitales, establecer valores por defecto
+                $datosRecurso['estado'] = 'disponible';
+                $datosRecurso['stock'] = 0; // Los recursos digitales no tienen stock físico
+            }
 
             // 1. Insertar el recurso
             $idRecurso = $recursoModel->insert($datosRecurso);
@@ -167,15 +185,7 @@ class RecursoController extends Controller
                 log_message('error', 'Error subiendo archivo digital: ' . $e->getMessage());
             }
 
-            // Determinar si es recurso físico o digital
-            $idTipo = $this->request->getVar('idtiporecurso');
-            $esDigital = false;
-            if ($idTipo) {
-                $tipo = model('TiporecursoModel')->find($idTipo);
-                if ($tipo && isset($tipo['tiporecurso']) && stripos($tipo['tiporecurso'], 'digital') !== false) {
-                    $esDigital = true;
-                }
-            }
+            // Usar la variable $esDigital ya determinada arriba
 
             // Insertar en tabla específica según el tipo de recurso
             if ($esDigital) {
@@ -327,22 +337,39 @@ public function actualizar($idrecurso)
     $recursoModel = new RecursoModel();
     $detAutorModel = new DetAutorModel();
 
+    // Determinar si es recurso digital o físico
+    $idTipo = $this->request->getVar('idtiporecurso');
+    $esDigital = false;
+    if ($idTipo) {
+        $tipo = model('TiporecursoModel')->find($idTipo);
+        if ($tipo && isset($tipo['tiporecurso']) && stripos($tipo['tiporecurso'], 'digital') !== false) {
+            $esDigital = true;
+        }
+    }
+
     // Datos para actualizar en recursos
     $datosRecurso = [
         'titulo'         => $this->request->getVar('titulo'),
         'anio'           => $this->request->getVar('anio'),
         'numpaginas'     => $this->request->getVar('numpaginas'),
-        'encuadernacion' => $this->request->getVar('encuadernacion'),
         'isbn'           => $this->request->getVar('isbn'),
         'numedicion'     => $this->request->getVar('numedicion'),
         'rutaportada'    => $this->request->getVar('rutaportada'),
-        'estado'         => $this->request->getVar('estado'),
-        'stock'          => $this->request->getVar('stock'),
         'nivel'          => $this->request->getVar('nivel'),
         'idsubcategoria' => $this->request->getVar('idsubcategoria'),
         'ideditorial'    => $this->request->getVar('ideditorial'),
         'idtiporecurso'  => $this->request->getVar('idtiporecurso')
     ];
+
+    // Solo actualizar stock y estado para recursos físicos
+    if (!$esDigital) {
+        $datosRecurso['estado'] = $this->request->getVar('estado') ?: 'disponible';
+        $datosRecurso['stock'] = $this->request->getVar('stock') ?: 1;
+    } else {
+        // Para recursos digitales, mantener valores por defecto
+        $datosRecurso['estado'] = 'disponible';
+        $datosRecurso['stock'] = 0; // Los recursos digitales no tienen stock físico
+    }
 
     // 1. Actualizar el recurso (sin tocar aún portada ni PDF)
     $recursoModel->update($idrecurso, $datosRecurso);
@@ -412,6 +439,53 @@ public function actualizar($idrecurso)
         }
     } catch (\Throwable $e) {
         log_message('error', 'Error actualizando PDF: ' . $e->getMessage());
+    }
+
+    // 1.3 Actualizar tabla específica según el tipo de recurso
+    try {
+        if ($esDigital) {
+            // Actualizar recursos_digitales
+            $recursoDigitalModel = new \App\Models\RecursoDigitalModel();
+            $datosDigital = [];
+            
+            // Solo actualizar si hay archivo nuevo
+            $archivoPdf = $this->request->getFile('archivo_pdf');
+            if ($archivoPdf && $archivoPdf->isValid() && !$archivoPdf->hasMoved()) {
+                // Procesar archivo PDF
+                $carpetaRecurso = FCPATH . 'uploads' . DIRECTORY_SEPARATOR . 'digitales' . DIRECTORY_SEPARATOR . 'archivos' . DIRECTORY_SEPARATOR;
+                if (!is_dir($carpetaRecurso)) {
+                    @mkdir($carpetaRecurso, 0775, true);
+                }
+                
+                $recursoExistente = $recursoModel->find($idrecurso);
+                $nombreBase = url_title(($recursoExistente['titulo'] ?? 'libro'), '-', true);
+                $nombreArchivo = $nombreBase . '-' . $idrecurso . '.pdf';
+                $archivoPdf->move($carpetaRecurso, $nombreArchivo, true);
+                $datosDigital['archivo'] = 'uploads/digitales/archivos/' . $nombreArchivo;
+            }
+            
+            // Actualizar si hay datos que cambiar
+            if (!empty($datosDigital)) {
+                $recursoDigitalModel->update($idrecurso, $datosDigital);
+            }
+        } else {
+            // Actualizar recursos_fisicos
+            $recursoFisicoModel = new \App\Models\RecursoFisicoModel();
+            $datosFisico = [];
+            
+            // Actualizar encuadernación si se proporciona
+            $encuadernacion = $this->request->getVar('encuadernacion');
+            if ($encuadernacion !== null) {
+                $datosFisico['encuadernacion'] = $encuadernacion;
+            }
+            
+            // Actualizar si hay datos que cambiar
+            if (!empty($datosFisico)) {
+                $recursoFisicoModel->update($idrecurso, $datosFisico);
+            }
+        }
+    } catch (\Throwable $e) {
+        log_message('error', 'Error actualizando tabla específica: ' . $e->getMessage());
     }
 
     // 2. Actualizar relación autor-recurso
