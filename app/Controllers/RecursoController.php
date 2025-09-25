@@ -167,11 +167,45 @@ class RecursoController extends Controller
                 log_message('error', 'Error subiendo archivo digital: ' . $e->getMessage());
             }
 
-            // Los archivos se guardan en las carpetas pero no se almacenan en la BD
-            // ya que la tabla recursos no tiene campos para rutaportada ni urlLibro
-            // Los archivos quedan disponibles en las carpetas:
-            // - Portadas: public/uploads/portadas/
-            // - Archivos digitales: public/uploads/digitales/archivos/
+            // Determinar si es recurso físico o digital
+            $idTipo = $this->request->getVar('idtiporecurso');
+            $esDigital = false;
+            if ($idTipo) {
+                $tipo = model('TiporecursoModel')->find($idTipo);
+                log_message('info', 'Tipo de recurso seleccionado: ' . json_encode($tipo));
+                if ($tipo && isset($tipo['tiporecurso']) && stripos($tipo['tiporecurso'], 'digital') !== false) {
+                    $esDigital = true;
+                    log_message('info', 'Recurso identificado como DIGITAL');
+                } else {
+                    log_message('info', 'Recurso identificado como FÍSICO');
+                }
+            }
+
+            // Insertar en tabla específica según el tipo de recurso
+            if ($esDigital) {
+                // Insertar en recursos_digitales
+                $recursoDigitalModel = new \App\Models\RecursoDigitalModel();
+                $datosDigital = [
+                    'idrecurso' => $idRecurso,
+                    'portada' => $portadaPath,
+                    'archivo' => $archivoPath
+                ];
+                log_message('info', 'Insertando en recursos_digitales: ' . json_encode($datosDigital));
+                $resultado = $recursoDigitalModel->insert($datosDigital);
+                log_message('info', 'Resultado inserción digital: ' . ($resultado ? 'ÉXITO' : 'ERROR'));
+            } else {
+                // Insertar en recursos_fisicos
+                $encuadernacion = $this->request->getVar('encuadernacion');
+                $recursoFisicoModel = new \App\Models\RecursoFisicoModel();
+                $datosFisico = [
+                    'idrecurso' => $idRecurso,
+                    'portada' => $portadaPath,
+                    'encuadernacion' => $encuadernacion
+                ];
+                log_message('info', 'Insertando en recursos_fisicos: ' . json_encode($datosFisico));
+                $resultado = $recursoFisicoModel->insert($datosFisico);
+                log_message('info', 'Resultado inserción físico: ' . ($resultado ? 'ÉXITO' : 'ERROR'));
+            }
             
             // 2. Insertar la relación autor-recurso en detautores
             $idAutores = $this->request->getVar('idautor');

@@ -199,10 +199,14 @@ if (modal) {
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label for="encuadernacion" class="form-label">Encuadernación</label>
-                                <select class="form-select" id="encuadernacion" name="encuadernacion" disabled>
-                                    <option value="">Campo no disponible</option>
+                                <select class="form-select" id="encuadernacion" name="encuadernacion">
+                                    <option value="">Seleccionar opción</option>
+                                    <option value="Tapa dura">Tapa dura</option>
+                                    <option value="Tapa blanda">Tapa blanda</option>
+                                    <option value="Rústica">Rústica</option>
+                                    <option value="Espiral">Espiral</option>
                                 </select>
-                                <small class="form-text text-muted">Campo no disponible en la estructura actual</small>
+                                <small class="form-text text-muted">Solo para recursos físicos</small>
                             </div>
                         </div>
                     </div>

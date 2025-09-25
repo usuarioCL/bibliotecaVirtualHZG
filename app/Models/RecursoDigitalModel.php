@@ -27,8 +27,7 @@ class RecursoDigitalModel extends Model
 
     // Validation
     protected $validationRules = [
-        'idrecurso' => 'required|integer',
-        'archivo' => 'required|max_length[200]'
+        'idrecurso' => 'required|integer'
     ];
     protected $validationMessages = [];
     protected $skipValidation = false;
