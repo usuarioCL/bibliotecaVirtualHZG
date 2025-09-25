@@ -55,6 +55,18 @@
                       <span class="hide-menu">Editoriales</span>
                     </a>
                   </li>
+                  <li class="sidebar-item">
+                    <a class="sidebar-link d-flex align-items-center gap-3 ajax-link" href="<?= base_url('recurso-digital'); ?>">
+                      <i class="ti ti-device-desktop fs-5"></i>
+                      <span class="hide-menu">Recurso Digital</span>
+                    </a>
+                  </li>
+                  <li class="sidebar-item">
+                    <a class="sidebar-link d-flex align-items-center gap-3 ajax-link" href="<?= base_url('recurso-fisico'); ?>">
+                      <i class="ti ti-book fs-5"></i>
+                      <span class="hide-menu">Recurso Físico</span>
+                    </a>
+                  </li>
                 </ul>
               </li>
               <!-- Gestión de Préstamos -->

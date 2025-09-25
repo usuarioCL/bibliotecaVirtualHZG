@@ -96,6 +96,12 @@ $routes->get('/recursos/filtrosBusqueda', 'RecursoController::filtrosBusqueda');
 $routes->get('/catalogo', 'CatalogoController::index');
 $routes->get('catalogo/subcategorias/(:num)', 'CatalogoController::getSubcategoriasPorCategoria/$1');
 
+// Recursos Digitales
+$routes->get('/recurso-digital', 'RecursoDigitalController::index');
+
+// Recursos Físicos
+$routes->get('/recurso-fisico', 'RecursoFisicoController::index');
+
 // Sanciones
 $routes->get('/sanciones', 'SancionController::index');
 $routes->get('/sanciones/crear', 'SancionController::crear');
