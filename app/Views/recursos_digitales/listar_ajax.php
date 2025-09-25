@@ -155,8 +155,8 @@
                 </button>
                 <div class="voice-speed-control">
                     <label for="voiceSpeed" class="form-label">Velocidad:</label>
-                    <input type="range" id="voiceSpeed" class="form-range" min="0.5" max="2" step="0.1" value="1" onchange="changeVoiceSpeed(this.value)">
-                    <span id="speedValue">1x</span>
+                    <input type="range" id="voiceSpeed" class="form-range" min="0.5" max="1.5" step="0.1" value="0.8" onchange="changeVoiceSpeed(this.value)">
+                    <span id="speedValue">0.8x</span>
                 </div>
             </div>
             
@@ -567,14 +567,19 @@ function startVoiceReading() {
         return;
     }
     
-    // Crear utterance
+    // Crear utterance con configuración amigable para niños
     currentUtterance = new SpeechSynthesisUtterance(pdfText);
-    currentUtterance.rate = currentVoiceSpeed;
-    currentUtterance.pitch = 1;
-    currentUtterance.volume = 0.8;
+    
+    // Configuración optimizada para niños
+    currentUtterance.rate = Math.max(0.6, currentVoiceSpeed * 0.8); // Más lento para niños
+    currentUtterance.pitch = 1.3; // Pitch más alto, más amigable
+    currentUtterance.volume = 0.9; // Volumen más alto para mejor audición
     
     // Configurar idioma (español)
     currentUtterance.lang = 'es-ES';
+    
+    // Intentar seleccionar una voz más amigable para niños
+    selectChildFriendlyVoice();
     
     // Eventos
     currentUtterance.onstart = function() {
@@ -628,7 +633,66 @@ function changeVoiceSpeed(speed) {
     document.getElementById('speedValue').textContent = speed + 'x';
     
     if (currentUtterance) {
-        currentUtterance.rate = currentVoiceSpeed;
+        // Aplicar velocidad más lenta para niños
+        currentUtterance.rate = Math.max(0.6, currentVoiceSpeed * 0.8);
+    }
+}
+
+// Función para seleccionar una voz amigable para niños
+function selectChildFriendlyVoice() {
+    if (!currentUtterance) return;
+    
+    // Obtener todas las voces disponibles
+    const voices = speechSynthesis.getVoices();
+    
+    // Voces preferidas para niños (más amigables)
+    const childFriendlyVoices = [
+        'Microsoft Sabina Desktop - Spanish (Mexico)',
+        'Microsoft Helena Desktop - Spanish (Spain)', 
+        'Google español',
+        'Microsoft Laura Desktop - Spanish (Spain)',
+        'Microsoft Monica Desktop - Spanish (Spain)',
+        'Microsoft Paulina Desktop - Spanish (Mexico)',
+        'Microsoft Teresa Desktop - Spanish (Spain)'
+    ];
+    
+    // Buscar una voz amigable para niños
+    let selectedVoice = null;
+    
+    // Primero intentar con las voces preferidas
+    for (const preferredVoice of childFriendlyVoices) {
+        selectedVoice = voices.find(voice => 
+            voice.name.includes('Sabina') || 
+            voice.name.includes('Helena') ||
+            voice.name.includes('Laura') ||
+            voice.name.includes('Monica') ||
+            voice.name.includes('Paulina') ||
+            voice.name.includes('Teresa') ||
+            (voice.name.toLowerCase().includes('google') && voice.lang.startsWith('es'))
+        );
+        if (selectedVoice) break;
+    }
+    
+    // Si no se encuentra una voz preferida, buscar cualquier voz femenina en español
+    if (!selectedVoice) {
+        selectedVoice = voices.find(voice => 
+            voice.lang.startsWith('es') && 
+            (voice.name.toLowerCase().includes('female') || 
+             voice.name.toLowerCase().includes('woman') ||
+             voice.name.toLowerCase().includes('mujer') ||
+             voice.name.toLowerCase().includes('femenina'))
+        );
+    }
+    
+    // Si aún no se encuentra, usar cualquier voz en español
+    if (!selectedVoice) {
+        selectedVoice = voices.find(voice => voice.lang.startsWith('es'));
+    }
+    
+    // Aplicar la voz seleccionada
+    if (selectedVoice) {
+        currentUtterance.voice = selectedVoice;
+        console.log('Voz seleccionada para niños:', selectedVoice.name);
     }
 }
 
@@ -642,12 +706,12 @@ function updateVoiceButtons() {
         playBtn.style.display = 'none';
         pauseBtn.style.display = 'inline-block';
         stopBtn.style.display = 'inline-block';
-        voiceText.textContent = isVoicePaused ? 'Reanudar' : 'Pausar';
+        voiceText.textContent = isVoicePaused ? '▶️ Continuar' : '⏸️ Pausar';
     } else {
         playBtn.style.display = 'inline-block';
         pauseBtn.style.display = 'none';
         stopBtn.style.display = 'none';
-        voiceText.textContent = 'Leer PDF';
+        voiceText.textContent = '🎤 Leer Cuento';
     }
 }
 
