@@ -49,4 +49,11 @@ class RecursoDigitalController extends BaseController
 
         return view('recursos_digitales/listar', $data);
     }
+
+    public function eliminar($idrecurso = null)
+    {
+        // Redirigir al controlador principal de recursos para eliminar
+        // ya que la lógica de eliminación está centralizada ahí
+        return redirect()->to(base_url('recursos/eliminar/' . $idrecurso));
+    }
 }

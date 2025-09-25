@@ -456,8 +456,7 @@ public function actualizar($idrecurso)
         $favoritoModel = new FavoritoModel();
         
         // Log para debug
-        log_message('info', 'Intentando eliminar recurso ID: ' . $idrecurso);
-        log_message('info', 'Es petición AJAX: ' . ($this->request->isAJAX() ? 'SI' : 'NO'));
+        log_message('info', 'Eliminando recurso ID: ' . $idrecurso);
         
         try {
             // Verificar que el recurso existe
@@ -476,40 +475,68 @@ public function actualizar($idrecurso)
             
             // Eliminar registros relacionados en orden correcto
             // 1. Eliminar favoritos
-            $favoritosEliminados = $favoritoModel->deleteByRecurso($idrecurso);
-            log_message('info', 'Favoritos eliminados: ' . $favoritosEliminados);
+            $favoritoModel->deleteByRecurso($idrecurso);
             
             // 2. Eliminar compartidos
-            $compartidosEliminados = $compartidoModel->deleteByRecurso($idrecurso);
-            log_message('info', 'Compartidos eliminados: ' . $compartidosEliminados);
+            $compartidoModel->deleteByRecurso($idrecurso);
             
             // 3. Eliminar reacciones
-            $reaccionesEliminadas = $reaccionModel->deleteByRecurso($idrecurso);
-            log_message('info', 'Reacciones eliminadas: ' . $reaccionesEliminadas);
+            $reaccionModel->deleteByRecurso($idrecurso);
             
             // 4. Eliminar comentarios
-            $comentariosEliminados = $comentarioModel->deleteByRecurso($idrecurso);
-            log_message('info', 'Comentarios eliminados: ' . $comentariosEliminados);
+            $comentarioModel->deleteByRecurso($idrecurso);
             
             // 5. Eliminar solicitudes (ANTES de eliminar préstamos)
-            $solicitudesEliminadas = $solicitudModel->deleteByRecurso($idrecurso);
-            log_message('info', 'Solicitudes eliminadas: ' . $solicitudesEliminadas);
+            $solicitudModel->deleteByRecurso($idrecurso);
             
             // 6. Eliminar préstamos
-            $prestamosEliminados = $prestamoModel->deleteByRecurso($idrecurso);
-            log_message('info', 'Préstamos eliminados: ' . $prestamosEliminados);
+            $prestamoModel->deleteByRecurso($idrecurso);
             
             // 7. Eliminar ubicaciones
-            $ubicacionesEliminadas = $ubicacionModel->deleteByRecurso($idrecurso);
-            log_message('info', 'Ubicaciones eliminadas: ' . $ubicacionesEliminadas);
+            $ubicacionModel->deleteByRecurso($idrecurso);
             
             // 8. Eliminar relaciones autor-recurso
-            $relacionesEliminadas = $detAutorModel->deleteByRecurso($idrecurso);
-            log_message('info', 'Relaciones autor-recurso eliminadas: ' . $relacionesEliminadas);
+            $detAutorModel->deleteByRecurso($idrecurso);
             
-            // 9. Finalmente eliminar el recurso
-            $recursoEliminado = $recursoModel->delete($idrecurso);
-            log_message('info', 'Recurso eliminado: ' . ($recursoEliminado ? 'SI' : 'NO'));
+            // 9. Eliminar de tabla específica (físico o digital)
+            $recursoFisicoModel = new \App\Models\RecursoFisicoModel();
+            $recursoDigitalModel = new \App\Models\RecursoDigitalModel();
+            
+            // Verificar si existe en recursos_fisicos
+            $recursoFisico = $recursoFisicoModel->find($idrecurso);
+            if ($recursoFisico) {
+                // Eliminar archivo de portada si existe
+                if (!empty($recursoFisico['portada'])) {
+                    $rutaPortada = FCPATH . $recursoFisico['portada'];
+                    if (file_exists($rutaPortada)) {
+                        unlink($rutaPortada);
+                    }
+                }
+                $recursoFisicoModel->delete($idrecurso);
+            }
+            
+            // Verificar si existe en recursos_digitales
+            $recursoDigital = $recursoDigitalModel->find($idrecurso);
+            if ($recursoDigital) {
+                // Eliminar archivo digital si existe
+                if (!empty($recursoDigital['archivo'])) {
+                    $rutaArchivo = FCPATH . $recursoDigital['archivo'];
+                    if (file_exists($rutaArchivo)) {
+                        unlink($rutaArchivo);
+                    }
+                }
+                // Eliminar portada si existe
+                if (!empty($recursoDigital['portada'])) {
+                    $rutaPortada = FCPATH . $recursoDigital['portada'];
+                    if (file_exists($rutaPortada)) {
+                        unlink($rutaPortada);
+                    }
+                }
+                $recursoDigitalModel->delete($idrecurso);
+            }
+            
+            // 9. Finalmente eliminar el recurso principal
+            $recursoModel->delete($idrecurso);
             
             // Si es una petición AJAX, devolver JSON
             if ($this->request->isAJAX()) {

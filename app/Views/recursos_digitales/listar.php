@@ -549,10 +549,57 @@ function editarRecurso(id) {
 }
 
 function eliminarRecurso(id) {
-    if (confirm('¿Estás seguro de que deseas eliminar este recurso digital?')) {
-        // Aquí puedes implementar la lógica para eliminar
-        alert('Eliminar recurso #' + id);
-    }
+    Swal.fire({
+        title: '¿Estás seguro?',
+        text: "¡No podrás revertir esta acción!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Realizar petición AJAX para eliminar
+            fetch('<?= base_url('recursos/eliminar') ?>/' + id, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: '¡Eliminado!',
+                        text: data.message || 'El recurso digital ha sido eliminado correctamente.',
+                        timer: 1500,
+                        showConfirmButton: false,
+                        timerProgressBar: true
+                    }).then(function() {
+                        // Recargar la página para actualizar la lista
+                        location.reload();
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error al eliminar',
+                        text: data.message || 'No se pudo eliminar el recurso digital.'
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error al eliminar',
+                    text: 'No se pudo eliminar el recurso digital. Por favor, inténtalo de nuevo.'
+                });
+            });
+        }
+    });
 }
 
 // ===== FUNCIONES DE VOZ =====
