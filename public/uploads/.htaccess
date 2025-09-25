@@ -7,7 +7,13 @@
 # Configurar tipo MIME para PDF
 AddType application/pdf .pdf
 
-# Permitir descarga de archivos
-<FilesMatch "\.(pdf|doc|docx|txt|epub)$">
+# Permitir visualización inline de PDFs
+<FilesMatch "\.pdf$">
+    Header set Content-Disposition "inline"
+    Header set Content-Type "application/pdf"
+</FilesMatch>
+
+# Permitir descarga de otros archivos
+<FilesMatch "\.(doc|docx|txt|epub)$">
     Header set Content-Disposition "attachment"
 </FilesMatch>
