@@ -52,7 +52,7 @@ class UsuarioModel extends Model
      */
     public function validarElegibilidadUsuario($idpersona, $nivelacceso)
     {
-        $personaModel = new \App\Models\PersonaModel();
+        $personaModel = new \App\Models\personaModel();
         $matriculaModel = new \App\Models\MatriculaModel();
 
         // Verificar que la persona existe
@@ -119,10 +119,28 @@ class UsuarioModel extends Model
      */
     public function getUsuarioCompleto($idusuario)
     {
-        return $this->select('usuarios.*, personas.apellidos, personas.nombres, personas.email, personas.tipodoc, personas.numerodoc')
+        return $this->select('usuarios.*, personas.apellidos, personas.nombres, personas.email, personas.tipodoc, personas.numerodoc, personas.telefono, personas.direccion, personas.genero')
                     ->join('personas', 'personas.idpersona = usuarios.idpersona')
                     ->where('usuarios.idusuario', $idusuario)
                     ->first();
+    }
+
+    /**
+     * Obtiene todos los usuarios por nivel de acceso con información completa
+     * @param string $nivelacceso
+     * @return array
+     */
+    public function getUsuariosCompletos($nivelacceso = null)
+    {
+        $builder = $this->select('usuarios.*, personas.apellidos, personas.nombres, personas.email, personas.tipodoc, personas.numerodoc, personas.telefono, personas.direccion, personas.genero')
+                        ->join('personas', 'personas.idpersona = usuarios.idpersona');
+                        
+        if ($nivelacceso) {
+            $builder->where('usuarios.nivelacceso', $nivelacceso);
+        }
+        
+        return $builder->orderBy('personas.apellidos', 'ASC')
+                      ->findAll();
     }
 
 }

@@ -36,6 +36,32 @@ $routes->group('usuarios', function($routes) {
     $routes->get('obtener/(:num)', 'UsuarioController::obtener/$1');      // Obtener usuario por ID
     $routes->get('verificar-elegibilidad', 'UsuarioController::verificarElegibilidad'); // Verificar si puede crear usuario
     $routes->get('info-matricula/(:num)', 'UsuarioController::infoMatricula/$1'); // Info matrícula de persona
+    $routes->get('buscar-por-dni', 'UsuarioController::buscarPorDni');     // Buscar estudiante por DNI para autocompletado
+});
+
+// Gestión de Estudiantes/Matrículas
+$routes->get('matriculas', 'MatriculaController::index');                  // Vista principal de estudiantes
+$routes->group('matriculas', function($routes) {
+    $routes->get('/', 'MatriculaController::index');                       // Lista de estudiantes matriculados
+    $routes->get('crear', 'MatriculaController::crear');                   // Formulario para matricular estudiante
+    $routes->post('crear', 'MatriculaController::guardar');                // Procesar nueva matrícula
+    $routes->get('detalle/(:num)', 'MatriculaController::detalle/$1');     // Detalles de un estudiante
+    $routes->get('editar/(:num)', 'MatriculaController::editar/$1');       // Formulario de edición
+    $routes->post('actualizar/(:num)', 'MatriculaController::actualizar/$1'); // Actualizar datos del estudiante
+    $routes->post('cambiar-estado', 'MatriculaController::cambiarEstado'); // Activar/desactivar matrícula
+    $routes->get('filtrar', 'MatriculaController::filtrar');               // Filtrar estudiantes
+    $routes->get('exportar', 'MatriculaController::exportar');             // Exportar lista de estudiantes
+});
+
+// Gestión de Docentes
+$routes->get('docentes', 'DocenteController::index');                      // Vista principal de docentes
+$routes->group('docentes', function($routes) {
+    $routes->get('/', 'DocenteController::index');                         // Lista de docentes
+    $routes->post('guardar', 'DocenteController::guardar');                // Crear nuevo docente
+    $routes->get('detalle/(:num)', 'DocenteController::detalle/$1');       // Detalles de un docente
+    $routes->post('cambiar-estado', 'DocenteController::cambiarEstado');   // Activar/desactivar docente
+    $routes->get('buscar-por-dni', 'DocenteController::buscarPorDni');     // Buscar persona por DNI para autocompletado
+    $routes->get('filtrar', 'DocenteController::filtrar');                // Filtrar docentes
 });
 
 // API para validaciones AJAX

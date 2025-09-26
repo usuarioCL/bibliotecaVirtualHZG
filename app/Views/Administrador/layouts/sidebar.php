@@ -113,83 +113,56 @@
                 <iconify-icon icon="solar:users-group-rounded-linear" class="nav-small-cap-icon fs-4 me-2"></iconify-icon>
                 <span class="hide-menu fw-bold">Gestión de Usuarios</span>
               </div>
-              <!-- Usuarios y Personas -->
+              
+              <!-- Administración General de Usuarios -->
               <li class="sidebar-item mb-2">
                 <a class="sidebar-link justify-content-between has-arrow" href="javascript:void(0)" aria-expanded="false">
                   <div class="d-flex align-items-center gap-3">
                     <span class="d-flex"><i class="ti ti-users"></i></span>
-                    <span class="hide-menu">Usuarios</span>
+                    <span class="hide-menu">Administrar</span>
                   </div>
                 </a>
                 <ul aria-expanded="false" class="collapse first-level ms-3">
                   <li class="sidebar-item">
                     <a class="sidebar-link d-flex align-items-center gap-3 ajax-link" href="<?= base_url('usuarios'); ?>">
-                      <i class="ti ti-user-plus fs-5"></i>
-                      <span class="hide-menu">Gestionar Usuarios</span>
-                    </a>
-                  </li>
-                  <li class="sidebar-item">
-                    <a class="sidebar-link d-flex align-items-center gap-3 ajax-link" href="<?= base_url('personas'); ?>">
-                      <i class="ti ti-address-book fs-5"></i>
-                      <span class="hide-menu">Datos Personales</span>
-                    </a>
-                  </li>
-                  <li class="sidebar-item">
-                    <a class="sidebar-link d-flex align-items-center gap-3 ajax-link" href="<?= base_url('Administrador/vistas/UsuariosRoles'); ?>">
-                      <i class="ti ti-shield-check fs-5"></i>
-                      <span class="hide-menu">Roles y Permisos</span>
-                    </a>
-                  </li>
-                </ul>
-              </li>
-              <!-- Gestión Académica -->
-              <li class="sidebar-item mb-2">
-                <a class="sidebar-link justify-content-between has-arrow" href="javascript:void(0)" aria-expanded="false">
-                  <div class="d-flex align-items-center gap-3">
-                    <span class="d-flex"><i class="ti ti-school"></i></span>
-                    <span class="hide-menu">G. Académica</span>
-                  </div>
-                </a>
-                <ul aria-expanded="false" class="collapse first-level ms-3">
-                  <li class="sidebar-item">
-                    <a class="sidebar-link d-flex align-items-center gap-3 ajax-link" href="<?= base_url('grupos'); ?>">
-                      <i class="ti ti-users-group fs-5"></i>
-                      <span class="hide-menu">Grupos y Secciones</span>
+                      <i class="ti ti-list fs-5"></i>
+                      <span class="hide-menu">Usuarios</span>
                     </a>
                   </li>
                   <li class="sidebar-item">
                     <a class="sidebar-link d-flex align-items-center gap-3 ajax-link" href="<?= base_url('matriculas'); ?>">
-                      <i class="ti ti-clipboard-list fs-5"></i>
-                      <span class="hide-menu">Matrículas</span>
+                      <i class="ti ti-school fs-5"></i>
+                      <span class="hide-menu">Estudiantes</span>
+                    </a>
+                  </li>
+                  <li class="sidebar-item">
+                    <a class="sidebar-link d-flex align-items-center gap-3 ajax-link" href="<?= base_url('docentes'); ?>">
+                      <i class="ti ti-user-check fs-5"></i>
+                      <span class="hide-menu">Docentes</span>
                     </a>
                   </li>
                 </ul>
               </li>
-              <!-- Sanciones y Disciplina -->
+
+              <!-- Control y Sanciones -->
               <li class="sidebar-item mb-2">
                 <a class="sidebar-link justify-content-between has-arrow" href="javascript:void(0)" aria-expanded="false">
                   <div class="d-flex align-items-center gap-3">
-                    <span class="d-flex"><i class="ti ti-ban"></i></span>
-                    <span class="hide-menu">Sanciones </span>
+                    <span class="d-flex"><i class="ti ti-alert-triangle"></i></span>
+                    <span class="hide-menu">Control Disciplinario</span>
                   </div>
                 </a>
                 <ul aria-expanded="false" class="collapse first-level ms-3">
                   <li class="sidebar-item">
                     <a class="sidebar-link d-flex align-items-center gap-3 ajax-link" href="<?= base_url('sanciones'); ?>">
-                      <i class="ti ti-alert-triangle fs-5"></i>
+                      <i class="ti ti-shield-x fs-5"></i>
                       <span class="hide-menu">Gestionar Sanciones</span>
                     </a>
                   </li>
                   <li class="sidebar-item">
-                    <a class="sidebar-link d-flex align-items-center gap-3 ajax-link" href="<?= base_url('tipos-sancion'); ?>">
-                      <i class="ti ti-list-details fs-5"></i>
-                      <span class="hide-menu">Tipos de Sanción</span>
-                    </a>
-                  </li>
-                  <li class="sidebar-item">
-                    <a class="sidebar-link d-flex align-items-center gap-3 ajax-link" href="<?= base_url('Administrador/vistas/AlumnosSancionados'); ?>">
-                      <i class="ti ti-user-x fs-5"></i>
-                      <span class="hide-menu">Alumnos Sancionados</span>
+                    <a class="sidebar-link d-flex align-items-center gap-3 ajax-link" href="<?= base_url('sanciones/historial'); ?>">
+                      <i class="ti ti-history fs-5"></i>
+                      <span class="hide-menu">Historial Disciplinario</span>
                     </a>
                   </li>
                 </ul>
@@ -207,32 +180,26 @@
                 <a class="sidebar-link justify-content-between has-arrow" href="javascript:void(0)" aria-expanded="false">
                   <div class="d-flex align-items-center gap-3">
                     <span class="d-flex"><i class="ti ti-chart-bar"></i></span>
-                    <span class="hide-menu">Estadísticas</span>
+                    <span class="hide-menu">Estadísticas de Biblioteca</span>
                   </div>
                 </a>
                 <ul aria-expanded="false" class="collapse first-level ms-3">
                   <li class="sidebar-item">
                     <a class="sidebar-link d-flex align-items-center gap-3 ajax-link" href="<?= base_url('Administrador/vistas/PrestamosAlumnos'); ?>">
                       <i class="ti ti-chart-line fs-5"></i>
-                      <span class="hide-menu">Préstamos por Periodo</span>
+                      <span class="hide-menu">Préstamos y Actividad</span>
                     </a>
                   </li>
                   <li class="sidebar-item">
                     <a class="sidebar-link d-flex align-items-center gap-3 ajax-link" href="<?= base_url('Administrador/vistas/RecursosPopulares'); ?>">
                       <i class="ti ti-trending-up fs-5"></i>
-                      <span class="hide-menu">Recursos más Populares</span>
-                    </a>
-                  </li>
-                  <li class="sidebar-item">
-                    <a class="sidebar-link d-flex align-items-center gap-3 ajax-link" href="<?= base_url('Administrador/vistas/ReaccionesUsuarios'); ?>">
-                      <i class="ti ti-heart fs-5"></i>
-                      <span class="hide-menu">Interacción de Usuarios</span>
+                      <span class="hide-menu">Recursos Populares</span>
                     </a>
                   </li>
                   <li class="sidebar-item">
                     <a class="sidebar-link d-flex align-items-center gap-3 ajax-link" href="<?= base_url('reportes/inventario'); ?>">
                       <i class="ti ti-boxes fs-5"></i>
-                      <span class="hide-menu">Estado del Inventario</span>
+                      <span class="hide-menu">Inventario y Stock</span>
                     </a>
                   </li>
                 </ul>
@@ -244,30 +211,34 @@
             <li class="sidebar-section mb-3">
               <div class="nav-small-cap d-flex align-items-center mb-2">
                 <iconify-icon icon="solar:settings-linear" class="nav-small-cap-icon fs-4 me-2"></iconify-icon>
-                <span class="hide-menu fw-bold">Herramientas del Sistema</span>
+                <span class="hide-menu fw-bold">Administración del Sistema</span>
               </div>
               <li class="sidebar-item mb-2">
-                <a class="sidebar-link ajax-link" href="<?= base_url('admin/importar-datos'); ?>" aria-expanded="false">
-                  <i class="ti ti-file-upload me-2"></i>
-                  <span class="hide-menu">Importar Datos</span>
+                <a class="sidebar-link justify-content-between has-arrow" href="javascript:void(0)" aria-expanded="false">
+                  <div class="d-flex align-items-center gap-3">
+                    <span class="d-flex"><i class="ti ti-database"></i></span>
+                    <span class="hide-menu">Gestión de Datos</span>
+                  </div>
                 </a>
-              </li>
-              <li class="sidebar-item mb-2">
-                <a class="sidebar-link ajax-link" href="<?= base_url('admin/exportar-datos'); ?>" aria-expanded="false">
-                  <i class="ti ti-file-download me-2"></i>
-                  <span class="hide-menu">Exportar Datos</span>
-                </a>
-              </li>
-              <li class="sidebar-item mb-2">
-                <a class="sidebar-link ajax-link" href="<?= base_url('admin/backup'); ?>" aria-expanded="false">
-                  <i class="ti ti-database-export me-2"></i>
-                  <span class="hide-menu">Respaldo de Sistema</span>
-                </a>
+                <ul aria-expanded="false" class="collapse first-level ms-3">
+                  <li class="sidebar-item">
+                    <a class="sidebar-link d-flex align-items-center gap-3 ajax-link" href="<?= base_url('admin/importar-datos'); ?>">
+                      <i class="ti ti-file-upload fs-5"></i>
+                      <span class="hide-menu">Importar/Exportar</span>
+                    </a>
+                  </li>
+                  <li class="sidebar-item">
+                    <a class="sidebar-link d-flex align-items-center gap-3 ajax-link" href="<?= base_url('admin/backup'); ?>">
+                      <i class="ti ti-database-export fs-5"></i>
+                      <span class="hide-menu">Respaldos</span>
+                    </a>
+                  </li>
+                </ul>
               </li>
               <li class="sidebar-item mb-2">
                 <a class="sidebar-link ajax-link" href="<?= base_url('admin/configuracion'); ?>" aria-expanded="false">
                   <i class="ti ti-settings me-2"></i>
-                  <span class="hide-menu">Configuración</span>
+                  <span class="hide-menu">Configuración General</span>
                 </a>
               </li>
             </li>

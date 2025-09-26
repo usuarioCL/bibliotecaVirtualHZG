@@ -40,7 +40,13 @@
                         <div class="col-md-4">
                             <div class="mb-3">
                                 <label for="numerodoc" class="form-label">Número de Documento</label>
-                                <input type="text" class="form-control" id="numerodoc" name="numerodoc" required maxlength="15" placeholder="Ej: 12345678">
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="numerodoc" name="numerodoc" required maxlength="15" placeholder="Ej: 12345678">
+                                    <button type="button" class="btn btn-outline-secondary" onclick="buscarPorDni()" title="Buscar estudiante por DNI">
+                                        <i class="icon tabler-search fs-6"></i>
+                                    </button>
+                                </div>
+                                <div id="info-busqueda" class="form-text d-none"></div>
                             </div>
                         </div>
                         <div class="col-md-4">
@@ -100,7 +106,12 @@
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label for="nomuser_preview" class="form-label">Usuario (generado automáticamente)</label>
-                                <input type="text" class="form-control" id="nomuser_preview" readonly placeholder="Se generará automáticamente" title="Usuario generado por el sistema">
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="nomuser_preview" readonly placeholder="Se generará automáticamente" title="Usuario generado por el sistema">
+                                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="generarUsuarioYEmail()" title="Regenerar usuario y email">
+                                        <i class="icon tabler-refresh fs-6"></i>
+                                    </button>
+                                </div>
                                 <input type="hidden" id="nomuser" name="nomuser">
                             </div>
                         </div>
