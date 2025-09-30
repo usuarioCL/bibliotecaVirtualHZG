@@ -6,6 +6,7 @@
   <title>Panel de Administración</title>
   <link rel="shortcut icon" type="image/png" href="<?= base_url('./assets/images/logos/favicon.png') ?>" />
   <link rel="stylesheet" href="<?= base_url('./assets/css/styles.min.css') ?>">
+  <link rel="stylesheet" href="<?= base_url('assets/css/sidebar-hzg.css') ?>">
   <!-- SweetAlert2 -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
@@ -15,23 +16,32 @@
   <div class="page-wrapper" id="main-wrapper" data-layout="vertical" data-navbarbg="skin6" data-sidebartype="full"
     data-sidebar-position="fixed" data-header-position="fixed">
     <!-- Sidebar Start -->
-  <link rel="stylesheet" href="<?= base_url('assets/css/sidebar-hzg.css') ?>">
-  <aside class="left-sidebar sidebar-hzg">
-      <!-- Sidebar scroll-->
-      <div>
-        <div class="brand-logo d-flex align-items-center justify-content-center">
-          <a href="index.php" class="text-nowrap logo-img">
-            <img src="<?= base_url('./assets/images/logos/hzg.png') ?>" alt="./assets/images/logos/hzg.png" style="max-width: 120px; height: auto; display: block; margin: 0 auto;" />
-          </a>
-          <div class="close-btn d-xl-none d-block sidebartoggler cursor-pointer" id="sidebarCollapse">
-            <i class="ti ti-x fs-6"></i>
+    <aside class="left-sidebar sidebar-hzg">
+        <!-- Sidebar scroll-->
+          <div class="brand-logo d-flex align-items-center justify-content-between">
+            <a href="<?= base_url('admin'); ?>" 
+              class="text-nowrap logo-img d-flex align-items-center justify-content-center flex-grow-1 dashboard-link"
+              aria-label="Regresar al panel principal de administración"
+              title="Biblioteca Virtual HZG - Panel Principal"
+              data-bs-toggle="tooltip"
+              data-bs-placement="bottom">
+              <div class="logo-container d-flex align-items-center">
+                <img src="<?= base_url('./assets/images/logos/hzg.png') ?>" 
+                    alt="Escudo Institucional HZG" 
+                    class="logo-image"
+                    loading="lazy"
+                    onerror="this.src='<?= base_url('./assets/images/logos/default-logo.png') ?>'" />
+                <div class="logo-text-container ms-3 d-none d-lg-flex flex-column">
+                  <span class="logo-text-primary">Biblioteca Virtual HZG</span>
+                  <span class="logo-text-secondary">Sistema de Gestión Integral</span>
+                </div>
+              </div>
+            </a>
           </div>
-        </div>
-        <!-- Sidebar navigation-->
-        <?= $this->include('Administrador/layouts/sidebar') ?>
-        <!-- End Sidebar navigation -->
-      </div>
-      <!-- End Sidebar scroll-->
+          <!-- Sidebar navigation-->
+          <?= $this->include('Administrador/layouts/sidebar') ?>
+          <!-- End Sidebar navigation -->
+        <!-- End Sidebar scroll-->
     </aside>
     <!--  Sidebar End -->
     <!--  Main wrapper -->
@@ -131,11 +141,12 @@
   $(document).on('click', '.ajax-link', function(e) {
     e.preventDefault();
     var url = $(this).attr('href');
+    var clickedUrl = url; // Guardar la URL del enlace clickeado
     $('#contenedor-principal').html('<div class="text-center py-5">Cargando...</div>');
     $.get(url, function(data) {
       $('#contenedor-principal').html(data);
       if (typeof window.initSidebarMenu === 'function') {
-        window.initSidebarMenu();
+        window.initSidebarMenu(clickedUrl);
       }
     }).fail(function() {
       $('#contenedor-principal').html('<div class="text-danger">Error al cargar el contenido.</div>');
@@ -145,7 +156,12 @@
   // Hacer que el enlace del Dashboard también cargue el contenido por defecto
   $(document).on('click', '.dashboard-link', function(e) {
     e.preventDefault();
+    var dashboardUrl = $(this).attr('href');
     cargarContenidoDefault();
+    // Actualizar el estado del sidebar para el dashboard
+    if (typeof window.initSidebarMenu === 'function') {
+      window.initSidebarMenu(dashboardUrl);
+    }
   });
   </script>
   <script src="<?= base_url('./assets/libs/bootstrap/dist/js/bootstrap.bundle.min.js') ?>"></script>

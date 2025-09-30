@@ -1,45 +1,484 @@
+/* ========================================
+   SIDEBAR BASE STYLES - MINIMALISTA
+   ======================================== */
 .sidebar-hzg {
-  background: #e9dac6 !important; /* Crema más oscura */
-  color: #fff !important;
-  padding: 1rem 0rem 0rem 0rem; /* Espaciado interno mejorado */
-  min-width: 270px; /* Ancho mínimo */
-  width: fit-content; /* Ancho responsivo según contenido */
-  max-width: 100vw; /* No excede el ancho de la ventana */
-  box-sizing: border-box;
+  background: #B71C1C !important;
+  color: #FFF8E1 !important;
+  min-width: 280px;
+  width: 280px;
+  box-shadow: 2px 0 8px rgba(0,0,0,0.1);
+  position: relative;
+  z-index: 1000;
+  transition: width 0.3s ease;
+  margin: 0 !important;
+  padding: 0 !important;
 }
+
+.sidebar-hzg.sidebar-minimized {
+  width: 70px;
+  min-width: 70px;
+}
+
+/* Separadores visuales */
 .sidebar-hzg .sidebar-divider {
-  border-color: #ffd54f !important;
-  opacity: 0.5;
-  margin: 1.2rem 0;
+  height: 1px;
+  background: rgba(255, 215, 0, 0.2);
+  margin: 0.75rem 0.5rem;
+  border: none;
+  opacity: 0.6;
 }
-.sidebar-hzg .sidebar-nav .sidebar-item i {
-  color: #bfa100 !important; /* Amarillo oscuro */
+
+.sidebar-hzg .sidebar-divider:first-child {
+  margin-top: 0;
 }
+
+/* ========================================
+   BRAND LOGO SECTION - MINIMALISTA
+   ======================================== */
 .sidebar-hzg .brand-logo {
-  border-bottom: 2px solid #ffd54f;
-  padding-bottom: 16px;
-  margin-bottom: 0rem;
+  border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+  padding: 0.75rem;
+  margin-bottom: 0.5rem;
+  transition: all 0.3s ease;
+  min-height: 70px;
 }
+
+.sidebar-hzg .brand-logo:hover {
+  background: rgba(255, 215, 0, 0.05);
+}
+
+/* Logo Link Styling - Minimalista */
+.sidebar-hzg .brand-logo .logo-img {
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.2s ease;
+  border-radius: 8px;
+  padding: 0.5rem;
+  width: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.sidebar-hzg .brand-logo .logo-img:hover {
+  background: rgba(255, 215, 0, 0.08);
+}
+
+/* Logo Container */
+.sidebar-hzg .brand-logo .logo-container {
+  width: 100%;
+  justify-content: flex-start;
+  align-items: center;
+}
+
+/* Logo Image */
+.sidebar-hzg .brand-logo .logo-image {
+  width: 50px;
+  height: 50px;
+  object-fit: contain;
+  transition: all 0.3s ease;
+  filter: drop-shadow(0 3px 12px rgba(0,0,0,0.15));
+  border-radius: 8px;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+/* Logo Text - Minimalista */
+.sidebar-hzg .brand-logo .logo-text-container {
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.3;
+  margin-left: 0.75rem;
+}
+
+.sidebar-hzg .brand-logo .logo-text-primary {
+  color: #FFD700;
+  font-weight: 600;
+  font-size: 0.95rem;
+  margin-bottom: 0.1rem;
+}
+
+.sidebar-hzg .brand-logo .logo-text-secondary {
+  color: rgba(255, 248, 225, 0.9);
+  font-weight: 400;
+  font-size: 0.7rem;
+}
+
+/* Sidebar Controls */
+.sidebar-hzg .brand-logo .sidebar-controls {
+  flex-shrink: 0;
+}
+
+/* Control Buttons - Minimalista */
+.sidebar-hzg .brand-logo .minimize-btn,
+.sidebar-hzg .brand-logo .close-btn {
+  background: transparent;
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  border-radius: 4px;
+  width: 32px;
+  height: 32px;
+  color: #FFD700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sidebar-hzg .brand-logo .minimize-btn:hover,
+.sidebar-hzg .brand-logo .close-btn:hover {
+  background: rgba(255, 215, 0, 0.1);
+  border-color: #FFD700;
+}
+
+.sidebar-hzg .brand-logo .minimize-btn i,
+.sidebar-hzg .brand-logo .close-btn i {
+  font-size: 1rem;
+}
+
+.sidebar-hzg .brand-logo .close-btn:focus {
+  outline: 2px solid #FFD700;
+  outline-offset: 2px;
+}
+
+/* ========================================
+   NAVIGATION STRUCTURE
+   ======================================== */
 .sidebar-hzg .sidebar-nav .sidebar-item {
-  margin-bottom: 0.7rem;
+  margin-bottom: 0.15rem; /* Espaciado optimizado entre elementos */
+  position: relative;
+  transition: all 0.2s ease;
 }
-.sidebar-hzg .sidebar-nav .sidebar-item a {
-  border-radius: 6px;
-  padding: 0.75rem 1.2rem;
-  transition: background 0.2s, color 0.2s;
-  margin-bottom: 0.2rem;
-  display: block;
-  white-space: nowrap; /* Evita que el texto se corte */
+
+.sidebar-hzg .sidebar-nav .sidebar-item:last-child {
+  margin-bottom: 0.75rem;
 }
+
+/* Hover effect sutil para toda la estructura del item */
+.sidebar-hzg .sidebar-nav .sidebar-item:hover {
+  transform: translateX(0px);
+}
+
+/* ========================================
+   MAIN MENU LINKS - MINIMALISTA
+   ======================================== */
+.sidebar-hzg .sidebar-nav .sidebar-item > a,
+.sidebar-hzg .sidebar-nav .sidebar-item > a:visited,
+.sidebar-hzg .sidebar-nav .sidebar-item > a:focus {
+  border-radius: 0;
+  padding: 0.8rem 0.5rem 0.8rem 0.75rem;
+  transition: all 0.25s ease;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  white-space: nowrap;
+  color: #FFF8E1 !important;
+  font-weight: 400;
+  font-size: 0.9rem;
+  min-height: 46px;
+  text-decoration: none !important;
+  position: relative;
+  overflow: hidden;
+}
+
+.sidebar-hzg .sidebar-nav .sidebar-item > a:hover {
+  background: rgba(255, 215, 0, 0.12) !important;
+  color: #FFD700 !important;
+  text-decoration: none !important;
+  box-shadow: 0 2px 8px rgba(255, 215, 0, 0.15);
+}
+
+.sidebar-hzg .sidebar-nav .sidebar-item > a.active,
+.sidebar-hzg .sidebar-nav .sidebar-item > a.active:visited,
+.sidebar-hzg .sidebar-nav .sidebar-item > a.active:focus,
+.sidebar-hzg .sidebar-nav .sidebar-item > a.active:hover {
+  background: linear-gradient(135deg, #FFD700 0%, #FFC107 100%) !important;
+  color: #B71C1C !important;
+  font-weight: 500;
+  border-left: 4px solid #B71C1C;
+  text-decoration: none !important;
+  box-shadow: 0 3px 12px rgba(255, 215, 0, 0.3);
+  transform: translateX(0px);
+}
+
+/* ========================================
+   CONTENT LAYOUT
+   ======================================== */
+.sidebar-hzg .sidebar-nav .sidebar-item a .d-flex {
+  flex: 1; /* Toma todo el espacio disponible */
+  align-items: center;
+  gap: 1rem;
+  min-width: 0;
+  margin-right: 0.25rem; /* Espacio mínimo para la flecha */
+}
+
+/* ========================================
+   ICONS - MINIMALISTA
+   ======================================== */
+.sidebar-hzg .sidebar-nav .sidebar-item i {
+  color: #FFD700 !important;
+  font-size: 1.15rem;
+  width: 20px;
+  text-align: center;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.sidebar-hzg .sidebar-nav .sidebar-item a:hover i {
+  transform: scale(1.1);
+}
+
+.sidebar-hzg .sidebar-nav .sidebar-item a.active i {
+  color: #B71C1C !important;
+  transform: scale(1.05);
+}
+
+/* Iconos específicos para submenús */
+.sidebar-hzg .sidebar-nav .collapse .sidebar-item i {
+  color: rgba(255, 215, 0, 0.9) !important;
+  font-size: 1.4rem;
+  width: 26px;
+  text-align: center;
+  transition: all 0.2s ease;
+}
+
+.sidebar-hzg .sidebar-nav .collapse .sidebar-item a:hover i {
+  color: #FFD700 !important;
+  transform: scale(1.15);
+}
+
+.sidebar-hzg .sidebar-nav .collapse .sidebar-item a.active i {
+  color: #FFD700 !important;
+  transform: scale(1.15);
+}
+
+/* ========================================
+   DROPDOWN ARROWS - MINIMALISTA
+   ======================================== */
+.sidebar-hzg .sidebar-nav .has-arrow {
+  position: relative;
+  padding-right: 1.75rem !important; /* Espacio optimizado para la flecha */
+}
+
+.sidebar-hzg .sidebar-nav .has-arrow::after {
+  content: '▶';
+  font-size: 0.9rem;
+  color: rgba(255, 215, 0, 0.8);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  line-height: 1;
+  text-align: center;
+  font-weight: normal;
+}
+
+/* Efecto hover para la flecha */
+.sidebar-hzg .sidebar-nav .has-arrow:hover::after {
+  color: #FFD700;
+  transform: translateY(-50%) scale(1.1);
+}
+
+.sidebar-hzg .sidebar-nav .has-arrow.active::after {
+  transform: translateY(-50%) rotate(90deg) scale(1.1);
+  color: #B71C1C;
+}
+
+/* ========================================
+   SUBMENUS - MINIMALISTA
+   ======================================== */
+.sidebar-hzg .sidebar-nav .collapse {
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.05) 0%, rgba(0, 0, 0, 0.15) 100%);
+  border-radius: 0;
+  margin: 0;
+  padding: 0.4rem 0;
+  border-left: 3px solid rgba(255, 215, 0, 0.4);
+  max-height: 0;
+  overflow: hidden;
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+.sidebar-hzg .sidebar-nav .collapse.in {
+  max-height: 450px;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.sidebar-hzg .sidebar-nav .collapse .sidebar-item {
+  margin-bottom: 0;
+}
+
+.sidebar-hzg .sidebar-nav .collapse .sidebar-item a,
+.sidebar-hzg .sidebar-nav .collapse .sidebar-item a:visited,
+.sidebar-hzg .sidebar-nav .collapse .sidebar-item a:focus {
+  padding: 0.75rem 0.5rem 0.75rem 1rem;
+  font-size: 0.85rem;
+  color: rgba(255, 248, 225, 0.9) !important;
+  margin: 0;
+  border-radius: 0;
+  min-height: 42px;
+  text-decoration: none !important;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.sidebar-hzg .sidebar-nav .collapse .sidebar-item a:hover {
+  background: rgba(255, 215, 0, 0.15) !important;
+  color: #FFD700 !important;
+  text-decoration: none !important;
+  transform: translateX(2px);
+  box-shadow: 0 2px 8px rgba(255, 215, 0, 0.1);
+}
+
+.sidebar-hzg .sidebar-nav .collapse .sidebar-item a.active,
+.sidebar-hzg .sidebar-nav .collapse .sidebar-item a.active:visited,
+.sidebar-hzg .sidebar-nav .collapse .sidebar-item a.active:focus,
+.sidebar-hzg .sidebar-nav .collapse .sidebar-item a.active:hover {
+  background: rgba(255, 215, 0, 0.25) !important;
+  color: #FFD700 !important;
+  font-weight: 500;
+  border-left: 3px solid #FFD700;
+  text-decoration: none !important;
+  transform: translateX(2px);
+  box-shadow: 0 3px 12px rgba(255, 215, 0, 0.2);
+}
+
+.sidebar-hzg .sidebar-nav .collapse .sidebar-item a.hover-highlight {
+  background: rgba(255, 215, 0, 0.08) !important;
+  color: #FFD700 !important;
+  transform: translateX(2px);
+  transition: all 0.2s ease;
+}
+
+/* ========================================
+   TEXT STYLING - MINIMALISTA
+   ======================================== */
+.sidebar-hzg .hide-menu {
+  font-size: 0.9rem;
+  line-height: 1.4;
+  font-weight: inherit;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  letter-spacing: 0.025em;
+  transition: all 0.2s ease;
+}
+
+/* Asegurar que el texto en menús con flecha tenga suficiente espacio */
+.sidebar-hzg .sidebar-nav .has-arrow .hide-menu {
+  padding-right: 0.5rem;
+}
+
+/* Efecto sutil en el texto al hacer hover */
+.sidebar-hzg .sidebar-nav .sidebar-item a:hover .hide-menu {
+  letter-spacing: 0.05em;
+}
+
+/* ========================================
+   FOCUS STATES
+   ======================================== */
+.sidebar-hzg .sidebar-nav .sidebar-item a:focus {
+  outline: 2px solid #FFD700;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(255, 215, 0, 0.2);
+}
+
+/* ========================================
+   RESPONSIVE DESIGN - MINIMALISTA
+   ======================================== */
+@media (max-width: 991px) {
+  .sidebar-hzg .brand-logo .logo-text-container {
+    display: none;
+  }
+  
+  .sidebar-hzg .brand-logo .logo-image {
+    width: 40px;
+    height: 40px;
+  }
+}
+
+@media (max-width: 768px) {
+  .sidebar-hzg {
+    width: 100%;
+    min-width: 100%;
+  }
+}
+
+/* ========================================
+   MINIMIZED SIDEBAR STATE
+   ======================================== */
+.sidebar-hzg.sidebar-minimized .brand-logo .logo-text-container {
+  display: none;
+}
+
+.sidebar-hzg.sidebar-minimized .brand-logo .logo-container {
+  justify-content: center;
+}
+
+.sidebar-hzg.sidebar-minimized .hide-menu {
+  display: none;
+}
+
+/* Ajustar flechas en estado minimizado */
+.sidebar-hzg.sidebar-minimized .has-arrow::after {
+  right: 0.2rem;
+  font-size: 0.9rem;
+}
+
+.sidebar-hzg.sidebar-minimized .has-arrow {
+  padding-right: 1.2rem !important;
+}
+
+/* ========================================
+   TOOLTIPS Y FEEDBACK VISUAL ADICIONAL
+   ======================================== */
+
+/* Efecto de pulsación en enlaces activos */
 .sidebar-hzg .sidebar-nav .sidebar-item a:active {
-  background: #ffd54f !important;
-  margin-bottom: 0.2rem;
+  transform: scale(0.98);
 }
-.sidebar-hzg .sidebar-nav .sidebar-item a {
-  border-radius: 6px;
-  padding: 0.55rem 1rem;
-  transition: background 0.2s, color 0.2s;
+
+/* Mejora visual para elementos con tooltip */
+.sidebar-hzg .sidebar-nav .sidebar-item a[title]:hover {
+  position: relative;
 }
-.sidebar-hzg .sidebar-nav .sidebar-item a:active {
-  background: #ffd54f !important;
+
+/* Animación sutil para toda la navegación */
+.sidebar-hzg .sidebar-nav {
+  animation: slideInFromLeft 0.3s ease-out;
+}
+
+@keyframes slideInFromLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Efecto de highlight al cargar */
+.sidebar-hzg .sidebar-nav .sidebar-item a.loading-highlight {
+  background: rgba(255, 215, 0, 0.1) !important;
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+/* Separador con degradado */
+.sidebar-hzg .sidebar-divider {
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 215, 0, 0.3) 50%, transparent 100%);
 }
