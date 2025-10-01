@@ -11,7 +11,7 @@
   top: 0;
   left: 0;
   height: 100vh;
-  z-index: 1000;
+  z-index: 1001;
   transition: all 0.3s ease;
   margin: 0 !important;
   padding: 0 !important;
@@ -327,19 +327,52 @@
   background: linear-gradient(180deg, rgba(0, 0, 0, 0.05) 0%, rgba(0, 0, 0, 0.15) 100%);
   border-radius: 0;
   margin: 0;
-  padding: 0.4rem 0;
+  padding: 0;
   border-left: 3px solid rgba(255, 215, 0, 0.4);
   max-height: 0;
   overflow: hidden;
-  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.35s ease, padding 0.35s ease;
   opacity: 0;
-  transform: translateY(-10px);
+  transform: translateY(0);
+  display: block;
 }
 
+.sidebar-hzg .sidebar-nav .collapse.show,
 .sidebar-hzg .sidebar-nav .collapse.in {
-  max-height: 450px;
-  opacity: 1;
-  transform: translateY(0);
+  max-height: 450px !important;
+  opacity: 1 !important;
+  transform: translateY(0) !important;
+  display: block !important;
+  visibility: visible !important;
+  padding: 0.4rem 0 !important;
+}
+
+/* Reglas generales para colapso que se eliminaron del styles.min.css */
+.collapse:not(.show) {
+  display: none;
+}
+
+.collapse.in,
+.collapse.show {
+  display: block !important;
+  height: auto !important;
+}
+
+.collapsing {
+  position: relative;
+  height: 0;
+  overflow: hidden;
+  transition: height 0.35s ease;
+}
+
+/* Reglas adicionales para asegurar compatibilidad con jQuery */
+.sidebar-hzg .sidebar-nav li.has-submenu ul.collapse {
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sidebar-hzg .sidebar-nav li.has-submenu ul.collapse.show,
+.sidebar-hzg .sidebar-nav li.has-submenu ul.collapse.in {
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .sidebar-hzg .sidebar-nav .collapse .sidebar-item {
@@ -457,10 +490,70 @@
     width: 280px;
     min-width: 280px;
     z-index: 1050;
+    pointer-events: auto;
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    transition: transform 0.3s ease;
   }
   
   .sidebar-hzg.show {
     transform: translateX(0);
+    pointer-events: auto;
+  }
+  
+  /* Asegurar que todos los elementos del sidebar sean interactivos */
+  .sidebar-hzg * {
+    pointer-events: auto;
+  }
+  
+  .sidebar-hzg .sidebar-nav,
+  .sidebar-hzg .sidebar-nav *,
+  .sidebar-hzg .brand-logo,
+  .sidebar-hzg .brand-logo * {
+    pointer-events: auto;
+    user-select: none;
+  }
+  
+  .sidebar-hzg .sidebar-nav a {
+    pointer-events: auto;
+    cursor: pointer;
+  }
+  
+  /* Asegurar que el sidebar esté por encima del overlay y sea interactivo */
+  .sidebar-hzg.show {
+    z-index: 1060 !important;
+    pointer-events: auto !important;
+  }
+  
+  .sidebar-hzg.show * {
+    pointer-events: auto !important;
+  }
+  
+  /* Permitir scroll en el sidebar */
+  .sidebar-hzg.show .sidebar-nav {
+    overflow-y: auto;
+    max-height: calc(100vh - 100px);
+    pointer-events: auto !important;
+  }
+  
+  /* Asegurar que los elementos interactivos funcionen */
+  .sidebar-hzg.show .sidebar-item,
+  .sidebar-hzg.show .sidebar-link,
+  .sidebar-hzg.show .has-arrow,
+  .sidebar-hzg.show .brand-logo,
+  .sidebar-hzg.show .brand-logo a {
+    pointer-events: auto !important;
+    cursor: pointer !important;
+    user-select: none;
+  }
+  
+  /* Fix específico para el problema de interacción */
+  .sidebar-hzg.show .sidebar-nav .sidebar-item .sidebar-link {
+    position: relative;
+    z-index: 1;
+    pointer-events: auto !important;
   }
 }
 
@@ -469,11 +562,28 @@
     width: 280px;
     min-width: 280px;
     transform: translateX(-100%);
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    z-index: 1050;
+    pointer-events: auto;
   }
   
   .sidebar-hzg.show {
     transform: translateX(0);
     box-shadow: 4px 0 20px rgba(0,0,0,0.3);
+    z-index: 1060 !important;
+    pointer-events: auto !important;
+  }
+  
+  .sidebar-hzg.show * {
+    pointer-events: auto !important;
+  }
+  
+  .sidebar-hzg.show .sidebar-nav a {
+    pointer-events: auto !important;
+    cursor: pointer !important;
   }
   
   .sidebar-hzg .brand-logo {
@@ -506,11 +616,14 @@
     opacity: 0;
     visibility: hidden;
     transition: all 0.3s ease;
+    pointer-events: none;
   }
   
   .sidebar-overlay.show {
     opacity: 1;
     visibility: visible;
+    pointer-events: auto;
+    cursor: pointer;
   }
   
   /* Ajustar el contenido principal cuando el sidebar está visible */
@@ -658,8 +771,96 @@
   box-shadow: 0 4px 12px rgba(0,0,0,0.15), 0 2px 6px rgba(183, 28, 28, 0.2) !important;
   border-bottom: 1px solid rgba(255, 215, 0, 0.2);
   backdrop-filter: blur(10px);
-  position: relative;
+  position: fixed;
+  top: 0;
+  left: 280px;
+  right: 0;
+  height: 91px;
   z-index: 999;
+  transition: left 0.3s ease;
+}
+
+/* ========================================
+   HEADER RESPONSIVE - SOLUCIÓN COMPLETA
+   ======================================== */
+/* Desktop completo - sidebar visible */
+@media (min-width: 1200px) {
+  .app-header {
+    left: 280px !important;
+    right: 0 !important;
+    width: auto !important;
+  }
+  
+  /* Sidebar minimizado en desktop */
+  .page-wrapper.sidebar-minimized .app-header {
+    left: 70px !important;
+  }
+}
+
+/* Rango de transición - sidebar oculto */
+@media (min-width: 992px) and (max-width: 1199px) {
+  .app-header {
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+  }
+  
+  /* Sobrescribir regla del sidebar minimizado */
+  .page-wrapper.sidebar-minimized .app-header {
+    left: 0 !important;
+  }
+}
+
+/* Tablet - sidebar overlay */
+@media (min-width: 768px) and (max-width: 991px) {
+  .app-header {
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+  }
+  
+  .page-wrapper.sidebar-minimized .app-header {
+    left: 0 !important;
+  }
+}
+
+/* Móvil - sidebar overlay */
+@media (max-width: 767px) {
+  .app-header {
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+  }
+  
+  .page-wrapper.sidebar-minimized .app-header {
+    left: 0 !important;
+  }
+}
+
+/* ========================================
+   REGLAS DE SEGURIDAD PARA EVITAR ESPACIOS EN BLANCO
+   ======================================== */
+/* Asegurar que no haya espacios en blanco en ninguna resolución */
+@media (max-width: 1199px) {
+  .app-header {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    z-index: 999 !important;
+  }
+  
+  .body-wrapper {
+    margin-left: 0 !important;
+    width: 100% !important;
+    margin-top: 91px !important;
+  }
+  
+  .page-wrapper .body-wrapper {
+    margin-left: 0 !important;
+    width: 100% !important;
+  }
 }
 
 .app-header::before {
@@ -675,8 +876,10 @@
 
 .app-header .navbar {
   background: transparent !important;
-  padding: 0.75rem 1.5rem;
-  min-height: 70px;
+  padding: 1rem 1.5rem;
+  min-height: 91px;
+  display: flex;
+  align-items: center;
 }
 
 /* ========================================
@@ -879,9 +1082,13 @@
    RESPONSIVE DESIGN PARA HEADER
    ======================================== */
 @media (max-width: 991px) {
+  .app-header {
+    height: 91px;
+  }
+  
   .app-header .navbar {
     padding: 0.5rem 1rem;
-    min-height: 60px;
+    min-height: 91px;
   }
   
   .app-header .sidebartoggler {
@@ -893,12 +1100,20 @@
     width: 32px;
     height: 32px;
   }
+  
+  .page-wrapper .body-wrapper {
+    margin-top: 91px !important;
+  }
 }
 
 @media (max-width: 768px) {
+  .app-header {
+    height: 91px;
+  }
+  
   .app-header .navbar {
     padding: 0.4rem 0.75rem;
-    min-height: 55px;
+    min-height: 91px;
   }
   
   .app-header .dropdown-menu {
@@ -921,6 +1136,10 @@
   .app-header .sidebartoggler {
     width: 35px;
     height: 35px;
+  }
+  
+  .page-wrapper .body-wrapper {
+    margin-top: 91px !important;
   }
 }
 
@@ -960,21 +1179,44 @@
 /* ========================================
    BODY WRAPPER Y LAYOUT ADJUSTMENTS
    ======================================== */
-@media (min-width: 992px) {
+/* Solo aplicar margin-left del sidebar en desktop completo */
+@media (min-width: 1200px) {
   .page-wrapper .body-wrapper {
     margin-left: 280px;
+    margin-top: 91px;
     transition: margin-left 0.3s ease;
   }
   
   .page-wrapper.sidebar-minimized .body-wrapper {
     margin-left: 70px;
   }
+  
+  .page-wrapper.sidebar-minimized .app-header {
+    left: 70px;
+  }
 }
 
-@media (max-width: 991px) {
+/* En rangos menores, sin margin-left del sidebar */
+@media (min-width: 992px) and (max-width: 1199px) {
   .page-wrapper .body-wrapper {
-    margin-left: 0;
-    width: 100%;
+    margin-left: 0 !important;
+    margin-top: 91px;
+  }
+  
+  .page-wrapper.sidebar-minimized .body-wrapper {
+    margin-left: 0 !important;
+  }
+}
+  
+  /* Optimizar contenedor cuando sidebar está minimizado */
+  .page-wrapper.sidebar-minimized .body-wrapper .container-fluid,
+  .page-wrapper.sidebar-minimized .body-wrapper .container-sm,
+  .page-wrapper.sidebar-minimized .body-wrapper .container-md,
+  .page-wrapper.sidebar-minimized .body-wrapper .container-lg,
+  .page-wrapper.sidebar-minimized .body-wrapper .container-xl,
+  .page-wrapper.sidebar-minimized .body-wrapper .container-xxl {
+    max-width: calc(100vw - 90px) !important;
+    padding: 15px 20px !important;
   }
 }
 
@@ -982,7 +1224,573 @@
    PREVENT BODY SCROLL WHEN SIDEBAR IS OPEN
    ======================================== */
 @media (max-width: 991px) {
+  .page-wrapper .body-wrapper {
+    margin-left: 0 !important;
+    margin-top: 91px;
+    width: 100% !important;
+  }
   body.sidebar-open {
     overflow: hidden;
+  }
+}
+
+/* ========================================
+   LAYOUT FIXES PARA ALINEACIÓN PERFECTA
+   ======================================== */
+.page-wrapper {
+  position: relative;
+  min-height: 100vh;
+}
+
+.body-wrapper {
+  position: relative;
+  z-index: 1;
+  margin-top: 91px; /* Altura del header fijo */
+}
+
+/* Asegurar que no haya gaps entre sidebar y header */
+@media (min-width: 992px) {
+  .sidebar-hzg {
+    border-right: 1px solid rgba(255, 215, 0, 0.1);
+  }
+  
+  .app-header {
+    border-left: 1px solid rgba(255, 215, 0, 0.1);
+    margin-left: -1px; /* Compensar el border del sidebar */
+  }
+}
+
+/* Transiciones suaves para el cambio de estado */
+.page-wrapper.sidebar-minimized .app-header {
+  transition: left 0.3s ease;
+}
+
+/* Corrección para el contenido principal */
+.body-wrapper-inner {
+  position: relative;
+  min-height: calc(100vh - 91px);
+  padding: 0.5rem 0;
+}
+
+/* ========================================
+   OPTIMIZACIÓN DEL LAYOUT PRINCIPAL
+   ======================================== */
+/* Optimizar el contenedor principal en desktop */
+@media (min-width: 1200px) {
+  .body-wrapper .container-fluid, 
+  .body-wrapper .container-sm, 
+  .body-wrapper .container-md, 
+  .body-wrapper .container-lg, 
+  .body-wrapper .container-xl, 
+  .body-wrapper .container-xxl {
+    max-width: calc(100vw - 290px) !important;
+    margin: 0 !important;
+    padding: 15px 20px !important;
+    transition: none !important;
+  }
+  
+  .body-wrapper .row {
+    margin: 0 !important;
+  }
+  
+  #contenedor-principal {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+}
+
+/* Rango de transición desktop-tablet */
+@media (min-width: 992px) and (max-width: 1199px) {
+  .body-wrapper .container-fluid, 
+  .body-wrapper .container-sm, 
+  .body-wrapper .container-md, 
+  .body-wrapper .container-lg, 
+  .body-wrapper .container-xl, 
+  .body-wrapper .container-xxl {
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 10px 15px !important;
+    transition: none !important;
+  }
+  
+  .body-wrapper .row {
+    margin: 0 !important;
+  }
+  
+  #contenedor-principal {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  
+  .body-wrapper-inner {
+    padding: 0.25rem 0;
+  }
+}
+
+/* Optimizar el contenedor en tablets */
+@media (min-width: 768px) and (max-width: 991px) {
+  .body-wrapper .container-fluid, 
+  .body-wrapper .container-sm, 
+  .body-wrapper .container-md, 
+  .body-wrapper .container-lg, 
+  .body-wrapper .container-xl, 
+  .body-wrapper .container-xxl {
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 12px 16px !important;
+    transition: none !important;
+  }
+  
+  .body-wrapper .row {
+    margin: 0 !important;
+  }
+  
+  #contenedor-principal {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  
+  .body-wrapper-inner {
+    padding: 0.25rem 0;
+  }
+}
+
+/* Optimizar para móviles grandes */
+@media (min-width: 576px) and (max-width: 767px) {
+  .body-wrapper .container-fluid, 
+  .body-wrapper .container-sm, 
+  .body-wrapper .container-md, 
+  .body-wrapper .container-lg, 
+  .body-wrapper .container-xl, 
+  .body-wrapper .container-xxl {
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 10px 12px !important;
+    transition: none !important;
+  }
+  
+  .body-wrapper .row {
+    margin: 0 !important;
+  }
+  
+  #contenedor-principal {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  
+  .body-wrapper-inner {
+    padding: 0.25rem 0;
+  }
+}
+
+/* ========================================
+   OPTIMIZACIÓN ESPECÍFICA DE CONTENIDO
+   ======================================== */
+/* Reducir espacios internos en todas las resoluciones */
+.body-wrapper .row {
+  --bs-gutter-x: 1rem;
+  --bs-gutter-y: 0;
+}
+
+.body-wrapper .col, 
+.body-wrapper [class*="col-"] {
+  padding-left: calc(var(--bs-gutter-x) * 0.5);
+  padding-right: calc(var(--bs-gutter-x) * 0.5);
+}
+
+/* Optimizar tarjetas y componentes */
+.body-wrapper .card {
+  margin-bottom: 1rem;
+}
+
+.body-wrapper .card-body {
+  padding: 1rem;
+}
+
+/* Optimizar tablas para mayor densidad */
+.body-wrapper .table {
+  margin-bottom: 0.5rem;
+}
+
+.body-wrapper .table td,
+.body-wrapper .table th {
+  padding: 0.5rem;
+  vertical-align: middle;
+}
+
+/* Optimizar formularios */
+.body-wrapper .form-group,
+.body-wrapper .mb-3 {
+  margin-bottom: 1rem;
+}
+
+/* Reducir espacio en headers de sección */
+.body-wrapper h1,
+.body-wrapper h2,
+.body-wrapper h3,
+.body-wrapper h4,
+.body-wrapper h5,
+.body-wrapper h6 {
+  margin-bottom: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.body-wrapper h1:first-child,
+.body-wrapper h2:first-child,
+.body-wrapper h3:first-child {
+  margin-top: 0;
+}
+
+/* ========================================
+   COMPONENTES ESPECÍFICOS DEL DASHBOARD
+   ======================================== */
+/* Optimizar botones y grupos de botones */
+.body-wrapper .btn-group {
+  margin-bottom: 0.5rem;
+}
+
+.body-wrapper .btn {
+  padding: 0.375rem 0.75rem;
+}
+
+/* Optimizar alertas y notificaciones */
+.body-wrapper .alert {
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+/* Optimizar breadcrumbs */
+.body-wrapper .breadcrumb {
+  padding: 0.5rem 0;
+  margin-bottom: 1rem;
+  background-color: transparent;
+}
+
+/* Optimizar paginación */
+.body-wrapper .pagination {
+  margin: 1rem 0 0.5rem;
+}
+
+/* Optimizar listas */
+.body-wrapper .list-group-item {
+  padding: 0.5rem 1rem;
+}
+
+/* Optimizar modales para mejor uso del espacio */
+.body-wrapper .modal-body {
+  padding: 1rem;
+}
+
+.body-wrapper .modal-header {
+  padding: 1rem;
+  border-bottom: 1px solid var(--bs-border-color);
+}
+
+.body-wrapper .modal-footer {
+  padding: 0.75rem 1rem;
+  border-top: 1px solid var(--bs-border-color);
+}
+
+/* Optimización específica para datatables y tablas grandes */
+.body-wrapper .dataTables_wrapper {
+  padding: 0;
+}
+
+.body-wrapper .dataTables_length,
+.body-wrapper .dataTables_filter {
+  margin-bottom: 1rem;
+}
+
+.body-wrapper .dataTables_info,
+.body-wrapper .dataTables_paginate {
+  margin-top: 1rem;
+}
+
+/* ========================================
+   OPTIMIZACIÓN DEL FOOTER
+   ======================================== */
+.body-wrapper + footer,
+footer {
+  padding: 1rem 1.5rem !important;
+  margin-top: 2rem !important;
+  font-size: 0.875rem;
+}
+
+/* Asegurar que el contenido principal use toda la altura disponible */
+.body-wrapper {
+  min-height: calc(100vh - 140px);
+}
+
+/* ========================================
+   REGLAS ESPECÍFICAS DE TRANSICIÓN RESPONSIVA
+   ======================================== */
+/* Asegurar responsividad completa en todas las resoluciones */
+@media (max-width: 1199px) {
+  .body-wrapper {
+    position: relative !important;
+    margin-left: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    left: 0 !important;
+    transform: none !important;
+  }
+}
+
+/* Reglas específicas para el punto de quiebre crítico */
+@media (min-width: 1100px) and (max-width: 1199px) {
+  .body-wrapper .container-fluid, 
+  .body-wrapper .container-sm, 
+  .body-wrapper .container-md, 
+  .body-wrapper .container-lg, 
+  .body-wrapper .container-xl, 
+  .body-wrapper .container-xxl {
+    max-width: calc(100vw - 40px) !important;
+    padding: 10px 20px !important;
+  }
+  
+  .app-header .container-fluid, 
+  .app-header .container-sm, 
+  .app-header .container-md, 
+  .app-header .container-lg, 
+  .app-header .container-xl, 
+  .app-header .container-xxl {
+    max-width: calc(100vw - 40px) !important;
+    padding: 0 20px !important;
+  }
+}
+
+/* Regla de seguridad para forzar comportamiento responsivo */
+@media (max-width: 1199px) {
+  .page-wrapper {
+    position: relative !important;
+  }
+  
+  .sidebar-hzg {
+    position: fixed !important;
+    left: -270px !important;
+    z-index: 1050 !important;
+  }
+  
+  .sidebar-hzg.show {
+    left: 0 !important;
+  }
+  
+  .page-wrapper .body-wrapper,
+  .body-wrapper {
+    margin-left: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    position: relative !important;
+  }
+}
+
+/* ========================================
+   APP-HEADER OPTIMIZADO
+   ======================================== */
+/* Optimizar el header para aprovechar mejor el espacio */
+.app-header .container-fluid, 
+.app-header .container-sm, 
+.app-header .container-md, 
+.app-header .container-lg, 
+.app-header .container-xl, 
+.app-header .container-xxl {
+  max-width: 100% !important;
+  margin: 0 !important;
+  padding: 0 20px !important;
+}
+
+@media (min-width: 1200px) {
+  .app-header .container-fluid, 
+  .app-header .container-sm, 
+  .app-header .container-md, 
+  .app-header .container-lg, 
+  .app-header .container-xl, 
+  .app-header .container-xxl {
+    max-width: calc(100vw - 290px) !important;
+    padding: 0 30px !important;
+  }
+  
+  .page-wrapper.sidebar-minimized .app-header .container-fluid,
+  .page-wrapper.sidebar-minimized .app-header .container-sm,
+  .page-wrapper.sidebar-minimized .app-header .container-md,
+  .page-wrapper.sidebar-minimized .app-header .container-lg,
+  .page-wrapper.sidebar-minimized .app-header .container-xl,
+  .page-wrapper.sidebar-minimized .app-header .container-xxl {
+    max-width: calc(100vw - 90px) !important;
+  }
+}
+
+/* Reglas específicas por rangos para mejor responsividad */
+@media (min-width: 992px) and (max-width: 1199px) {
+  .page-wrapper .body-wrapper,
+  .body-wrapper,
+  #main-wrapper[data-layout=vertical][data-sidebartype=full] .body-wrapper {
+    margin-left: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  
+  .app-header .container-fluid, 
+  .app-header .container-sm, 
+  .app-header .container-md, 
+  .app-header .container-lg, 
+  .app-header .container-xl, 
+  .app-header .container-xxl {
+    max-width: 100% !important;
+    padding: 0 20px !important;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+  .page-wrapper .body-wrapper,
+  .body-wrapper,
+  #main-wrapper[data-layout=vertical][data-sidebartype=full] .body-wrapper {
+    margin-left: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  
+  .app-header .container-fluid, 
+  .app-header .container-sm, 
+  .app-header .container-md, 
+  .app-header .container-lg, 
+  .app-header .container-xl, 
+  .app-header .container-xxl {
+    max-width: 100% !important;
+    padding: 0 16px !important;
+  }
+}
+
+@media (max-width: 767px) {
+  .page-wrapper .body-wrapper,
+  .body-wrapper,
+  #main-wrapper[data-layout=vertical][data-sidebartype=full] .body-wrapper {
+    margin-left: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  
+  .app-header .container-fluid, 
+  .app-header .container-sm, 
+  .app-header .container-md, 
+  .app-header .container-lg, 
+  .app-header .container-xl, 
+  .app-header .container-xxl {
+    max-width: 100% !important;
+    padding: 0 12px !important;
+  }
+}
+
+/* Reglas más específicas divididas por rangos de resolución */
+@media (min-width: 992px) and (max-width: 1199px) {
+  /* Sobrescribir reglas específicas del template - Rango tablet-desktop */
+  #main-wrapper[data-layout=vertical][data-sidebartype=mini-sidebar] .body-wrapper,
+  #main-wrapper[data-layout=vertical][data-sidebartype=full] .body-wrapper,
+  .page-wrapper .body-wrapper,
+  .body-wrapper {
+    margin-left: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+  /* Sobrescribir reglas específicas del template - Rango tablet */
+  #main-wrapper[data-layout=vertical][data-sidebartype=mini-sidebar] .body-wrapper,
+  #main-wrapper[data-layout=vertical][data-sidebartype=full] .body-wrapper,
+  .page-wrapper .body-wrapper,
+  .body-wrapper {
+    margin-left: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+}
+
+@media (max-width: 767px) {
+  /* Sobrescribir reglas específicas del template - Rango móvil */
+  #main-wrapper[data-layout=vertical][data-sidebartype=mini-sidebar] .body-wrapper,
+  #main-wrapper[data-layout=vertical][data-sidebartype=full] .body-wrapper,
+  .page-wrapper .body-wrapper,
+  .body-wrapper {
+    margin-left: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+}
+
+@media (max-width: 991px) {
+  .body-wrapper-inner {
+    min-height: calc(100vh - 91px);
+  }
+  
+  /* Asegurar que no haya margen izquierdo en tablets */
+  .page-wrapper .body-wrapper {
+    margin-left: 0 !important;
+    width: 100% !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .body-wrapper-inner {
+    min-height: calc(100vh - 91px);
+  }
+  
+  /* Forzar el ancho completo en móviles */
+  .page-wrapper .body-wrapper,
+  #main-wrapper .body-wrapper,
+  .body-wrapper {
+    margin-left: 0 !important;
+    width: 100% !important;
+    left: 0 !important;
+    max-width: 100% !important;
+  }
+  
+  /* Específicamente para los contenedores internos del template */
+  .body-wrapper > .container-fluid,
+  .body-wrapper > .container-sm,
+  .body-wrapper > .container-md,
+  .body-wrapper > .container-lg,
+  .body-wrapper > .container-xl,
+  .body-wrapper > .container-xxl {
+    margin: 0 !important;
+    padding-left: 15px !important;
+    padding-right: 15px !important;
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+}
+
+/* ========================================
+   OVERRIDE FINAL CON MÁXIMA ESPECIFICIDAD
+   ESPECÍFICAMENTE PARA SOBRESCRIBIR STYLES.MIN.CSS
+   ======================================== */
+@media (max-width: 1199px) {
+  /* Sobrescribir TODAS las reglas posibles del template con máxima especificidad */
+  body #main-wrapper[data-layout="vertical"][data-sidebartype="full"] .body-wrapper,
+  body .page-wrapper .body-wrapper,
+  body .body-wrapper,
+  html body #main-wrapper .body-wrapper {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    left: 0 !important;
+    right: 0 !important;
+    position: relative !important;
+  }
+  
+  /* Contenedores específicos del template con máxima especificidad */
+  body .body-wrapper > .container-fluid,
+  body .body-wrapper > .container-sm,
+  body .body-wrapper > .container-md,
+  body .body-wrapper > .container-lg,
+  body .body-wrapper > .container-xl,
+  body .body-wrapper > .container-xxl,
+  html body #main-wrapper .body-wrapper > .container-fluid {
+    margin: 0 !important;
+    padding-left: 15px !important;
+    padding-right: 15px !important;
+    max-width: 100% !important;
+    width: 100% !important;
   }
 }

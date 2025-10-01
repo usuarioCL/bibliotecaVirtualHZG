@@ -1,4 +1,4 @@
-<div class="container">
+<div class="">
     <?php if (isset($error_message)): ?>
         <div class="alert alert-danger" role="alert">
             <i class="ti ti-alert-circle"></i>

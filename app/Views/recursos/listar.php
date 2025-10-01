@@ -1,4 +1,4 @@
-<div class="container">
+<div class="">
     <!-- Encabezado de la página -->
     <div class="d-flex justify-content-between align-items-center">
         <div>
