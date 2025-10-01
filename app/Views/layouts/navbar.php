@@ -8,10 +8,10 @@
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav ms-auto mb-4 mb-lg-0 me-3 fs-5">
                 <li class="nav-item" >
-                    <a class="nav-link  " href="/">Inicio</a>
+                    <a class="nav-link  " href="/"><i class="fas fa-home"></i> Inicio</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link  " href="/catalogo">Catálogo</a>
+                    <a class="nav-link  " href="/catalogo"><i class="fas fa-book-open"></i> Catálogo</a>
                 </li>
                 <?php if (session()->get('logged_in')): ?>
                 <li class="nav-item">
@@ -22,7 +22,7 @@
                 </li>
                 <?php endif; ?>
                 <li class="nav-item me-2">
-                    <a class="nav-link  " href="/sobre-plataforma">Sobre La Plataforma
+                    <a class="nav-link  " href="/sobre-plataforma"><i class="fas fa-info-circle"></i> Sobre La Plataforma
                     </a>
                 </li>
             </ul>
