@@ -167,4 +167,42 @@ class CatalogoController extends BaseController
         }
     }
 
+    /**
+     * Vista de Mis Préstamos
+     */
+    public function misPrestamos()
+    {
+        // Verificar que el usuario esté logueado
+        if (!session()->get('logged_in')) {
+            return redirect()->to('/login');
+        }
+
+        $datos = [
+            'header' => view('layouts/header'),
+            'footer' => view('layouts/footer'),
+            'navbar' => view('layouts/navbar')
+        ];
+
+        return view('Catalogo/misPrestamos', $datos);
+    }
+
+    /**
+     * Vista de Favoritos
+     */
+    public function favoritos()
+    {
+        // Verificar que el usuario esté logueado
+        if (!session()->get('logged_in')) {
+            return redirect()->to('/login');
+        }
+
+        $datos = [
+            'header' => view('layouts/header'),
+            'footer' => view('layouts/footer'),
+            'navbar' => view('layouts/navbar')
+        ];
+
+        return view('Catalogo/favoritos', $datos);
+    }
+
 }

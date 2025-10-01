@@ -1,6 +1,10 @@
 <?php helper('form'); ?>
 <?= $header; ?>
 <?= $navbar; ?>
+
+<!-- Estilos institucionales de la Biblioteca Virtual HZG -->
+<link rel="stylesheet" href="<?= base_url('assets/css/biblioteca-hzg.css') ?>">
+
 <div class="container">
     <!-- Hero section con buscador -->
     <div class="py-4 border-bottom">

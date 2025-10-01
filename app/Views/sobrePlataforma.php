@@ -1,5 +1,9 @@
 <?= $header; ?>
 <?= $navbar; ?>
+
+<!-- Estilos institucionales de la Biblioteca Virtual HZG -->
+<link rel="stylesheet" href="<?= base_url('assets/css/biblioteca-hzg.css') ?>">
+
 <div class="container mt-4">
 
     <div class="row justify-content-center">

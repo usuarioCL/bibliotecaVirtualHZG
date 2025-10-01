@@ -1,0 +1,417 @@
+/* 
+ * Biblioteca Virtual HZG - Estilos Institucionales
+ * Paleta de colores basada en el logo de Horacio Zeballos Gámez
+ * Diseño minimalista y profesional
+ */
+
+:root {
+    --cream-bg: #FDF8F0;
+    --institutional-red: #B91C1C;
+    --institutional-gold: #D4AF37;
+    --dark-red: #7F1D1D;
+    --soft-white: #FEFEFE;
+    --text-dark: #374151;
+    --border-light: #E5E7EB;
+}
+
+/* ========================================
+   ESTILOS GENERALES Y BODY
+======================================== */
+body {
+    background-color: var(--cream-bg) !important;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    color: var(--text-dark);
+}
+
+.container {
+    max-width: 1200px;
+}
+
+/* ========================================
+   HERO SECTION Y CARRUSEL
+======================================== */
+.hero-section {
+    position: relative;
+    border-radius: 20px;
+    box-shadow: 0 4px 20px rgba(185, 28, 28, 0.08);
+    overflow: hidden;
+    min-height: 450px;
+    height: 450px;
+}
+
+.hero-carousel {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+}
+
+.hero-carousel .carousel-item {
+    height: 100%;
+}
+
+.hero-carousel .carousel-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: brightness(0.7) blur(0.5px);
+    display: block;
+}
+
+.hero-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, rgba(185, 28, 28, 0.4) 0%, rgba(212, 175, 55, 0.3) 50%, rgba(185, 28, 28, 0.5) 100%);
+    z-index: 2;
+}
+
+.hero-content {
+    position: relative;
+    z-index: 3;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 2rem;
+}
+
+.hero-section h1 {
+    color: white;
+    font-weight: 300;
+    letter-spacing: -0.02em;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.hero-section p {
+    color: var(--institutional-gold);
+    font-weight: 500;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* ========================================
+   FORMULARIOS Y CONTROLES
+======================================== */
+.form-control {
+    border: 2px solid var(--border-light);
+    padding: 0.875rem 1.25rem;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus {
+    border-color: var(--institutional-gold);
+    box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1);
+    outline: none;
+}
+
+/* ========================================
+   BOTONES
+======================================== */
+.btn-danger {
+    background: linear-gradient(135deg, var(--institutional-red) 0%, var(--dark-red) 100%);
+    border: none;
+    padding: 0.875rem 1.5rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(185, 28, 28, 0.2);
+}
+
+.btn-danger:hover {
+    background: linear-gradient(135deg, var(--dark-red) 0%, var(--institutional-red) 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(185, 28, 28, 0.3);
+}
+
+.btn-outline-primary {
+    border: 2px solid var(--institutional-gold);
+    color: var(--institutional-gold);
+    font-weight: 500;
+    padding: 0.5rem 1.5rem;
+    transition: all 0.3s ease;
+    border-radius: 25px;
+}
+
+.btn-outline-primary:hover {
+    background: var(--institutional-gold);
+    border-color: var(--institutional-gold);
+    color: white;
+    transform: translateY(-1px);
+}
+
+.btn-outline-primary.btn-lg {
+    padding: 0.875rem 2.5rem;
+    font-size: 1.1rem;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--institutional-red) 0%, var(--dark-red) 100%);
+    border: none;
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, var(--dark-red) 0%, var(--institutional-red) 100%);
+    transform: translateY(-1px);
+}
+
+/* ========================================
+   NAVEGACIÓN Y TABS
+======================================== */
+.nav-tabs {
+    border: none;
+    justify-content: center;
+}
+
+.nav-tabs .nav-link {
+    border: none;
+    color: var(--text-dark);
+    font-weight: 500;
+    padding: 0.75rem 2rem;
+    margin: 0 0.5rem;
+    border-radius: 25px;
+    background: var(--soft-white);
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.nav-tabs .nav-link.active {
+    background: linear-gradient(135deg, var(--institutional-gold) 0%, #B8860B 100%);
+    color: white;
+    box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
+}
+
+.nav-tabs .nav-link:hover:not(.active) {
+    background: var(--institutional-red);
+    color: white;
+    transform: translateY(-2px);
+}
+
+/* ========================================
+   TARJETAS (CARDS)
+======================================== */
+.card {
+    border: none;
+    border-radius: 16px;
+    background: var(--soft-white);
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+}
+
+.card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(185, 28, 28, 0.15);
+}
+
+.card-title {
+    color: var(--institutional-red);
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.card-text {
+    color: var(--text-dark);
+    font-size: 0.9rem;
+    line-height: 1.6;
+}
+
+/* ========================================
+   COLORES INSTITUCIONALES
+======================================== */
+.text-primary {
+    color: var(--institutional-red) !important;
+}
+
+.text-secondary {
+    color: var(--institutional-gold) !important;
+}
+
+.border-bottom {
+    border-color: var(--institutional-gold) !important;
+    border-width: 2px !important;
+}
+
+.border-primary {
+    border-color: var(--institutional-red) !important;
+}
+
+.bg-primary {
+    background-color: var(--institutional-red) !important;
+}
+
+.bg-secondary {
+    background-color: var(--institutional-gold) !important;
+}
+
+/* ========================================
+   ALERTAS Y NOTIFICACIONES
+======================================== */
+.alert-info {
+    background: linear-gradient(135deg, #F0F9FF 0%, var(--cream-bg) 100%);
+    border: 1px solid var(--institutional-gold);
+    color: var(--text-dark);
+    border-radius: 12px;
+}
+
+.alert-success {
+    background: linear-gradient(135deg, #F0FDF4 0%, var(--cream-bg) 100%);
+    border: 1px solid var(--institutional-gold);
+    color: var(--text-dark);
+    border-radius: 12px;
+}
+
+.alert-warning {
+    background: linear-gradient(135deg, #FFFBEB 0%, var(--cream-bg) 100%);
+    border: 1px solid var(--institutional-gold);
+    color: var(--text-dark);
+    border-radius: 12px;
+}
+
+.alert-danger {
+    background: linear-gradient(135deg, #FEF2F2 0%, var(--cream-bg) 100%);
+    border: 1px solid var(--institutional-red);
+    color: var(--text-dark);
+    border-radius: 12px;
+}
+
+/* ========================================
+   ICONOS
+======================================== */
+.fas, .far, .fab {
+    color: var(--institutional-gold);
+}
+
+.text-primary .fas,
+.text-primary .far,
+.text-primary .fab {
+    color: var(--institutional-red);
+}
+
+/* ========================================
+   ESPACIADO Y LAYOUT
+======================================== */
+.py-5 {
+    padding-top: 2.5rem !important;
+    padding-bottom: 2.5rem !important;
+}
+
+.mb-4 {
+    margin-bottom: 1.5rem !important;
+}
+
+.mt-4 {
+    margin-top: 1.5rem !important;
+}
+
+/* ========================================
+   ELEMENTOS ESPECÍFICOS DEL CATÁLOGO
+======================================== */
+.btn-categoria {
+    margin-bottom: 0.5rem;
+    transition: all 0.3s ease;
+}
+
+.btn-categoria.active,
+.btn-categoria:focus {
+    box-shadow: 0 4px 12px rgba(185, 28, 28, 0.3);
+}
+
+/* ========================================
+   ELEMENTOS ESPECÍFICOS DE SOBRE LA PLATAFORMA
+======================================== */
+.hero-section.text-center {
+    background: linear-gradient(135deg, var(--soft-white) 0%, var(--cream-bg) 100%);
+    padding: 3rem 2rem;
+    border-radius: 20px;
+    box-shadow: 0 4px 20px rgba(185, 28, 28, 0.08);
+}
+
+.hero-section.text-center h1 {
+    color: var(--institutional-red);
+    text-shadow: none;
+}
+
+.hero-section.text-center p {
+    color: var(--text-dark);
+    text-shadow: none;
+}
+
+/* ========================================
+   RESPONSIVE DESIGN
+======================================== */
+@media (max-width: 768px) {
+    .hero-section {
+        height: 350px;
+        min-height: 350px;
+    }
+    
+    .hero-content {
+        padding: 1rem;
+    }
+    
+    .nav-tabs .nav-link {
+        padding: 0.5rem 1rem;
+        margin: 0 0.25rem;
+        font-size: 0.9rem;
+    }
+    
+    .container {
+        max-width: 95%;
+    }
+}
+
+@media (max-width: 576px) {
+    .hero-section h1 {
+        font-size: 2rem;
+    }
+    
+    .hero-section p {
+        font-size: 1rem;
+    }
+    
+    .input-group {
+        max-width: 90% !important;
+    }
+}
+
+/* ========================================
+   ANIMACIONES SUAVES
+======================================== */
+* {
+    transition: color 0.3s ease, background-color 0.3s ease, border-color 0.3s ease;
+}
+
+/* Mejoras de accesibilidad */
+.btn:focus,
+.form-control:focus,
+.nav-link:focus {
+    outline: 2px solid var(--institutional-gold);
+    outline-offset: 2px;
+}
+
+/* Estados de hover mejorados */
+.card:hover .card-title {
+    color: var(--dark-red);
+}
+
+.nav-link:hover {
+    text-decoration: none;
+}
+
+/* Sombras consistentes */
+.shadow-sm {
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05) !important;
+}
+
+.shadow {
+    box-shadow: 0 4px 20px rgba(185, 28, 28, 0.08) !important;
+}
+
+.shadow-lg {
+    box-shadow: 0 8px 25px rgba(185, 28, 28, 0.15) !important;
+}
