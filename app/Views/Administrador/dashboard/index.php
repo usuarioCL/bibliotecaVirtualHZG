@@ -15,8 +15,11 @@
   <!--  Body Wrapper -->
   <div class="page-wrapper" id="main-wrapper" data-layout="vertical" data-navbarbg="skin6" data-sidebartype="full"
     data-sidebar-position="fixed" data-header-position="fixed">
+    <!-- Sidebar Overlay para móviles -->
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+    
     <!-- Sidebar Start -->
-    <aside class="left-sidebar sidebar-hzg">
+    <aside class="left-sidebar sidebar-hzg" id="sidebar-hzg">
         <!-- Sidebar scroll-->
           <div class="brand-logo d-flex align-items-center justify-content-between">
             <a href="<?= base_url('admin'); ?>" 
@@ -48,25 +51,36 @@
     <div class="body-wrapper">
       <!--  Header Start -->
       <header class="app-header">
-        <nav class="navbar navbar-expand-lg navbar-light">
+        <nav class="navbar navbar-expand-lg">
           <ul class="navbar-nav">
             <li class="nav-item d-block d-xl-none">
-              <a class="nav-link sidebartoggler " id="headerCollapse" href="javascript:void(0)">
+              <a class="nav-link sidebartoggler" id="headerCollapse" href="javascript:void(0)"
+                aria-label="Alternar menú lateral"
+                title="Mostrar/Ocultar menú lateral">
                 <i class="ti ti-menu-2"></i>
               </a>
             </li>
             <li class="nav-item dropdown">
-              <a class="nav-link " href="javascript:void(0)" id="drop1" data-bs-toggle="dropdown" aria-expanded="false">
+              <a class="nav-link" href="javascript:void(0)" id="drop1" data-bs-toggle="dropdown" 
+                aria-expanded="false"
+                aria-label="Notificaciones"
+                title="Ver notificaciones">
                 <i class="ti ti-bell"></i>
-                <div class="notification bg-primary rounded-circle"></div>
+                <div class="notification rounded-circle"></div>
               </a>
               <div class="dropdown-menu dropdown-menu-animate-up" aria-labelledby="drop1">
                 <div class="message-body">
                   <a href="javascript:void(0)" class="dropdown-item">
-                    Item 1
+                    <i class="ti ti-info-circle"></i>
+                    <p class="mb-0">Nueva notificación disponible</p>
                   </a>
                   <a href="javascript:void(0)" class="dropdown-item">
-                    Item 2
+                    <i class="ti ti-alert-circle"></i>
+                    <p class="mb-0">Actualización del sistema</p>
+                  </a>
+                  <a href="javascript:void(0)" class="dropdown-item">
+                    <i class="ti ti-check-circle"></i>
+                    <p class="mb-0">Todas las notificaciones</p>
                   </a>
                 </div>
               </div>
@@ -74,27 +88,40 @@
           </ul>
           <div class="navbar-collapse justify-content-end px-0" id="navbarNav">
             <ul class="navbar-nav flex-row ms-auto align-items-center justify-content-end">
-               
               <li class="nav-item dropdown">
-                <a class="nav-link " href="javascript:void(0)" id="drop2" data-bs-toggle="dropdown"
-                  aria-expanded="false">
-                  <img src="<?= base_url('./assets/images/profile/user-1.jpg') ?>" alt="" width="35" height="35" class="rounded-circle">
+                <a class="nav-link" href="javascript:void(0)" id="drop2" data-bs-toggle="dropdown"
+                  aria-expanded="false"
+                  aria-label="Menú de usuario"
+                  title="Opciones de usuario">
+                  <img src="<?= base_url('./assets/images/profile/user-1.jpg') ?>" 
+                      alt="Foto de perfil del usuario" 
+                      width="35" 
+                      height="35" 
+                      class="rounded-circle"
+                      loading="lazy"
+                      onerror="this.src='<?= base_url('./assets/images/profile/default-avatar.png') ?>'">
                 </a>
                 <div class="dropdown-menu dropdown-menu-end dropdown-menu-animate-up" aria-labelledby="drop2">
                   <div class="message-body">
-                    <a href="javascript:void(0)" class="d-flex align-items-center gap-2 dropdown-item">
-                      <i class="ti ti-user fs-6"></i>
-                      <p class="mb-0 fs-3">My Profile</p>
+                    <a href="javascript:void(0)" class="dropdown-item">
+                      <i class="ti ti-user"></i>
+                      <p class="mb-0">Mi Perfil</p>
                     </a>
-                    <a href="javascript:void(0)" class="d-flex align-items-center gap-2 dropdown-item">
-                      <i class="ti ti-mail fs-6"></i>
-                      <p class="mb-0 fs-3">My Account</p>
+                    <a href="javascript:void(0)" class="dropdown-item">
+                      <i class="ti ti-settings"></i>
+                      <p class="mb-0">Configuración</p>
                     </a>
-                    <a href="javascript:void(0)" class="d-flex align-items-center gap-2 dropdown-item">
-                      <i class="ti ti-list-check fs-6"></i>
-                      <p class="mb-0 fs-3">My Task</p>
+                    <a href="javascript:void(0)" class="dropdown-item">
+                      <i class="ti ti-list-check"></i>
+                      <p class="mb-0">Mis Tareas</p>
                     </a>
-                    <a href="<?= base_url('logout') ?>" class="btn btn-outline-primary mx-3 mt-2 d-block">Logout</a>
+                    <a href="javascript:void(0)" class="dropdown-item">
+                      <i class="ti ti-help"></i>
+                      <p class="mb-0">Ayuda</p>
+                    </a>
+                    <a href="<?= base_url('logout') ?>" class="btn btn-outline-primary d-block">
+                      <i class="ti ti-logout me-2"></i>Cerrar Sesión
+                    </a>
                   </div>
                 </div>
               </li>
@@ -162,6 +189,72 @@
     if (typeof window.initSidebarMenu === 'function') {
       window.initSidebarMenu(dashboardUrl);
     }
+  });
+
+  // Funcionalidad del sidebar para móviles
+  function initSidebarToggle() {
+    const sidebarToggler = document.getElementById('headerCollapse');
+    const sidebar = document.getElementById('sidebar-hzg');
+    const overlay = document.getElementById('sidebar-overlay');
+    const body = document.body;
+    const pageWrapper = document.getElementById('main-wrapper');
+
+    if (sidebarToggler && sidebar && overlay) {
+      // Toggle sidebar
+      sidebarToggler.addEventListener('click', function(e) {
+        e.preventDefault();
+        toggleSidebar();
+      });
+
+      // Cerrar sidebar al hacer click en overlay
+      overlay.addEventListener('click', function() {
+        closeSidebar();
+      });
+
+      // Cerrar sidebar con tecla ESC
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && sidebar.classList.contains('show')) {
+          closeSidebar();
+        }
+      });
+
+      // Funciones helper
+      function toggleSidebar() {
+        if (sidebar.classList.contains('show')) {
+          closeSidebar();
+        } else {
+          openSidebar();
+        }
+      }
+
+      function openSidebar() {
+        sidebar.classList.add('show');
+        overlay.classList.add('show');
+        body.classList.add('sidebar-open');
+        pageWrapper.classList.add('sidebar-open');
+      }
+
+      function closeSidebar() {
+        sidebar.classList.remove('show');
+        overlay.classList.remove('show');
+        body.classList.remove('sidebar-open');
+        pageWrapper.classList.remove('sidebar-open');
+      }
+
+      // Cerrar sidebar automáticamente en desktop
+      function handleResize() {
+        if (window.innerWidth >= 992) {
+          closeSidebar();
+        }
+      }
+
+      window.addEventListener('resize', handleResize);
+    }
+  }
+
+  // Inicializar funcionalidad del sidebar
+  $(document).ready(function() {
+    initSidebarToggle();
   });
   </script>
   <script src="<?= base_url('./assets/libs/bootstrap/dist/js/bootstrap.bundle.min.js') ?>"></script>

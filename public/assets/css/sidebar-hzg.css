@@ -7,11 +7,17 @@
   min-width: 280px;
   width: 280px;
   box-shadow: 2px 0 8px rgba(0,0,0,0.1);
-  position: relative;
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
   z-index: 1000;
-  transition: width 0.3s ease;
+  transition: all 0.3s ease;
   margin: 0 !important;
   padding: 0 !important;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .sidebar-hzg.sidebar-minimized {
@@ -37,10 +43,12 @@
    ======================================== */
 .sidebar-hzg .brand-logo {
   border-bottom: 1px solid rgba(255, 215, 0, 0.2);
-  padding: 0.75rem;
+  padding: 0.75rem 0.75rem;
   margin-bottom: 0.5rem;
   transition: all 0.3s ease;
   min-height: 70px;
+  display: flex;
+  align-items: center;
 }
 
 .sidebar-hzg .brand-logo:hover {
@@ -135,6 +143,36 @@
 .sidebar-hzg .brand-logo .close-btn:focus {
   outline: 2px solid #FFD700;
   outline-offset: 2px;
+}
+
+/* ========================================
+   NAVIGATION CONTAINER
+   ======================================== */
+.sidebar-hzg .sidebar-nav {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+.sidebar-hzg .sidebar-nav.scroll-sidebar {
+  overflow-y: auto;
+  height: calc(100vh - 70px); /* Altura total menos el brand-logo */
+  padding: 0.5rem 0 1rem 0;
+}
+
+/* Estilos para SimpleBar si está presente */
+.sidebar-hzg .simplebar-wrapper {
+  height: 100%;
+}
+
+.sidebar-hzg .simplebar-content-wrapper {
+  height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.sidebar-hzg .simplebar-content {
+  padding: 0.5rem 0 1rem 0;
 }
 
 /* ========================================
@@ -391,26 +429,105 @@
    RESPONSIVE DESIGN - MINIMALISTA
    ======================================== */
 @media (max-width: 991px) {
+  .sidebar-hzg .brand-logo {
+    min-height: 60px;
+    padding: 0.5rem 0.75rem;
+  }
+  
   .sidebar-hzg .brand-logo .logo-text-container {
     display: none;
   }
   
   .sidebar-hzg .brand-logo .logo-image {
-    width: 40px;
-    height: 40px;
+    width: 38px;
+    height: 38px;
+  }
+  
+  .sidebar-hzg .sidebar-nav.scroll-sidebar {
+    height: calc(100vh - 60px);
+  }
+}
+
+/* ========================================
+   SIDEBAR MOBILE RESPONSIVE
+   ======================================== */
+@media (max-width: 991px) {
+  .sidebar-hzg {
+    transform: translateX(-100%);
+    width: 280px;
+    min-width: 280px;
+    z-index: 1050;
+  }
+  
+  .sidebar-hzg.show {
+    transform: translateX(0);
   }
 }
 
 @media (max-width: 768px) {
   .sidebar-hzg {
+    width: 280px;
+    min-width: 280px;
+    transform: translateX(-100%);
+  }
+  
+  .sidebar-hzg.show {
+    transform: translateX(0);
+    box-shadow: 4px 0 20px rgba(0,0,0,0.3);
+  }
+  
+  .sidebar-hzg .brand-logo {
+    min-height: 55px;
+    padding: 0.4rem 0.75rem;
+  }
+  
+  .sidebar-hzg .brand-logo .logo-image {
+    width: 35px;
+    height: 35px;
+  }
+  
+  .sidebar-hzg .sidebar-nav.scroll-sidebar {
+    height: calc(100vh - 55px);
+  }
+}
+
+/* ========================================
+   SIDEBAR OVERLAY PARA MÓVILES
+   ======================================== */
+@media (max-width: 991px) {
+  .sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
     width: 100%;
-    min-width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1040;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+  }
+  
+  .sidebar-overlay.show {
+    opacity: 1;
+    visibility: visible;
+  }
+  
+  /* Ajustar el contenido principal cuando el sidebar está visible */
+  .page-wrapper.sidebar-open .body-wrapper {
+    transform: translateX(0);
   }
 }
 
 /* ========================================
    MINIMIZED SIDEBAR STATE
    ======================================== */
+.sidebar-hzg.sidebar-minimized .brand-logo {
+  min-height: 70px;
+  padding: 0.75rem 0.5rem;
+  justify-content: center;
+}
+
 .sidebar-hzg.sidebar-minimized .brand-logo .logo-text-container {
   display: none;
 }
@@ -423,6 +540,36 @@
   display: none;
 }
 
+/* ========================================
+   MINIMIZED SIDEBAR NAVIGATION - MISMAS PROPIEDADES
+   ======================================== */
+.sidebar-hzg.sidebar-minimized .sidebar-nav {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+.sidebar-hzg.sidebar-minimized .sidebar-nav.scroll-sidebar {
+  overflow-y: auto;
+  height: calc(100vh - 70px);
+  padding: 0.5rem 0 1rem 0;
+}
+
+/* Estilos para SimpleBar en sidebar minimizado */
+.sidebar-hzg.sidebar-minimized .simplebar-wrapper {
+  height: 100%;
+}
+
+.sidebar-hzg.sidebar-minimized .simplebar-content-wrapper {
+  height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.sidebar-hzg.sidebar-minimized .simplebar-content {
+  padding: 0.5rem 0 1rem 0;
+}
+
 /* Ajustar flechas en estado minimizado */
 .sidebar-hzg.sidebar-minimized .has-arrow::after {
   right: 0.2rem;
@@ -431,6 +578,25 @@
 
 .sidebar-hzg.sidebar-minimized .has-arrow {
   padding-right: 1.2rem !important;
+}
+
+/* ========================================
+   RESPONSIVE PARA SIDEBAR MINIMIZADO
+   ======================================== */
+@media (max-width: 991px) {
+  .sidebar-hzg.sidebar-minimized .sidebar-nav.scroll-sidebar {
+    height: calc(100vh - 60px);
+    overflow-y: auto;
+    padding: 0.5rem 0 1rem 0;
+  }
+}
+
+@media (max-width: 768px) {
+  .sidebar-hzg.sidebar-minimized .sidebar-nav.scroll-sidebar {
+    height: calc(100vh - 55px);
+    overflow-y: auto;
+    padding: 0.5rem 0 1rem 0;
+  }
 }
 
 /* ========================================
@@ -481,4 +647,342 @@
 /* Separador con degradado */
 .sidebar-hzg .sidebar-divider {
   background: linear-gradient(90deg, transparent 0%, rgba(255, 215, 0, 0.3) 50%, transparent 100%);
+}
+
+/* ========================================
+   HEADER STYLES - COHERENTE CON SIDEBAR
+   ======================================== */
+.app-header {
+  background: linear-gradient(135deg, #B71C1C 0%, #A91B1B 100%) !important;
+  color: #FFF8E1 !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15), 0 2px 6px rgba(183, 28, 28, 0.2) !important;
+  border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+  backdrop-filter: blur(10px);
+  position: relative;
+  z-index: 999;
+}
+
+.app-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 215, 0, 0.05) 50%, transparent 100%);
+  pointer-events: none;
+}
+
+.app-header .navbar {
+  background: transparent !important;
+  padding: 0.75rem 1.5rem;
+  min-height: 70px;
+}
+
+/* ========================================
+   NAVBAR BRAND Y CONTENIDO
+   ======================================== */
+.app-header .navbar-nav .nav-item .nav-link {
+  color: #FFF8E1 !important;
+  border-radius: 8px;
+  padding: 0.6rem 0.8rem;
+  transition: all 0.25s ease;
+  position: relative;
+  margin: 0 0.25rem;
+  font-weight: 400;
+}
+
+.app-header .navbar-nav .nav-item .nav-link:hover {
+  background: rgba(255, 215, 0, 0.12) !important;
+  color: #FFD700 !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.15);
+}
+
+.app-header .navbar-nav .nav-item .nav-link:focus {
+  outline: 2px solid #FFD700;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(255, 215, 0, 0.2);
+}
+
+/* ========================================
+   ICONOS DEL HEADER
+   ======================================== */
+.app-header .navbar-nav .nav-item .nav-link i {
+  color: #FFD700 !important;
+  font-size: 1.25rem;
+  transition: all 0.2s ease;
+}
+
+.app-header .navbar-nav .nav-item .nav-link:hover i {
+  transform: scale(1.1);
+  filter: drop-shadow(0 2px 4px rgba(255, 215, 0, 0.3));
+}
+
+/* ========================================
+   SIDEBAR TOGGLE BUTTON
+   ======================================== */
+.app-header .sidebartoggler {
+  background: rgba(255, 215, 0, 0.1) !important;
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  border-radius: 8px;
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.app-header .sidebartoggler:hover {
+  background: rgba(255, 215, 0, 0.2) !important;
+  border-color: #FFD700;
+  transform: scale(1.05);
+}
+
+.app-header .sidebartoggler i {
+  color: #FFD700 !important;
+  font-size: 1.3rem;
+}
+
+/* ========================================
+   NOTIFICATION BADGE
+   ======================================== */
+.app-header .notification {
+  background: linear-gradient(135deg, #FFD700 0%, #FFC107 100%) !important;
+  border: 2px solid #B71C1C;
+  width: 10px;
+  height: 10px;
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  box-shadow: 0 2px 6px rgba(255, 215, 0, 0.4);
+}
+
+/* ========================================
+   DROPDOWN MENUS
+   ======================================== */
+.app-header .dropdown-menu {
+  background: #B71C1C !important;
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.2), 0 4px 12px rgba(183, 28, 28, 0.3);
+  margin-top: 0.5rem;
+  padding: 0.75rem 0;
+  min-width: 220px;
+}
+
+.app-header .dropdown-menu::before {
+  content: '';
+  position: absolute;
+  top: -6px;
+  right: 20px;
+  width: 12px;
+  height: 12px;
+  background: #B71C1C;
+  border-left: 1px solid rgba(255, 215, 0, 0.3);
+  border-top: 1px solid rgba(255, 215, 0, 0.3);
+  transform: rotate(45deg);
+}
+
+.app-header .dropdown-item {
+  color: #FFF8E1 !important;
+  padding: 0.75rem 1.25rem;
+  border-radius: 0;
+  transition: all 0.2s ease;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.app-header .dropdown-item:hover {
+  background: rgba(255, 215, 0, 0.12) !important;
+  color: #FFD700 !important;
+  transform: translateX(2px);
+}
+
+.app-header .dropdown-item:focus {
+  background: rgba(255, 215, 0, 0.15) !important;
+  color: #FFD700 !important;
+  outline: none;
+}
+
+.app-header .dropdown-item i {
+  color: #FFD700 !important;
+  font-size: 1.1rem;
+  width: 20px;
+  text-align: center;
+}
+
+.app-header .dropdown-item:hover i {
+  transform: scale(1.1);
+}
+
+/* ========================================
+   PROFILE IMAGE
+   ======================================== */
+.app-header .navbar-nav .nav-item img {
+  border: 2px solid rgba(255, 215, 0, 0.5);
+  transition: all 0.3s ease;
+  box-shadow: 0 3px 12px rgba(255, 215, 0, 0.2);
+}
+
+.app-header .navbar-nav .nav-item:hover img {
+  border-color: #FFD700;
+  transform: scale(1.05);
+  box-shadow: 0 4px 16px rgba(255, 215, 0, 0.3);
+}
+
+/* ========================================
+   LOGOUT BUTTON
+   ======================================== */
+.app-header .btn-outline-primary {
+  background: transparent !important;
+  border: 1px solid #FFD700 !important;
+  color: #FFD700 !important;
+  border-radius: 8px;
+  padding: 0.5rem 1.25rem;
+  font-weight: 500;
+  font-size: 0.85rem;
+  transition: all 0.25s ease;
+  margin: 0.5rem 1.25rem 0.25rem;
+}
+
+.app-header .btn-outline-primary:hover {
+  background: #FFD700 !important;
+  color: #B71C1C !important;
+  border-color: #FFD700 !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
+}
+
+.app-header .btn-outline-primary:focus {
+  outline: 2px solid #FFD700;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(255, 215, 0, 0.2);
+}
+
+/* ========================================
+   MESSAGE BODY STYLING
+   ======================================== */
+.app-header .message-body {
+  padding: 0;
+}
+
+.app-header .message-body .dropdown-item p {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+/* ========================================
+   RESPONSIVE DESIGN PARA HEADER
+   ======================================== */
+@media (max-width: 991px) {
+  .app-header .navbar {
+    padding: 0.5rem 1rem;
+    min-height: 60px;
+  }
+  
+  .app-header .sidebartoggler {
+    width: 38px;
+    height: 38px;
+  }
+  
+  .app-header .navbar-nav .nav-item img {
+    width: 32px;
+    height: 32px;
+  }
+}
+
+@media (max-width: 768px) {
+  .app-header .navbar {
+    padding: 0.4rem 0.75rem;
+    min-height: 55px;
+  }
+  
+  .app-header .dropdown-menu {
+    min-width: 200px;
+    right: 0;
+    left: auto;
+  }
+  
+  .app-header .navbar-collapse {
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid rgba(255, 215, 0, 0.2);
+  }
+  
+  .app-header .navbar-nav .nav-item img {
+    width: 30px;
+    height: 30px;
+  }
+  
+  .app-header .sidebartoggler {
+    width: 35px;
+    height: 35px;
+  }
+}
+
+/* ========================================
+   ANIMACIONES Y EFECTOS ADICIONALES
+   ======================================== */
+.app-header .navbar-nav .nav-item {
+  animation: slideInFromTop 0.3s ease-out;
+}
+
+@keyframes slideInFromTop {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Efecto de carga para el header */
+.app-header.loading {
+  opacity: 0.8;
+  animation: headerPulse 1s infinite;
+}
+
+@keyframes headerPulse {
+  0%, 100% {
+    opacity: 0.8;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* ========================================
+   BODY WRAPPER Y LAYOUT ADJUSTMENTS
+   ======================================== */
+@media (min-width: 992px) {
+  .page-wrapper .body-wrapper {
+    margin-left: 280px;
+    transition: margin-left 0.3s ease;
+  }
+  
+  .page-wrapper.sidebar-minimized .body-wrapper {
+    margin-left: 70px;
+  }
+}
+
+@media (max-width: 991px) {
+  .page-wrapper .body-wrapper {
+    margin-left: 0;
+    width: 100%;
+  }
+}
+
+/* ========================================
+   PREVENT BODY SCROLL WHEN SIDEBAR IS OPEN
+   ======================================== */
+@media (max-width: 991px) {
+  body.sidebar-open {
+    overflow: hidden;
+  }
 }
