@@ -7,6 +7,7 @@ use App\Models\SubcategoriaModel;
 use App\Models\RecursoModel;
 use App\Models\AutorModel;
 use App\Models\DetAutorModel; // para obtener autores
+use App\Models\PrestamoModel;
 
 class CatalogoController extends BaseController
 {
@@ -177,7 +178,62 @@ class CatalogoController extends BaseController
             return redirect()->to('/login');
         }
 
+        $prestamoModel = new PrestamoModel();
+        $nomuser = session()->get('usuario');
+        
+        // Obtener ID del usuario desde el nombre
+        $usuarioModel = new \App\Models\usuarioModel();
+        $usuario = $usuarioModel->where('nomuser', $nomuser)->first();
+        $idusuario = $usuario ? $usuario['idusuario'] : null;
+        
+        // Obtener matrícula del usuario
+        $idmatricula = $idusuario ? $prestamoModel->getMatriculaByUsuario($idusuario) : null;
+        
+        $prestamosActivos = [];
+        $historialPrestamos = [];
+        
+        if ($idmatricula) {
+            // Debug: verificar datos
+            log_message('info', "Usuario: $nomuser, ID: $idusuario, Matrícula: $idmatricula");
+            
+            // Primero, verificar si hay préstamos básicos
+            $prestamosBasicos = $prestamoModel->where('idmatricula', $idmatricula)->findAll();
+            log_message('info', 'Préstamos básicos encontrados: ' . count($prestamosBasicos));
+            
+            // Obtener préstamos activos con joins
+            $prestamosActivos = $prestamoModel->getPrestamosActivosByUsuario($idmatricula);
+            
+            // Debug: mostrar préstamos encontrados
+            log_message('info', 'Préstamos activos encontrados: ' . count($prestamosActivos));
+            
+            // Los datos ya vienen procesados desde la consulta SQL
+            
+            // Obtener historial completo
+            $historialPrestamos = $prestamoModel->getHistorialPrestamosByUsuario($idmatricula, 20);
+        } else {
+            // Debug: mostrar por qué no hay matrícula
+            log_message('info', "No se encontró matrícula. Usuario: $nomuser, ID Usuario: $idusuario");
+        }
+
+        // Si no hay préstamos, crear datos de ejemplo para testing
+        if (empty($prestamosActivos) && session()->get('nivel') === 'admin') {
+            $prestamosActivos = [
+                [
+                    'idprestamo' => 999,
+                    'titulo' => 'Libro de Prueba',
+                    'nomautor' => 'Autor Test',
+                    'fechaprestamo' => date('Y-m-d H:i:s'),
+                    'fechadevolucion' => date('Y-m-d H:i:s', strtotime('+15 days')),
+                    'fechahoraretorno' => null,
+                    'portada' => null
+                ]
+            ];
+        }
+
         $datos = [
+            'prestamosActivos' => $prestamosActivos,
+            'historialPrestamos' => $historialPrestamos,
+            'contadorActivos' => count($prestamosActivos),
             'header' => view('layouts/header'),
             'footer' => view('layouts/footer'),
             'navbar' => view('layouts/navbar')
@@ -203,6 +259,33 @@ class CatalogoController extends BaseController
         ];
 
         return view('Catalogo/favoritos', $datos);
+    }
+
+    /**
+     * Método temporal para insertar datos de prueba
+     */
+    public function insertarDatosPrueba()
+    {
+        if (session()->get('nivel') !== 'admin') {
+            return redirect()->to('/');
+        }
+
+        $db = \Config\Database::connect();
+        
+        try {
+            // Insertar préstamos de prueba para el usuario con matrícula 3 (estu1)
+            $sql = "INSERT INTO prestamos (idmatricula, idusuario, idrecurso, fechaprestamo, fechadevolucion, fechahoravalidacion) VALUES
+                    (3, 1, 1, '2025-09-15 10:00:00', '2025-10-15 10:00:00', '2025-09-15 10:30:00'),
+                    (3, 1, 2, '2025-09-01 11:00:00', '2025-09-20 11:00:00', '2025-09-01 11:30:00')
+                    ON DUPLICATE KEY UPDATE idprestamo = idprestamo";
+            
+            $db->query($sql);
+            
+            return redirect()->to('/catalogo/mis-prestamos')->with('message', 'Datos de prueba insertados');
+        } catch (\Exception $e) {
+            log_message('error', 'Error insertando datos de prueba: ' . $e->getMessage());
+            return redirect()->to('/catalogo/mis-prestamos')->with('error', 'Error al insertar datos');
+        }
     }
 
 }
