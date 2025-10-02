@@ -19,7 +19,7 @@
                     <div class="card bg-light border-0">
                         <div class="card-body text-center py-2">
                             <small class="text-muted">Total Favoritos</small>
-                            <h4 class="text-primary mb-0" id="contadorFavoritos">5</h4>
+                            <h4 class="text-primary mb-0" id="contadorFavoritos"><?= $contadorFavoritos ?></h4>
                         </div>
                     </div>
                 </div>
@@ -40,10 +40,10 @@
         <div class="col-md-3">
             <select class="form-select" id="filtroCategoria">
                 <option value="">Todas las categorías</option>
-                <option value="matematicas">Matemáticas</option>
-                <option value="ciencias">Ciencias</option>
-                <option value="historia">Historia</option>
                 <option value="literatura">Literatura</option>
+                <option value="matemáticas">Matemáticas</option>
+                <option value="informática">Informática</option>
+                <option value="historia">Historia</option>
             </select>
         </div>
         <div class="col-md-3">
@@ -61,7 +61,7 @@
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
-                    <span class="text-muted">Mostrando <span id="resultadosCount">5</span> favoritos</span>
+                    <span class="text-muted">Mostrando <span id="resultadosCount"><?= count($favoritos) ?></span> favoritos</span>
                 </div>
                 <div class="btn-group" role="group">
                     <button type="button" class="btn btn-outline-primary active" id="vistaGrilla">
@@ -71,191 +71,16 @@
                         <i class="fas fa-list"></i> Lista
                     </button>
                 </div>
-            </div>
         </div>
     </div>
 
     <!-- Contenido de favoritos - Vista Grilla -->
     <div class="row" id="favoritosGrilla">
-        <!-- Ejemplo de libro favorito 1 -->
-        <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
-            <div class="card h-100 position-relative">
-                <div class="position-absolute top-0 end-0 p-2">
-                    <button class="btn btn-sm btn-outline-danger rounded-circle" title="Quitar de favoritos">
-                        <i class="fas fa-heart text-danger"></i>
-                    </button>
-                </div>
-                <div class="card-img-top-container" style="height: 220px; overflow: hidden;">
-                    <img src="<?= base_url('img/portada_1.png') ?>" class="card-img-top h-100 w-100" style="object-fit: cover;" alt="Matemáticas Básicas">
-                </div>
-                <div class="card-body">
-                    <h6 class="card-title mb-2">Matemáticas Básicas</h6>
-                    <p class="card-text text-muted small mb-2">
-                        <strong>Autor:</strong> Juan Pérez
-                    </p>
-                    <p class="card-text text-muted small mb-2">
-                        <strong>Categoría:</strong> Matemáticas
-                    </p>
-                    <p class="card-text text-muted small">
-                        <i class="fas fa-calendar-plus me-1"></i>Agregado: 25/Sep/2025
-                    </p>
-                </div>
-                <div class="card-footer bg-transparent border-0">
-                    <div class="d-flex gap-2">
-                        <button class="btn btn-outline-primary btn-sm flex-fill">
-                            <i class="fas fa-eye me-1"></i>Ver
-                        </button>
-                        <button class="btn btn-primary btn-sm flex-fill">
-                            <i class="fas fa-book me-1"></i>Prestar
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Ejemplo de libro favorito 2 -->
-        <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
-            <div class="card h-100 position-relative">
-                <div class="position-absolute top-0 end-0 p-2">
-                    <button class="btn btn-sm btn-outline-danger rounded-circle" title="Quitar de favoritos">
-                        <i class="fas fa-heart text-danger"></i>
-                    </button>
-                </div>
-                <div class="card-img-top-container" style="height: 220px; overflow: hidden;">
-                    <img src="<?= base_url('img/portada_2.png') ?>" class="card-img-top h-100 w-100" style="object-fit: cover;" alt="Historia Universal">
-                </div>
-                <div class="card-body">
-                    <h6 class="card-title mb-2">Historia Universal</h6>
-                    <p class="card-text text-muted small mb-2">
-                        <strong>Autor:</strong> María García
-                    </p>
-                    <p class="card-text text-muted small mb-2">
-                        <strong>Categoría:</strong> Historia
-                    </p>
-                    <p class="card-text text-muted small">
-                        <i class="fas fa-calendar-plus me-1"></i>Agregado: 20/Sep/2025
-                    </p>
-                </div>
-                <div class="card-footer bg-transparent border-0">
-                    <div class="d-flex gap-2">
-                        <button class="btn btn-outline-primary btn-sm flex-fill">
-                            <i class="fas fa-eye me-1"></i>Ver
-                        </button>
-                        <button class="btn btn-primary btn-sm flex-fill">
-                            <i class="fas fa-book me-1"></i>Prestar
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Ejemplo de libro favorito 3 -->
-        <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
-            <div class="card h-100 position-relative">
-                <div class="position-absolute top-0 end-0 p-2">
-                    <button class="btn btn-sm btn-outline-danger rounded-circle" title="Quitar de favoritos">
-                        <i class="fas fa-heart text-danger"></i>
-                    </button>
-                </div>
-                <div class="card-img-top-container" style="height: 220px; overflow: hidden;">
-                    <img src="<?= base_url('img/inicial.jpg') ?>" class="card-img-top h-100 w-100" style="object-fit: cover;" alt="Ciencias Naturales">
-                </div>
-                <div class="card-body">
-                    <h6 class="card-title mb-2">Ciencias Naturales</h6>
-                    <p class="card-text text-muted small mb-2">
-                        <strong>Autor:</strong> Carlos López
-                    </p>
-                    <p class="card-text text-muted small mb-2">
-                        <strong>Categoría:</strong> Ciencias
-                    </p>
-                    <p class="card-text text-muted small">
-                        <i class="fas fa-calendar-plus me-1"></i>Agregado: 15/Sep/2025
-                    </p>
-                </div>
-                <div class="card-footer bg-transparent border-0">
-                    <div class="d-flex gap-2">
-                        <button class="btn btn-outline-primary btn-sm flex-fill">
-                            <i class="fas fa-eye me-1"></i>Ver
-                        </button>
-                        <button class="btn btn-primary btn-sm flex-fill">
-                            <i class="fas fa-book me-1"></i>Prestar
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Ejemplo de libro favorito 4 -->
-        <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
-            <div class="card h-100 position-relative">
-                <div class="position-absolute top-0 end-0 p-2">
-                    <button class="btn btn-sm btn-outline-danger rounded-circle" title="Quitar de favoritos">
-                        <i class="fas fa-heart text-danger"></i>
-                    </button>
-                </div>
-                <div class="card-img-top-container" style="height: 220px; overflow: hidden;">
-                    <img src="<?= base_url('img/primaria.jpg') ?>" class="card-img-top h-100 w-100" style="object-fit: cover;" alt="Álgebra Avanzada">
-                </div>
-                <div class="card-body">
-                    <h6 class="card-title mb-2">Álgebra Avanzada</h6>
-                    <p class="card-text text-muted small mb-2">
-                        <strong>Autor:</strong> Ana Martínez
-                    </p>
-                    <p class="card-text text-muted small mb-2">
-                        <strong>Categoría:</strong> Matemáticas
-                    </p>
-                    <p class="card-text text-muted small">
-                        <i class="fas fa-calendar-plus me-1"></i>Agregado: 10/Sep/2025
-                    </p>
-                </div>
-                <div class="card-footer bg-transparent border-0">
-                    <div class="d-flex gap-2">
-                        <button class="btn btn-outline-primary btn-sm flex-fill">
-                            <i class="fas fa-eye me-1"></i>Ver
-                        </button>
-                        <button class="btn btn-primary btn-sm flex-fill">
-                            <i class="fas fa-book me-1"></i>Prestar
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Ejemplo de libro favorito 5 -->
-        <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
-            <div class="card h-100 position-relative">
-                <div class="position-absolute top-0 end-0 p-2">
-                    <button class="btn btn-sm btn-outline-danger rounded-circle" title="Quitar de favoritos">
-                        <i class="fas fa-heart text-danger"></i>
-                    </button>
-                </div>
-                <div class="card-img-top-container" style="height: 220px; overflow: hidden;">
-                    <img src="<?= base_url('img/secundaria.jpg') ?>" class="card-img-top h-100 w-100" style="object-fit: cover;" alt="Física Moderna">
-                </div>
-                <div class="card-body">
-                    <h6 class="card-title mb-2">Física Moderna</h6>
-                    <p class="card-text text-muted small mb-2">
-                        <strong>Autor:</strong> Roberto Silva
-                    </p>
-                    <p class="card-text text-muted small mb-2">
-                        <strong>Categoría:</strong> Ciencias
-                    </p>
-                    <p class="card-text text-muted small">
-                        <i class="fas fa-calendar-plus me-1"></i>Agregado: 05/Sep/2025
-                    </p>
-                </div>
-                <div class="card-footer bg-transparent border-0">
-                    <div class="d-flex gap-2">
-                        <button class="btn btn-outline-primary btn-sm flex-fill">
-                            <i class="fas fa-eye me-1"></i>Ver
-                        </button>
-                        <button class="btn btn-primary btn-sm flex-fill">
-                            <i class="fas fa-book me-1"></i>Prestar
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <?php if (!empty($favoritos)): ?>
+            <?php foreach ($favoritos as $favorito): ?>
+                <?= view('partials/favorito_card', ['favorito' => $favorito, 'colClasses' => 'col-lg-3 col-md-4 col-sm-6 mb-4']) ?>
+            <?php endforeach; ?>
+        <?php endif; ?>
     </div>
 
     <!-- Contenido de favoritos - Vista Lista (oculta por defecto) -->
@@ -272,41 +97,84 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        <td>
-                            <div class="d-flex align-items-center">
-                                <img src="<?= base_url('img/portada_1.png') ?>" class="rounded me-3" style="width: 40px; height: 50px; object-fit: cover;" alt="Portada">
-                                <div>
-                                    <h6 class="mb-0">Matemáticas Básicas</h6>
-                                    <small class="text-muted">ISBN: 978-123456789</small>
-                                </div>
-                            </div>
-                        </td>
-                        <td>Juan Pérez</td>
-                        <td><span class="badge bg-primary">Matemáticas</span></td>
-                        <td>25/Sep/2025</td>
-                        <td>
-                            <div class="btn-group" role="group">
-                                <button class="btn btn-sm btn-outline-primary" title="Ver detalles">
-                                    <i class="fas fa-eye"></i>
-                                </button>
-                                <button class="btn btn-sm btn-primary" title="Prestar">
-                                    <i class="fas fa-book"></i>
-                                </button>
-                                <button class="btn btn-sm btn-outline-danger" title="Quitar de favoritos">
-                                    <i class="fas fa-heart-broken"></i>
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                    <!-- Más filas de ejemplo aquí -->
+                    <?php if (!empty($favoritos)): ?>
+                        <?php foreach ($favoritos as $favorito): ?>
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <?php if (!empty($favorito['portada'])): ?>
+                                            <img src="<?= base_url($favorito['portada']) ?>" class="rounded me-3" style="width: 40px; height: 50px; object-fit: cover;" alt="Portada">
+                                        <?php else: ?>
+                                            <div class="bg-light rounded me-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 50px;">
+                                                <i class="fas fa-book text-muted"></i>
+                                            </div>
+                                        <?php endif; ?>
+                                        <div>
+                                            <h6 class="mb-0"><?= esc($favorito['titulo']) ?></h6>
+                                            <?php if (!empty($favorito['isbn'])): ?>
+                                                <small class="text-muted">ISBN: <?= esc($favorito['isbn']) ?></small>
+                                            <?php endif; ?>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td><?= esc($favorito['nomautor'] ?: 'Sin autor') ?></td>
+                                <td>
+                                    <?php if (!empty($favorito['categoria'])): ?>
+                                        <span class="badge bg-primary"><?= esc($favorito['categoria']) ?></span>
+                                    <?php else: ?>
+                                        <span class="badge bg-secondary">Sin categoría</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <small class="text-muted">
+                                        <i class="fas fa-heart text-danger me-1"></i>
+                                        Favorito
+                                    </small>
+                                </td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <button class="btn btn-sm btn-outline-primary" 
+                                                onclick="verDetalles(<?= $favorito['idrecurso'] ?>)" 
+                                                title="Ver detalles">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <?php if ($favorito['estado'] === 'disponible'): ?>
+                                            <button class="btn btn-sm btn-primary" 
+                                                    onclick="solicitarPrestamo(<?= $favorito['idrecurso'] ?>)" 
+                                                    title="Prestar">
+                                                <i class="fas fa-book"></i>
+                                            </button>
+                                        <?php else: ?>
+                                            <button class="btn btn-sm btn-secondary" disabled title="No disponible">
+                                                <i class="fas fa-ban"></i>
+                                            </button>
+                                        <?php endif; ?>
+                                        <button class="btn btn-sm btn-outline-danger" 
+                                                onclick="quitarFavorito(<?= $favorito['idfavorito'] ?>, <?= $favorito['idrecurso'] ?>)" 
+                                                title="Quitar de favoritos">
+                                            <i class="fas fa-heart-broken"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <tr>
+                            <td colspan="5" class="text-center text-muted py-4">
+                                <i class="fas fa-heart fa-2x mb-2"></i>
+                                <br>No tienes libros favoritos
+                                <br>
+                                <small>¡Explora nuestro catálogo y marca tus libros favoritos!</small>
+                            </td>
+                        </tr>
+                    <?php endif; ?>
                 </tbody>
             </table>
         </div>
     </div>
 
     <!-- Mensaje cuando no hay favoritos -->
-    <div class="row d-none" id="sinFavoritos">
+    <div class="row <?= empty($favoritos) ? '' : 'd-none' ?>" id="sinFavoritos">
         <div class="col-12">
             <div class="text-center py-5">
                 <i class="fas fa-heart fa-3x text-muted mb-3"></i>
@@ -347,6 +215,8 @@ document.addEventListener('DOMContentLoaded', function() {
         vistaLista.classList.remove('active');
         favoritosGrilla.classList.remove('d-none');
         favoritosLista.classList.add('d-none');
+        // Reaplicar filtros después del cambio de vista
+        filtrarFavoritos();
     });
 
     vistaLista.addEventListener('click', function() {
@@ -354,6 +224,8 @@ document.addEventListener('DOMContentLoaded', function() {
         vistaGrilla.classList.remove('active');
         favoritosLista.classList.remove('d-none');
         favoritosGrilla.classList.add('d-none');
+        // Reaplicar filtros después del cambio de vista
+        filtrarFavoritos();
     });
 
     // Funcionalidad de búsqueda y filtros
@@ -364,53 +236,266 @@ document.addEventListener('DOMContentLoaded', function() {
     buscarInput.addEventListener('input', filtrarFavoritos);
     filtroCategoria.addEventListener('change', filtrarFavoritos);
     ordenarPor.addEventListener('change', filtrarFavoritos);
-
     function filtrarFavoritos() {
-        // Aquí iría la lógica de filtrado
-        console.log('Filtrando favoritos...');
-    }
-
-    // Funcionalidad de quitar de favoritos
-    document.querySelectorAll('.btn-outline-danger').forEach(btn => {
-        if (btn.title && btn.title.includes('Quitar')) {
-            btn.addEventListener('click', function() {
-                if (confirm('¿Estás seguro de que deseas quitar este libro de favoritos?')) {
-                    // Lógica para quitar de favoritos
-                    this.closest('.col-lg-3, tr').remove();
-                    actualizarContador();
-                    alert('Libro quitado de favoritos');
-                }
-            });
-        }
-    });
-
-    // Funcionalidad de prestar libro
-    document.querySelectorAll('.btn-primary').forEach(btn => {
-        if (btn.textContent.includes('Prestar') || btn.title === 'Prestar') {
-            btn.addEventListener('click', function() {
-                if (confirm('¿Deseas solicitar el préstamo de este libro?')) {
-                    // Lógica de préstamo
-                    alert('Solicitud de préstamo enviada');
-                }
-            });
-        }
-    });
-
-    // Actualizar contador
-    function actualizarContador() {
-        const totalFavoritos = document.querySelectorAll('#favoritosGrilla .col-lg-3').length;
-        document.getElementById('contadorFavoritos').textContent = totalFavoritos;
-        document.getElementById('resultadosCount').textContent = totalFavoritos;
+        const busqueda = buscarInput.value.toLowerCase().trim();
+        const categoriaSeleccionada = filtroCategoria.value.toLowerCase();
+        const ordenSeleccionado = ordenarPor.value;
         
-        // Mostrar mensaje si no hay favoritos
-        if (totalFavoritos === 0) {
-            document.getElementById('sinFavoritos').classList.remove('d-none');
-            favoritosGrilla.classList.add('d-none');
+        console.log('Filtros aplicados:', { busqueda, categoriaSeleccionada, ordenSeleccionado });
+        
+        // Obtener todas las cards de favoritos (grilla)
+        const cards = Array.from(document.querySelectorAll('#favoritosGrilla .col-lg-3'));
+        let cardsVisibles = [];
+        
+        // Obtener todas las filas de la tabla (lista)
+        const filas = Array.from(document.querySelectorAll('#favoritosLista tbody tr'));
+        let filasVisibles = [];
+        
+        // Filtrar cards de grilla
+        cards.forEach(card => {
+            const titulo = card.querySelector('h6.card-title')?.textContent.toLowerCase() || '';
+            
+            // Buscar el texto del autor (después de "Autor:")
+            const autorElement = card.querySelector('p.card-text');
+            const autorTexto = autorElement?.textContent || '';
+            const autor = autorTexto.replace('autor:', '').trim().toLowerCase();
+            
+            // Buscar el texto de la categoría (después de "Categoría:")
+            const categoriaElements = card.querySelectorAll('p.card-text');
+            let categoria = '';
+            categoriaElements.forEach(el => {
+                const texto = el.textContent.toLowerCase();
+                if (texto.includes('categoría:')) {
+                    categoria = texto.replace('categoría:', '').trim();
+                }
+            });
+            
+            // Verificar si coincide con la búsqueda
+            const coincideBusqueda = !busqueda || 
+                titulo.includes(busqueda) || 
+                autor.includes(busqueda);
+            
+            // Verificar si coincide con la categoría
+            const coincidenCategoria = !categoriaSeleccionada || 
+                categoria.includes(categoriaSeleccionada);
+            
+            // Mostrar/ocultar card
+            if (coincideBusqueda && coincidenCategoria) {
+                card.style.display = 'block';
+                cardsVisibles.push(card);
+            } else {
+                card.style.display = 'none';
+            }
+        });
+        
+        // Filtrar filas de la tabla
+        filas.forEach(fila => {
+            // Evitar filtrar la fila de "no hay favoritos"
+            if (fila.querySelector('td[colspan]')) {
+                return;
+            }
+            
+            const titulo = fila.querySelector('h6')?.textContent.toLowerCase() || '';
+            const autor = fila.cells[1]?.textContent.toLowerCase() || '';
+            const categoriaElement = fila.querySelector('.badge');
+            const categoria = categoriaElement?.textContent.toLowerCase() || '';
+            
+            // Verificar si coincide con la búsqueda
+            const coincideBusqueda = !busqueda || 
+                titulo.includes(busqueda) || 
+                autor.includes(busqueda);
+            
+            // Verificar si coincide con la categoría
+            const coincidenCategoria = !categoriaSeleccionada || 
+                categoria.includes(categoriaSeleccionada);
+            
+            // Mostrar/ocultar fila
+            if (coincideBusqueda && coincidenCategoria) {
+                fila.style.display = 'table-row';
+                filasVisibles.push(fila);
+            } else {
+                fila.style.display = 'none';
+            }
+        });
+        
+        // Ordenar elementos visibles
+        if (cardsVisibles.length > 0) {
+            ordenarCards(cardsVisibles, ordenSeleccionado);
+        }
+        if (filasVisibles.length > 0) {
+            ordenarFilas(filasVisibles, ordenSeleccionado);
+        }
+        
+        // Actualizar contador (usar el mayor entre cards y filas)
+        const totalVisibles = Math.max(cardsVisibles.length, filasVisibles.length);
+        document.getElementById('resultadosCount').textContent = totalVisibles;
+        
+        // Mostrar mensaje si no hay resultados
+        const sinFavoritos = document.getElementById('sinFavoritos');
+        const favoritosGrilla = document.getElementById('favoritosGrilla');
+        
+        if (totalVisibles === 0 && (cards.length > 0 || filas.length > 0)) {
+            // Hay favoritos pero no coinciden con el filtro
+            sinFavoritos.innerHTML = `
+                <div class="col-12">
+                    <div class="text-center py-5">
+                        <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                        <h4 class="text-muted">No se encontraron resultados</h4>
+                        <p class="text-muted mb-4">Intenta con otros términos de búsqueda o filtros</p>
+                        <button class="btn btn-outline-primary" onclick="limpiarFiltros()">
+                            <i class="fas fa-times me-2"></i>Limpiar Filtros
+                        </button>
+                    </div>
+                </div>
+            `;
+            sinFavoritos.classList.remove('d-none');
+        } else if (totalVisibles === 0 && cards.length === 0 && filas.length === 0) {
+            // No hay favoritos en absoluto
+            sinFavoritos.innerHTML = `
+                <div class="col-12">
+                    <div class="text-center py-5">
+                        <i class="fas fa-heart fa-3x text-muted mb-3"></i>
+                        <h4 class="text-muted">No tienes libros favoritos</h4>
+                        <p class="text-muted mb-4">¡Explora nuestro catálogo y marca tus libros favoritos!</p>
+                        <a href="<?= site_url('catalogo') ?>" class="btn btn-primary">
+                            <i class="fas fa-search me-2"></i>Explorar Catálogo
+                        </a>
+                    </div>
+                </div>
+            `;
+            sinFavoritos.classList.remove('d-none');
+        } else {
+            sinFavoritos.classList.add('d-none');
         }
     }
+    
+    function ordenarCards(cards, criterio) {
+        const container = document.getElementById('favoritosGrilla');
+        
+        cards.sort((a, b) => {
+            switch (criterio) {
+                case 'alfabetico':
+                    const tituloA = a.querySelector('h6.card-title')?.textContent || '';
+                    const tituloB = b.querySelector('h6.card-title')?.textContent || '';
+                    return tituloA.localeCompare(tituloB);
+                    
+                case 'autor':
+                    const autorElementA = a.querySelector('p.card-text');
+                    const autorElementB = b.querySelector('p.card-text');
+                    const autorA = autorElementA?.textContent.replace('Autor:', '').trim() || '';
+                    const autorB = autorElementB?.textContent.replace('Autor:', '').trim() || '';
+                    return autorA.localeCompare(autorB);
+                    
+                case 'categoria':
+                    let catA = '', catB = '';
+                    
+                    // Buscar categoría en card A
+                    a.querySelectorAll('p.card-text').forEach(el => {
+                        if (el.textContent.includes('Categoría:')) {
+                            catA = el.textContent.replace('Categoría:', '').trim();
+                        }
+                    });
+                    
+                    // Buscar categoría en card B
+                    b.querySelectorAll('p.card-text').forEach(el => {
+                        if (el.textContent.includes('Categoría:')) {
+                            catB = el.textContent.replace('Categoría:', '').trim();
+                        }
+                    });
+                    
+                    return catA.localeCompare(catB);
+                    
+                case 'reciente':
+                default:
+                    // Mantener orden original (más recientes primero)
+                    return 0;
+            }
+        });
+        
+        // Reordenar en el DOM
+        cards.forEach(card => {
+            container.appendChild(card);
+        });
+    }
+    
+    function ordenarFilas(filas, criterio) {
+        const tbody = document.querySelector('#favoritosLista tbody');
+        
+        filas.sort((a, b) => {
+            switch (criterio) {
+                case 'alfabetico':
+                    const tituloA = a.querySelector('h6')?.textContent || '';
+                    const tituloB = b.querySelector('h6')?.textContent || '';
+                    return tituloA.localeCompare(tituloB);
+                    
+                case 'autor':
+                    const autorA = a.cells[1]?.textContent || '';
+                    const autorB = b.cells[1]?.textContent || '';
+                    return autorA.localeCompare(autorB);
+                    
+                case 'categoria':
+                    const catA = a.querySelector('.badge')?.textContent || '';
+                    const catB = b.querySelector('.badge')?.textContent || '';
+                    return catA.localeCompare(catB);
+                    
+                case 'reciente':
+                default:
+                    // Mantener orden original (más recientes primero)
+                    return 0;
+            }
+        });
+        
+        // Reordenar en el DOM
+        filas.forEach(fila => {
+            tbody.appendChild(fila);
+        });
+    }
 
-    actualizarContador();
 });
+
+// Funciones globales para favoritos
+function quitarFavorito(idfavorito, idrecurso) {
+    if (confirm('¿Estás seguro de que quieres quitar este libro de favoritos?')) {
+        fetch('<?= base_url('catalogo/quitar-favorito') ?>', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({idfavorito: idfavorito})
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert('Error: ' + (data.message || 'Error desconocido'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error de conexión');
+        });
+    }
+}
+
+function verDetalles(idrecurso) {
+    alert('Ver detalles del libro ID: ' + idrecurso);
+}
+
+function solicitarPrestamo(idrecurso) {
+    alert('Solicitar préstamo del libro ID: ' + idrecurso);
+}
+
+function limpiarFiltros() {
+    document.getElementById('buscarFavoritos').value = '';
+    document.getElementById('filtroCategoria').value = '';
+    document.getElementById('ordenarPor').value = 'reciente';
+    
+    // Disparar evento para aplicar filtros
+    document.getElementById('buscarFavoritos').dispatchEvent(new Event('input'));
+}
 </script>
 
 <?= $footer ?>

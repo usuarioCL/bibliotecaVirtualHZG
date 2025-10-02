@@ -128,6 +128,8 @@ $routes->get('catalogo/subcategorias/(:num)', 'CatalogoController::getSubcategor
 $routes->get('catalogo/mis-prestamos', 'CatalogoController::misPrestamos');
 $routes->get('catalogo/favoritos', 'CatalogoController::favoritos');
 $routes->get('catalogo/insertar-datos-prueba', 'CatalogoController::insertarDatosPrueba');
+$routes->post('catalogo/toggle-favorito', 'CatalogoController::toggleFavorito');
+$routes->post('catalogo/quitar-favorito', 'CatalogoController::quitarFavorito');
 
 // Recursos Digitales
 $routes->get('/recurso-digital', 'RecursoDigitalController::index');

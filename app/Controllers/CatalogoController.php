@@ -8,6 +8,7 @@ use App\Models\RecursoModel;
 use App\Models\AutorModel;
 use App\Models\DetAutorModel; // para obtener autores
 use App\Models\PrestamoModel;
+use App\Models\FavoritoModel;
 
 class CatalogoController extends BaseController
 {
@@ -252,7 +253,50 @@ class CatalogoController extends BaseController
             return redirect()->to('/login');
         }
 
+        $favoritoModel = new FavoritoModel();
+        $nomuser = session()->get('usuario');
+        
+        // Obtener ID del usuario desde el nombre
+        $usuarioModel = new \App\Models\usuarioModel();
+        $usuario = $usuarioModel->where('nomuser', $nomuser)->first();
+        $idusuario = $usuario ? $usuario['idusuario'] : null;
+        
+        $favoritos = [];
+        $contadorFavoritos = 0;
+        
+        if ($idusuario) {
+            // Obtener favoritos del usuario
+            $favoritos = $favoritoModel->getFavoritosByUsuario($idusuario);
+            $contadorFavoritos = count($favoritos);
+            
+            // Debug
+            log_message('info', "Usuario: $nomuser, ID: $idusuario, Favoritos: $contadorFavoritos");
+        } else {
+            log_message('info', "No se encontró usuario: $nomuser");
+        }
+
+        // Si no hay favoritos, crear datos de ejemplo para testing (solo para admin)
+        if (empty($favoritos) && session()->get('nivel') === 'admin') {
+            $favoritos = [
+                [
+                    'idfavorito' => 999,
+                    'idrecurso' => 1,
+                    'titulo' => 'Libro Favorito de Prueba',
+                    'nomautor' => 'Autor Test',
+                    'anio' => 2023,
+                    'categoria' => 'Literatura',
+                    'subcategoria' => 'Novela',
+                    'editorial' => 'Editorial Test',
+                    'estado' => 'disponible',
+                    'portada' => null
+                ]
+            ];
+            $contadorFavoritos = 1;
+        }
+
         $datos = [
+            'favoritos' => $favoritos,
+            'contadorFavoritos' => $contadorFavoritos,
             'header' => view('layouts/header'),
             'footer' => view('layouts/footer'),
             'navbar' => view('layouts/navbar')
@@ -285,6 +329,89 @@ class CatalogoController extends BaseController
         } catch (\Exception $e) {
             log_message('error', 'Error insertando datos de prueba: ' . $e->getMessage());
             return redirect()->to('/catalogo/mis-prestamos')->with('error', 'Error al insertar datos');
+        }
+    }
+
+    /**
+     * Agregar/quitar favorito via AJAX
+     */
+    public function toggleFavorito()
+    {
+        if (!$this->request->isAJAX()) {
+            return $this->response->setJSON(['success' => false, 'message' => 'Solicitud inválida']);
+        }
+
+        if (!session()->get('logged_in')) {
+            return $this->response->setJSON(['success' => false, 'message' => 'Debes iniciar sesión']);
+        }
+
+        $input = $this->request->getJSON();
+        $idrecurso = $input->idrecurso ?? null;
+
+        if (!$idrecurso) {
+            return $this->response->setJSON(['success' => false, 'message' => 'ID de recurso requerido']);
+        }
+
+        $favoritoModel = new FavoritoModel();
+        $nomuser = session()->get('usuario');
+        
+        // Obtener ID del usuario
+        $usuarioModel = new \App\Models\usuarioModel();
+        $usuario = $usuarioModel->where('nomuser', $nomuser)->first();
+        $idusuario = $usuario ? $usuario['idusuario'] : null;
+
+        if (!$idusuario) {
+            return $this->response->setJSON(['success' => false, 'message' => 'Usuario no encontrado']);
+        }
+
+        try {
+            $agregado = $favoritoModel->toggleFavorito($idusuario, $idrecurso);
+            $mensaje = $agregado ? 'Agregado a favoritos' : 'Quitado de favoritos';
+            
+            return $this->response->setJSON([
+                'success' => true, 
+                'message' => $mensaje,
+                'agregado' => $agregado
+            ]);
+        } catch (\Exception $e) {
+            log_message('error', 'Error en toggleFavorito: ' . $e->getMessage());
+            return $this->response->setJSON(['success' => false, 'message' => 'Error interno']);
+        }
+    }
+
+    /**
+     * Quitar favorito específico via AJAX
+     */
+    public function quitarFavorito()
+    {
+        if (!$this->request->isAJAX()) {
+            return $this->response->setJSON(['success' => false, 'message' => 'Solicitud inválida']);
+        }
+
+        if (!session()->get('logged_in')) {
+            return $this->response->setJSON(['success' => false, 'message' => 'Debes iniciar sesión']);
+        }
+
+        $input = $this->request->getJSON();
+        $idfavorito = $input->idfavorito ?? null;
+
+        if (!$idfavorito) {
+            return $this->response->setJSON(['success' => false, 'message' => 'ID de favorito requerido']);
+        }
+
+        $favoritoModel = new FavoritoModel();
+
+        try {
+            $result = $favoritoModel->delete($idfavorito);
+            
+            if ($result) {
+                return $this->response->setJSON(['success' => true, 'message' => 'Favorito eliminado']);
+            } else {
+                return $this->response->setJSON(['success' => false, 'message' => 'No se pudo eliminar']);
+            }
+        } catch (\Exception $e) {
+            log_message('error', 'Error en quitarFavorito: ' . $e->getMessage());
+            return $this->response->setJSON(['success' => false, 'message' => 'Error interno']);
         }
     }
 
