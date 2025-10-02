@@ -19,7 +19,7 @@
                     <div class="card bg-light border-0">
                         <div class="card-body text-center py-2">
                             <small class="text-muted">Préstamos Activos</small>
-                            <h4 class="text-primary mb-0" id="contadorActivos">3</h4>
+                            <h4 class="text-primary mb-0" id="contadorActivos"><?= $contadorActivos ?></h4>
                         </div>
                     </div>
                 </div>
@@ -67,122 +67,26 @@
         <!-- Préstamos Activos -->
         <div class="tab-pane fade show active" id="activos" role="tabpanel">
             <div class="row" id="prestamosActivos">
-                <!-- Ejemplo de préstamo activo -->
-                <div class="col-lg-6 col-xl-4 mb-4">
-                    <div class="card h-100 border-start border-primary border-3">
-                        <div class="card-header bg-light border-0 d-flex justify-content-between align-items-center">
-                            <span class="badge bg-success">Activo</span>
-                            <small class="text-muted">Vence: 15/Oct/2025</small>
-                        </div>
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col-4">
-                                    <img src="<?= base_url('img/portada_1.png') ?>" class="img-fluid rounded" alt="Portada" style="height: 80px; object-fit: cover;">
-                                </div>
-                                <div class="col-8">
-                                    <h6 class="card-title mb-2">Matemáticas Básicas</h6>
-                                    <p class="card-text small text-muted mb-2">
-                                        <strong>Autor:</strong> Juan Pérez
-                                    </p>
-                                    <p class="card-text small text-muted mb-2">
-                                        <strong>Prestado:</strong> 01/Oct/2025
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="card-footer bg-transparent border-0">
-                            <div class="d-flex gap-2">
-                                <button class="btn btn-outline-primary btn-sm flex-fill">
-                                    <i class="fas fa-redo-alt me-1"></i>Renovar
-                                </button>
-                                <button class="btn btn-primary btn-sm flex-fill">
-                                    <i class="fas fa-check me-1"></i>Devolver
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Ejemplo de préstamo vencido -->
-                <div class="col-lg-6 col-xl-4 mb-4">
-                    <div class="card h-100 border-start border-danger border-3">
-                        <div class="card-header bg-light border-0 d-flex justify-content-between align-items-center">
-                            <span class="badge bg-danger">Vencido</span>
-                            <small class="text-danger">Vencido: 25/Sep/2025</small>
-                        </div>
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col-4">
-                                    <img src="<?= base_url('img/portada_2.png') ?>" class="img-fluid rounded" alt="Portada" style="height: 80px; object-fit: cover;">
-                                </div>
-                                <div class="col-8">
-                                    <h6 class="card-title mb-2">Historia Universal</h6>
-                                    <p class="card-text small text-muted mb-2">
-                                        <strong>Autor:</strong> María García
-                                    </p>
-                                    <p class="card-text small text-muted mb-2">
-                                        <strong>Prestado:</strong> 10/Sep/2025
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="card-footer bg-transparent border-0">
-                            <div class="d-flex gap-2">
-                                <button class="btn btn-outline-warning btn-sm flex-fill">
-                                    <i class="fas fa-exclamation-triangle me-1"></i>Renovar
-                                </button>
-                                <button class="btn btn-danger btn-sm flex-fill">
-                                    <i class="fas fa-check me-1"></i>Devolver
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Ejemplo de préstamo próximo a vencer -->
-                <div class="col-lg-6 col-xl-4 mb-4">
-                    <div class="card h-100 border-start border-warning border-3">
-                        <div class="card-header bg-light border-0 d-flex justify-content-between align-items-center">
-                            <span class="badge bg-warning text-dark">Por Vencer</span>
-                            <small class="text-warning">Vence: 05/Oct/2025</small>
-                        </div>
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col-4">
-                                    <img src="<?= base_url('img/inicial.jpg') ?>" class="img-fluid rounded" alt="Portada" style="height: 80px; object-fit: cover;">
-                                </div>
-                                <div class="col-8">
-                                    <h6 class="card-title mb-2">Ciencias Naturales</h6>
-                                    <p class="card-text small text-muted mb-2">
-                                        <strong>Autor:</strong> Carlos López
-                                    </p>
-                                    <p class="card-text small text-muted mb-2">
-                                        <strong>Prestado:</strong> 20/Sep/2025
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="card-footer bg-transparent border-0">
-                            <div class="d-flex gap-2">
-                                <button class="btn btn-outline-primary btn-sm flex-fill">
-                                    <i class="fas fa-redo-alt me-1"></i>Renovar
-                                </button>
-                                <button class="btn btn-primary btn-sm flex-fill">
-                                    <i class="fas fa-check me-1"></i>Devolver
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <?php if (!empty($prestamosActivos)): ?>
+                    <?php foreach ($prestamosActivos as $prestamo): ?>
+                        <?= view('partials/prestamo_card', ['prestamo' => $prestamo]) ?>
+                    <?php endforeach; ?>
+                <?php endif; ?>
             </div>
 
             <!-- Mensaje cuando no hay préstamos activos -->
-            <div class="row d-none" id="sinPrestamosActivos">
+            <div class="row <?= empty($prestamosActivos) ? '' : 'd-none' ?>" id="sinPrestamosActivos">
                 <div class="col-12">
                     <div class="text-center py-5">
                         <i class="fas fa-book-open fa-3x text-muted mb-3"></i>
                         <h4 class="text-muted">No tienes préstamos activos</h4>
                         <p class="text-muted mb-4">¡Explora nuestro catálogo y encuentra tu próximo libro!</p>
+                        <?php if (session()->get('nivel') === 'admin'): ?>
+                            <div class="alert alert-info mb-3">
+                                <strong>Modo Admin:</strong> Para probar la funcionalidad, puedes 
+                                <a href="<?= site_url('catalogo/insertar-datos-prueba') ?>" class="alert-link">insertar datos de prueba</a>
+                            </div>
+                        <?php endif; ?>
                         <a href="<?= site_url('catalogo') ?>" class="btn btn-primary">
                             <i class="fas fa-search me-2"></i>Explorar Catálogo
                         </a>
@@ -200,58 +104,71 @@
                             <th>Libro</th>
                             <th>Autor</th>
                             <th>Fecha Préstamo</th>
-                            <th>Fecha Devolución</th>
                             <th>Estado</th>
                             <th>Acciones</th>
                         </tr>
                     </thead>
                     <tbody id="historialPrestamos">
-                        <tr>
-                            <td>
-                                <div class="d-flex align-items-center">
-                                    <img src="<?= base_url('img/primaria.jpg') ?>" class="rounded me-3" style="width: 40px; height: 50px; object-fit: cover;" alt="Portada">
-                                    <div>
-                                        <h6 class="mb-0">Álgebra Avanzada</h6>
-                                        <small class="text-muted">ISBN: 978-123456789</small>
-                                    </div>
-                                </div>
-                            </td>
-                            <td>Ana Martínez</td>
-                            <td>15/Sep/2025</td>
-                            <td>28/Sep/2025</td>
-                            <td><span class="badge bg-success">Devuelto</span></td>
-                            <td>
-                                <button class="btn btn-sm btn-outline-primary" title="Volver a prestar">
-                                    <i class="fas fa-redo-alt"></i>
-                                </button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>
-                                <div class="d-flex align-items-center">
-                                    <img src="<?= base_url('img/secundaria.jpg') ?>" class="rounded me-3" style="width: 40px; height: 50px; object-fit: cover;" alt="Portada">
-                                    <div>
-                                        <h6 class="mb-0">Física Moderna</h6>
-                                        <small class="text-muted">ISBN: 978-987654321</small>
-                                    </div>
-                                </div>
-                            </td>
-                            <td>Roberto Silva</td>
-                            <td>01/Sep/2025</td>
-                            <td>20/Sep/2025</td>
-                            <td><span class="badge bg-success">Devuelto</span></td>
-                            <td>
-                                <button class="btn btn-sm btn-outline-primary" title="Volver a prestar">
-                                    <i class="fas fa-redo-alt"></i>
-                                </button>
-                            </td>
-                        </tr>
+                        <?php if (!empty($historialPrestamos)): ?>
+                            <?php foreach ($historialPrestamos as $prestamo): ?>
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <?php if (!empty($prestamo['portada'])): ?>
+                                                <img src="<?= base_url($prestamo['portada']) ?>" class="rounded me-3" style="width: 40px; height: 50px; object-fit: cover;" alt="Portada">
+                                            <?php else: ?>
+                                                <div class="bg-light rounded me-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 50px;">
+                                                    <i class="fas fa-book text-muted"></i>
+                                                </div>
+                                            <?php endif; ?>
+                                            <div>
+                                                <h6 class="mb-0"><?= esc($prestamo['titulo']) ?></h6>
+                                                <?php if (!empty($prestamo['isbn'])): ?>
+                                                    <small class="text-muted">ISBN: <?= esc($prestamo['isbn']) ?></small>
+                                                <?php endif; ?>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td><?= esc($prestamo['nomautor'] ?: 'Sin autor') ?></td>
+                                    <td><?= date('d/M/Y', strtotime($prestamo['fechaprestamo'])) ?></td>
+                                    <td>
+                                        <?php if (!empty($prestamo['fechahoraretorno'])): ?>
+                                            <?= date('d/M/Y', strtotime($prestamo['fechahoraretorno'])) ?>
+                                        <?php elseif (!empty($prestamo['fechadevolucion'])): ?>
+                                            <small class="text-muted">Vence: <?= date('d/M/Y', strtotime($prestamo['fechadevolucion'])) ?></small>
+                                        <?php else: ?>
+                                            <small class="text-muted">Sin fecha</small>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td>
+                                        <?php if (!empty($prestamo['fechahoraretorno'])): ?>
+                                            <span class="badge bg-success">Devuelto</span>
+                                        <?php elseif (!empty($prestamo['fechadevolucion']) && strtotime($prestamo['fechadevolucion']) < time()): ?>
+                                            <span class="badge bg-danger">Vencido</span>
+                                        <?php else: ?>
+                                            <span class="badge bg-primary">Activo</span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-primary" title="Ver detalles">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <tr>
+                                <td colspan="6" class="text-center text-muted py-4">
+                                    <i class="fas fa-history fa-2x mb-2"></i>
+                                    <br>No hay historial de préstamos
+                                </td>
+                            </tr>
+                        <?php endif; ?>
                     </tbody>
                 </table>
             </div>
 
             <!-- Paginación del historial -->
-            <nav aria-label="Paginación del historial">
                 <ul class="pagination justify-content-center">
                     <li class="page-item disabled">
                         <a class="page-link" href="#" tabindex="-1">Anterior</a>
@@ -269,49 +186,105 @@
 </div>
 
 <script>
+// Funciones globales para los botones de préstamo
+function renovarPrestamo(idPrestamo) {
+    if (confirm('¿Deseas renovar este préstamo?')) {
+        // Aquí iría la lógica AJAX para renovar
+        fetch('<?= base_url('catalogo/renovar-prestamo') ?>', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({idprestamo: idPrestamo})
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Préstamo renovado exitosamente');
+                location.reload();
+            } else {
+                alert('Error al renovar: ' + (data.message || 'Error desconocido'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error de conexión');
+        });
+    }
+}
+
+function devolverPrestamo(idPrestamo) {
+    if (confirm('¿Confirmas la devolución de este libro?')) {
+        // Aquí iría la lógica AJAX para devolver
+        fetch('<?= base_url('catalogo/devolver-prestamo') ?>', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({idprestamo: idPrestamo})
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Libro devuelto exitosamente');
+                location.reload();
+            } else {
+                alert('Error al devolver: ' + (data.message || 'Error desconocido'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error de conexión');
+        });
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     // Funcionalidad de búsqueda
     const buscarInput = document.getElementById('buscarPrestamos');
     const filtroEstado = document.getElementById('filtroEstado');
 
-    buscarInput.addEventListener('input', filtrarPrestamos);
-    filtroEstado.addEventListener('change', filtrarPrestamos);
+    if (buscarInput) {
+        buscarInput.addEventListener('input', filtrarPrestamos);
+    }
+    if (filtroEstado) {
+        filtroEstado.addEventListener('change', filtrarPrestamos);
+    }
 
     function filtrarPrestamos() {
-        // Aquí iría la lógica de filtrado
-        console.log('Filtrando préstamos...');
+        const busqueda = buscarInput.value.toLowerCase();
+        const estado = filtroEstado.value;
+        
+        // Filtrar cards de préstamos activos
+        document.querySelectorAll('#prestamosActivos .card').forEach(card => {
+            const titulo = card.querySelector('.card-title').textContent.toLowerCase();
+            const autor = card.querySelector('.card-text').textContent.toLowerCase();
+            const badge = card.querySelector('.badge');
+            const estadoCard = badge ? badge.textContent.toLowerCase() : '';
+            
+            const coincideBusqueda = titulo.includes(busqueda) || autor.includes(busqueda);
+            const coincidenEstado = !estado || estadoCard.includes(estado.toLowerCase());
+            
+            card.closest('.col-lg-6').style.display = (coincideBusqueda && coincidenEstado) ? 'block' : 'none';
+        });
+        
+        // Filtrar filas del historial
+        document.querySelectorAll('#historialPrestamos tr').forEach(row => {
+            if (row.querySelector('td')) {
+                const titulo = row.querySelector('h6').textContent.toLowerCase();
+                const autor = row.cells[1].textContent.toLowerCase();
+                const badge = row.querySelector('.badge');
+                const estadoRow = badge ? badge.textContent.toLowerCase() : '';
+                
+                const coincideBusqueda = titulo.includes(busqueda) || autor.includes(busqueda);
+                const coincidenEstado = !estado || estadoRow.includes(estado.toLowerCase());
+                
+                row.style.display = (coincideBusqueda && coincidenEstado) ? 'table-row' : 'none';
+            }
+        });
     }
-
-    // Funcionalidad de botones
-    document.querySelectorAll('.btn-outline-primary').forEach(btn => {
-        if (btn.textContent.includes('Renovar')) {
-            btn.addEventListener('click', function() {
-                if (confirm('¿Deseas renovar este préstamo?')) {
-                    // Lógica de renovación
-                    alert('Préstamo renovado exitosamente');
-                }
-            });
-        }
-    });
-
-    document.querySelectorAll('.btn-primary, .btn-danger').forEach(btn => {
-        if (btn.textContent.includes('Devolver')) {
-            btn.addEventListener('click', function() {
-                if (confirm('¿Confirmas la devolución de este libro?')) {
-                    // Lógica de devolución
-                    alert('Libro devuelto exitosamente');
-                }
-            });
-        }
-    });
-
-    // Actualizar contador
-    function actualizarContador() {
-        const prestamosActivos = document.querySelectorAll('#prestamosActivos .card').length;
-        document.getElementById('contadorActivos').textContent = prestamosActivos;
-    }
-
-    actualizarContador();
 });
 </script>
 
