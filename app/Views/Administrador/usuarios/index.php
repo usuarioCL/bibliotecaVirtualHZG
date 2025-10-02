@@ -1,144 +1,196 @@
-<div class="">
-    <!-- Estilos para la funcionalidad de búsqueda -->
-    <style>
-        .spin {
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-        .btn:disabled {
-            opacity: 0.6;
-        }
-    </style>
-
-    <!-- Encabezado de la página -->
-    <div class="d-flex justify-content-between align-items-center">
-        <div>
-            <h4 class="mb-0">Gestión de Usuarios</h4>
-            <p class="text-muted mb-0">Usuarios registrados en el sistema bibliotecario</p>
-        </div>
-        <div class="d-flex gap-2">
-            <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalFiltrarUsuarios">
-                <i class="ti ti-filter"></i> Filtrar
-            </button>
-            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalNuevoUsuario">
-                <i class="ti ti-plus"></i> Nuevo Usuario
-            </button>
+<div class="container-fluid">
+    <!-- Encabezado de la página con breadcrumb -->
+    <div class="row">
+        <div class="col-12">
+            <div class="page-title-box d-sm-flex align-items-center justify-content-between mb-4">
+                <div>
+                    <h1 class="h3 mb-1 fw-bold text-dark">
+                        <i class="ti ti-users text-primary me-2"></i>
+                        Gestión de Usuarios
+                    </h1>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb mb-0">
+                            <li class="breadcrumb-item"><a href="<?= base_url('admin') ?>">Dashboard</a></li>
+                            <li class="breadcrumb-item active">Usuarios</li>
+                        </ol>
+                    </nav>
+                    <p class="text-muted mb-0 mt-1">Administra los usuarios registrados en el sistema bibliotecario</p>
+                </div>
+                <div class="d-flex gap-2 flex-wrap">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#modalFiltrarUsuarios">
+                        <i class="ti ti-filter"></i> Filtrar
+                    </button>
+                    <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modalNuevoUsuario">
+                        <i class="ti ti-plus"></i> Nuevo Usuario
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- Tabla de usuarios -->
-    <div class="card mt-1">
-        <div class="card-body">
-            <!-- Estadísticas rápidas -->
-            <div class="row mb-4">
-                <div class="col-md-3">
-                    <div class="bg-light rounded p-3 text-center">
-                        <h5 class="mb-1 text-primary"><?= isset($totalUsuarios) ? $totalUsuarios : 0 ?></h5>
-                        <small class="text-muted">Total Usuarios</small>
+    <!-- Estadísticas rápidas -->
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card stats-card primary h-100 shadow-sm">
+                <div class="card-body text-center">
+                    <div class="d-flex align-items-center justify-content-center mb-2">
+                        <div class="rounded-circle bg-primary bg-opacity-10 p-3">
+                            <i class="ti ti-users text-primary" style="font-size: 2.5rem;"></i>
+                        </div>
                     </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="bg-light rounded p-3 text-center">
-                        <h5 class="mb-1 text-warning"><?= isset($administradores) ? $administradores : 0 ?></h5>
-                        <small class="text-muted">Administradores</small>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="bg-light rounded p-3 text-center">
-                        <h5 class="mb-1 text-info"><?= isset($docentes) ? $docentes : 0 ?></h5>
-                        <small class="text-muted">Docentes</small>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="bg-light rounded p-3 text-center">
-                        <h5 class="mb-1 text-success"><?= isset($estudiantes) ? $estudiantes : 0 ?></h5>
-                        <small class="text-muted">Estudiantes</small>
-                    </div>
+                    <h3 class="fw-bold text-primary mb-1"><?= isset($totalUsuarios) ? number_format($totalUsuarios) : 0 ?></h3>
+                    <p class="text-muted mb-0 small">Total Usuarios</p>
                 </div>
             </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card stats-card warning h-100 shadow-sm">
+                <div class="card-body text-center">
+                    <div class="d-flex align-items-center justify-content-center mb-2">
+                        <div class="rounded-circle bg-warning bg-opacity-10 p-3">
+                            <i class="ti ti-shield-lock text-warning" style="font-size: 2.5rem;"></i>
+                        </div>
+                    </div>
+                    <h3 class="fw-bold text-warning mb-1"><?= isset($administradores) ? number_format($administradores) : 0 ?></h3>
+                    <p class="text-muted mb-0 small">Administradores</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card stats-card info h-100 shadow-sm">
+                <div class="card-body text-center">
+                    <div class="d-flex align-items-center justify-content-center mb-2">
+                        <div class="rounded-circle bg-info bg-opacity-10 p-3">
+                            <i class="ti ti-user-check text-info" style="font-size: 2.5rem;"></i>
+                        </div>
+                    </div>
+                    <h3 class="fw-bold text-info mb-1"><?= isset($docentes) ? number_format($docentes) : 0 ?></h3>
+                    <p class="text-muted mb-0 small">Docentes</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card stats-card success h-100 shadow-sm">
+                <div class="card-body text-center">
+                    <div class="d-flex align-items-center justify-content-center mb-2">
+                        <div class="rounded-circle bg-success bg-opacity-10 p-3">
+                            <i class="ti ti-school text-success" style="font-size: 2.5rem;"></i>
+                        </div>
+                    </div>
+                    <h3 class="fw-bold text-success mb-1"><?= isset($estudiantes) ? number_format($estudiantes) : 0 ?></h3>
+                    <p class="text-muted mb-0 small">Estudiantes</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de usuarios con diseño mejorado -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-white py-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="card-title mb-0 fw-semibold">
+                        <i class="ti ti-list text-primary me-2"></i>
+                        Lista de Usuarios
+                    </h5>
+                    <p class="text-muted small mb-0 mt-1">Gestiona todos los usuarios del sistema</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-outline-secondary btn-sm" type="button">
+                        <i class="ti ti-download me-1"></i>Exportar
+                    </button>
+                    <button class="btn btn-outline-secondary btn-sm" type="button" onclick="location.reload()">
+                        <i class="ti ti-refresh me-1"></i>Actualizar
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="card-body p-3">
             <div class="table-responsive">
-                <table class="table table-hover align-middle" id="tablaUsuarios">
+                <table class="table table-hover align-middle mb-0" id="tablaUsuarios">
                     <thead class="table-light">
-                        <tr>
-                            <th>Código</th>
-                            <th>Usuario</th>
-                            <th>Información Personal</th>
-                            <th>Email</th>
-                            <th>Nivel de Acceso</th>
-                            <th>Acciones</th>
+                        <tr class="text-uppercase small fw-semibold text-muted">
+                            
+                            <th class="border-0 px-3 py-3">Usuario</th>
+                            <th class="border-0 px-3 py-3">Información Personal</th>
+                            <th class="border-0 px-3 py-3">Email</th>
+                            <th class="border-0 text-center px-3 py-3">Nivel de Acceso</th>
+                            <th class="border-0 text-center px-3 py-3">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php if (!empty($usuarios)): ?>
                             <?php foreach ($usuarios as $usuario): ?>
-                                <tr>
-                                    <td>
-                                        <span class="badge bg-light text-dark"><?= str_pad($usuario['idusuario'], 4, '0', STR_PAD_LEFT) ?></span>
-                                    </td>
-                                    <td>
+                                <tr class="border-bottom">
+                                    
+                                    <td class="px-3 py-3">
                                         <div class="d-flex align-items-center">
-                                            <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center me-2" style="width: 35px; height: 35px;">
+                                            <div class="user-avatar rounded-3 text-white d-flex align-items-center justify-content-center me-3 shadow-sm" style="width: 42px; height: 42px; font-weight: 600;">
                                                 <?= strtoupper(substr($usuario['nomuser'], 0, 2)) ?>
                                             </div>
                                             <div>
-                                                <h6 class="mb-0"><?= $usuario['nomuser'] ?></h6>
-                                                <small class="text-muted">@<?= $usuario['nomuser'] ?></small>
+                                                <h6 class="mb-1 fw-semibold text-dark"><?= $usuario['nomuser'] ?></h6>
+                                                <small class="text-muted d-flex align-items-center">
+                                                    <i class="ti ti-at me-1"></i><?= $usuario['nomuser'] ?>
+                                                </small>
                                             </div>
                                         </div>
                                     </td>
-                                    <td>
+                                    <td class="px-3 py-3">
                                         <div>
                                             <?php if (isset($usuario['nombres']) && isset($usuario['apellidos'])): ?>
-                                                <strong><?= $usuario['nombres'] . ' ' . $usuario['apellidos'] ?></strong><br>
+                                                <div class="fw-semibold text-dark mb-1"><?= $usuario['nombres'] . ' ' . $usuario['apellidos'] ?></div>
                                             <?php endif; ?>
-                                            <small class="text-muted">
-                                                <i class="ti ti-id"></i> <?= $usuario['numerodoc'] ?? 'Sin documento' ?>
-                                            </small>
+                                            <div class="d-flex align-items-center text-muted small">
+                                                <i class="ti ti-id-badge me-1 text-secondary"></i>
+                                                <span><?= $usuario['numerodoc'] ?? 'Sin documento' ?></span>
+                                            </div>
                                         </div>
                                     </td>
-                                    <td>
+                                    <td class="px-3 py-3">
                                         <?php if (!empty($usuario['email'])): ?>
-                                            <span class="text-primary"><?= $usuario['email'] ?></span>
+                                            <div class="d-flex align-items-center">
+                                                <i class="ti ti-mail me-2 text-primary"></i>
+                                                <span class="text-primary fw-medium"><?= $usuario['email'] ?></span>
+                                            </div>
                                         <?php else: ?>
-                                            <span class="text-muted"><i class="ti ti-mail-off"></i> Sin email</span>
+                                            <div class="d-flex align-items-center text-muted">
+                                                <i class="ti ti-mail-off me-2"></i>
+                                                <span class="small">Sin email registrado</span>
+                                            </div>
                                         <?php endif; ?>
                                     </td>
-                                    <td>
+                                    <td class="text-center px-3 py-3">
                                         <?php 
                                         $badgeClass = match($usuario['nivelacceso']) {
                                             'admin' => 'bg-warning text-dark',
-                                            'docente' => 'bg-info',
-                                            'estudiante' => 'bg-success',
-                                            default => 'bg-secondary'
+                                            'docente' => 'bg-info text-white',
+                                            'estudiante' => 'bg-success text-white',
+                                            default => 'bg-secondary text-white'
                                         };
                                         $icon = match($usuario['nivelacceso']) {
-                                            'admin' => 'ti-shield-star',
+                                            'admin' => 'ti-shield-lock',
                                             'docente' => 'ti-user-check',
                                             'estudiante' => 'ti-school',
                                             default => 'ti-user'
                                         };
                                         ?>
-                                        <span class="badge <?= $badgeClass ?>" title="<?= ucfirst($usuario['nivelacceso']) ?>">
-                                            <i class="<?= $icon ?> me-1"></i>
+                                        <span class="badge <?= $badgeClass ?> px-3 py-2 fw-medium rounded-pill" title="<?= ucfirst($usuario['nivelacceso']) ?>">
+                                            <i class="ti <?= $icon ?> me-2"></i>
                                             <?= ucfirst($usuario['nivelacceso']) ?>
                                         </span>
                                     </td>
-                                    <td>
-                                        <div class="btn-group" role="group">
-                                            <button class="btn btn-sm btn-outline-info" title="Ver perfil" onclick="verPerfilUsuario(<?= $usuario['idusuario'] ?>)">
+                                    <td class="text-center px-3 py-3">
+                                        <div class="d-flex gap-1 justify-content-center">
+                                            <button class="btn btn-outline-info btn-sm" type="button" onclick="verPerfilUsuario(<?= $usuario['idusuario'] ?>)" title="Ver perfil">
                                                 <i class="ti ti-eye"></i>
                                             </button>
-                                            <button class="btn btn-sm btn-outline-primary" title="Editar usuario" onclick="editarUsuario(<?= $usuario['idusuario'] ?>)">
+                                            <button class="btn btn-outline-primary btn-sm" type="button" onclick="editarUsuario(<?= $usuario['idusuario'] ?>)" title="Editar usuario">
                                                 <i class="ti ti-edit"></i>
                                             </button>
-                                            <?php if ($usuario['nivelacceso'] !== 'admin'): ?>
-                                                <button class="btn btn-sm btn-outline-danger" title="Eliminar usuario" onclick="eliminarUsuario(<?= $usuario['idusuario'] ?>)">
-                                                    <i class="ti ti-trash"></i>
-                                                </button>
-                                            <?php endif; ?>
+                                            <button class="btn btn-outline-danger btn-sm" type="button" onclick="eliminarUsuario(<?= $usuario['idusuario'] ?>)" title="Eliminar usuario">
+                                                <i class="ti ti-trash"></i>
+                                            </button>
                                         </div>
                                     </td>
                                 </tr>
@@ -146,12 +198,14 @@
                         <?php else: ?>
                             <tr>
                                 <td colspan="6" class="text-center py-5">
-                                    <div class="text-muted">
-                                        <i class="ti ti-users fs-1 mb-3"></i>
-                                        <h5>No hay usuarios registrados</h5>
-                                        <p class="mb-3">Comienza creando tu primer usuario del sistema</p>
-                                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalNuevoUsuario">
-                                            <i class="ti ti-plus"></i> Crear Usuario
+                                    <div class="empty-state p-5">
+                                        <div class="rounded-circle bg-light mx-auto mb-4 d-flex align-items-center justify-content-center" style="width: 100px; height: 100px;">
+                                            <i class="ti ti-users text-muted" style="font-size: 3rem;"></i>
+                                        </div>
+                                        <h4 class="text-dark mb-2">No hay usuarios registrados</h4>
+                                        <p class="text-muted mb-4 lead">Comienza creando tu primer usuario del sistema bibliotecario</p>
+                                        <button type="button" class="btn btn-primary btn-lg shadow-sm" data-bs-toggle="modal" data-bs-target="#modalNuevoUsuario">
+                                            <i class="ti ti-plus me-2"></i> Crear Primer Usuario
                                         </button>
                                     </div>
                                 </td>
@@ -161,6 +215,24 @@
                 </table>
             </div>
         </div>
+        
+        <!-- Footer de la tarjeta con información adicional -->
+        <?php if (!empty($usuarios)): ?>
+        <div class="card-footer bg-light border-top-0">
+            <div class="d-flex justify-content-between align-items-center text-muted small">
+                <div>
+                    <i class="ti ti-info-circle me-1"></i>
+                    Mostrando <?= count($usuarios) ?> usuario(s) de <?= isset($totalUsuarios) ? $totalUsuarios : count($usuarios) ?>
+                </div>
+                <div>
+                    <span class="badge bg-primary bg-opacity-10 text-primary">
+                        <i class="ti ti-clock me-1"></i>
+                        Actualizado hace pocos minutos
+                    </span>
+                </div>
+            </div>
+        </div>
+        <?php endif; ?>
     </div>
 </div>
 

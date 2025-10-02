@@ -1218,7 +1218,7 @@
     max-width: calc(100vw - 90px) !important;
     padding: 15px 20px !important;
   }
-}
+
 
 /* ========================================
    PREVENT BODY SCROLL WHEN SIDEBAR IS OPEN
@@ -1476,20 +1476,6 @@
   padding: 0.5rem 1rem;
 }
 
-/* Optimizar modales para mejor uso del espacio */
-.body-wrapper .modal-body {
-  padding: 1rem;
-}
-
-.body-wrapper .modal-header {
-  padding: 1rem;
-  border-bottom: 1px solid var(--bs-border-color);
-}
-
-.body-wrapper .modal-footer {
-  padding: 0.75rem 1rem;
-  border-top: 1px solid var(--bs-border-color);
-}
 
 /* Optimización específica para datatables y tablas grandes */
 .body-wrapper .dataTables_wrapper {

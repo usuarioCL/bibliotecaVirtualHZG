@@ -7,6 +7,7 @@
   <link rel="shortcut icon" type="image/png" href="<?= base_url('./assets/images/logos/favicon.png') ?>" />
   <link rel="stylesheet" href="<?= base_url('./assets/css/styles.min.css') ?>">
   <link rel="stylesheet" href="<?= base_url('assets/css/sidebar-hzg.css') ?>">
+  <link rel="stylesheet" href="<?= base_url('assets/css/modals.css') ?>">
   <!-- SweetAlert2 -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
@@ -141,11 +142,6 @@
           </div>
         </div>
       </div>
-      <!-- Footer -->
-      <footer class="py-6 px-6 text-center mt-auto">
-        <p class="mb-0 fs-4">Design and Developed by <a href="#"
-            class="pe-1 text-primary text-decoration-underline">Wrappixel.com</a> Distributed by <a href="https://themewagon.com" target="_blank" >ThemeWagon</a></p>
-      </footer>
     </div>
   </div>
   <script src="<?= base_url('./assets/libs/jquery/dist/jquery.min.js') ?>"></script>
