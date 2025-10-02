@@ -56,21 +56,17 @@ INSERT INTO editoriales (editorial) VALUES
 
 -- Recursos 
 INSERT INTO recursos (titulo, anio, numpaginas, isbn, numedicion, estado, stock, nivel, idsubcategoria, ideditorial, idtiporecurso) VALUES
-('Cien Años de Soledad', 1967, 471, '1234567890123', 'Primera edición', 'disponible', 5, 'Secundaria', 1, 1, 1),
-('Matemáticas Básicas', 2015, 320, '2345678901234', 'Edición escolar', 'disponible', 10, 'Primaria', 2, 2, 1),
-('Learning Python', 2013, 1600, '3456789012345', 'Programming Guide', 'disponible', 3, 'Secundaria', 3, 3, 2),
-('Historia del Perú', 2005, 520, '4567890123456', 'Desde la independencia', 'disponible', 4, 'Secundaria', 4, 4, 2);
+('Cien Años de Soledad', 1967, 471, '1234567890123', 'Primera edición', 'disponible', 5, 'Secundaria', 1, 1, 1),  -- físico
+('Liebre y la tortuga', 2013, 1600, '3456789012345', 'Guide', 'disponible', 3, 'Inicial', 3, 3, 2);     -- digital
 
 -- Recursos fisicos
 INSERT INTO recursos_fisicos (idrecurso, portada, encuadernacion) VALUES
-(1, 'portadas/cien_anos.jpg', 'Tapa dura'),
-(2, 'portadas/matematicas.jpg', 'Tapa blanda');
+(1, 'uploads/portadas/fisico/100años.jpg', 'Tapa dura');
 
 
 -- Recursos digitales
 INSERT INTO recursos_digitales (idrecurso, portada, archivo) VALUES
-(3, 'portadas/python.jpg', 'archivos/python.pdf'),
-(4, NULL, 'archivos/historia_peru.pdf');
+(2, 'uploads/portadas/digital/large.jpg', 'uploads/digitales/archivos/liebretortuga.pdf');
 
 
 -- Autores
