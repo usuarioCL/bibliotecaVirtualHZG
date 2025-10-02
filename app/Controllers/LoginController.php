@@ -28,8 +28,11 @@ class LoginController extends BaseController
         $usuario = $usuarioModel->where('nomuser', $nomuser)->first();
 
         if ($usuario) {
-            // Si las contraseñas coinciden (aquí sin hash)
-            if ($passuser === $usuario['passuser']) {
+            // Verificar contraseña - primero intentar hash, luego texto plano
+            $passwordMatch = password_verify($passuser, $usuario['passuser']) || 
+                           ($passuser === $usuario['passuser']);
+            
+            if ($passwordMatch) {
 
                 // Guardamos en sesión
                 session()->set([
