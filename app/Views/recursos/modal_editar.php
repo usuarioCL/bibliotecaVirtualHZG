@@ -417,6 +417,11 @@ function actualizarRecurso()
     .then(response => response.json())
     .then(data => {
         if (data.status === 'success') {
+            // Actualizar imagen inmediatamente si se cambió
+            if (archivoPortada && data.nuevaRutaImagen) {
+                actualizarImagenEnVista(idrecurso, data.nuevaRutaImagen);
+            }
+            
             alerta.className = 'alert alert-success';
             alerta.innerHTML = `
                 <strong>¡Actualización exitosa!</strong><br>
@@ -532,6 +537,73 @@ document.addEventListener('DOMContentLoaded', function() {
                 cerrarModalCompletamente();
             }
         });
+    }
+
+    /**
+     * Actualizar imagen en la vista sin recargar la página
+     */
+    function actualizarImagenEnVista(idrecurso, nuevaRutaImagen) {
+        try {
+            console.log(`🔄 Iniciando actualización de imagen para recurso ${idrecurso}`);
+            console.log(`📁 Nueva ruta: ${nuevaRutaImagen}`);
+            
+            // Agregar timestamp para evitar caché del navegador
+            const timestamp = new Date().getTime();
+            const nuevaUrl = `<?= base_url() ?>${nuevaRutaImagen}?v=${timestamp}`;
+            
+            console.log(`🌐 URL completa: ${nuevaUrl}`);
+            
+            // Buscar SOLO por data-recurso-id (más confiable)
+            const imagenesRecurso = document.querySelectorAll(`img[data-recurso-id="${idrecurso}"]`);
+            console.log(`🖼️ Imágenes encontradas: ${imagenesRecurso.length}`);
+            
+            let actualizadas = 0;
+            imagenesRecurso.forEach((img, index) => {
+                console.log(`📸 Actualizando imagen ${index + 1}:`, img.src);
+                
+                // Actualizar src con timestamp para forzar recarga
+                img.src = nuevaUrl;
+                
+                // Agregar efecto visual de actualización
+                img.style.opacity = '0.5';
+                img.style.transition = 'opacity 0.3s ease';
+                
+                img.onload = function() {
+                    this.style.opacity = '1';
+                    actualizadas++;
+                    console.log(`✅ Imagen ${index + 1} cargada exitosamente`);
+                };
+                
+                img.onerror = function() {
+                    console.error(`❌ Error cargando imagen ${index + 1}:`, nuevaUrl);
+                    this.style.opacity = '1'; // Restaurar opacidad aunque falle
+                };
+            });
+            
+            // Verificar si se encontraron imágenes
+            if (imagenesRecurso.length === 0) {
+                console.warn(`⚠️ No se encontraron imágenes con data-recurso-id="${idrecurso}"`);
+                
+                // Buscar por patrón en src como fallback
+                const todasLasImagenes = document.querySelectorAll('img');
+                todasLasImagenes.forEach(img => {
+                    if (img.src.includes(`-${idrecurso}.`)) {
+                        console.log(`🔍 Encontrada imagen por patrón:`, img.src);
+                        img.src = nuevaUrl;
+                        img.style.opacity = '0.5';
+                        img.onload = function() {
+                            this.style.opacity = '1';
+                            this.style.transition = 'opacity 0.3s ease';
+                        };
+                    }
+                });
+            }
+            
+            console.log(`🏁 Actualización completada para recurso ${idrecurso}`);
+            
+        } catch (error) {
+            console.error('❌ Error actualizando imagen en vista:', error);
+        }
     }
 });
 </script>

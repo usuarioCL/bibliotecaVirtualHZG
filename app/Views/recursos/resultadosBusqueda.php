@@ -14,7 +14,8 @@
                         <img src="<?= base_url('public/' . $recurso['rutaportada']) ?>" 
                              class="img-fluid rounded shadow-sm" 
                              alt="Portada" 
-                             style="max-height: 100px; object-fit: cover;">
+                             style="max-height: 100px; object-fit: cover;"
+                             data-recurso-id="<?= $recurso['idrecurso'] ?>">
                     <?php else: ?>
                         <div class="bg-light rounded shadow-sm d-flex align-items-center justify-content-center" 
                              style="width: 70px; height: 100px;">

@@ -558,11 +558,18 @@ public function actualizar($idrecurso)
             ]);
         }
 
-        return $this->response->setJSON([
+        $respuesta = [
             'status' => 'success',
             'message' => 'Recurso actualizado exitosamente',
             'titulo' => $datosRecurso['titulo']
-        ]);
+        ];
+        
+        // Agregar nueva ruta de imagen si se actualizó
+        if ($rutaPortadaActualizada !== null) {
+            $respuesta['nuevaRutaImagen'] = $rutaPortadaActualizada;
+        }
+        
+        return $this->response->setJSON($respuesta);
     } catch (\Throwable $e) {
         return $this->response->setJSON([
             'status' => 'error',
@@ -931,6 +938,9 @@ public function actualizar($idrecurso)
     private function eliminarImagenAnterior($idrecurso)
     {
         try {
+            if (ENVIRONMENT === 'development') {
+                log_message('debug', "🗑️ Eliminando imágenes anteriores para recurso: $idrecurso");
+            }
             
             $archivosEliminados = 0;
             
@@ -946,6 +956,9 @@ public function actualizar($idrecurso)
                 $archivosEliminados += $this->eliminarArchivosRecurso($carpetaDigital, $idrecurso, 'digital');
             }
             
+            if (ENVIRONMENT === 'development') {
+                log_message('debug', "✅ Eliminación completada. Archivos eliminados: $archivosEliminados");
+            }
             
         } catch (\Throwable $e) {
             log_message('error', 'Error eliminando imagen anterior: ' . $e->getMessage());
@@ -960,18 +973,27 @@ public function actualizar($idrecurso)
         $eliminados = 0;
         
         try {
-            // Buscar archivos que terminen con -ID.extension
-            $patron = '*-' . $idrecurso . '.*';
-            $archivos = glob($carpeta . $patron);
+            // Buscar archivos que terminen con -ID.extension (más específico)
+            $patron = '*-' . $idrecurso . '.{jpg,jpeg,png,gif,webp}';
+            $archivos = glob($carpeta . $patron, GLOB_BRACE);
             
+            if (ENVIRONMENT === 'development') {
+                log_message('debug', "🔍 Buscando en $tipo: $patron");
+                log_message('debug', "📁 Archivos encontrados: " . count($archivos));
+            }
             
             foreach ($archivos as $archivo) {
                 if (is_file($archivo)) {
+                    $nombreArchivo = basename($archivo);
                     if (@unlink($archivo)) {
                         $eliminados++;
-                        // Archivo eliminado exitosamente
+                        if (ENVIRONMENT === 'development') {
+                            log_message('debug', "✅ Eliminado ($tipo): $nombreArchivo");
+                        }
                     } else {
-                        // No se pudo eliminar el archivo
+                        if (ENVIRONMENT === 'development') {
+                            log_message('debug', "❌ No se pudo eliminar ($tipo): $nombreArchivo");
+                        }
                     }
                 }
             }

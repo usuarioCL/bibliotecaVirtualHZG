@@ -65,6 +65,7 @@ $imagenPrefix = $imagenPrefix ?? '';
                      class="card-img-top h-100 w-100" 
                      style="object-fit: cover;" 
                      alt="<?= esc($libro['titulo']) ?>"
+                     data-recurso-id="<?= $libro['idrecurso'] ?>"
                      title="Ruta: <?= esc($rutaCompleta) ?>">
             <?php else: ?>
                 <div class="bg-light h-100 d-flex align-items-center justify-content-center">
