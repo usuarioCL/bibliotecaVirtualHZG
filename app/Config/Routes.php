@@ -108,6 +108,7 @@ $routes->get('/recursos/limpiarRutasImagenes', 'RecursoController::limpiarRutasI
 $routes->get('/recursos/limpiarDuplicados', 'RecursoController::limpiarDuplicados');
 $routes->get('/recursos/sincronizarImagenes', 'RecursoController::sincronizarImagenes');
 $routes->get('/recursos/actualizarRutasImagenes', 'RecursoController::actualizarRutasImagenes');
+$routes->get('/recursos/debugImagenes', 'RecursoController::debugImagenes');
 
 // Autores (CRUD)
 $routes->group('autores', function($routes) {

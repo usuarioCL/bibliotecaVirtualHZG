@@ -181,8 +181,8 @@
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label for="rutaportada" class="form-label">Portada</label>
-                                <input type="file" class="form-control" id="rutaportada" name="rutaportada" accept="image/*">
-                                <div class="form-text">Formatos: JPG, PNG, GIF. Máximo 2MB</div>
+                                <input type="file" class="form-control" id="rutaportada" name="rutaportada" accept="image/jpeg,image/jpg,image/png,image/gif">
+                                <div class="form-text">Formatos: JPG, JPEG, PNG, GIF. Máximo 2MB</div>
                             </div>
                         </div>
                     </div>
@@ -417,9 +417,23 @@ function actualizarRecurso()
     .then(response => response.json())
     .then(data => {
         if (data.status === 'success') {
+            console.log('🎉 Respuesta exitosa del servidor:', data);
+            
             // Actualizar imagen inmediatamente si se cambió
-            if (archivoPortada && data.nuevaRutaImagen) {
-                actualizarImagenEnVista(idrecurso, data.nuevaRutaImagen);
+            if (archivoPortada) {
+                console.log('📸 Se detectó archivo de portada, actualizando imagen...');
+                if (data.nuevaRutaImagen) {
+                    console.log('✅ Nueva ruta recibida:', data.nuevaRutaImagen);
+                    
+                    // Actualizar imagen inmediatamente (optimizado)
+                    actualizarImagenEnVista(idrecurso, data.nuevaRutaImagen);
+                } else {
+                    console.warn('⚠️ No se recibió nuevaRutaImagen del servidor');
+                    // Forzar actualización de todas las imágenes del recurso con timestamp
+                    forzarActualizacionImagen(idrecurso);
+                }
+            } else {
+                console.log('ℹ️ No se cambió la imagen');
             }
             
             alerta.className = 'alert alert-success';
@@ -429,10 +443,10 @@ function actualizarRecurso()
             `;
             alerta.classList.remove('d-none');
             
-            // Cerrar modal después de 2 segundos y recargar vista de recursos en el dashboard
+            // Cerrar modal rápidamente (optimizado)
             setTimeout(() => {
                 cerrarModalCompletamente();
-            }, 2000);
+            }, 1000);
         } else {
             alerta.className = 'alert alert-danger';
             alerta.textContent = data.message || 'Error al actualizar recurso';
@@ -544,53 +558,105 @@ document.addEventListener('DOMContentLoaded', function() {
      */
     function actualizarImagenEnVista(idrecurso, nuevaRutaImagen) {
         try {
-            console.log(`🔄 Iniciando actualización de imagen para recurso ${idrecurso}`);
-            console.log(`📁 Nueva ruta: ${nuevaRutaImagen}`);
+            console.log(`⚡ Actualización RÁPIDA para recurso ${idrecurso}: ${nuevaRutaImagen}`);
             
-            // Agregar timestamp para evitar caché del navegador
-            const timestamp = new Date().getTime();
+            // Timestamp agresivo para forzar recarga inmediata
+            const timestamp = Date.now() + Math.random();
             const nuevaUrl = `<?= base_url() ?>${nuevaRutaImagen}?v=${timestamp}`;
             
-            console.log(`🌐 URL completa: ${nuevaUrl}`);
-            
-            // Buscar SOLO por data-recurso-id (más confiable)
+            // Actualizar TODAS las imágenes del recurso inmediatamente
             const imagenesRecurso = document.querySelectorAll(`img[data-recurso-id="${idrecurso}"]`);
-            console.log(`🖼️ Imágenes encontradas: ${imagenesRecurso.length}`);
             
-            let actualizadas = 0;
+            if (imagenesRecurso.length > 0) {
+                console.log(`🖼️ Actualizando ${imagenesRecurso.length} imágenes inmediatamente`);
+                
+                imagenesRecurso.forEach((img, index) => {
+                    // Actualización inmediata sin esperas
+                    img.src = nuevaUrl;
+                    img.style.transition = 'opacity 0.2s ease';
+                    img.style.opacity = '0.7';
+                    
+                    // Restaurar opacidad rápidamente
+                    setTimeout(() => {
+                        img.style.opacity = '1';
+                    }, 200);
+                });
+            } else {
+                // Fallback rápido por patrón
+                console.log(`🔍 Búsqueda rápida por patrón -${idrecurso}.`);
+                document.querySelectorAll('img').forEach(img => {
+                    if (img.src.includes(`-${idrecurso}.`)) {
+                        img.src = nuevaUrl;
+                        img.style.transition = 'opacity 0.2s ease';
+                        img.style.opacity = '0.7';
+                        setTimeout(() => { img.style.opacity = '1'; }, 200);
+                    }
+                });
+            }
+            
+            console.log(`✅ Actualización instantánea completada`);
+            
+        } catch (error) {
+            console.error('❌ Error en actualización rápida:', error);
+        }
+    }
+
+    /**
+     * Forzar actualización de imagen cuando no se recibe la ruta del servidor
+     */
+    function forzarActualizacionImagen(idrecurso) {
+        try {
+            console.log(`🔄 Forzando actualización de imagen para recurso ${idrecurso}`);
+            
+            // Timestamp único para evitar caché
+            const timestamp = new Date().getTime();
+            
+            // Buscar todas las imágenes del recurso
+            const imagenesRecurso = document.querySelectorAll(`img[data-recurso-id="${idrecurso}"]`);
+            console.log(`🖼️ Imágenes encontradas para forzar actualización: ${imagenesRecurso.length}`);
+            
             imagenesRecurso.forEach((img, index) => {
-                console.log(`📸 Actualizando imagen ${index + 1}:`, img.src);
+                const urlActual = img.src;
+                console.log(`📸 Imagen ${index + 1} URL actual:`, urlActual);
                 
-                // Actualizar src con timestamp para forzar recarga
-                img.src = nuevaUrl;
+                // Remover timestamp anterior si existe
+                const urlLimpia = urlActual.split('?')[0];
+                const nuevaUrl = `${urlLimpia}?v=${timestamp}`;
                 
-                // Agregar efecto visual de actualización
+                console.log(`🔄 Nueva URL con timestamp:`, nuevaUrl);
+                
+                // Agregar efecto visual
                 img.style.opacity = '0.5';
                 img.style.transition = 'opacity 0.3s ease';
                 
+                // Actualizar src
+                img.src = nuevaUrl;
+                
                 img.onload = function() {
                     this.style.opacity = '1';
-                    actualizadas++;
-                    console.log(`✅ Imagen ${index + 1} cargada exitosamente`);
+                    console.log(`✅ Imagen ${index + 1} recargada con timestamp`);
                 };
                 
                 img.onerror = function() {
-                    console.error(`❌ Error cargando imagen ${index + 1}:`, nuevaUrl);
-                    this.style.opacity = '1'; // Restaurar opacidad aunque falle
+                    this.style.opacity = '1';
+                    console.error(`❌ Error recargando imagen ${index + 1}:`, nuevaUrl);
                 };
             });
             
-            // Verificar si se encontraron imágenes
+            // Si no encuentra por data-recurso-id, buscar por patrón
             if (imagenesRecurso.length === 0) {
                 console.warn(`⚠️ No se encontraron imágenes con data-recurso-id="${idrecurso}"`);
+                console.log('🔍 Buscando por patrón en todas las imágenes...');
                 
-                // Buscar por patrón en src como fallback
                 const todasLasImagenes = document.querySelectorAll('img');
                 todasLasImagenes.forEach(img => {
                     if (img.src.includes(`-${idrecurso}.`)) {
-                        console.log(`🔍 Encontrada imagen por patrón:`, img.src);
-                        img.src = nuevaUrl;
+                        console.log(`🎯 Encontrada imagen por patrón:`, img.src);
+                        const urlLimpia = img.src.split('?')[0];
+                        const nuevaUrl = `${urlLimpia}?v=${timestamp}`;
+                        
                         img.style.opacity = '0.5';
+                        img.src = nuevaUrl;
                         img.onload = function() {
                             this.style.opacity = '1';
                             this.style.transition = 'opacity 0.3s ease';
@@ -599,10 +665,58 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
             }
             
-            console.log(`🏁 Actualización completada para recurso ${idrecurso}`);
+        } catch (error) {
+            console.error('❌ Error forzando actualización de imagen:', error);
+        }
+    }
+
+    /**
+     * Verificar que la imagen existe antes de actualizar la vista
+     */
+    function verificarYActualizarImagen(idrecurso, rutaImagen) {
+        try {
+            console.log(`🔍 Verificando existencia de imagen: ${rutaImagen}`);
+            
+            // Crear una imagen temporal para verificar si existe
+            const imgTest = new Image();
+            const baseUrl = '<?= base_url() ?>';
+            const urlCompleta = `${baseUrl}${rutaImagen}`;
+            
+            imgTest.onload = function() {
+                console.log(`✅ Imagen verificada exitosamente: ${urlCompleta}`);
+                // La imagen existe, proceder con la actualización
+                actualizarImagenEnVista(idrecurso, rutaImagen);
+            };
+            
+            imgTest.onerror = function() {
+                console.error(`❌ Error: Imagen no existe en ${urlCompleta}`);
+                console.log(`🔄 Intentando sincronización automática...`);
+                
+                // Si la imagen no existe, intentar sincronización
+                fetch('<?= base_url("recursos/actualizarRutasImagenes") ?>')
+                    .then(response => response.json())
+                    .then(syncData => {
+                        console.log('🔄 Sincronización completada:', syncData);
+                        
+                        // Después de sincronizar, forzar actualización
+                        setTimeout(() => {
+                            forzarActualizacionImagen(idrecurso);
+                        }, 1000);
+                    })
+                    .catch(error => {
+                        console.error('❌ Error en sincronización:', error);
+                        // Como último recurso, forzar actualización
+                        forzarActualizacionImagen(idrecurso);
+                    });
+            };
+            
+            // Iniciar la verificación
+            imgTest.src = urlCompleta;
             
         } catch (error) {
-            console.error('❌ Error actualizando imagen en vista:', error);
+            console.error('❌ Error verificando imagen:', error);
+            // Si hay error, usar el método de actualización normal
+            actualizarImagenEnVista(idrecurso, rutaImagen);
         }
     }
 });

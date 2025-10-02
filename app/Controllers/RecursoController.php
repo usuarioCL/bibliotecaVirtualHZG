@@ -404,6 +404,7 @@ public function actualizar($idrecurso)
                 $tituloSlug = url_title(($recursoExistente['titulo'] ?? 'portada'), '-', true);
                 $ext = strtolower($portada->getExtension());
                 $nombreArchivo = $tituloSlug . '-' . $idrecurso . '.' . $ext;
+                
                 // Determinar carpeta según tipo de recurso
                 $tipoRecurso = $this->request->getVar('idtiporecurso');
                 $esDigitalPortada = false;
@@ -423,8 +424,13 @@ public function actualizar($idrecurso)
 
                 $portada->move($carpetaPublica, $nombreArchivo, true);
                 $rutaRelativaPortada = 'uploads/portadas/' . $subcarpeta . '/' . $nombreArchivo;
-                $recursoModel->update($idrecurso, ['rutaportada' => $rutaRelativaPortada]);
-                $rutaPortadaActualizada = $rutaRelativaPortada;
+                
+                // Verificar que el archivo se guardó correctamente
+                if (file_exists($carpetaPublica . $nombreArchivo)) {
+                    $rutaPortadaActualizada = $rutaRelativaPortada;
+                } else {
+                    log_message('error', "Error: Archivo no se guardó correctamente: " . $carpetaPublica . $nombreArchivo);
+                }
             }
         }
     } catch (\Throwable $e) {
@@ -564,9 +570,11 @@ public function actualizar($idrecurso)
             'titulo' => $datosRecurso['titulo']
         ];
         
-        // Agregar nueva ruta de imagen si se actualizó
+        // Siempre incluir la ruta de imagen (optimizado)
         if ($rutaPortadaActualizada !== null) {
             $respuesta['nuevaRutaImagen'] = $rutaPortadaActualizada;
+            $respuesta['imagenActualizada'] = true;
+            $respuesta['timestamp'] = time(); // Para forzar recarga inmediata
         }
         
         return $this->response->setJSON($respuesta);
@@ -1313,6 +1321,110 @@ public function actualizar($idrecurso)
             return $this->response->setJSON([
                 'status' => 'error',
                 'message' => 'Error sincronizando imágenes: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Obtener la ruta actual de la imagen de un recurso
+     */
+    private function obtenerRutaImagenActual($idrecurso)
+    {
+        try {
+            $recursoFisicoModel = new \App\Models\RecursoFisicoModel();
+            $recursoDigitalModel = new \App\Models\RecursoDigitalModel();
+            
+            // Buscar en recursos físicos
+            $recursoFisico = $recursoFisicoModel->find($idrecurso);
+            if ($recursoFisico && !empty($recursoFisico['portada'])) {
+                return $recursoFisico['portada'];
+            }
+            
+            // Buscar en recursos digitales
+            $recursoDigital = $recursoDigitalModel->find($idrecurso);
+            if ($recursoDigital && !empty($recursoDigital['portada'])) {
+                return $recursoDigital['portada'];
+            }
+            
+            return null;
+            
+        } catch (\Throwable $e) {
+            log_message('error', 'Error obteniendo ruta de imagen actual: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Método de debugging para verificar rutas de imágenes
+     */
+    public function debugImagenes()
+    {
+        try {
+            $recursoModel = new RecursoModel();
+            $recursoFisicoModel = new \App\Models\RecursoFisicoModel();
+            $recursoDigitalModel = new \App\Models\RecursoDigitalModel();
+            
+            $debug = [];
+            $errores = [];
+            
+            // Obtener todos los recursos con sus portadas
+            $recursos = $recursoModel->select('
+                recursos.idrecurso,
+                recursos.titulo,
+                COALESCE(rf.portada, rd.portada) as rutaportada,
+                rf.portada as portada_fisica,
+                rd.portada as portada_digital
+            ')
+            ->join('recursos_fisicos rf', 'rf.idrecurso = recursos.idrecurso', 'left')
+            ->join('recursos_digitales rd', 'rd.idrecurso = recursos.idrecurso', 'left')
+            ->findAll();
+            
+            foreach ($recursos as $recurso) {
+                $idrecurso = $recurso['idrecurso'];
+                $titulo = $recurso['titulo'];
+                $rutaportada = $recurso['rutaportada'];
+                $portadaFisica = $recurso['portada_fisica'];
+                $portadaDigital = $recurso['portada_digital'];
+                
+                $info = [
+                    'id' => $idrecurso,
+                    'titulo' => $titulo,
+                    'ruta_unificada' => $rutaportada,
+                    'ruta_fisica' => $portadaFisica,
+                    'ruta_digital' => $portadaDigital,
+                    'archivo_existe' => false,
+                    'url_completa' => null,
+                    'error' => null
+                ];
+                
+                if ($rutaportada) {
+                    $archivoCompleto = FCPATH . $rutaportada;
+                    $info['archivo_existe'] = file_exists($archivoCompleto);
+                    $info['url_completa'] = base_url($rutaportada);
+                    
+                    if (!$info['archivo_existe']) {
+                        $info['error'] = 'Archivo no existe en: ' . $archivoCompleto;
+                        $errores[] = $info;
+                    }
+                } else {
+                    $info['error'] = 'Sin ruta de portada en BD';
+                }
+                
+                $debug[] = $info;
+            }
+            
+            return $this->response->setJSON([
+                'status' => 'success',
+                'total_recursos' => count($recursos),
+                'recursos_con_error' => count($errores),
+                'debug' => $debug,
+                'errores' => $errores
+            ]);
+            
+        } catch (\Throwable $e) {
+            return $this->response->setJSON([
+                'status' => 'error',
+                'message' => 'Error: ' . $e->getMessage()
             ]);
         }
     }

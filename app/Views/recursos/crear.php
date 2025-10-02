@@ -197,8 +197,8 @@ if (modal) {
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label for="portada" class="form-label">Portada</label>
-                                <input type="file" class="form-control" id="portada" name="portada" accept="image/*">
-                                <div class="form-text">Formatos: JPG, PNG, GIF. Máximo 2MB</div>
+                                <input type="file" class="form-control" id="portada" name="portada" accept="image/jpeg,image/jpg,image/png,image/gif">
+                                <div class="form-text">Formatos: JPG, JPEG, PNG, GIF. Máximo 2MB</div>
                             </div>
                         </div>
                     </div>
