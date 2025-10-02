@@ -152,7 +152,11 @@ class RecursoController extends Controller
                 $imagenFile = $this->request->getFile('portada');
                 if ($imagenFile && $imagenFile->isValid() && !$imagenFile->hasMoved()) {
                     helper('text');
-                    $carpetaRecurso = FCPATH . 'uploads' . DIRECTORY_SEPARATOR . 'portadas' . DIRECTORY_SEPARATOR;
+                    
+                    // Determinar subcarpeta según tipo de recurso
+                    $subcarpeta = $esDigital ? 'digital' : 'fisico';
+                    $carpetaRecurso = FCPATH . 'uploads' . DIRECTORY_SEPARATOR . 'portadas' . DIRECTORY_SEPARATOR . $subcarpeta . DIRECTORY_SEPARATOR;
+                    
                     if (!is_dir($carpetaRecurso)) {
                         @mkdir($carpetaRecurso, 0775, true);
                     }
@@ -160,7 +164,7 @@ class RecursoController extends Controller
                     $extension = $imagenFile->getExtension();
                     $nombreArchivo = $nombreBase . '-' . $idRecurso . '.' . $extension;
                     $imagenFile->move($carpetaRecurso, $nombreArchivo, true);
-                    $portadaPath = 'uploads/portadas/' . $nombreArchivo;
+                    $portadaPath = 'uploads/portadas/' . $subcarpeta . '/' . $nombreArchivo;
                 }
             } catch (\Throwable $e) {
                 log_message('error', 'Error subiendo portada: ' . $e->getMessage());
@@ -341,6 +345,7 @@ public function actualizar($idrecurso)
 {
     $recursoModel = new RecursoModel();
     $detAutorModel = new DetAutorModel();
+    
 
     // Determinar si es recurso digital o físico
     $idTipo = $this->request->getVar('idtiporecurso');
@@ -380,25 +385,52 @@ public function actualizar($idrecurso)
     $recursoModel->update($idrecurso, $datosRecurso);
 
     // 1.1 Manejo de portada (imagen)
+    $rutaPortadaActualizada = null;
     try {
         $portada = $this->request->getFile('rutaportada');
+        
+        
         if ($portada && $portada->isValid() && !$portada->hasMoved()) {
             $mime = $portada->getMimeType();
             if (strpos($mime, 'image/') === 0) {
                 helper('text');
+                
+                
+                // IMPORTANTE: Eliminar imagen anterior ANTES de subir la nueva
+                $this->eliminarImagenAnterior($idrecurso);
+                
                 $recursoExistente = $recursoModel->find($idrecurso);
+                
                 $tituloSlug = url_title(($recursoExistente['titulo'] ?? 'portada'), '-', true);
                 $ext = strtolower($portada->getExtension());
                 $nombreArchivo = $tituloSlug . '-' . $idrecurso . '.' . $ext;
-                $carpetaPublica = FCPATH . 'img' . DIRECTORY_SEPARATOR . 'portadas' . DIRECTORY_SEPARATOR;
+                
+                // Determinar carpeta según tipo de recurso
+                $tipoRecurso = $this->request->getVar('idtiporecurso');
+                $esDigitalPortada = false;
+                if ($tipoRecurso) {
+                    $tipo = model('TiporecursoModel')->find($tipoRecurso);
+                    if ($tipo && isset($tipo['tiporecurso']) && stripos($tipo['tiporecurso'], 'digital') !== false) {
+                        $esDigitalPortada = true;
+                    }
+                }
+                
+                $subcarpeta = $esDigitalPortada ? 'digital' : 'fisico';
+                $carpetaPublica = FCPATH . 'uploads' . DIRECTORY_SEPARATOR . 'portadas' . DIRECTORY_SEPARATOR . $subcarpeta . DIRECTORY_SEPARATOR;
 
                 if (!is_dir($carpetaPublica)) {
                     @mkdir($carpetaPublica, 0775, true);
                 }
 
                 $portada->move($carpetaPublica, $nombreArchivo, true);
-                $rutaRelativaPortada = 'img/portadas/' . $nombreArchivo;
-                $recursoModel->update($idrecurso, ['rutaportada' => $rutaRelativaPortada]);
+                $rutaRelativaPortada = 'uploads/portadas/' . $subcarpeta . '/' . $nombreArchivo;
+                
+                // Verificar que el archivo se guardó correctamente
+                if (file_exists($carpetaPublica . $nombreArchivo)) {
+                    $rutaPortadaActualizada = $rutaRelativaPortada;
+                } else {
+                    log_message('error', "Error: Archivo no se guardó correctamente: " . $carpetaPublica . $nombreArchivo);
+                }
             }
         }
     } catch (\Throwable $e) {
@@ -453,6 +485,18 @@ public function actualizar($idrecurso)
             $recursoDigitalModel = new \App\Models\RecursoDigitalModel();
             $datosDigital = [];
             
+            // Actualizar portada en recursos_digitales si se subió una nueva imagen
+            if ($rutaPortadaActualizada !== null) {
+                $datosDigital['portada'] = $rutaPortadaActualizada;
+                
+                // Limpiar portada de recursos_fisicos si existe (evitar duplicados)
+                $recursoFisicoModel = new \App\Models\RecursoFisicoModel();
+                $recursoFisicoExistente = $recursoFisicoModel->find($idrecurso);
+                if ($recursoFisicoExistente) {
+                    $recursoFisicoModel->update($idrecurso, ['portada' => null]);
+                }
+            }
+            
             // Solo actualizar si hay archivo nuevo
             $archivoPdf = $this->request->getFile('archivo_pdf');
             if ($archivoPdf && $archivoPdf->isValid() && !$archivoPdf->hasMoved()) {
@@ -484,6 +528,18 @@ public function actualizar($idrecurso)
                 $datosFisico['encuadernacion'] = $encuadernacion;
             }
             
+            // Actualizar portada en recursos_fisicos si se subió una nueva imagen
+            if ($rutaPortadaActualizada !== null) {
+                $datosFisico['portada'] = $rutaPortadaActualizada;
+                
+                // Limpiar portada de recursos_digitales si existe (evitar duplicados)
+                $recursoDigitalModel = new \App\Models\RecursoDigitalModel();
+                $recursoDigitalExistente = $recursoDigitalModel->find($idrecurso);
+                if ($recursoDigitalExistente) {
+                    $recursoDigitalModel->update($idrecurso, ['portada' => null]);
+                }
+            }
+            
             // Actualizar si hay datos que cambiar
             if (!empty($datosFisico)) {
                 $recursoFisicoModel->update($idrecurso, $datosFisico);
@@ -508,11 +564,20 @@ public function actualizar($idrecurso)
             ]);
         }
 
-        return $this->response->setJSON([
+        $respuesta = [
             'status' => 'success',
             'message' => 'Recurso actualizado exitosamente',
             'titulo' => $datosRecurso['titulo']
-        ]);
+        ];
+        
+        // Siempre incluir la ruta de imagen (optimizado)
+        if ($rutaPortadaActualizada !== null) {
+            $respuesta['nuevaRutaImagen'] = $rutaPortadaActualizada;
+            $respuesta['imagenActualizada'] = true;
+            $respuesta['timestamp'] = time(); // Para forzar recarga inmediata
+        }
+        
+        return $this->response->setJSON($respuesta);
     } catch (\Throwable $e) {
         return $this->response->setJSON([
             'status' => 'error',
@@ -802,5 +867,612 @@ public function actualizar($idrecurso)
             : base_url($path);
     
         return view('recursos/verPdf', ['pdfUrl' => $pdfUrl]);
+    }
+
+    /**
+     * Método temporal para limpiar rutas de imágenes incorrectas
+     */
+    public function limpiarRutasImagenes()
+    {
+        $recursoModel = new RecursoModel();
+        $recursoFisicoModel = new \App\Models\RecursoFisicoModel();
+        $recursoDigitalModel = new \App\Models\RecursoDigitalModel();
+        
+        $actualizados = 0;
+        $eliminados = 0;
+        
+        try {
+            // Obtener todos los recursos con sus portadas
+            $recursos = $recursoModel->select('recursos.*, rf.portada as portada_fisica, rd.portada as portada_digital')
+                ->join('recursos_fisicos rf', 'rf.idrecurso = recursos.idrecurso', 'left')
+                ->join('recursos_digitales rd', 'rd.idrecurso = recursos.idrecurso', 'left')
+                ->findAll();
+            
+            foreach ($recursos as $recurso) {
+                $idrecurso = $recurso['idrecurso'];
+                $portadaFisica = $recurso['portada_fisica'] ?? '';
+                $portadaDigital = $recurso['portada_digital'] ?? '';
+                
+                // Verificar portada física
+                if (!empty($portadaFisica)) {
+                    $archivoFisico = FCPATH . $portadaFisica;
+                    if (!file_exists($archivoFisico)) {
+                        // Archivo no existe, limpiar la referencia
+                        $recursoFisicoModel->update($idrecurso, ['portada' => null]);
+                        $eliminados++;
+                    }
+                }
+                
+                // Verificar portada digital
+                if (!empty($portadaDigital)) {
+                    $archivoDigital = FCPATH . $portadaDigital;
+                    if (!file_exists($archivoDigital)) {
+                        // Archivo no existe, limpiar la referencia
+                        $recursoDigitalModel->update($idrecurso, ['portada' => null]);
+                        $eliminados++;
+                    }
+                }
+                
+                // Actualizar rutaportada en recursos basándose en archivos existentes
+                $nuevaRuta = null;
+                if (!empty($portadaFisica) && file_exists(FCPATH . $portadaFisica)) {
+                    $nuevaRuta = $portadaFisica;
+                } elseif (!empty($portadaDigital) && file_exists(FCPATH . $portadaDigital)) {
+                    $nuevaRuta = $portadaDigital;
+                }
+                
+                // Solo contar como actualizado si se cambió algo
+                if ($nuevaRuta !== null) {
+                    $actualizados++;
+                }
+            }
+            
+            return $this->response->setJSON([
+                'status' => 'success',
+                'message' => "Se actualizaron $actualizados rutas y se eliminaron $eliminados referencias incorrectas"
+            ]);
+            
+        } catch (\Throwable $e) {
+            return $this->response->setJSON([
+                'status' => 'error',
+                'message' => 'Error: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Eliminar TODAS las imágenes anteriores del recurso (cualquier extensión)
+     */
+    private function eliminarImagenAnterior($idrecurso)
+    {
+        try {
+            if (ENVIRONMENT === 'development') {
+                log_message('debug', "🗑️ Eliminando imágenes anteriores para recurso: $idrecurso");
+            }
+            
+            $archivosEliminados = 0;
+            
+            // Buscar y eliminar en carpeta física
+            $carpetaFisica = FCPATH . 'uploads' . DIRECTORY_SEPARATOR . 'portadas' . DIRECTORY_SEPARATOR . 'fisico' . DIRECTORY_SEPARATOR;
+            if (is_dir($carpetaFisica)) {
+                $archivosEliminados += $this->eliminarArchivosRecurso($carpetaFisica, $idrecurso, 'física');
+            }
+            
+            // Buscar y eliminar en carpeta digital
+            $carpetaDigital = FCPATH . 'uploads' . DIRECTORY_SEPARATOR . 'portadas' . DIRECTORY_SEPARATOR . 'digital' . DIRECTORY_SEPARATOR;
+            if (is_dir($carpetaDigital)) {
+                $archivosEliminados += $this->eliminarArchivosRecurso($carpetaDigital, $idrecurso, 'digital');
+            }
+            
+            if (ENVIRONMENT === 'development') {
+                log_message('debug', "✅ Eliminación completada. Archivos eliminados: $archivosEliminados");
+            }
+            
+        } catch (\Throwable $e) {
+            log_message('error', 'Error eliminando imagen anterior: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Eliminar archivos de un recurso específico en una carpeta
+     */
+    private function eliminarArchivosRecurso($carpeta, $idrecurso, $tipo)
+    {
+        $eliminados = 0;
+        
+        try {
+            // Buscar archivos que terminen con -ID.extension (más específico)
+            $patron = '*-' . $idrecurso . '.{jpg,jpeg,png,gif,webp}';
+            $archivos = glob($carpeta . $patron, GLOB_BRACE);
+            
+            if (ENVIRONMENT === 'development') {
+                log_message('debug', "🔍 Buscando en $tipo: $patron");
+                log_message('debug', "📁 Archivos encontrados: " . count($archivos));
+            }
+            
+            foreach ($archivos as $archivo) {
+                if (is_file($archivo)) {
+                    $nombreArchivo = basename($archivo);
+                    if (@unlink($archivo)) {
+                        $eliminados++;
+                        if (ENVIRONMENT === 'development') {
+                            log_message('debug', "✅ Eliminado ($tipo): $nombreArchivo");
+                        }
+                    } else {
+                        if (ENVIRONMENT === 'development') {
+                            log_message('debug', "❌ No se pudo eliminar ($tipo): $nombreArchivo");
+                        }
+                    }
+                }
+            }
+            
+        } catch (\Throwable $e) {
+            log_message('error', 'Error eliminando archivos en carpeta ' . $tipo . ': ' . $e->getMessage());
+        }
+        
+        return $eliminados;
+    }
+
+    /**
+     * Método temporal para limpiar archivos duplicados existentes
+     */
+    public function limpiarDuplicados()
+    {
+        try {
+            $eliminados = 0;
+            
+            // Limpiar carpeta física
+            $carpetaFisica = FCPATH . 'uploads' . DIRECTORY_SEPARATOR . 'portadas' . DIRECTORY_SEPARATOR . 'fisico' . DIRECTORY_SEPARATOR;
+            if (is_dir($carpetaFisica)) {
+                $eliminados += $this->limpiarDuplicadosEnCarpeta($carpetaFisica, 'física');
+            }
+            
+            // Limpiar carpeta digital
+            $carpetaDigital = FCPATH . 'uploads' . DIRECTORY_SEPARATOR . 'portadas' . DIRECTORY_SEPARATOR . 'digital' . DIRECTORY_SEPARATOR;
+            if (is_dir($carpetaDigital)) {
+                $eliminados += $this->limpiarDuplicadosEnCarpeta($carpetaDigital, 'digital');
+            }
+            
+            return $this->response->setJSON([
+                'status' => 'success',
+                'message' => "Se eliminaron $eliminados archivos duplicados"
+            ]);
+            
+        } catch (\Throwable $e) {
+            return $this->response->setJSON([
+                'status' => 'error',
+                'message' => 'Error: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Limpiar duplicados en una carpeta específica
+     */
+    private function limpiarDuplicadosEnCarpeta($carpeta, $tipo)
+    {
+        $eliminados = 0;
+        $recursos = [];
+        
+        try {
+            // Obtener todos los archivos
+            $archivos = glob($carpeta . '*.*');
+            
+            // Agrupar por ID de recurso
+            foreach ($archivos as $archivo) {
+                $nombre = basename($archivo);
+                // Extraer ID del recurso (formato: nombre-ID.extension)
+                if (preg_match('/^(.+)-(\d+)\.(jpg|jpeg|png|gif)$/i', $nombre, $matches)) {
+                    $idRecurso = $matches[2];
+                    $extension = strtolower($matches[3]);
+                    
+                    if (!isset($recursos[$idRecurso])) {
+                        $recursos[$idRecurso] = [];
+                    }
+                    
+                    $recursos[$idRecurso][] = [
+                        'archivo' => $archivo,
+                        'nombre' => $nombre,
+                        'extension' => $extension,
+                        'tiempo' => filemtime($archivo)
+                    ];
+                }
+            }
+            
+            // Para cada recurso con múltiples archivos, mantener solo el más reciente
+            foreach ($recursos as $idRecurso => $archivosRecurso) {
+                if (count($archivosRecurso) > 1) {
+                    // Ordenar por tiempo de modificación (más reciente primero)
+                    usort($archivosRecurso, function($a, $b) {
+                        return $b['tiempo'] - $a['tiempo'];
+                    });
+                    
+                    // Eliminar todos excepto el más reciente
+                    for ($i = 1; $i < count($archivosRecurso); $i++) {
+                        if (@unlink($archivosRecurso[$i]['archivo'])) {
+                            $eliminados++;
+                            // Duplicado eliminado
+                        }
+                    }
+                    
+                    // Archivo más reciente mantenido
+                }
+            }
+            
+        } catch (\Throwable $e) {
+            log_message('error', 'Error limpiando duplicados en carpeta ' . $tipo . ': ' . $e->getMessage());
+        }
+        
+        return $eliminados;
+    }
+
+    /**
+     * Método simple para actualizar rutas de imágenes usando SQL directo
+     */
+    public function actualizarRutasImagenes()
+    {
+        try {
+            $db = \Config\Database::connect();
+            $actualizados = 0;
+            $debug = [];
+            
+            // Obtener archivos físicos
+            $carpetaFisica = FCPATH . 'uploads' . DIRECTORY_SEPARATOR . 'portadas' . DIRECTORY_SEPARATOR . 'fisico' . DIRECTORY_SEPARATOR;
+            $archivosFisicos = glob($carpetaFisica . '*.*');
+            
+            foreach ($archivosFisicos as $archivo) {
+                $nombre = basename($archivo);
+                if (preg_match('/^(.+)-(\d+)\.(jpg|jpeg|png|gif)$/i', $nombre, $matches)) {
+                    $idRecurso = $matches[2];
+                    $rutaNueva = 'uploads/portadas/fisico/' . $nombre;
+                    
+                    // Verificar que el recurso existe antes de actualizar
+                    $recursoExiste = $db->query("SELECT idrecurso FROM recursos WHERE idrecurso = ?", [$idRecurso])->getRow();
+                    if ($recursoExiste) {
+                        // Actualizar o insertar en recursos_fisicos
+                        $existe = $db->query("SELECT idrecurso FROM recursos_fisicos WHERE idrecurso = ?", [$idRecurso])->getRow();
+                        if ($existe) {
+                            $db->query("UPDATE recursos_fisicos SET portada = ? WHERE idrecurso = ?", [$rutaNueva, $idRecurso]);
+                        } else {
+                            $db->query("INSERT INTO recursos_fisicos (idrecurso, portada, encuadernacion) VALUES (?, ?, 'Tapa blanda')", [$idRecurso, $rutaNueva]);
+                        }
+                        $actualizados++;
+                        $debug[] = "Físico: $nombre -> ID $idRecurso";
+                    } else {
+                        $debug[] = "⚠️ Recurso ID $idRecurso no existe en BD (archivo: $nombre)";
+                    }
+                }
+            }
+            
+            // Obtener archivos digitales
+            $carpetaDigital = FCPATH . 'uploads' . DIRECTORY_SEPARATOR . 'portadas' . DIRECTORY_SEPARATOR . 'digital' . DIRECTORY_SEPARATOR;
+            $archivosDigitales = glob($carpetaDigital . '*.*');
+            
+            foreach ($archivosDigitales as $archivo) {
+                $nombre = basename($archivo);
+                if (preg_match('/^(.+)-(\d+)\.(jpg|jpeg|png|gif)$/i', $nombre, $matches)) {
+                    $idRecurso = $matches[2];
+                    $rutaNueva = 'uploads/portadas/digital/' . $nombre;
+                    
+                    // Verificar que el recurso existe antes de actualizar
+                    $recursoExiste = $db->query("SELECT idrecurso FROM recursos WHERE idrecurso = ?", [$idRecurso])->getRow();
+                    if ($recursoExiste) {
+                        // Actualizar o insertar en recursos_digitales
+                        $existe = $db->query("SELECT idrecurso FROM recursos_digitales WHERE idrecurso = ?", [$idRecurso])->getRow();
+                        if ($existe) {
+                            $db->query("UPDATE recursos_digitales SET portada = ? WHERE idrecurso = ?", [$rutaNueva, $idRecurso]);
+                        } else {
+                            $db->query("INSERT INTO recursos_digitales (idrecurso, portada) VALUES (?, ?)", [$idRecurso, $rutaNueva]);
+                        }
+                        
+                        // Limpiar recursos_fisicos
+                        $db->query("UPDATE recursos_fisicos SET portada = NULL WHERE idrecurso = ?", [$idRecurso]);
+                        
+                        $actualizados++;
+                        $debug[] = "Digital: $nombre -> ID $idRecurso";
+                    } else {
+                        $debug[] = "⚠️ Recurso ID $idRecurso no existe en BD (archivo: $nombre)";
+                    }
+                }
+            }
+            
+            return $this->response->setJSON([
+                'status' => 'success',
+                'message' => "Se actualizaron $actualizados rutas de imágenes",
+                'actualizados' => $actualizados,
+                'debug' => $debug
+            ]);
+            
+        } catch (\Throwable $e) {
+            return $this->response->setJSON([
+                'status' => 'error',
+                'message' => 'Error: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Sincronizar rutas de imágenes en la base de datos con archivos existentes
+     */
+    public function sincronizarImagenes()
+    {
+        try {
+            $recursoModel = new RecursoModel();
+            $recursoFisicoModel = new \App\Models\RecursoFisicoModel();
+            $recursoDigitalModel = new \App\Models\RecursoDigitalModel();
+            
+            $actualizados = 0;
+            $errores = [];
+            $debug = [];
+            
+            // Obtener todos los recursos
+            $recursos = $recursoModel->findAll();
+            $debug[] = "Total recursos encontrados: " . count($recursos);
+            
+            foreach ($recursos as $recurso) {
+                $idrecurso = $recurso['idrecurso'];
+                $rutaEncontrada = null;
+                $tipoEncontrado = null;
+                
+                // Buscar archivo en carpeta física
+                $carpetaFisica = FCPATH . 'uploads' . DIRECTORY_SEPARATOR . 'portadas' . DIRECTORY_SEPARATOR . 'fisico' . DIRECTORY_SEPARATOR;
+                $archivosFisicos = glob($carpetaFisica . '*-' . $idrecurso . '.*');
+                $debug[] = "Recurso $idrecurso - Archivos físicos: " . count($archivosFisicos);
+                
+                if (!empty($archivosFisicos)) {
+                    $archivo = $archivosFisicos[0]; // Tomar el primero (ya no hay duplicados)
+                    $rutaEncontrada = 'uploads/portadas/fisico/' . basename($archivo);
+                    $tipoEncontrado = 'fisico';
+                    $debug[] = "Recurso $idrecurso - Encontrado físico: " . $rutaEncontrada;
+                }
+                
+                // Si no se encontró en físico, buscar en digital
+                if (!$rutaEncontrada) {
+                    $carpetaDigital = FCPATH . 'uploads' . DIRECTORY_SEPARATOR . 'portadas' . DIRECTORY_SEPARATOR . 'digital' . DIRECTORY_SEPARATOR;
+                    $archivosDigitales = glob($carpetaDigital . '*-' . $idrecurso . '.*');
+                    $debug[] = "Recurso $idrecurso - Archivos digitales: " . count($archivosDigitales);
+                    
+                    if (!empty($archivosDigitales)) {
+                        $archivo = $archivosDigitales[0];
+                        $rutaEncontrada = 'uploads/portadas/digital/' . basename($archivo);
+                        $tipoEncontrado = 'digital';
+                        $debug[] = "Recurso $idrecurso - Encontrado digital: " . $rutaEncontrada;
+                    }
+                }
+                
+                // Actualizar base de datos si se encontró archivo
+                if ($rutaEncontrada) {
+                    // Verificar si la ruta actual es diferente
+                    $rutaActual = $recurso['rutaportada'] ?? '';
+                    if ($rutaActual !== $rutaEncontrada) {
+                        // Actualizar tabla recursos
+                        $recursoModel->update($idrecurso, ['rutaportada' => $rutaEncontrada]);
+                        $debug[] = "Recurso $idrecurso - Actualizada ruta principal: $rutaEncontrada";
+                    }
+                    
+                    // Actualizar tabla específica según el tipo
+                    if ($tipoEncontrado === 'fisico') {
+                        // Actualizar recursos_fisicos
+                        $recursoFisicoExistente = $recursoFisicoModel->find($idrecurso);
+                        if ($recursoFisicoExistente) {
+                            if (($recursoFisicoExistente['portada'] ?? '') !== $rutaEncontrada) {
+                                $recursoFisicoModel->update($idrecurso, ['portada' => $rutaEncontrada]);
+                                $debug[] = "Recurso $idrecurso - Actualizada portada física";
+                            }
+                        } else {
+                            // Crear registro si no existe
+                            $recursoFisicoModel->insert([
+                                'idrecurso' => $idrecurso,
+                                'portada' => $rutaEncontrada,
+                                'encuadernacion' => 'Tapa blanda'
+                            ]);
+                            $debug[] = "Recurso $idrecurso - Creado registro físico";
+                        }
+                        
+                        // Limpiar recursos_digitales (solo si tiene portada)
+                        $recursoDigitalExistente = $recursoDigitalModel->find($idrecurso);
+                        if ($recursoDigitalExistente && !empty($recursoDigitalExistente['portada'])) {
+                            $recursoDigitalModel->update($idrecurso, ['portada' => null]);
+                            $debug[] = "Recurso $idrecurso - Limpiada portada digital";
+                        }
+                        
+                    } else { // digital
+                        // Actualizar recursos_digitales
+                        $recursoDigitalExistente = $recursoDigitalModel->find($idrecurso);
+                        if ($recursoDigitalExistente) {
+                            if (($recursoDigitalExistente['portada'] ?? '') !== $rutaEncontrada) {
+                                $recursoDigitalModel->update($idrecurso, ['portada' => $rutaEncontrada]);
+                                $debug[] = "Recurso $idrecurso - Actualizada portada digital";
+                            }
+                        } else {
+                            // Crear registro si no existe
+                            $recursoDigitalModel->insert([
+                                'idrecurso' => $idrecurso,
+                                'portada' => $rutaEncontrada,
+                                'archivo' => null
+                            ]);
+                            $debug[] = "Recurso $idrecurso - Creado registro digital";
+                        }
+                        
+                        // Limpiar recursos_fisicos (solo si tiene portada)
+                        $recursoFisicoExistente = $recursoFisicoModel->find($idrecurso);
+                        if ($recursoFisicoExistente && !empty($recursoFisicoExistente['portada'])) {
+                            $recursoFisicoModel->update($idrecurso, ['portada' => null]);
+                            $debug[] = "Recurso $idrecurso - Limpiada portada física";
+                        }
+                    }
+                    
+                    $actualizados++;
+                    
+                } else {
+                    $debug[] = "Recurso $idrecurso - No se encontró imagen";
+                }
+            }
+            
+            return $this->response->setJSON([
+                'status' => 'success',
+                'message' => "Se sincronizaron $actualizados imágenes correctamente",
+                'actualizados' => $actualizados,
+                'total_recursos' => count($recursos),
+                'debug' => $debug
+            ]);
+            
+        } catch (\Throwable $e) {
+            return $this->response->setJSON([
+                'status' => 'error',
+                'message' => 'Error sincronizando imágenes: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Obtener la ruta actual de la imagen de un recurso
+     */
+    private function obtenerRutaImagenActual($idrecurso)
+    {
+        try {
+            $recursoFisicoModel = new \App\Models\RecursoFisicoModel();
+            $recursoDigitalModel = new \App\Models\RecursoDigitalModel();
+            
+            // Buscar en recursos físicos
+            $recursoFisico = $recursoFisicoModel->find($idrecurso);
+            if ($recursoFisico && !empty($recursoFisico['portada'])) {
+                return $recursoFisico['portada'];
+            }
+            
+            // Buscar en recursos digitales
+            $recursoDigital = $recursoDigitalModel->find($idrecurso);
+            if ($recursoDigital && !empty($recursoDigital['portada'])) {
+                return $recursoDigital['portada'];
+            }
+            
+            return null;
+            
+        } catch (\Throwable $e) {
+            log_message('error', 'Error obteniendo ruta de imagen actual: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Método de debugging para verificar rutas de imágenes
+     */
+    public function debugImagenes()
+    {
+        try {
+            $recursoModel = new RecursoModel();
+            $recursoFisicoModel = new \App\Models\RecursoFisicoModel();
+            $recursoDigitalModel = new \App\Models\RecursoDigitalModel();
+            
+            $debug = [];
+            $errores = [];
+            
+            // Obtener todos los recursos con sus portadas
+            $recursos = $recursoModel->select('
+                recursos.idrecurso,
+                recursos.titulo,
+                COALESCE(rf.portada, rd.portada) as rutaportada,
+                rf.portada as portada_fisica,
+                rd.portada as portada_digital
+            ')
+            ->join('recursos_fisicos rf', 'rf.idrecurso = recursos.idrecurso', 'left')
+            ->join('recursos_digitales rd', 'rd.idrecurso = recursos.idrecurso', 'left')
+            ->findAll();
+            
+            foreach ($recursos as $recurso) {
+                $idrecurso = $recurso['idrecurso'];
+                $titulo = $recurso['titulo'];
+                $rutaportada = $recurso['rutaportada'];
+                $portadaFisica = $recurso['portada_fisica'];
+                $portadaDigital = $recurso['portada_digital'];
+                
+                $info = [
+                    'id' => $idrecurso,
+                    'titulo' => $titulo,
+                    'ruta_unificada' => $rutaportada,
+                    'ruta_fisica' => $portadaFisica,
+                    'ruta_digital' => $portadaDigital,
+                    'archivo_existe' => false,
+                    'url_completa' => null,
+                    'error' => null
+                ];
+                
+                if ($rutaportada) {
+                    $archivoCompleto = FCPATH . $rutaportada;
+                    $info['archivo_existe'] = file_exists($archivoCompleto);
+                    $info['url_completa'] = base_url($rutaportada);
+                    
+                    if (!$info['archivo_existe']) {
+                        $info['error'] = 'Archivo no existe en: ' . $archivoCompleto;
+                        $errores[] = $info;
+                    }
+                } else {
+                    $info['error'] = 'Sin ruta de portada en BD';
+                }
+                
+                $debug[] = $info;
+            }
+            
+            return $this->response->setJSON([
+                'status' => 'success',
+                'total_recursos' => count($recursos),
+                'recursos_con_error' => count($errores),
+                'debug' => $debug,
+                'errores' => $errores
+            ]);
+            
+        } catch (\Throwable $e) {
+            return $this->response->setJSON([
+                'status' => 'error',
+                'message' => 'Error: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Endpoint de prueba para verificar acceso a PDFs
+     */
+    public function testPDF($idrecurso)
+    {
+        $recursoDigitalModel = new \App\Models\RecursoDigitalModel();
+        $recursoModel = new \App\Models\RecursoModel();
+        
+        // Obtener información del recurso
+        $recurso = $recursoModel->find($idrecurso);
+        $recursoDigital = $recursoDigitalModel->find($idrecurso);
+        
+        if (!$recurso || !$recursoDigital) {
+            return $this->response->setJSON([
+                'error' => 'Recurso no encontrado',
+                'idrecurso' => $idrecurso
+            ]);
+        }
+        
+        $archivo = $recursoDigital['archivo'];
+        if (!$archivo) {
+            return $this->response->setJSON([
+                'error' => 'No hay archivo asociado',
+                'recurso' => $recurso,
+                'recursoDigital' => $recursoDigital
+            ]);
+        }
+        
+        // Verificar si el archivo existe físicamente
+        $rutaCompleta = FCPATH . $archivo;
+        $existeArchivo = file_exists($rutaCompleta);
+        
+        // URL completa
+        $urlCompleta = base_url($archivo);
+        
+        return $this->response->setJSON([
+            'recurso' => $recurso,
+            'recursoDigital' => $recursoDigital,
+            'archivo' => $archivo,
+            'rutaCompleta' => $rutaCompleta,
+            'existeArchivo' => $existeArchivo,
+            'urlCompleta' => $urlCompleta,
+            'tamaño' => $existeArchivo ? filesize($rutaCompleta) : 0,
+            'FCPATH' => FCPATH
+        ]);
     }
 }

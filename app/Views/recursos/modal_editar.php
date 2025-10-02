@@ -3,7 +3,7 @@
     <div class="modal-dialog modal-xl">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Editar Recurso</h5>
+                <h5 class="modal-title">Editar Recurso </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
@@ -181,8 +181,8 @@
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label for="rutaportada" class="form-label">Portada</label>
-                                <input type="file" class="form-control" id="rutaportada" name="rutaportada" accept="image/*">
-                                <div class="form-text">Formatos: JPG, PNG, GIF. Máximo 2MB</div>
+                                <input type="file" class="form-control" id="rutaportada" name="rutaportada" accept="image/jpeg,image/jpg,image/png,image/gif">
+                                <div class="form-text">Formatos: JPG, JPEG, PNG, GIF. Máximo 2MB</div>
                             </div>
                         </div>
                     </div>
@@ -208,33 +208,6 @@
         </div>
     </div>
 </div>
-
-<style>
-/* Estilos para campos deshabilitados */
-.form-control-disabled {
-    background-color: #f8f9fa !important;
-    color: #6c757d !important;
-    cursor: not-allowed !important;
-    opacity: 0.7 !important;
-}
-
-.form-select-disabled {
-    background-color: #f8f9fa !important;
-    color: #6c757d !important;
-    cursor: not-allowed !important;
-    opacity: 0.7 !important;
-}
-
-.form-control-disabled:focus {
-    border-color: #ced4da !important;
-    box-shadow: none !important;
-}
-
-.form-select-disabled:focus {
-    border-color: #ced4da !important;
-    box-shadow: none !important;
-}
-</style>
 
 <script>
 // Cargar subcategorías basadas en la categoría seleccionada (para editar)
@@ -407,6 +380,9 @@ function actualizarRecurso()
     // Enviar primer autor como 'idautor' por compatibilidad con el backend
     formData.append('idautor', autoresMarcados[0]);
     
+    // Verificar si se seleccionó un archivo
+    const archivoPortada = document.getElementById('rutaportada').files[0];
+    
     fetch(`<?= base_url('recursos/actualizar') ?>/${idrecurso}`, {
         method: 'POST',
         body: formData
@@ -414,6 +390,25 @@ function actualizarRecurso()
     .then(response => response.json())
     .then(data => {
         if (data.status === 'success') {
+            console.log('🎉 Respuesta exitosa del servidor:', data);
+            
+            // Actualizar imagen inmediatamente si se cambió
+            if (archivoPortada) {
+                console.log('📸 Se detectó archivo de portada, actualizando imagen...');
+                if (data.nuevaRutaImagen) {
+                    console.log('✅ Nueva ruta recibida:', data.nuevaRutaImagen);
+                    
+                    // Actualizar imagen inmediatamente (optimizado)
+                    actualizarImagenEnVista(idrecurso, data.nuevaRutaImagen);
+                } else {
+                    console.warn('⚠️ No se recibió nuevaRutaImagen del servidor');
+                    // Forzar actualización de todas las imágenes del recurso con timestamp
+                    forzarActualizacionImagen(idrecurso);
+                }
+            } else {
+                console.log('ℹ️ No se cambió la imagen');
+            }
+            
             alerta.className = 'alert alert-success';
             alerta.innerHTML = `
                 <strong>¡Actualización exitosa!</strong><br>
@@ -421,33 +416,10 @@ function actualizarRecurso()
             `;
             alerta.classList.remove('d-none');
             
-            // Cerrar modal después de 2 segundos y recargar vista de recursos en el dashboard
+            // Cerrar modal rápidamente (optimizado)
             setTimeout(() => {
-                const modalElement = document.getElementById('modalEditarRecurso');
-                const modalInstance = bootstrap.Modal.getInstance(modalElement);
-                
-                // Cerrar modal correctamente
-                modalInstance.hide();
-                
-                // Limpiar backdrop y overlays manualmente
-                setTimeout(() => {
-                    // Eliminar backdrop si existe
-                    const backdrop = document.querySelector('.modal-backdrop');
-                    if (backdrop) {
-                        backdrop.remove();
-                    }
-                    
-                    // Restaurar scroll del body
-                    document.body.classList.remove('modal-open');
-                    document.body.style.overflow = '';
-                    document.body.style.paddingRight = '';
-                    
-                    // Cargar la vista de recursos en el contenedor principal del dashboard
-                    $.get('<?= base_url('recursos') ?>', function(html){ 
-                        $('#contenedor-principal').html(html); 
-                    });
-                }, 300);
-            }, 2000);
+                cerrarModalCompletamente();
+            }, 1000);
         } else {
             alerta.className = 'alert alert-danger';
             alerta.textContent = data.message || 'Error al actualizar recurso';
@@ -471,12 +443,254 @@ document.addEventListener('DOMContentLoaded', function() {
     toggleCamposDigitalEditar();
 });
 
+// Función para cerrar modal completamente
+function cerrarModalCompletamente() {
+    try {
+        // Forzar cierre inmediato
+        const modalElement = document.getElementById('modalEditarRecurso');
+        
+        if (modalElement) {
+            // Remover modal del DOM completamente
+            modalElement.remove();
+        }
+        
+        // Limpiar todos los backdrops
+        const backdrops = document.querySelectorAll('.modal-backdrop');
+        backdrops.forEach(backdrop => backdrop.remove());
+        
+        // Restaurar body completamente
+        document.body.classList.remove('modal-open');
+        document.body.style.overflow = '';
+        document.body.style.paddingRight = '';
+        document.body.style.overflowX = '';
+        document.body.style.overflowY = '';
+        document.body.removeAttribute('aria-hidden');
+        
+        // Forzar reflow
+        document.body.offsetHeight;
+        
+        // Recargar vista de recursos
+        if (typeof $ !== 'undefined' && $('#contenedor-principal').length > 0) {
+            $.get('<?= base_url('recursos') ?>', function(html){ 
+                $('#contenedor-principal').html(html); 
+            }).fail(function() {
+                console.error('Error al recargar la vista de recursos');
+                window.location.reload();
+            });
+        } else {
+            window.location.reload();
+        }
+    } catch (error) {
+        console.error('Error cerrando modal:', error);
+        // Fallback: recargar página
+        window.location.reload();
+    }
+}
+
 // Mostrar el modal automáticamente cuando se carga la vista (Bootstrap 5 nativo)
 document.addEventListener('DOMContentLoaded', function() {
     var modalEl = document.getElementById('modalEditarRecurso');
     if (modalEl) {
         var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
         modal.show();
+        
+        // Agregar event listeners para cerrar modal
+        modalEl.addEventListener('hidden.bs.modal', function() {
+            setTimeout(() => {
+                // Eliminar todos los backdrops
+                const backdrops = document.querySelectorAll('.modal-backdrop');
+                backdrops.forEach(backdrop => backdrop.remove());
+                
+                // Restaurar body completamente
+                document.body.classList.remove('modal-open');
+                document.body.style.overflow = '';
+                document.body.style.paddingRight = '';
+            }, 100);
+        });
+        
+        // Listener para botón de cerrar
+        const closeButtons = modalEl.querySelectorAll('[data-bs-dismiss="modal"]');
+        closeButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                setTimeout(() => {
+                    cerrarModalCompletamente();
+                }, 100);
+            });
+        });
+        
+        // Listener para tecla Escape
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && modalEl.classList.contains('show')) {
+                cerrarModalCompletamente();
+            }
+        });
+    }
+
+    /**
+     * Actualizar imagen en la vista sin recargar la página
+     */
+    function actualizarImagenEnVista(idrecurso, nuevaRutaImagen) {
+        try {
+            console.log(`⚡ Actualización RÁPIDA para recurso ${idrecurso}: ${nuevaRutaImagen}`);
+            
+            // Timestamp agresivo para forzar recarga inmediata
+            const timestamp = Date.now() + Math.random();
+            const nuevaUrl = `<?= base_url() ?>${nuevaRutaImagen}?v=${timestamp}`;
+            
+            // Actualizar TODAS las imágenes del recurso inmediatamente
+            const imagenesRecurso = document.querySelectorAll(`img[data-recurso-id="${idrecurso}"]`);
+            
+            if (imagenesRecurso.length > 0) {
+                console.log(`🖼️ Actualizando ${imagenesRecurso.length} imágenes inmediatamente`);
+                
+                imagenesRecurso.forEach((img, index) => {
+                    // Actualización inmediata sin esperas
+                    img.src = nuevaUrl;
+                    img.style.transition = 'opacity 0.2s ease';
+                    img.style.opacity = '0.7';
+                    
+                    // Restaurar opacidad rápidamente
+                    setTimeout(() => {
+                        img.style.opacity = '1';
+                    }, 200);
+                });
+            } else {
+                // Fallback rápido por patrón
+                console.log(`🔍 Búsqueda rápida por patrón -${idrecurso}.`);
+                document.querySelectorAll('img').forEach(img => {
+                    if (img.src.includes(`-${idrecurso}.`)) {
+                        img.src = nuevaUrl;
+                        img.style.transition = 'opacity 0.2s ease';
+                        img.style.opacity = '0.7';
+                        setTimeout(() => { img.style.opacity = '1'; }, 200);
+                    }
+                });
+            }
+            
+            console.log(`✅ Actualización instantánea completada`);
+            
+        } catch (error) {
+            console.error('❌ Error en actualización rápida:', error);
+        }
+    }
+
+    /**
+     * Forzar actualización de imagen cuando no se recibe la ruta del servidor
+     */
+    function forzarActualizacionImagen(idrecurso) {
+        try {
+            console.log(`🔄 Forzando actualización de imagen para recurso ${idrecurso}`);
+            
+            // Timestamp único para evitar caché
+            const timestamp = new Date().getTime();
+            
+            // Buscar todas las imágenes del recurso
+            const imagenesRecurso = document.querySelectorAll(`img[data-recurso-id="${idrecurso}"]`);
+            console.log(`🖼️ Imágenes encontradas para forzar actualización: ${imagenesRecurso.length}`);
+            
+            imagenesRecurso.forEach((img, index) => {
+                const urlActual = img.src;
+                console.log(`📸 Imagen ${index + 1} URL actual:`, urlActual);
+                
+                // Remover timestamp anterior si existe
+                const urlLimpia = urlActual.split('?')[0];
+                const nuevaUrl = `${urlLimpia}?v=${timestamp}`;
+                
+                console.log(`🔄 Nueva URL con timestamp:`, nuevaUrl);
+                
+                // Agregar efecto visual
+                img.style.opacity = '0.5';
+                img.style.transition = 'opacity 0.3s ease';
+                
+                // Actualizar src
+                img.src = nuevaUrl;
+                
+                img.onload = function() {
+                    this.style.opacity = '1';
+                    console.log(`✅ Imagen ${index + 1} recargada con timestamp`);
+                };
+                
+                img.onerror = function() {
+                    this.style.opacity = '1';
+                    console.error(`❌ Error recargando imagen ${index + 1}:`, nuevaUrl);
+                };
+            });
+            
+            // Si no encuentra por data-recurso-id, buscar por patrón
+            if (imagenesRecurso.length === 0) {
+                console.warn(`⚠️ No se encontraron imágenes con data-recurso-id="${idrecurso}"`);
+                console.log('🔍 Buscando por patrón en todas las imágenes...');
+                
+                const todasLasImagenes = document.querySelectorAll('img');
+                todasLasImagenes.forEach(img => {
+                    if (img.src.includes(`-${idrecurso}.`)) {
+                        console.log(`🎯 Encontrada imagen por patrón:`, img.src);
+                        const urlLimpia = img.src.split('?')[0];
+                        const nuevaUrl = `${urlLimpia}?v=${timestamp}`;
+                        
+                        img.style.opacity = '0.5';
+                        img.src = nuevaUrl;
+                        img.onload = function() {
+                            this.style.opacity = '1';
+                            this.style.transition = 'opacity 0.3s ease';
+                        };
+                    }
+                });
+            }
+            
+        } catch (error) {
+            console.error('❌ Error forzando actualización de imagen:', error);
+        }
+    }
+
+    /**
+     * Verificar que la imagen existe antes de actualizar la vista
+     */
+    function verificarYActualizarImagen(idrecurso, rutaImagen) {
+        try {
+            console.log(`🔍 Verificando existencia de imagen: ${rutaImagen}`);
+            
+            // Crear una imagen temporal para verificar si existe
+            const imgTest = new Image();
+            const baseUrl = '<?= base_url() ?>';
+            const urlCompleta = `${baseUrl}${rutaImagen}`;
+            
+            imgTest.onload = function() {
+                console.log(`✅ Imagen verificada exitosamente: ${urlCompleta}`);
+                // La imagen existe, proceder con la actualización
+                actualizarImagenEnVista(idrecurso, rutaImagen);
+            };
+            
+            imgTest.onerror = function() {
+                console.error(`❌ Error: Imagen no existe en ${urlCompleta}`);
+                console.log(`🔄 Intentando sincronización automática...`);
+                
+                // Si la imagen no existe, intentar sincronización
+                fetch('<?= base_url("recursos/actualizarRutasImagenes") ?>')
+                    .then(response => response.json())
+                    .then(syncData => {
+                        console.log('🔄 Sincronización completada:', syncData);
+                        
+                        // Después de sincronizar, forzar actualización
+                        setTimeout(() => {
+                            forzarActualizacionImagen(idrecurso);
+                        }, 1000);
+                    })
+                    .catch(error => {
+                        console.error('❌ Error en sincronización:', error);
+                        // Como último recurso, forzar actualización
+                        forzarActualizacionImagen(idrecurso);
+                    });
+            };
+            
+            // Iniciar la verificación
+            imgTest.src = urlCompleta;
+            
+        } catch (error) {
+            console.error('❌ Error verificando imagen:', error);
+            // Si hay error, usar el método de actualización normal
+            actualizarImagenEnVista(idrecurso, rutaImagen);
+        }
     }
 });
 </script>

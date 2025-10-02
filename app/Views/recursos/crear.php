@@ -3,7 +3,7 @@
     <div class="modal-dialog modal-xl">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Registrar Nuevo Recurso</h5>
+                <h5 class="modal-title">Registrar</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
@@ -197,8 +197,8 @@ if (modal) {
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label for="portada" class="form-label">Portada</label>
-                                <input type="file" class="form-control" id="portada" name="portada" accept="image/*">
-                                <div class="form-text">Formatos: JPG, PNG, GIF. Máximo 2MB</div>
+                                <input type="file" class="form-control" id="portada" name="portada" accept="image/jpeg,image/jpg,image/png,image/gif">
+                                <div class="form-text">Formatos: JPG, JPEG, PNG, GIF. Máximo 2MB</div>
                             </div>
                         </div>
                     </div>
@@ -224,33 +224,6 @@ if (modal) {
         </div>
     </div>
 </div>
-
-<style>
-/* Estilos para campos deshabilitados */
-.form-control-disabled {
-    background-color: #f8f9fa !important;
-    color: #6c757d !important;
-    cursor: not-allowed !important;
-    opacity: 0.7 !important;
-}
-
-.form-select-disabled {
-    background-color: #f8f9fa !important;
-    color: #6c757d !important;
-    cursor: not-allowed !important;
-    opacity: 0.7 !important;
-}
-
-.form-control-disabled:focus {
-    border-color: #ced4da !important;
-    box-shadow: none !important;
-}
-
-.form-select-disabled:focus {
-    border-color: #ced4da !important;
-    box-shadow: none !important;
-}
-</style>
 
 <script>
 // Cargar subcategorías basadas en la categoría seleccionada
@@ -617,8 +590,160 @@ document.addEventListener('DOMContentLoaded', function() {
 // Validación de tipo de recurso al cargar
 document.addEventListener('DOMContentLoaded', function() {
     // Establecer valores por defecto
-    document.getElementById('anio').value = new Date().getFullYear();
-    document.getElementById('stock').value = 1;
-    document.getElementById('estado').value = 'disponible';
+    const anioInput = document.getElementById('anio');
+    const stockInput = document.getElementById('stock');
+    const estadoSelect = document.getElementById('estado');
+    
+    if (anioInput) anioInput.value = new Date().getFullYear();
+    if (stockInput) stockInput.value = 1;  
+    if (estadoSelect) estadoSelect.value = 'disponible';
+});
+
+// SOLUCIÓN DIRECTA Y AGRESIVA PARA EL MODAL
+function forzarModalEncimaSidebar() {
+    const modal = document.getElementById('modalCrearRecurso');
+    
+    if (modal) {
+        // Aplicar estilos directamente con JavaScript
+        modal.style.zIndex = '99999';
+        modal.style.position = 'fixed';
+        
+        // Aplicar a elementos internos también
+        const modalDialog = modal.querySelector('.modal-dialog');
+        const modalContent = modal.querySelector('.modal-content');
+        
+        if (modalDialog) {
+            modalDialog.style.zIndex = '100000';
+            modalDialog.style.position = 'relative';
+        }
+        
+        if (modalContent) {
+            modalContent.style.zIndex = '100001';
+            modalContent.style.position = 'relative';
+        }
+        
+        // Mover al body si no está ahí
+        if (modal.parentElement.id !== 'body' && modal.parentElement !== document.body) {
+            document.body.appendChild(modal);
+            console.log('Modal movido al body');
+        }
+        
+        console.log('Z-index del modal forzado a 99999');
+    }
+}
+
+// Función global para reinicializar
+window.reinicializarModalRecurso = function() {
+    setTimeout(forzarModalEncimaSidebar, 50);
+};
+
+// Ejecutar inmediatamente al cargar
+document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(forzarModalEncimaSidebar, 100);
+    
+    // Ejecutar cada vez que se abra el modal
+    const modalElement = document.getElementById('modalCrearRecurso');
+    if (modalElement) {
+        modalElement.addEventListener('show.bs.modal', function() {
+            forzarModalEncimaSidebar();
+        });
+        
+        modalElement.addEventListener('shown.bs.modal', function() {
+            forzarModalEncimaSidebar();
+        });
+    }
+    
+    // Observar cambios en el DOM
+    const observer = new MutationObserver(function() {
+        const modal = document.getElementById('modalCrearRecurso');
+        if (modal) {
+            forzarModalEncimaSidebar();
+        }
+    });
+    
+    observer.observe(document.body, {
+        childList: true,
+        subtree: true
+    });
+    
+    // BOTÓN DE PRUEBA TEMPORAL (solo para desarrollo)
+    if (window.location.hostname === 'localhost' || window.location.hostname.includes('xampp')) {
+        const btnFix = document.createElement('button');
+        btnFix.innerHTML = '🔧 Fix Modal Z-Index';
+        btnFix.style.cssText = 'position:fixed;top:10px;right:10px;z-index:999999;background:#28a745;color:white;border:none;padding:8px 12px;border-radius:4px;font-size:12px;cursor:pointer;';
+        btnFix.onclick = function() {
+            forzarModalEncimaSidebar();
+            alert('Modal reconfigurado - Intenta abrirlo ahora');
+        };
+        document.body.appendChild(btnFix);
+    }
 });
 </script>
+
+<!-- CSS AGRESIVO para asegurar z-index correcto -->
+<style>
+/* SOLUCIÓN DEFINITIVA: Z-index extremadamente alto y específico */
+#modalCrearRecurso,
+#modalCrearRecurso.modal,
+#modalCrearRecurso.modal.fade,
+#modalCrearRecurso.modal.show {
+    z-index: 99999 !important;
+    position: fixed !important;
+}
+
+#modalCrearRecurso .modal-dialog {
+    z-index: 100000 !important;
+    position: relative !important;
+}
+
+#modalCrearRecurso .modal-content {
+    z-index: 100001 !important;
+    position: relative !important;
+}
+
+#modalCrearRecurso .modal-header,
+#modalCrearRecurso .modal-body,
+#modalCrearRecurso .modal-footer {
+    z-index: 100002 !important;
+    position: relative !important;
+}
+
+/* Backdrop con z-index inferior pero muy alto */
+.modal-backdrop,
+.modal-backdrop.fade,
+.modal-backdrop.show {
+    z-index: 99998 !important;
+}
+
+/* Sobrescribir cualquier regla del sidebar */
+.sidebar-hzg,
+.left-sidebar,
+aside.left-sidebar {
+    z-index: 1001 !important;
+}
+
+/* Reglas específicas con máxima especificidad */
+body .modal#modalCrearRecurso {
+    z-index: 99999 !important;
+}
+
+body .modal#modalCrearRecurso.show {
+    z-index: 99999 !important;
+    display: block !important;
+}
+
+html body .modal#modalCrearRecurso {
+    z-index: 99999 !important;
+}
+
+/* Fix específico para el contenedor principal */
+#contenedor-principal .modal#modalCrearRecurso {
+    z-index: 99999 !important;
+}
+
+/* Asegurar que funcione en el contexto del dashboard */
+.page-wrapper .modal#modalCrearRecurso,
+.body-wrapper .modal#modalCrearRecurso {
+    z-index: 99999 !important;
+}
+</style>

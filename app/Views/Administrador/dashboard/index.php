@@ -120,6 +120,10 @@
                       <i class="ti ti-help"></i>
                       <p class="mb-0">Ayuda</p>
                     </a>
+                    <a href="<?= base_url('/') ?>" class="dropdown-item">
+                      <i class="ti ti-book"></i>
+                      <p class="mb-0">Biblioteca Virtual</p>
+                    </a>
                     <a href="<?= base_url('logout') ?>" class="btn btn-outline-primary d-block">
                       <i class="ti ti-logout me-2"></i>Cerrar Sesión
                     </a>
@@ -145,6 +149,7 @@
     </div>
   </div>
   <script src="<?= base_url('./assets/libs/jquery/dist/jquery.min.js') ?>"></script>
+  <script src="<?= base_url('./assets/js/modal-fix.js') ?>"></script>
   <script>
   // Cargar contenido por defecto al inicializar
   $(document).ready(function() {
@@ -160,7 +165,8 @@
       $('#contenedor-principal').html('<div class="text-danger text-center py-5">Error al cargar el dashboard.</div>');
     });
   }
-
+  
+  // Manejar clics en enlaces AJAX
   $(document).on('click', '.ajax-link', function(e) {
     e.preventDefault();
     var url = $(this).attr('href');
@@ -171,6 +177,18 @@
       if (typeof window.initSidebarMenu === 'function') {
         window.initSidebarMenu(clickedUrl);
       }
+      // Reinicializar modales después de carga AJAX
+      setTimeout(function() {
+        if (url.includes('recursos') && typeof window.reinicializarModalRecurso === 'function') {
+          window.reinicializarModalRecurso();
+        }
+        if (url.includes('usuarios') && typeof window.reinicializarModalUsuario === 'function') {
+          window.reinicializarModalUsuario();
+        }
+        if (url.includes('usuarios') && typeof window.reinicializarModalDetalleUsuario === 'function') {
+          window.reinicializarModalDetalleUsuario();
+        }
+      }, 100);
     }).fail(function() {
       $('#contenedor-principal').html('<div class="text-danger">Error al cargar el contenido.</div>');
     });

@@ -44,9 +44,11 @@
                                 <td>
                                     <?php if (!empty($recurso['portada'])): ?>
                                         <img src="<?= base_url(esc($recurso['portada'])) ?>" alt="Portada" style="height:60px;width:auto;border-radius:4px;border:1px solid #e5e5e5;object-fit:cover;"
-                                             onerror="this.onerror=null;this.src='<?= base_url('img/portada_default.png') ?>';">
+                                             data-recurso-id="<?= $recurso['idrecurso'] ?>"
+                                             onerror="console.error('Error cargando imagen:', this.src); this.onerror=null;this.src='<?= base_url('img/portada_default.png') ?>';">
                                     <?php else: ?>
-                                        <img src="<?= base_url('img/portada_default.png') ?>" alt="Sin portada" style="height:60px;width:auto;border-radius:4px;border:1px solid #e5e5e5;object-fit:cover;">
+                                        <img src="<?= base_url('img/portada_default.png') ?>" alt="Sin portada" style="height:60px;width:auto;border-radius:4px;border:1px solid #e5e5e5;object-fit:cover;"
+                                             data-recurso-id="<?= $recurso['idrecurso'] ?>">
                                     <?php endif; ?>
                                 </td>
                                 <td>

@@ -1,6 +1,4 @@
-<?php if (isset($header)): ?>
-<?= $header ?>
-<?php endif; ?>
+
 
 <!-- Modal para editar recurso -->
 <div class="modal fade" id="modalEditarRecurso" tabindex="-1">
@@ -210,8 +208,8 @@
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label for="rutaportada" class="form-label">Portada</label>
-                                <input type="file" class="form-control" id="rutaportada" name="rutaportada" accept="image/*">
-                                <div class="form-text">Formatos: JPG, PNG, GIF. Máximo 2MB</div>
+                                <input type="file" class="form-control" id="rutaportada" name="rutaportada" accept="image/jpeg,image/jpg,image/png,image/gif">
+                                <div class="form-text">Formatos: JPG, JPEG, PNG, GIF. Máximo 2MB</div>
                             </div>
                         </div>
                     </div>
