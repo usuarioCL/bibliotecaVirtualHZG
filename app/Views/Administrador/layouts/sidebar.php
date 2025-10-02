@@ -198,7 +198,7 @@
              href="<?= base_url('docentes'); ?>"
              title="Gestionar docentes">
             <div class="d-flex align-items-center gap-3">
-              <i class="ti ti-user-star fs-5"></i>
+              <i class="ti ti-user-check fs-5"></i>
               <span class="hide-menu">Docentes</span>
             </div>
           </a>
