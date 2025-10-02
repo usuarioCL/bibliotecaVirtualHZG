@@ -1428,4 +1428,51 @@ public function actualizar($idrecurso)
             ]);
         }
     }
+
+    /**
+     * Endpoint de prueba para verificar acceso a PDFs
+     */
+    public function testPDF($idrecurso)
+    {
+        $recursoDigitalModel = new \App\Models\RecursoDigitalModel();
+        $recursoModel = new \App\Models\RecursoModel();
+        
+        // Obtener información del recurso
+        $recurso = $recursoModel->find($idrecurso);
+        $recursoDigital = $recursoDigitalModel->find($idrecurso);
+        
+        if (!$recurso || !$recursoDigital) {
+            return $this->response->setJSON([
+                'error' => 'Recurso no encontrado',
+                'idrecurso' => $idrecurso
+            ]);
+        }
+        
+        $archivo = $recursoDigital['archivo'];
+        if (!$archivo) {
+            return $this->response->setJSON([
+                'error' => 'No hay archivo asociado',
+                'recurso' => $recurso,
+                'recursoDigital' => $recursoDigital
+            ]);
+        }
+        
+        // Verificar si el archivo existe físicamente
+        $rutaCompleta = FCPATH . $archivo;
+        $existeArchivo = file_exists($rutaCompleta);
+        
+        // URL completa
+        $urlCompleta = base_url($archivo);
+        
+        return $this->response->setJSON([
+            'recurso' => $recurso,
+            'recursoDigital' => $recursoDigital,
+            'archivo' => $archivo,
+            'rutaCompleta' => $rutaCompleta,
+            'existeArchivo' => $existeArchivo,
+            'urlCompleta' => $urlCompleta,
+            'tamaño' => $existeArchivo ? filesize($rutaCompleta) : 0,
+            'FCPATH' => FCPATH
+        ]);
+    }
 }

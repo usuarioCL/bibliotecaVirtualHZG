@@ -108,12 +108,10 @@ $routes->post('/recursos/actualizar/(:num)', 'RecursoController::actualizar/$1')
 $routes->get('/recursos/eliminar/(:num)', 'RecursoController::eliminar/$1');
 $routes->post('/recursos/eliminar/(:num)', 'RecursoController::eliminar/$1');
 $routes->get('/recursos/detalles/(:num)', 'RecursoController::detalles/$1');
-$routes->get('/recursos/migrarRutasImagenes', 'RecursoController::migrarRutasImagenes');
-$routes->get('/recursos/limpiarRutasImagenes', 'RecursoController::limpiarRutasImagenes');
-$routes->get('/recursos/limpiarDuplicados', 'RecursoController::limpiarDuplicados');
-$routes->get('/recursos/sincronizarImagenes', 'RecursoController::sincronizarImagenes');
+// Rutas de mantenimiento y debug (remover en producción)
 $routes->get('/recursos/actualizarRutasImagenes', 'RecursoController::actualizarRutasImagenes');
 $routes->get('/recursos/debugImagenes', 'RecursoController::debugImagenes');
+$routes->get('/recursos/testPDF/(:num)', 'RecursoController::testPDF/$1');
 
 // Autores (CRUD)
 $routes->group('autores', function($routes) {

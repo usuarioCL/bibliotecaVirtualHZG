@@ -148,14 +148,37 @@ $imagenPrefix = $imagenPrefix ?? '';
         
         <!-- Footer de la card -->
         <div class="card-footer bg-transparent border-top-0">
-            <button type="button" 
-                    class="btn btn-sm btn-outline-primary w-100 btn-detalles-recurso" 
-                    data-bs-toggle="modal" 
-                    data-bs-target="#libroModal"
-                    data-libro-id="<?= $libro['idrecurso'] ?>"
-                    onclick="cargarDetallesLibro(<?= $libro['idrecurso'] ?>)">
-                Ver detalles
-            </button>
+            <?php if ($esDigital && isset($libro['archivo']) && !empty($libro['archivo'])): ?>
+                <!-- Botones para recursos digitales -->
+                <div class="d-flex gap-1">
+                    <button type="button" 
+                            class="btn btn-sm btn-success flex-fill btn-leer-pdf" 
+                            onclick="leerPDFDirecto('<?= base_url($libro['archivo']) ?>', '<?= esc($libro['titulo']) ?>')">
+                        <i class="fas fa-book-open me-1"></i>
+                        Leer
+                    </button>
+                    <button type="button" 
+                            class="btn btn-sm btn-outline-primary flex-fill btn-detalles-recurso" 
+                            data-bs-toggle="modal" 
+                            data-bs-target="#libroModal"
+                            data-libro-id="<?= $libro['idrecurso'] ?>"
+                            onclick="cargarDetallesLibro(<?= $libro['idrecurso'] ?>)">
+                        <i class="fas fa-info-circle me-1"></i>
+                        Detalles
+                    </button>
+                </div>
+            <?php else: ?>
+                <!-- Botón para recursos físicos -->
+                <button type="button" 
+                        class="btn btn-sm btn-outline-primary w-100 btn-detalles-recurso" 
+                        data-bs-toggle="modal" 
+                        data-bs-target="#libroModal"
+                        data-libro-id="<?= $libro['idrecurso'] ?>"
+                        onclick="cargarDetallesLibro(<?= $libro['idrecurso'] ?>)">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Ver detalles
+                </button>
+            <?php endif; ?>
         </div>
     </div>
 </div>
