@@ -814,7 +814,7 @@ public function actualizar($idrecurso)
     public function crearModal(): string
     {
         $recursoModel = new RecursoModel();
-        $autorModel = new \App\Models\AutorModel();
+        $autorModel = new AutorModel();
 
         try {
             // Obtener valores ENUM de estado
