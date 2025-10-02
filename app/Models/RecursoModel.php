@@ -135,7 +135,7 @@ class RecursoModel extends Model
             categorias.categoria,
             editoriales.editorial,
             tiporecursos.tiporecurso,
-            rf.portada as rutaportada,
+            COALESCE(rf.portada, rd.portada) as rutaportada,
             rd.archivo
         ')
             ->join('subcategorias', 'subcategorias.idsubcategoria = recursos.idsubcategoria', 'left')
@@ -177,7 +177,7 @@ class RecursoModel extends Model
             categorias.categoria,
             editoriales.editorial,
             tiporecursos.tiporecurso,
-            rf.portada as rutaportada,
+            COALESCE(rf.portada, rd.portada) as rutaportada,
             rd.archivo
         ')
             ->join('subcategorias', 'subcategorias.idsubcategoria = recursos.idsubcategoria', 'left')
@@ -251,7 +251,7 @@ class RecursoModel extends Model
             editoriales.editorial,
             tiporecursos.tiporecurso,
             rf.encuadernacion,
-            rf.portada,
+            COALESCE(rf.portada, rd.portada) as portada,
             rd.archivo
         ')
         ->join('subcategorias', 'subcategorias.idsubcategoria = recursos.idsubcategoria', 'left')
