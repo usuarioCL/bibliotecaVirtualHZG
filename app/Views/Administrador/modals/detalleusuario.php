@@ -159,3 +159,127 @@
         </div>
     </div>
 </div>
+
+<script>
+// SOLUCIÓN PARA EL PROBLEMA DEL MODAL DETALLE USUARIO DEBAJO DEL SIDEBAR
+function forzarModalDetalleEncimaSidebar() {
+    const modal = document.getElementById('modalDetalleUsuario');
+    
+    if (modal) {
+        // Aplicar estilos directamente con JavaScript
+        modal.style.zIndex = '99999';
+        modal.style.position = 'fixed';
+        
+        // Aplicar a elementos internos también
+        const modalDialog = modal.querySelector('.modal-dialog');
+        const modalContent = modal.querySelector('.modal-content');
+        
+        if (modalDialog) {
+            modalDialog.style.zIndex = '100000';
+            modalDialog.style.position = 'relative';
+        }
+        
+        if (modalContent) {
+            modalContent.style.zIndex = '100001';
+            modalContent.style.position = 'relative';
+        }
+        
+        // Mover al body si no está ahí
+        if (modal.parentElement.id !== 'body' && modal.parentElement !== document.body) {
+            document.body.appendChild(modal);
+            console.log('Modal detalle usuario movido al body');
+        }
+        
+        console.log('Z-index del modal detalle usuario forzado a 99999');
+    }
+}
+
+// Función global para reinicializar
+window.reinicializarModalDetalleUsuario = function() {
+    setTimeout(forzarModalDetalleEncimaSidebar, 50);
+};
+
+// Configurar el modal cuando se carga
+document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(forzarModalDetalleEncimaSidebar, 100);
+    
+    // Ejecutar cada vez que se abra el modal
+    const modalElement = document.getElementById('modalDetalleUsuario');
+    if (modalElement) {
+        modalElement.addEventListener('show.bs.modal', function() {
+            forzarModalDetalleEncimaSidebar();
+        });
+        
+        modalElement.addEventListener('shown.bs.modal', function() {
+            forzarModalDetalleEncimaSidebar();
+        });
+    }
+    
+    // Observar cambios en el DOM
+    const observer = new MutationObserver(function() {
+        const modal = document.getElementById('modalDetalleUsuario');
+        if (modal) {
+            forzarModalDetalleEncimaSidebar();
+        }
+    });
+    
+    observer.observe(document.body, {
+        childList: true,
+        subtree: true
+    });
+});
+</script>
+
+<!-- CSS AGRESIVO para asegurar z-index correcto del modal detalle usuario -->
+<style>
+/* SOLUCIÓN DEFINITIVA: Z-index extremadamente alto para modal detalle usuario */
+#modalDetalleUsuario,
+#modalDetalleUsuario.modal,
+#modalDetalleUsuario.modal.fade,
+#modalDetalleUsuario.modal.show {
+    z-index: 99999 !important;
+    position: fixed !important;
+}
+
+#modalDetalleUsuario .modal-dialog {
+    z-index: 100000 !important;
+    position: relative !important;
+}
+
+#modalDetalleUsuario .modal-content {
+    z-index: 100001 !important;
+    position: relative !important;
+}
+
+#modalDetalleUsuario .modal-header,
+#modalDetalleUsuario .modal-body,
+#modalDetalleUsuario .modal-footer {
+    z-index: 100002 !important;
+    position: relative !important;
+}
+
+/* Reglas específicas con máxima especificidad */
+body .modal#modalDetalleUsuario {
+    z-index: 99999 !important;
+}
+
+body .modal#modalDetalleUsuario.show {
+    z-index: 99999 !important;
+    display: block !important;
+}
+
+html body .modal#modalDetalleUsuario {
+    z-index: 99999 !important;
+}
+
+/* Fix específico para el contenedor principal */
+#contenedor-principal .modal#modalDetalleUsuario {
+    z-index: 99999 !important;
+}
+
+/* Asegurar que funcione en el contexto del dashboard */
+.page-wrapper .modal#modalDetalleUsuario,
+.body-wrapper .modal#modalDetalleUsuario {
+    z-index: 99999 !important;
+}
+</style>

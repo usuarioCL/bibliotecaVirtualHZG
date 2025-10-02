@@ -1,6 +1,4 @@
-<?php if (isset($header)): ?>
-<?= $header ?>
-<?php endif; ?>
+
 
 <!-- Modal para editar recurso -->
 <div class="modal fade" id="modalEditarRecurso" tabindex="-1">

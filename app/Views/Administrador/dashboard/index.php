@@ -149,6 +149,7 @@
     </div>
   </div>
   <script src="<?= base_url('./assets/libs/jquery/dist/jquery.min.js') ?>"></script>
+  <script src="<?= base_url('./assets/js/modal-fix.js') ?>"></script>
   <script>
   // Cargar contenido por defecto al inicializar
   $(document).ready(function() {
@@ -176,6 +177,18 @@
       if (typeof window.initSidebarMenu === 'function') {
         window.initSidebarMenu(clickedUrl);
       }
+      // Reinicializar modales después de carga AJAX
+      setTimeout(function() {
+        if (url.includes('recursos') && typeof window.reinicializarModalRecurso === 'function') {
+          window.reinicializarModalRecurso();
+        }
+        if (url.includes('usuarios') && typeof window.reinicializarModalUsuario === 'function') {
+          window.reinicializarModalUsuario();
+        }
+        if (url.includes('usuarios') && typeof window.reinicializarModalDetalleUsuario === 'function') {
+          window.reinicializarModalDetalleUsuario();
+        }
+      }, 100);
     }).fail(function() {
       $('#contenedor-principal').html('<div class="text-danger">Error al cargar el contenido.</div>');
     });

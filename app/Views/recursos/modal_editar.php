@@ -3,7 +3,7 @@
     <div class="modal-dialog modal-xl">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Editar Recurso</h5>
+                <h5 class="modal-title">Editar Recurso </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
@@ -208,33 +208,6 @@
         </div>
     </div>
 </div>
-
-<style>
-/* Estilos para campos deshabilitados */
-.form-control-disabled {
-    background-color: #f8f9fa !important;
-    color: #6c757d !important;
-    cursor: not-allowed !important;
-    opacity: 0.7 !important;
-}
-
-.form-select-disabled {
-    background-color: #f8f9fa !important;
-    color: #6c757d !important;
-    cursor: not-allowed !important;
-    opacity: 0.7 !important;
-}
-
-.form-control-disabled:focus {
-    border-color: #ced4da !important;
-    box-shadow: none !important;
-}
-
-.form-select-disabled:focus {
-    border-color: #ced4da !important;
-    box-shadow: none !important;
-}
-</style>
 
 <script>
 // Cargar subcategorías basadas en la categoría seleccionada (para editar)

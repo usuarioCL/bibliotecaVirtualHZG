@@ -661,4 +661,126 @@ function recargarVistaUsuarios() {
 
 // Hacer la función disponible globalmente
 window.recargarVistaUsuarios = recargarVistaUsuarios;
+
+// SOLUCIÓN PARA EL PROBLEMA DEL MODAL DEBAJO DEL SIDEBAR
+function forzarModalUsuarioEncimaSidebar() {
+    const modal = document.getElementById('modalNuevoUsuario');
+    
+    if (modal) {
+        // Aplicar estilos directamente con JavaScript
+        modal.style.zIndex = '99999';
+        modal.style.position = 'fixed';
+        
+        // Aplicar a elementos internos también
+        const modalDialog = modal.querySelector('.modal-dialog');
+        const modalContent = modal.querySelector('.modal-content');
+        
+        if (modalDialog) {
+            modalDialog.style.zIndex = '100000';
+            modalDialog.style.position = 'relative';
+        }
+        
+        if (modalContent) {
+            modalContent.style.zIndex = '100001';
+            modalContent.style.position = 'relative';
+        }
+        
+        // Mover al body si no está ahí
+        if (modal.parentElement.id !== 'body' && modal.parentElement !== document.body) {
+            document.body.appendChild(modal);
+            console.log('Modal de usuario movido al body');
+        }
+        
+        console.log('Z-index del modal de usuario forzado a 99999');
+    }
+}
+
+// Función global para reinicializar
+window.reinicializarModalUsuario = function() {
+    setTimeout(forzarModalUsuarioEncimaSidebar, 50);
+};
+
+// Configurar el modal cuando se carga
+document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(forzarModalUsuarioEncimaSidebar, 100);
+    
+    // Ejecutar cada vez que se abra el modal
+    const modalElement = document.getElementById('modalNuevoUsuario');
+    if (modalElement) {
+        modalElement.addEventListener('show.bs.modal', function() {
+            forzarModalUsuarioEncimaSidebar();
+        });
+        
+        modalElement.addEventListener('shown.bs.modal', function() {
+            forzarModalUsuarioEncimaSidebar();
+        });
+    }
+    
+    // Observar cambios en el DOM
+    const observer = new MutationObserver(function() {
+        const modal = document.getElementById('modalNuevoUsuario');
+        if (modal) {
+            forzarModalUsuarioEncimaSidebar();
+        }
+    });
+    
+    observer.observe(document.body, {
+        childList: true,
+        subtree: true
+    });
+});
 </script>
+
+<!-- CSS AGRESIVO para asegurar z-index correcto del modal de usuario -->
+<style>
+/* SOLUCIÓN DEFINITIVA: Z-index extremadamente alto para modal de usuario */
+#modalNuevoUsuario,
+#modalNuevoUsuario.modal,
+#modalNuevoUsuario.modal.fade,
+#modalNuevoUsuario.modal.show {
+    z-index: 99999 !important;
+    position: fixed !important;
+}
+
+#modalNuevoUsuario .modal-dialog {
+    z-index: 100000 !important;
+    position: relative !important;
+}
+
+#modalNuevoUsuario .modal-content {
+    z-index: 100001 !important;
+    position: relative !important;
+}
+
+#modalNuevoUsuario .modal-header,
+#modalNuevoUsuario .modal-body,
+#modalNuevoUsuario .modal-footer {
+    z-index: 100002 !important;
+    position: relative !important;
+}
+
+/* Reglas específicas con máxima especificidad */
+body .modal#modalNuevoUsuario {
+    z-index: 99999 !important;
+}
+
+body .modal#modalNuevoUsuario.show {
+    z-index: 99999 !important;
+    display: block !important;
+}
+
+html body .modal#modalNuevoUsuario {
+    z-index: 99999 !important;
+}
+
+/* Fix específico para el contenedor principal */
+#contenedor-principal .modal#modalNuevoUsuario {
+    z-index: 99999 !important;
+}
+
+/* Asegurar que funcione en el contexto del dashboard */
+.page-wrapper .modal#modalNuevoUsuario,
+.body-wrapper .modal#modalNuevoUsuario {
+    z-index: 99999 !important;
+}
+</style>
