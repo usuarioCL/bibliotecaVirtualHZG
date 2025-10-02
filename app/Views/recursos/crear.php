@@ -384,6 +384,13 @@ document.getElementById('isbn').addEventListener('input', function()
 // Función para registrar recurso
 function registrarRecurso() 
 {
+    // Verificar que Bootstrap esté disponible
+    if (typeof bootstrap === 'undefined') {
+        console.error('Bootstrap no está cargado');
+        alert('Error: Bootstrap no está disponible. Por favor, recarga la página.');
+        return;
+    }
+    
     const form = document.getElementById('formNuevoRecurso');
     const formData = new FormData(form);
     const alerta = document.getElementById('alertaValidacionRecurso');
@@ -449,29 +456,67 @@ function registrarRecurso()
             // Cerrar modal después de 2 segundos y recargar vista de recursos en el dashboard
             setTimeout(() => {
                 const modalElement = document.getElementById('modalCrearRecurso');
-                const modalInstance = bootstrap.Modal.getInstance(modalElement);
                 
-                // Cerrar modal correctamente
-                modalInstance.hide();
-                
-                // Limpiar backdrop y overlays manualmente
-                setTimeout(() => {
-                    // Eliminar backdrop si existe
-                    const backdrop = document.querySelector('.modal-backdrop');
-                    if (backdrop) {
-                        backdrop.remove();
+                // Verificar que el modal existe
+                if (modalElement) {
+                    // Intentar obtener la instancia del modal
+                    let modalInstance = bootstrap.Modal.getInstance(modalElement);
+                    
+                    // Si no existe instancia, crear una nueva
+                    if (!modalInstance) {
+                        modalInstance = new bootstrap.Modal(modalElement);
                     }
                     
-                    // Restaurar scroll del body
-                    document.body.classList.remove('modal-open');
-                    document.body.style.overflow = '';
-                    document.body.style.paddingRight = '';
+                    // Cerrar modal correctamente
+                    modalInstance.hide();
                     
-                    // Cargar la vista de recursos en el contenedor principal del dashboard
-                    $.get('<?= base_url('recursos') ?>', function(html){ 
-                        $('#contenedor-principal').html(html); 
-                    });
-                }, 300);
+                    // Limpiar backdrop y overlays manualmente
+                    setTimeout(() => {
+                        // Función para limpiar completamente el modal
+                        function limpiarModalCompletamente() {
+                            // Eliminar todos los backdrops
+                            const backdrops = document.querySelectorAll('.modal-backdrop');
+                            backdrops.forEach(backdrop => backdrop.remove());
+                            
+                            // Restaurar scroll del body completamente
+                            document.body.classList.remove('modal-open');
+                            document.body.style.overflow = '';
+                            document.body.style.paddingRight = '';
+                            document.body.style.overflowX = '';
+                            document.body.style.overflowY = '';
+                            
+                            // Eliminar cualquier clase modal que pueda quedar
+                            document.body.classList.remove('modal-open');
+                            
+                            // Forzar reflow para asegurar que los cambios se apliquen
+                            document.body.offsetHeight;
+                        }
+                        
+                        // Limpiar inmediatamente
+                        limpiarModalCompletamente();
+                        
+                        // Limpiar nuevamente después de un breve delay para asegurar
+                        setTimeout(limpiarModalCompletamente, 100);
+                        
+                        // Cargar la vista de recursos en el contenedor principal del dashboard
+                        if (typeof $ !== 'undefined' && $('#contenedor-principal').length > 0) {
+                            $.get('<?= base_url('recursos') ?>', function(html){ 
+                                $('#contenedor-principal').html(html); 
+                            }).fail(function() {
+                                console.error('Error al recargar la vista de recursos');
+                                // Recargar la página como fallback
+                                window.location.reload();
+                            });
+                        } else {
+                            // Si no hay contenedor principal, recargar la página
+                            window.location.reload();
+                        }
+                    }, 300);
+                } else {
+                    console.error('Modal element not found');
+                    // Recargar la página como fallback
+                    window.location.reload();
+                }
             }, 2000);
         } else {
             alerta.className = 'alert alert-danger';
@@ -480,18 +525,93 @@ function registrarRecurso()
         }
     })
     .catch(error => {
+        console.error('Error en registrarRecurso:', error);
         alerta.className = 'alert alert-danger';
-        alerta.textContent = 'Error de conexión';
+        alerta.textContent = 'Error de conexión: ' + error.message;
         alerta.classList.remove('d-none');
     });
 }
 
-// Limpiar formulario cuando se cierre el modal
-document.getElementById('modalCrearRecurso').addEventListener('hidden.bs.modal', function() {
-    document.getElementById('formNuevoRecurso').reset();
-    document.getElementById('idsubcategoria').innerHTML = '<option value="">Primero seleccione una categoría</option>';
-    document.getElementById('campoArchivoDigital').style.display = 'none';
-    document.getElementById('alertaValidacionRecurso').classList.add('d-none');
+// Función para limpiar completamente el backdrop del modal
+function limpiarBackdropModal() {
+    // Eliminar todos los backdrops
+    const backdrops = document.querySelectorAll('.modal-backdrop');
+    backdrops.forEach(backdrop => backdrop.remove());
+    
+    // Restaurar scroll del body completamente
+    document.body.classList.remove('modal-open');
+    document.body.style.overflow = '';
+    document.body.style.paddingRight = '';
+    document.body.style.overflowX = '';
+    document.body.style.overflowY = '';
+    
+    // Forzar reflow para asegurar que los cambios se apliquen
+    document.body.offsetHeight;
+}
+
+// Función para inicializar el modal de forma segura
+function inicializarModalRecurso() {
+    const modalElement = document.getElementById('modalCrearRecurso');
+    if (modalElement) {
+        // Limpiar formulario cuando se cierre el modal
+        modalElement.addEventListener('hidden.bs.modal', function() {
+            const form = document.getElementById('formNuevoRecurso');
+            const alerta = document.getElementById('alertaValidacionRecurso');
+            const subcategoriaSelect = document.getElementById('idsubcategoria');
+            const campoArchivo = document.getElementById('campoArchivoDigital');
+            
+            if (form) form.reset();
+            if (alerta) alerta.classList.add('d-none');
+            if (subcategoriaSelect) {
+                subcategoriaSelect.innerHTML = '<option value="">Primero seleccione una categoría</option>';
+            }
+            if (campoArchivo) campoArchivo.style.display = 'none';
+            
+            // Limpiar backdrop después de cerrar el modal
+            setTimeout(limpiarBackdropModal, 100);
+        });
+        
+        // Agregar evento para el botón de cerrar (X)
+        const btnClose = modalElement.querySelector('.btn-close');
+        if (btnClose) {
+            btnClose.addEventListener('click', function() {
+                setTimeout(limpiarBackdropModal, 300);
+            });
+        }
+        
+        // Agregar evento para el botón Cancelar
+        const btnCancel = modalElement.querySelector('button[data-bs-dismiss="modal"]');
+        if (btnCancel) {
+            btnCancel.addEventListener('click', function() {
+                setTimeout(limpiarBackdropModal, 300);
+            });
+        }
+    }
+}
+
+// Función de emergencia para limpiar backdrop con tecla Escape
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        // Si hay un backdrop visible, limpiarlo
+        const backdrop = document.querySelector('.modal-backdrop');
+        if (backdrop) {
+            limpiarBackdropModal();
+        }
+    }
+});
+
+// Limpiar formulario cuando se cierre el modal (versión mejorada)
+document.addEventListener('DOMContentLoaded', function() {
+    inicializarModalRecurso();
+    
+    // Agregar un botón de emergencia para limpiar backdrop (solo para desarrollo)
+    if (window.location.hostname === 'localhost' || window.location.hostname.includes('test')) {
+        const emergencyBtn = document.createElement('button');
+        emergencyBtn.innerHTML = '🔧 Limpiar Backdrop';
+        emergencyBtn.style.cssText = 'position:fixed;top:10px;right:10px;z-index:9999;background:red;color:white;border:none;padding:5px;border-radius:3px;font-size:12px;';
+        emergencyBtn.onclick = limpiarBackdropModal;
+        document.body.appendChild(emergencyBtn);
+    }
 });
 
 // Validación de tipo de recurso al cargar

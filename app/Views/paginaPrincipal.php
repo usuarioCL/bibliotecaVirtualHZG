@@ -142,24 +142,30 @@
                 <div class="card-body px-0">
                     <div class="row">
                         <div class="col-12 text-center mb-4 border-bottom pb-3">
-                            <h2 class="text-primary mb-2">Recursos Destacados</h2>
-                            <p class="text-muted">Los más solicitados en nuestra biblioteca</p>
+                            <h2 class="text-primary mb-2">Nuestros Recursos</h2>
+                            <p class="text-muted">
+                                Todos los recursos disponibles en nuestra biblioteca
+                                <?php if (!empty($librosPopulares)): ?>
+                                    <span class="badge badge-contador-recursos ms-2"><?= count($librosPopulares) ?> recursos</span>
+                                <?php endif; ?>
+                            </p>
                         </div>
                     </div>
                     
-                    <div class="row">
+                    <div class="row contenedor-recursos">
                         <?php if (!empty($librosPopulares)): ?>
                             <?php foreach ($librosPopulares as $libro): ?>
                                 <?= view('partials/libro_card', [
                                     'libro' => $libro,
-                                    'imagenPrefix' => base_url('public/')
+                                    'imagenPrefix' => base_url('public/'),
+                                    'colClasses' => 'col-lg-2 col-md-4 col-sm-6'
                                 ]) ?>
                             <?php endforeach; ?>
                         <?php else: ?>
                             <div class="col-12">
                                 <div class="alert alert-info text-center">
                                     <i class="fas fa-info-circle me-2"></i>
-                                    No hay libros populares disponibles en este momento.
+                                    No hay recursos disponibles en este momento.
                                 </div>
                             </div>
                         <?php endif; ?>
@@ -175,5 +181,64 @@
                 </div>
     </div>
 <!-- Fin de sección -->
+
+<!-- Modal para detalles del libro -->
+<div class="modal fade" id="libroModal" tabindex="-1" aria-labelledby="libroModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="libroModalLabel">Detalles del Recurso</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="libroModalBody">
+                <div class="text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                    <p class="mt-2">Cargando detalles del recurso...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 </div>
 <?= $footer ?>
+
+<script>
+// Función para cargar detalles del libro
+function cargarDetallesLibro(idRecurso) {
+    const modalBody = document.getElementById('libroModalBody');
+    
+    // Mostrar loading
+    modalBody.innerHTML = `
+        <div class="text-center">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Cargando...</span>
+            </div>
+            <p class="mt-2">Cargando detalles del recurso...</p>
+        </div>
+    `;
+    
+    // Cargar detalles via AJAX
+    fetch(`<?= base_url('recursos/detalles/') ?>${idRecurso}`)
+        .then(response => response.text())
+        .then(html => {
+            modalBody.innerHTML = html;
+        })
+        .catch(error => {
+            console.error('Error al cargar detalles:', error);
+            modalBody.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Error al cargar los detalles del recurso.
+                </div>
+            `;
+        });
+}
+
+// Limpiar modal cuando se cierre
+document.getElementById('libroModal').addEventListener('hidden.bs.modal', function() {
+    document.getElementById('libroModalBody').innerHTML = '';
+});
+</script>

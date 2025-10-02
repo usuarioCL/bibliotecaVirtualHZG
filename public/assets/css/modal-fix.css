@@ -1,0 +1,53 @@
+/* Fix para el problema del backdrop gris del modal */
+
+/* Asegurar que el backdrop se elimine correctamente */
+.modal-backdrop {
+    z-index: 1040 !important;
+}
+
+/* Limpiar estilos del body cuando el modal se cierra */
+body.modal-open {
+    overflow: hidden !important;
+    padding-right: 0 !important;
+}
+
+/* Forzar limpieza del backdrop */
+.modal-backdrop.fade {
+    opacity: 0;
+}
+
+.modal-backdrop.show {
+    opacity: 0.5;
+}
+
+/* Asegurar que el modal tenga el z-index correcto */
+.modal {
+    z-index: 1050 !important;
+}
+
+/* Estilo para el botón de emergencia */
+#emergency-backdrop-btn {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    z-index: 9999;
+    background: #dc3545;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+#emergency-backdrop-btn:hover {
+    background: #c82333;
+}
+
+/* Ocultar el botón de emergencia en producción */
+@media (min-width: 1200px) {
+    #emergency-backdrop-btn {
+        display: none;
+    }
+}

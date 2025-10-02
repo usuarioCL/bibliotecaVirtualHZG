@@ -20,8 +20,8 @@ class Home extends Controller
         $categorias = $categoriaModel->findAll();
         //Obtener recursos destacados (los más recientes por ahora)
         $recursosDestacados = $recursoModel->obtenerRecursosDestacados(8);
-        //Obtener libros populares
-        $librosPopulares = $recursoModel->obtenerLibrosPopulares(6);
+        //Obtener todos los recursos disponibles
+        $librosPopulares = $recursoModel->obtenerTodosLosRecursos();
 
         $data = ['header' => view('layouts/header'),
                  'footer' => view('layouts/footer'),

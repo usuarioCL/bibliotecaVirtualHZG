@@ -7,6 +7,7 @@
   <link rel="shortcut icon" type="image/png" href="<?= base_url('./assets/images/logos/favicon.png') ?>" />
   <link rel="stylesheet" href="<?= base_url('./assets/css/styles.min.css') ?>">
   <link rel="stylesheet" href="<?= base_url('assets/css/sidebar-hzg.css') ?>">
+  <link rel="stylesheet" href="<?= base_url('assets/css/modal-fix.css') ?>">
   <!-- SweetAlert2 -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
