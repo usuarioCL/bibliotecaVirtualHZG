@@ -32,11 +32,16 @@ $routes->group('usuarios', function($routes) {
     $routes->get('crear', 'UsuarioController::crear');                    // Formulario de creación
     $routes->post('crear', 'UsuarioController::crear');                   // Procesar creación
     $routes->post('crear-completo', 'UsuarioController::crearCompleto');   // Crear persona y usuario completo
+    $routes->post('actualizar', 'UsuarioController::actualizar');         // Actualizar usuario y persona
+    $routes->delete('eliminar/(:num)', 'UsuarioController::eliminar/$1');  // Eliminar usuario por ID
+    $routes->delete('eliminar-simple/(:num)', 'UsuarioController::eliminarSimple/$1');  // Eliminación simple para pruebas
     $routes->get('listar', 'UsuarioController::listar');                  // Listar usuarios (JSON)
     $routes->get('obtener/(:num)', 'UsuarioController::obtener/$1');      // Obtener usuario por ID
+    $routes->get('buscar-por-dni', 'UsuarioController::buscarPorDni');     // Buscar usuario por DNI
+    $routes->get('test/(:any)', 'UsuarioController::test/$1');             // Método de prueba de conectividad
+    $routes->get('test', 'UsuarioController::test');                      // Método de prueba sin parámetros
     $routes->get('verificar-elegibilidad', 'UsuarioController::verificarElegibilidad'); // Verificar si puede crear usuario
     $routes->get('info-matricula/(:num)', 'UsuarioController::infoMatricula/$1'); // Info matrícula de persona
-    $routes->get('buscar-por-dni', 'UsuarioController::buscarPorDni');     // Buscar estudiante por DNI para autocompletado
 });
 
 // Gestión de Estudiantes/Matrículas

@@ -1,3 +1,6 @@
+<!-- SweetAlert2 CDN -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 <div class="container-fluid">
     <!-- Encabezado de la página con breadcrumb -->
     <div class="row">
@@ -238,412 +241,552 @@
 
 <!-- Modales para gestión de usuarios -->
 <?php echo view('Administrador/modals/registrarusuario'); ?>
+<?php echo view('Administrador/modals/detalleusuario'); ?>
+<?php echo view('Administrador/modals/editarusuario'); ?>
 
 <script>
-// Función para ver perfil de usuario
-function verPerfilUsuario(idusuario) {
-    fetch(`<?= base_url('usuarios/obtener') ?>/${idusuario}`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === 'success') {
-                // Crear modal dinámico para mostrar perfil
-                mostrarPerfilUsuario(data.usuario);
-            } else {
-                mostrarAlerta('Error al cargar perfil del usuario', 'danger');
-            }
-        })
-        .catch(() => mostrarAlerta('Error de conexión', 'danger'));
-}
-
-// Función para mostrar perfil de usuario en modal
-function mostrarPerfilUsuario(usuario) {
-    const modalContent = `
-        <div class="modal fade" id="modalPerfilUsuario" tabindex="-1">
-            <div class="modal-dialog modal-lg">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">
-                            <i class="ti ti-user-circle me-2"></i>Perfil de Usuario
-                        </h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <h6 class="text-muted">Información de Usuario</h6>
-                                <p><strong>Usuario:</strong> ${usuario.nomuser}</p>
-                                <p><strong>Nivel:</strong> 
-                                    <span class="badge bg-primary">${usuario.nivelacceso}</span>
-                                </p>
-                                <p><strong>Email:</strong> ${usuario.email || 'No registrado'}</p>
-                            </div>
-                            <div class="col-md-6">
-                                <h6 class="text-muted">Información Personal</h6>
-                                <p><strong>Nombres:</strong> ${usuario.nombres || 'No registrado'}</p>
-                                <p><strong>Apellidos:</strong> ${usuario.apellidos || 'No registrado'}</p>
-                                <p><strong>Documento:</strong> ${usuario.numerodoc || 'No registrado'}</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    // Remover modal anterior si existe
-    const existingModal = document.getElementById('modalPerfilUsuario');
-    if (existingModal) {
-        existingModal.remove();
-    }
-    
-    // Agregar nuevo modal
-    document.body.insertAdjacentHTML('beforeend', modalContent);
-    const modal = new bootstrap.Modal(document.getElementById('modalPerfilUsuario'));
-    modal.show();
-}
-
-// Función para editar usuario
-function editarUsuario(idusuario) {
-    // Implementar funcionalidad de edición
-    mostrarAlerta('Función de edición en desarrollo', 'info');
-}
-
-// Función para eliminar usuario
-function eliminarUsuario(idusuario) {
-    if (confirm('¿Está seguro de eliminar este usuario? Esta acción no se puede deshacer.')) {
-        fetch(`<?= base_url('usuarios/eliminar') ?>/${idusuario}`, {
-            method: 'DELETE',
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === 'success') {
-                mostrarAlerta('Usuario eliminado correctamente', 'success');
-                setTimeout(() => location.reload(), 1500);
-            } else {
-                mostrarAlerta(data.message || 'Error al eliminar usuario', 'danger');
-            }
-        })
-        .catch(() => mostrarAlerta('Error de conexión', 'danger'));
-    }
-}
-// Generar usuario y email automáticamente
-function generarUsuarioYEmail() {
-    const nombres = document.getElementById('nombres');
-    const apellidos = document.getElementById('apellidos');
-    
-    if (!nombres || !apellidos) {
-        console.error('No se encontraron los campos nombres o apellidos');
-        return;
-    }
-    
-    const nombresValue = nombres.value.trim();
-    const apellidosValue = apellidos.value.trim();
-
-    console.log('Generando usuario con:', nombresValue, apellidosValue);
-
-    if (nombresValue && apellidosValue) {
-        // Limpiar caracteres especiales y convertir a minúsculas
-        const primerNombre = nombresValue.toLowerCase().split(' ')[0].replace(/[^a-z]/g, '');
-        const primerApellido = apellidosValue.toLowerCase().split(' ')[0].replace(/[^a-z]/g, '');
+    // Función para ver perfil de usuario
+    function verPerfilUsuario(userId) {
+        console.log('Ver perfil usuario:', userId);
         
-        if (primerNombre && primerApellido) {
-            const usuario = primerNombre + '.' + primerApellido;
-            const email = usuario + '@bibliotecavirtual.edu.pe';
-
-            console.log('Usuario generado:', usuario);
-            console.log('Email generado:', email);
-
-            const nomuser_preview = document.getElementById('nomuser_preview');
-            const email_preview = document.getElementById('email_preview');
-            const nomuser = document.getElementById('nomuser');
-            const emailField = document.getElementById('email');
-
-            if (nomuser_preview) nomuser_preview.value = usuario;
-            if (email_preview) email_preview.value = email;
-            if (nomuser) nomuser.value = usuario;
-            if (emailField) emailField.value = email;
-        }
-    } else {
-        // Limpiar campos si están vacíos
-        const nomuser_preview = document.getElementById('nomuser_preview');
-        const email_preview = document.getElementById('email_preview');
-        const nomuser = document.getElementById('nomuser');
-        const emailField = document.getElementById('email');
-
-        if (nomuser_preview) nomuser_preview.value = '';
-        if (email_preview) email_preview.value = '';
-        if (nomuser) nomuser.value = '';
-        if (emailField) emailField.value = '';
-    }
-}
-
-// Event listeners para generación automática
-function configurarEventListeners() {
-    const nombres = document.getElementById('nombres');
-    const apellidos = document.getElementById('apellidos');
-    
-    if (nombres && apellidos) {
-        console.log('Configurando event listeners para generación automática');
-        
-        // Remover listeners existentes para evitar duplicados
-        nombres.removeEventListener('input', generarUsuarioYEmail);
-        apellidos.removeEventListener('input', generarUsuarioYEmail);
-        
-        // Agregar nuevos listeners
-        nombres.addEventListener('input', generarUsuarioYEmail);
-        apellidos.addEventListener('input', generarUsuarioYEmail);
-        
-        // También configurar evento keyup para mayor responsividad
-        nombres.addEventListener('keyup', generarUsuarioYEmail);
-        apellidos.addEventListener('keyup', generarUsuarioYEmail);
-        
-        console.log('Event listeners configurados correctamente');
-    } else {
-        console.error('No se pudieron encontrar los campos nombres o apellidos para configurar listeners');
-    }
-}
-
-// Event listeners para generación automática
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM cargado, configurando listeners iniciales');
-    configurarEventListeners();
-    
-    // También configurar listeners cuando se abra el modal
-    const modalElement = document.getElementById('modalNuevoUsuario');
-    if (modalElement) {
-        modalElement.addEventListener('shown.bs.modal', function() {
-            console.log('Modal abierto, reconfigurando listeners');
-            setTimeout(configurarEventListeners, 100);
-        });
-    }
-});
-
-function registrarPersonaYUsuario() {
-    console.log('Iniciando proceso de registro');
-    
-    const form = document.getElementById('formNuevoUsuario');
-    if (!form) {
-        mostrarAlertaModal('Error: No se encontró el formulario', 'danger');
-        return;
-    }
-    
-    const formData = new FormData(form);
-    
-    // Verificar campos obligatorios
-    const apellidos = document.getElementById('apellidos')?.value?.trim();
-    const nombres = document.getElementById('nombres')?.value?.trim();
-    const nomuser = document.getElementById('nomuser')?.value?.trim();
-    const email = document.getElementById('email')?.value?.trim();
-    
-    console.log('Datos del formulario:');
-    console.log('Apellidos:', apellidos);
-    console.log('Nombres:', nombres);
-    console.log('Usuario generado:', nomuser);
-    console.log('Email generado:', email);
-
-    // Validar que se hayan completado nombres y apellidos
-    if (!apellidos || !nombres) {
-        mostrarAlertaModal('Por favor complete nombres y apellidos', 'danger');
-        return;
-    }
-    
-    // Validar usuario y email generados
-    if (!nomuser || !email) {
-        console.log('Intentando regenerar usuario y email...');
-        generarUsuarioYEmail();
-        
-        // Verificar nuevamente después de intentar generar
-        const nomuserRecheck = document.getElementById('nomuser')?.value?.trim();
-        const emailRecheck = document.getElementById('email')?.value?.trim();
-        
-        if (!nomuserRecheck || !emailRecheck) {
-            mostrarAlertaModal('Error al generar usuario y email. Por favor verifique nombres y apellidos', 'danger');
+        // Verificar si el modal existe
+        const modalElement = document.getElementById('modalDetalleUsuario');
+        if (!modalElement) {
+            console.error('Modal no encontrado: modalDetalleUsuario');
+            alert('Error: Modal de detalles no encontrado');
             return;
         }
-    }
-
-    console.log('Enviando datos al servidor...');
-    
-    fetch('<?= base_url('usuarios/crear-completo') ?>', {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => {
-        console.log('Respuesta del servidor recibida:', response.status);
-        return response.json();
-    })
-    .then(data => {
-        console.log('Datos de respuesta:', data);
-        if (data.status === 'success') {
-            mostrarAlertaModal(`¡Registro exitoso!<br>Usuario creado: <strong>${data.usuario}</strong><br>Email: <strong>${data.email}</strong>`, 'success');
-            setTimeout(() => {
-                bootstrap.Modal.getInstance(document.getElementById('modalNuevoUsuario')).hide();
-                location.reload();
-            }, 2500);
-        } else {
-            mostrarAlertaModal(data.message || 'Error al registrar persona y usuario', 'danger');
-        }
-    })
-    .catch(error => {
-        console.error('Error en la solicitud:', error);
-        mostrarAlertaModal('Error de conexión', 'danger');
-    });
-}
-
-// Función para mostrar alertas en modales
-function mostrarAlertaModal(mensaje, tipo = 'info') {
-    const alerta = document.getElementById('alertaValidacion');
-    if (alerta) {
-        alerta.className = `alert alert-${tipo} mt-2`;
-        alerta.innerHTML = mensaje;
-        alerta.classList.remove('d-none');
-    }
-}
-
-// Limpiar formulario cuando se cierra el modal
-document.addEventListener('DOMContentLoaded', function() {
-    if (document.getElementById('modalNuevoUsuario')) {
-        document.getElementById('modalNuevoUsuario').addEventListener('hidden.bs.modal', function() {
-            if (document.getElementById('formNuevoUsuario')) {
-                document.getElementById('formNuevoUsuario').reset();
-                if (document.getElementById('nomuser_preview')) document.getElementById('nomuser_preview').value = '';
-                if (document.getElementById('email_preview')) document.getElementById('email_preview').value = '';
-                if (document.getElementById('nomuser')) document.getElementById('nomuser').value = '';
-                if (document.getElementById('email')) document.getElementById('email').value = '';
-                if (document.getElementById('alertaValidacion')) document.getElementById('alertaValidacion').classList.add('d-none');
-            }
-        });
-    }
-
-    // Inicializar tooltips si están disponibles
-    if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
-        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-            return new bootstrap.Tooltip(tooltipTriggerEl);
-        });
-    }
-});
-
-// Función para buscar estudiante por DNI
-function buscarPorDni() {
-    const numerodoc = document.getElementById('numerodoc')?.value?.trim();
-    
-    if (!numerodoc) {
-        mostrarAlertaModal('Por favor ingrese un número de documento', 'warning');
-        return;
-    }
-    
-    if (numerodoc.length < 8) {
-        mostrarAlertaModal('El número de documento debe tener al menos 8 dígitos', 'warning');
-        return;
-    }
-    
-    // Mostrar indicador de carga
-    const botonBuscar = event.target;
-    const textoOriginal = botonBuscar.innerHTML;
-    botonBuscar.innerHTML = '<i class="icon tabler-loader-2 fs-6 spin"></i>';
-    botonBuscar.disabled = true;
-    
-    const infoBusqueda = document.getElementById('info-busqueda');
-    infoBusqueda.className = 'form-text text-info';
-    infoBusqueda.innerHTML = '<i class="ti ti-search"></i> Buscando...';
-    infoBusqueda.classList.remove('d-none');
-    
-    fetch(`<?= base_url('usuarios/buscar-por-dni') ?>?numerodoc=${encodeURIComponent(numerodoc)}`)
-    .then(response => response.json())
-    .then(data => {
-        if (data.status === 'success' && data.encontrado) {
-            // Autocompletar campos con los datos encontrados
-            autocompletarCampos(data.datos);
-            
-            infoBusqueda.className = 'form-text text-success';
-            infoBusqueda.innerHTML = `<i class="ti ti-check"></i> Estudiante encontrado: ${data.datos.apellidos}, ${data.datos.nombres}`;
-            
-            if (data.datos.tiene_usuario) {
-                mostrarAlertaModal(`Este estudiante ya tiene un usuario: <strong>${data.datos.usuario_existente}</strong>`, 'warning');
-            } else {
-                mostrarAlertaModal('Datos autocompletados correctamente. Puede proceder con el registro.', 'success');
-            }
-        } else {
-            infoBusqueda.className = 'form-text text-muted';
-            infoBusqueda.innerHTML = '<i class="ti ti-info-circle"></i> No se encontró un estudiante con este DNI. Puede registrar manualmente.';
-            
-            // Limpiar campos por si tenían datos anteriores
-            limpiarFormulario();
-        }
-    })
-    .catch(error => {
-        console.error('Error en búsqueda:', error);
-        infoBusqueda.className = 'form-text text-danger';
-        infoBusqueda.innerHTML = '<i class="ti ti-alert-circle"></i> Error al buscar. Intente nuevamente.';
-        mostrarAlertaModal('Error de conexión al buscar estudiante', 'danger');
-    })
-    .finally(() => {
-        // Restaurar botón
-        botonBuscar.innerHTML = textoOriginal;
-        botonBuscar.disabled = false;
-    });
-}
-
-// Función para autocompletar campos con datos encontrados
-function autocompletarCampos(datos) {
-    console.log('Autocompletando con datos:', datos);
-    
-    // Campos básicos
-    if (datos.apellidos) document.getElementById('apellidos').value = datos.apellidos;
-    if (datos.nombres) document.getElementById('nombres').value = datos.nombres;
-    if (datos.tipodoc) document.getElementById('tipodoc').value = datos.tipodoc;
-    if (datos.telefono) document.getElementById('telefono').value = datos.telefono;
-    if (datos.direccion) document.getElementById('direccion').value = datos.direccion;
-    if (datos.genero) document.getElementById('genero').value = datos.genero;
-    
-    // Generar usuario y email automáticamente después de autocompletar nombres
-    setTimeout(() => {
-        generarUsuarioYEmail();
-    }, 100);
-    
-    // Mostrar información adicional si existe
-    if (datos.nivel_academico && datos.nivel_academico !== 'Sin matrícula') {
-        const infoBusqueda = document.getElementById('info-busqueda');
-        infoBusqueda.innerHTML += `<br><small>Nivel académico: ${datos.nivel_academico}</small>`;
-    }
-}
-
-// Función para limpiar formulario
-function limpiarFormulario() {
-    const campos = ['apellidos', 'nombres', 'telefono', 'direccion', 'genero', 'nomuser_preview', 'email_preview', 'nomuser', 'email'];
-    campos.forEach(campo => {
-        const elemento = document.getElementById(campo);
-        if (elemento) elemento.value = '';
-    });
-    
-    // También limpiar los selects
-    const selects = ['tipodoc', 'genero'];
-    selects.forEach(select => {
-        const elemento = document.getElementById(select);
-        if (elemento) elemento.selectedIndex = 0;
-    });
-}
-
-// Agregar evento para búsqueda automática al escribir DNI (opcional)
-document.addEventListener('DOMContentLoaded', function() {
-    const numerodocField = document.getElementById('numerodoc');
-    if (numerodocField) {
-        numerodocField.addEventListener('blur', function() {
-            const valor = this.value.trim();
-            if (valor.length >= 8) {
-                // Auto-buscar después de 500ms de inactividad
-                setTimeout(() => {
-                    if (this.value.trim() === valor && valor.length >= 8) {
-                        buscarPorDni();
+        
+        console.log('Modal encontrado, procediendo...');
+        
+        // Guardar ID del usuario en el modal para uso posterior
+        modalElement.setAttribute('data-user-id', userId);
+        
+        // Mostrar modal
+        const modal = new bootstrap.Modal(modalElement);
+        modal.show();
+        
+        console.log('Modal mostrado');
+        
+        // Mostrar estado de carga
+        document.getElementById('loading-detalle').style.display = 'block';
+        document.getElementById('contenido-detalle-usuario').style.display = 'none';
+        document.getElementById('error-detalle').style.display = 'none';
+        
+        // Realizar petición AJAX para obtener datos del usuario
+        const url = `<?= base_url('usuarios/obtener') ?>/${userId}`;
+        console.log('Realizando petición a:', url);
+        
+        fetch(url)
+            .then(response => {
+                console.log('Respuesta recibida:', response.status);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Datos recibidos:', data);
+                document.getElementById('loading-detalle').style.display = 'none';
+                
+                if (data.success) {
+                    // Llenar los datos en el modal
+                    const usuario = data.usuario;
+                    
+                    // Datos personales
+                    document.getElementById('detalle-nombres').textContent = usuario.nombres || 'No disponible';
+                    document.getElementById('detalle-apellidos').textContent = usuario.apellidos || 'No disponible';
+                    document.getElementById('detalle-documento').textContent = usuario.dni || 'No disponible';
+                    document.getElementById('detalle-telefono').textContent = usuario.telefono || 'No disponible';
+                    document.getElementById('detalle-direccion').textContent = usuario.direccion || 'No disponible';
+                    document.getElementById('detalle-email').textContent = usuario.email || 'No disponible';
+                    document.getElementById('detalle-genero').textContent = usuario.genero || 'No disponible';
+                    
+                    // Datos del sistema
+                    document.getElementById('detalle-nomuser').textContent = usuario.nomuser || 'No disponible';
+                    document.getElementById('detalle-nivelacceso').textContent = usuario.nivelacceso || 'No disponible';
+                    document.getElementById('detalle-idusuario').textContent = usuario.idusuario || 'No disponible';
+                    document.getElementById('detalle-tipodoc').textContent = usuario.tipodoc || 'No disponible';
+                    
+                    // Estado del usuario
+                    const estadoElement = document.getElementById('detalle-estado');
+                    if (usuario.estado == 1) {
+                        estadoElement.textContent = 'Activo';
+                        estadoElement.className = 'badge bg-success';
+                    } else {
+                        estadoElement.textContent = 'Inactivo';
+                        estadoElement.className = 'badge bg-danger';
                     }
-                }, 500);
+                    
+                    // Avatar con iniciales
+                    const avatar = document.getElementById('detalle-avatar');
+                    if (usuario.nombres && usuario.apellidos) {
+                        const iniciales = (usuario.nombres.charAt(0) + usuario.apellidos.charAt(0)).toUpperCase();
+                        avatar.textContent = iniciales;
+                    } else {
+                        avatar.textContent = '--';
+                    }
+                    
+                    // Badge de nivel
+                    const nivelBadge = document.getElementById('detalle-nivel-badge');
+                    let badgeClass = 'badge fs-6 px-3 py-2';
+                    let icon = 'ti-user';
+                    
+                    switch(usuario.nivelacceso) {
+                        case 'admin':
+                            badgeClass += ' bg-warning text-dark';
+                            icon = 'ti-shield-lock';
+                            break;
+                        case 'docente':
+                            badgeClass += ' bg-info';
+                            icon = 'ti-user-check';
+                            break;
+                        case 'estudiante':
+                            badgeClass += ' bg-success';
+                            icon = 'ti-school';
+                            break;
+                        default:
+                            badgeClass += ' bg-secondary';
+                    }
+                    
+                    nivelBadge.className = badgeClass;
+                    nivelBadge.innerHTML = `<i class="ti ${icon} me-1"></i>${usuario.nivelacceso || 'Usuario'}`;
+                    
+                    // Fechas
+                    const fechaCreacion = usuario.fecha_creacion ? new Date(usuario.fecha_creacion).toLocaleDateString('es-ES') : 'No disponible';
+                    document.getElementById('detalle-fecha-registro').textContent = fechaCreacion;
+                    
+                    // Información académica (solo para estudiantes)
+                    if (usuario.nivelacceso === 'estudiante' && usuario.nivel) {
+                        document.getElementById('detalle-nivel-academico').textContent = usuario.nivel || 'No disponible';
+                        document.getElementById('detalle-grado').textContent = usuario.grado || 'No disponible';
+                        document.getElementById('detalle-seccion').textContent = usuario.seccion || 'No disponible';
+                        document.getElementById('detalle-anio-lectivo').textContent = usuario.anio_lectivo || 'No disponible';
+                        document.getElementById('seccion-matricula').classList.remove('d-none');
+                    } else {
+                        document.getElementById('seccion-matricula').classList.add('d-none');
+                    }
+                    
+                    document.getElementById('contenido-detalle-usuario').style.display = 'block';
+                } else {
+                    // Mostrar error
+                    console.error('Error en respuesta:', data.message);
+                    document.getElementById('error-detalle').style.display = 'block';
+                    // Mostrar el mensaje de error específico
+                    const errorMsg = document.querySelector('#error-detalle h5');
+                    if (errorMsg && data.message) {
+                        errorMsg.textContent = data.message;
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error de red o parsing:', error);
+                document.getElementById('loading-detalle').style.display = 'none';
+                document.getElementById('error-detalle').style.display = 'block';
+                
+                // Mostrar el error específico
+                const errorMsg = document.querySelector('#error-detalle h5');
+                if (errorMsg) {
+                    errorMsg.textContent = 'Error de conexión: ' + error.message;
+                }
+            });
+    }
+
+    // Función para editar usuario desde el modal de detalles
+    function editarUsuarioDesdeDetalle() {
+        // Obtener ID del usuario desde el modal de detalles
+        const modalDetalleElement = document.getElementById('modalDetalleUsuario');
+        const userId = modalDetalleElement.getAttribute('data-user-id');
+        
+        if (!userId) {
+            console.error('No se encontró ID del usuario en modal de detalles');
+            return;
+        }
+        
+        // Cerrar modal de detalles
+        const modalDetalle = bootstrap.Modal.getInstance(modalDetalleElement);
+        modalDetalle.hide();
+        
+        // Esperar a que se cierre completamente y luego abrir modal de edición
+        modalDetalleElement.addEventListener('hidden.bs.modal', function() {
+            editarUsuario(userId);
+        }, { once: true });
+    }
+
+    // Función para ver historial completo
+    function verHistorialCompleto() {
+        console.log('Ver historial completo');
+        // TODO: Implementar vista de historial
+    }
+
+    // Función para recargar detalles en caso de error
+    function recargarDetalleUsuario() {
+        const modalElement = document.getElementById('modalDetalleUsuario');
+        const userId = modalElement.getAttribute('data-user-id');
+        
+        if (userId) {
+            // Ocultar error y mostrar loading
+            document.getElementById('error-detalle').style.display = 'none';
+            document.getElementById('loading-detalle').style.display = 'block';
+            
+            // Volver a cargar
+            verPerfilUsuario(userId);
+        }
+    }
+
+    // Función para editar usuario (botón en tabla)
+    function editarUsuario(userId) {
+        console.log('Editar usuario:', userId);
+        
+        // Verificar si el modal existe
+        const modalElement = document.getElementById('modalEditarUsuario');
+        if (!modalElement) {
+            console.error('Modal de edición no encontrado');
+            Swal.fire({
+                icon: 'error',
+                title: 'Error del sistema',
+                text: 'Modal de edición no encontrado',
+                confirmButtonColor: '#dc3545'
+            });
+            return;
+        }
+        
+        // Mostrar modal con loading
+        const modal = new bootstrap.Modal(modalElement);
+        modal.show();
+        
+        // Mostrar estado de carga
+        document.getElementById('loading-editar').style.display = 'block';
+        const form = document.getElementById('formEditarUsuario');
+        if (form) {
+            form.style.display = 'none';
+        }
+        
+        // Cargar datos del usuario
+        const url = `<?= base_url('usuarios/obtener') ?>/${userId}`;
+        console.log('🔍 Cargando datos para edición desde:', url);
+        
+        fetch(url)
+            .then(response => {
+                console.log('📥 Respuesta recibida para edición:', response.status);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('📊 Datos recibidos para edición:', data);
+                document.getElementById('loading-editar').style.display = 'none';
+                if (form) {
+                    form.style.display = 'block';
+                }
+                
+                if (data.success) {
+                    const usuario = data.usuario;
+                    
+                    // Llenar datos ocultos
+                    document.getElementById('editar-idusuario').value = usuario.idusuario || '';
+                    document.getElementById('editar-idpersona').value = usuario.idpersona || '';
+                    
+                    // Datos personales
+                    document.getElementById('editar-apellidos').value = usuario.apellidos || '';
+                    document.getElementById('editar-nombres').value = usuario.nombres || '';
+                    document.getElementById('editar-tipodoc').value = usuario.tipodoc || '';
+                    document.getElementById('editar-numerodoc').value = usuario.dni || '';
+                    document.getElementById('editar-genero').value = usuario.genero || '';
+                    document.getElementById('editar-telefono').value = usuario.telefono || '';
+                    document.getElementById('editar-direccion').value = usuario.direccion || '';
+                    
+                    // Datos de usuario
+                    document.getElementById('editar-nomuser').value = usuario.nomuser || '';
+                    document.getElementById('editar-email').value = usuario.email || '';
+                    document.getElementById('editar-nivelacceso').value = usuario.nivelacceso || '';
+                    
+                    // Limpiar contraseña (no se debe mostrar)
+                    document.getElementById('editar-passuser').value = '';
+                    
+                    // Mostrar/ocultar sección académica si es estudiante
+                    const seccionAcademica = document.getElementById('seccion-academica-editar');
+                    if (seccionAcademica) {
+                        if (usuario.nivelacceso === 'estudiante') {
+                            seccionAcademica.classList.remove('d-none');
+                            
+                            // Llenar datos académicos si existen
+                            if (usuario.nivel) {
+                                const editarNivel = document.getElementById('editar-nivel');
+                                const editarGrado = document.getElementById('editar-grado');
+                                const editarSeccion = document.getElementById('editar-seccion');
+                                const editarAnioLectivo = document.getElementById('editar-anio-lectivo');
+                                
+                                if (editarNivel) editarNivel.value = usuario.nivel || '';
+                                if (editarGrado) editarGrado.value = usuario.grado || '';
+                                if (editarSeccion) editarSeccion.value = usuario.seccion || '';
+                                if (editarAnioLectivo) editarAnioLectivo.value = usuario.anio_lectivo || new Date().getFullYear();
+                            }
+                        } else {
+                            seccionAcademica.classList.add('d-none');
+                        }
+                    } else {
+                        console.warn('⚠️ Elemento seccion-academica-editar no encontrado');
+                    }
+                    
+                    console.log('✅ Datos del usuario cargados para edición');
+                } else {
+                    console.error('❌ Error en respuesta del servidor:', data);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error al cargar datos',
+                        text: data.message || 'No se pudieron cargar los datos del usuario',
+                        confirmButtonColor: '#dc3545',
+                        footer: `<small>Código de error: ${data.message || 'Desconocido'}</small>`
+                    }).then(() => {
+                        modal.hide();
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('❌ Error de red o parsing:', error);
+                document.getElementById('loading-editar').style.display = 'none';
+                if (form) {
+                    form.style.display = 'block';
+                }
+                
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error de conexión',
+                    html: `
+                        <p>No se pudo cargar la información del usuario</p>
+                        <small class="text-muted">Detalles técnicos: ${error.message}</small>
+                    `,
+                    showCancelButton: true,
+                    confirmButtonText: 'Ejecutar Diagnóstico',
+                    cancelButtonText: 'Cerrar',
+                    confirmButtonColor: '#0d6efd',
+                    cancelButtonColor: '#6c757d'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        diagnosticarConexion(userId);
+                    }
+                    modal.hide();
+                });
+            });
+    }
+
+    // Función para eliminar usuario (botón en tabla)
+    function eliminarUsuario(userId) {
+        console.log('Eliminar usuario:', userId);
+        
+        // Validar ID de usuario
+        if (!userId || userId <= 0) {
+            console.error('ID de usuario inválido:', userId);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'ID de usuario inválido',
+                confirmButtonColor: '#dc3545'
+            });
+            return;
+        }
+        
+        // Mostrar confirmación con SweetAlert2
+        Swal.fire({
+            title: '¿Eliminar usuario?',
+            html: `
+                <div class="text-center">
+                    <div class="mb-3">
+                        <i class="ti ti-alert-triangle text-warning" style="font-size: 3rem;"></i>
+                    </div>
+                    <p class="mb-2">Esta acción <strong>eliminará permanentemente</strong> el usuario del sistema.</p>
+                    <p class="text-muted small mb-0">Esta operación no se puede deshacer.</p>
+                </div>
+            `,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: '<i class="ti ti-trash me-1"></i>Sí, eliminar',
+            cancelButtonText: '<i class="ti ti-x me-1"></i>Cancelar',
+            focusCancel: true,
+            reverseButtons: true,
+            showLoaderOnConfirm: true,
+            preConfirm: () => {
+                // Realizar petición AJAX para eliminar usuario
+                const url = `<?= base_url('usuarios/eliminar') ?>/${userId}`;
+                console.log('🗑️ Eliminando usuario desde:', url);
+                
+                return fetch(url, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => {
+                    console.log('📥 Respuesta de eliminación:', response.status);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('📊 Datos de eliminación:', data);
+                    if (!data.success) {
+                        throw new Error(data.message || 'Error al eliminar usuario');
+                    }
+                    return data;
+                })
+                .catch(error => {
+                    console.error('❌ Error al eliminar usuario:', error);
+                    Swal.showValidationMessage(`Error: ${error.message}`);
+                    throw error;
+                });
+            },
+            allowOutsideClick: () => !Swal.isLoading()
+        }).then((result) => {
+            if (result.isConfirmed && result.value) {
+                // Eliminación exitosa
+                console.log('✅ Usuario eliminado exitosamente');
+                
+                Swal.fire({
+                    icon: 'success',
+                    title: '¡Usuario eliminado!',
+                    html: `
+                        <div class="text-center">
+                            <div class="mb-3">
+                                <i class="ti ti-check-circle text-success" style="font-size: 3rem;"></i>
+                            </div>
+                            <p class="mb-2">El usuario ha sido eliminado correctamente del sistema.</p>
+                            <p class="text-muted small mb-0">La página se actualizará automáticamente.</p>
+                        </div>
+                    `,
+                    timer: 2000,
+                    timerProgressBar: true,
+                    showConfirmButton: false,
+                    allowOutsideClick: false
+                }).then(() => {
+                    // Recargar el contenido AJAX de usuarios
+                    console.log('🔄 Recargando contenido de usuarios...');
+                    
+                    // Buscar el enlace de usuarios en el sidebar y simular click
+                    const usuariosLink = document.querySelector('a[href="<?= base_url('usuarios') ?>"].ajax-link');
+                    if (usuariosLink) {
+                        usuariosLink.click();
+                    } else {
+                        // Fallback: recargar la página completa si no se encuentra el enlace AJAX
+                        console.log('⚠️ Enlace AJAX no encontrado, recargando página completa...');
+                        location.reload();
+                    }
+                });
+                
+            } else if (result.isDismissed && result.dismiss === Swal.DismissReason.cancel) {
+                // Cancelación
+                console.log('❌ Eliminación cancelada por el usuario');
+                
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Operación cancelada',
+                    text: 'El usuario no ha sido eliminado',
+                    timer: 1500,
+                    showConfirmButton: false,
+                    toast: true,
+                    position: 'top-end'
+                });
             }
+        }).catch(error => {
+            // Error en la eliminación
+            console.error('❌ Error final en eliminación:', error);
+            
+            Swal.fire({
+                icon: 'error',
+                title: 'Error al eliminar',
+                html: `
+                    <div class="text-center">
+                        <div class="mb-3">
+                            <i class="ti ti-x-circle text-danger" style="font-size: 3rem;"></i>
+                        </div>
+                        <p class="mb-2">No se pudo eliminar el usuario</p>
+                        <p class="text-muted small mb-0">Detalles: ${error.message || 'Error desconocido'}</p>
+                    </div>
+                `,
+                showCancelButton: true,
+                confirmButtonText: 'Reintentar',
+                cancelButtonText: 'Cerrar',
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#6c757d'
+            }).then((retryResult) => {
+                if (retryResult.isConfirmed) {
+                    // Reintentar eliminación
+                    setTimeout(() => {
+                        eliminarUsuario(userId);
+                    }, 500);
+                }
+            });
         });
     }
-});
 
+    // Función de diagnóstico temporal
+    function diagnosticarConexion(userId) {
+        console.log('🔧 Diagnóstico de conexión para usuario:', userId);
+        
+        // Probar endpoint de test
+        const testUrl = `<?= base_url('usuarios/test') ?>/${userId}`;
+        console.log('🧪 Probando endpoint:', testUrl);
+        
+        fetch(testUrl)
+            .then(response => {
+                console.log('🧪 Test response status:', response.status);
+                return response.json();
+            })
+            .then(data => {
+                console.log('🧪 Test data:', data);
+                
+                if (data.status === 'success') {
+                    console.log('✅ Conectividad OK, probando endpoint real...');
+                    
+                    // Ahora probar el endpoint real
+                    const realUrl = `<?= base_url('usuarios/obtener') ?>/${userId}`;
+                    console.log('🔍 Probando endpoint real:', realUrl);
+                    
+                    return fetch(realUrl);
+                } else {
+                    throw new Error('Test endpoint falló');
+                }
+            })
+            .then(response => {
+                console.log('🔍 Real response status:', response.status);
+                return response.json();
+            })
+            .then(data => {
+                console.log('🔍 Real data:', data);
+                
+                Swal.fire({
+                    icon: data.success ? 'success' : 'warning',
+                    title: 'Diagnóstico completado',
+                    html: `
+                        <div class="text-start">
+                            <p><strong>Conectividad:</strong> ✅ OK</p>
+                            <p><strong>Endpoint:</strong> ${data.success ? '✅ OK' : '❌ Error'}</p>
+                            <p><strong>Mensaje:</strong> ${data.message || 'Sin mensaje'}</p>
+                            ${data.success ? '<p><strong>Usuario encontrado:</strong> ✅</p>' : ''}
+                        </div>
+                    `,
+                    confirmButtonColor: '#0d6efd'
+                });
+            })
+            .catch(error => {
+                console.error('🔧 Error en diagnóstico:', error);
+                
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error en diagnóstico',
+                    html: `
+                        <div class="text-start">
+                            <p><strong>Error:</strong> ${error.message}</p>
+                            <p><strong>Recomendación:</strong> Verificar logs del servidor</p>
+                        </div>
+                    `,
+                    confirmButtonColor: '#dc3545'
+                });
+            });
+    }
 </script>
