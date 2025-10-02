@@ -157,7 +157,7 @@
                             <?php foreach ($librosPopulares as $libro): ?>
                                 <?= view('partials/libro_card', [
                                     'libro' => $libro,
-                                    'imagenPrefix' => base_url('public/'),
+                                    'imagenPrefix' => base_url(),
                                     'colClasses' => 'col-lg-2 col-md-4 col-sm-6'
                                 ]) ?>
                             <?php endforeach; ?>

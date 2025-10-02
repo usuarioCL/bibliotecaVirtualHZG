@@ -152,7 +152,11 @@ class RecursoController extends Controller
                 $imagenFile = $this->request->getFile('portada');
                 if ($imagenFile && $imagenFile->isValid() && !$imagenFile->hasMoved()) {
                     helper('text');
-                    $carpetaRecurso = FCPATH . 'uploads' . DIRECTORY_SEPARATOR . 'portadas' . DIRECTORY_SEPARATOR;
+                    
+                    // Determinar subcarpeta según tipo de recurso
+                    $subcarpeta = $esDigital ? 'digital' : 'fisico';
+                    $carpetaRecurso = FCPATH . 'uploads' . DIRECTORY_SEPARATOR . 'portadas' . DIRECTORY_SEPARATOR . $subcarpeta . DIRECTORY_SEPARATOR;
+                    
                     if (!is_dir($carpetaRecurso)) {
                         @mkdir($carpetaRecurso, 0775, true);
                     }
@@ -160,7 +164,7 @@ class RecursoController extends Controller
                     $extension = $imagenFile->getExtension();
                     $nombreArchivo = $nombreBase . '-' . $idRecurso . '.' . $extension;
                     $imagenFile->move($carpetaRecurso, $nombreArchivo, true);
-                    $portadaPath = 'uploads/portadas/' . $nombreArchivo;
+                    $portadaPath = 'uploads/portadas/' . $subcarpeta . '/' . $nombreArchivo;
                 }
             } catch (\Throwable $e) {
                 log_message('error', 'Error subiendo portada: ' . $e->getMessage());
@@ -380,6 +384,7 @@ public function actualizar($idrecurso)
     $recursoModel->update($idrecurso, $datosRecurso);
 
     // 1.1 Manejo de portada (imagen)
+    $rutaPortadaActualizada = null;
     try {
         $portada = $this->request->getFile('rutaportada');
         if ($portada && $portada->isValid() && !$portada->hasMoved()) {
@@ -390,15 +395,27 @@ public function actualizar($idrecurso)
                 $tituloSlug = url_title(($recursoExistente['titulo'] ?? 'portada'), '-', true);
                 $ext = strtolower($portada->getExtension());
                 $nombreArchivo = $tituloSlug . '-' . $idrecurso . '.' . $ext;
-                $carpetaPublica = FCPATH . 'img' . DIRECTORY_SEPARATOR . 'portadas' . DIRECTORY_SEPARATOR;
+                // Determinar carpeta según tipo de recurso
+                $tipoRecurso = $this->request->getVar('idtiporecurso');
+                $esDigitalPortada = false;
+                if ($tipoRecurso) {
+                    $tipo = model('TiporecursoModel')->find($tipoRecurso);
+                    if ($tipo && isset($tipo['tiporecurso']) && stripos($tipo['tiporecurso'], 'digital') !== false) {
+                        $esDigitalPortada = true;
+                    }
+                }
+                
+                $subcarpeta = $esDigitalPortada ? 'digital' : 'fisico';
+                $carpetaPublica = FCPATH . 'uploads' . DIRECTORY_SEPARATOR . 'portadas' . DIRECTORY_SEPARATOR . $subcarpeta . DIRECTORY_SEPARATOR;
 
                 if (!is_dir($carpetaPublica)) {
                     @mkdir($carpetaPublica, 0775, true);
                 }
 
                 $portada->move($carpetaPublica, $nombreArchivo, true);
-                $rutaRelativaPortada = 'img/portadas/' . $nombreArchivo;
+                $rutaRelativaPortada = 'uploads/portadas/' . $subcarpeta . '/' . $nombreArchivo;
                 $recursoModel->update($idrecurso, ['rutaportada' => $rutaRelativaPortada]);
+                $rutaPortadaActualizada = $rutaRelativaPortada;
             }
         }
     } catch (\Throwable $e) {
@@ -453,6 +470,11 @@ public function actualizar($idrecurso)
             $recursoDigitalModel = new \App\Models\RecursoDigitalModel();
             $datosDigital = [];
             
+            // Actualizar portada en recursos_digitales si se subió una nueva imagen
+            if ($rutaPortadaActualizada !== null) {
+                $datosDigital['portada'] = $rutaPortadaActualizada;
+            }
+            
             // Solo actualizar si hay archivo nuevo
             $archivoPdf = $this->request->getFile('archivo_pdf');
             if ($archivoPdf && $archivoPdf->isValid() && !$archivoPdf->hasMoved()) {
@@ -482,6 +504,11 @@ public function actualizar($idrecurso)
             $encuadernacion = $this->request->getVar('encuadernacion');
             if ($encuadernacion !== null) {
                 $datosFisico['encuadernacion'] = $encuadernacion;
+            }
+            
+            // Actualizar portada en recursos_fisicos si se subió una nueva imagen
+            if ($rutaPortadaActualizada !== null) {
+                $datosFisico['portada'] = $rutaPortadaActualizada;
             }
             
             // Actualizar si hay datos que cambiar
