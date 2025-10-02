@@ -120,6 +120,10 @@
                       <i class="ti ti-help"></i>
                       <p class="mb-0">Ayuda</p>
                     </a>
+                    <a href="<?= base_url('/') ?>" class="dropdown-item">
+                      <i class="ti ti-book"></i>
+                      <p class="mb-0">Biblioteca Virtual</p>
+                    </a>
                     <a href="<?= base_url('logout') ?>" class="btn btn-outline-primary d-block">
                       <i class="ti ti-logout me-2"></i>Cerrar Sesión
                     </a>
@@ -160,7 +164,8 @@
       $('#contenedor-principal').html('<div class="text-danger text-center py-5">Error al cargar el dashboard.</div>');
     });
   }
-
+  
+  // Manejar clics en enlaces AJAX
   $(document).on('click', '.ajax-link', function(e) {
     e.preventDefault();
     var url = $(this).attr('href');
