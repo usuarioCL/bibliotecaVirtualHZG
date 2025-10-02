@@ -407,6 +407,9 @@ function actualizarRecurso()
     // Enviar primer autor como 'idautor' por compatibilidad con el backend
     formData.append('idautor', autoresMarcados[0]);
     
+    // Verificar si se seleccionó un archivo
+    const archivoPortada = document.getElementById('rutaportada').files[0];
+    
     fetch(`<?= base_url('recursos/actualizar') ?>/${idrecurso}`, {
         method: 'POST',
         body: formData
@@ -423,30 +426,7 @@ function actualizarRecurso()
             
             // Cerrar modal después de 2 segundos y recargar vista de recursos en el dashboard
             setTimeout(() => {
-                const modalElement = document.getElementById('modalEditarRecurso');
-                const modalInstance = bootstrap.Modal.getInstance(modalElement);
-                
-                // Cerrar modal correctamente
-                modalInstance.hide();
-                
-                // Limpiar backdrop y overlays manualmente
-                setTimeout(() => {
-                    // Eliminar backdrop si existe
-                    const backdrop = document.querySelector('.modal-backdrop');
-                    if (backdrop) {
-                        backdrop.remove();
-                    }
-                    
-                    // Restaurar scroll del body
-                    document.body.classList.remove('modal-open');
-                    document.body.style.overflow = '';
-                    document.body.style.paddingRight = '';
-                    
-                    // Cargar la vista de recursos en el contenedor principal del dashboard
-                    $.get('<?= base_url('recursos') ?>', function(html){ 
-                        $('#contenedor-principal').html(html); 
-                    });
-                }, 300);
+                cerrarModalCompletamente();
             }, 2000);
         } else {
             alerta.className = 'alert alert-danger';
@@ -471,12 +451,87 @@ document.addEventListener('DOMContentLoaded', function() {
     toggleCamposDigitalEditar();
 });
 
+// Función para cerrar modal completamente
+function cerrarModalCompletamente() {
+    try {
+        // Forzar cierre inmediato
+        const modalElement = document.getElementById('modalEditarRecurso');
+        
+        if (modalElement) {
+            // Remover modal del DOM completamente
+            modalElement.remove();
+        }
+        
+        // Limpiar todos los backdrops
+        const backdrops = document.querySelectorAll('.modal-backdrop');
+        backdrops.forEach(backdrop => backdrop.remove());
+        
+        // Restaurar body completamente
+        document.body.classList.remove('modal-open');
+        document.body.style.overflow = '';
+        document.body.style.paddingRight = '';
+        document.body.style.overflowX = '';
+        document.body.style.overflowY = '';
+        document.body.removeAttribute('aria-hidden');
+        
+        // Forzar reflow
+        document.body.offsetHeight;
+        
+        // Recargar vista de recursos
+        if (typeof $ !== 'undefined' && $('#contenedor-principal').length > 0) {
+            $.get('<?= base_url('recursos') ?>', function(html){ 
+                $('#contenedor-principal').html(html); 
+            }).fail(function() {
+                console.error('Error al recargar la vista de recursos');
+                window.location.reload();
+            });
+        } else {
+            window.location.reload();
+        }
+    } catch (error) {
+        console.error('Error cerrando modal:', error);
+        // Fallback: recargar página
+        window.location.reload();
+    }
+}
+
 // Mostrar el modal automáticamente cuando se carga la vista (Bootstrap 5 nativo)
 document.addEventListener('DOMContentLoaded', function() {
     var modalEl = document.getElementById('modalEditarRecurso');
     if (modalEl) {
         var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
         modal.show();
+        
+        // Agregar event listeners para cerrar modal
+        modalEl.addEventListener('hidden.bs.modal', function() {
+            setTimeout(() => {
+                // Eliminar todos los backdrops
+                const backdrops = document.querySelectorAll('.modal-backdrop');
+                backdrops.forEach(backdrop => backdrop.remove());
+                
+                // Restaurar body completamente
+                document.body.classList.remove('modal-open');
+                document.body.style.overflow = '';
+                document.body.style.paddingRight = '';
+            }, 100);
+        });
+        
+        // Listener para botón de cerrar
+        const closeButtons = modalEl.querySelectorAll('[data-bs-dismiss="modal"]');
+        closeButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                setTimeout(() => {
+                    cerrarModalCompletamente();
+                }, 100);
+            });
+        });
+        
+        // Listener para tecla Escape
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && modalEl.classList.contains('show')) {
+                cerrarModalCompletamente();
+            }
+        });
     }
 });
 </script>

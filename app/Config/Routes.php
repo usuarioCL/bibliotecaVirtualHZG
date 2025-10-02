@@ -103,6 +103,11 @@ $routes->post('/recursos/actualizar/(:num)', 'RecursoController::actualizar/$1')
 $routes->get('/recursos/eliminar/(:num)', 'RecursoController::eliminar/$1');
 $routes->post('/recursos/eliminar/(:num)', 'RecursoController::eliminar/$1');
 $routes->get('/recursos/detalles/(:num)', 'RecursoController::detalles/$1');
+$routes->get('/recursos/migrarRutasImagenes', 'RecursoController::migrarRutasImagenes');
+$routes->get('/recursos/limpiarRutasImagenes', 'RecursoController::limpiarRutasImagenes');
+$routes->get('/recursos/limpiarDuplicados', 'RecursoController::limpiarDuplicados');
+$routes->get('/recursos/sincronizarImagenes', 'RecursoController::sincronizarImagenes');
+$routes->get('/recursos/actualizarRutasImagenes', 'RecursoController::actualizarRutasImagenes');
 
 // Autores (CRUD)
 $routes->group('autores', function($routes) {
