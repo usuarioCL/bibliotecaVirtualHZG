@@ -626,16 +626,66 @@ class UsuarioController extends Controller
             $persona = $this->personaModel->find($idpersona);
             $nombreCompleto = $persona ? ($persona['nombres'] . ' ' . $persona['apellidos']) : $nomuser;
 
-            // 4. Eliminar registros relacionados según el nivel de acceso
-
-            // Si es estudiante, eliminar matrículas
-            if ($nivelacceso === 'estudiante') {
-                $matriculasEliminadas = $this->matriculaModel->where('idpersona', $idpersona)->delete();
-                log_message('info', "Matrículas eliminadas para persona {$idpersona}: {$matriculasEliminadas}");
+            // 4. Eliminar registros relacionados siguiendo el orden correcto de dependencias
+            
+            log_message('info', "Iniciando eliminación de registros relacionados para usuario {$id}");
+            
+            // PASO 1: Eliminar solicitudes relacionadas con préstamos del usuario
+            try {
+                if ($db->tableExists('solicitud')) {
+                    // Obtener IDs de préstamos del usuario para eliminar solicitudes
+                    $prestamosUsuario = $db->table('prestamos')->select('idprestamo')->where('idusuario', $id)->get()->getResultArray();
+                    foreach ($prestamosUsuario as $prestamo) {
+                        $solicitudesEliminadas = $db->table('solicitud')->where('idprestamo', $prestamo['idprestamo'])->delete();
+                        log_message('info', "Solicitudes eliminadas para préstamo {$prestamo['idprestamo']}: {$solicitudesEliminadas}");
+                    }
+                }
+            } catch (\Exception $e) {
+                log_message('warning', "Error al eliminar solicitudes: " . $e->getMessage());
             }
 
-            // Eliminar otros registros que puedan estar relacionados con el usuario
-            // Estas tablas usan idusuario en lugar de idpersona
+            // PASO 2: Si es estudiante, manejar préstamos donde él es beneficiario
+            if ($nivelacceso === 'estudiante') {
+                try {
+                    // Obtener matrículas del estudiante
+                    $matriculasUsuario = $db->table('matriculas')->select('idmatricula')->where('idpersona', $idpersona)->get()->getResultArray();
+                    
+                    foreach ($matriculasUsuario as $matricula) {
+                        // Eliminar solicitudes de préstamos de esta matrícula
+                        $prestamosMatricula = $db->table('prestamos')->select('idprestamo')->where('idmatricula', $matricula['idmatricula'])->get()->getResultArray();
+                        foreach ($prestamosMatricula as $prestamo) {
+                            if ($db->tableExists('solicitud')) {
+                                $db->table('solicitud')->where('idprestamo', $prestamo['idprestamo'])->delete();
+                            }
+                        }
+                        
+                        // Eliminar préstamos de esta matrícula
+                        $prestamosEstudiante = $db->table('prestamos')->where('idmatricula', $matricula['idmatricula'])->delete();
+                        log_message('info', "Préstamos eliminados para matrícula {$matricula['idmatricula']}: {$prestamosEstudiante}");
+                    }
+                    
+                    // Eliminar las matrículas
+                    $matriculasEliminadas = $db->table('matriculas')->where('idpersona', $idpersona)->delete();
+                    log_message('info', "Matrículas eliminadas para persona {$idpersona}: {$matriculasEliminadas}");
+                    
+                } catch (\Exception $e) {
+                    log_message('error', "Error al eliminar datos de estudiante: " . $e->getMessage());
+                    throw new \Exception("Error al eliminar datos del estudiante: " . $e->getMessage());
+                }
+            }
+
+            // PASO 3: Eliminar préstamos donde este usuario fue quien los registró
+            try {
+                if ($db->tableExists('prestamos')) {
+                    $prestamosRegistrados = $db->table('prestamos')->where('idusuario', $id)->delete();
+                    log_message('info', "Préstamos registrados por usuario {$id} eliminados: {$prestamosRegistrados}");
+                }
+            } catch (\Exception $e) {
+                log_message('error', "Error al eliminar préstamos registrados: " . $e->getMessage());
+                throw new \Exception("Error al eliminar préstamos del usuario: " . $e->getMessage());
+            }
+
+            // PASO 4: Eliminar interacciones sociales del usuario
             $tablesWithUsuario = ['comentarios', 'favoritos', 'compartidos', 'reacciones']; 
             
             foreach ($tablesWithUsuario as $table) {
@@ -645,35 +695,25 @@ class UsuarioController extends Controller
                         log_message('info', "Registros eliminados de tabla {$table} para usuario {$id}: {$registrosEliminados}");
                     }
                 } catch (\Exception $e) {
-                    log_message('warning', "No se pudieron eliminar registros de tabla {$table}: " . $e->getMessage());
-                    // Continuar con las demás tablas, no fallar por una tabla específica
+                    log_message('error', "Error al eliminar registros de tabla {$table}: " . $e->getMessage());
+                    throw new \Exception("Error al eliminar registros de la tabla {$table}: " . $e->getMessage());
                 }
             }
 
-            // Para préstamos, necesitamos manejar tanto el usuario que registra como la matrícula del estudiante
-            if ($db->tableExists('prestamos')) {
-                try {
-                    // Eliminar préstamos donde este usuario fue quien los registró
-                    $prestamosRegistrados = $db->table('prestamos')->where('idusuario', $id)->delete();
-                    log_message('info', "Préstamos registrados por usuario {$id} eliminados: {$prestamosRegistrados}");
-                    
-                    // Si es estudiante, también eliminar préstamos donde él fue el beneficiario
-                    if ($nivelacceso === 'estudiante') {
-                        // Primero obtener las matrículas del estudiante
-                        $matriculasUsuario = $db->table('matriculas')->where('idpersona', $idpersona)->get()->getResultArray();
-                        
-                        foreach ($matriculasUsuario as $matricula) {
-                            $prestamosEstudiante = $db->table('prestamos')->where('idmatricula', $matricula['idmatricula'])->delete();
-                            log_message('info', "Préstamos de estudiante matrícula {$matricula['idmatricula']} eliminados: {$prestamosEstudiante}");
-                        }
-                    }
-                } catch (\Exception $e) {
-                    log_message('warning', "No se pudieron eliminar préstamos: " . $e->getMessage());
-                    // Continuar, no fallar por los préstamos
+            log_message('info', "Eliminación de registros relacionados completada para usuario {$id}");
+
+            // 5. Eliminar sanciones de la persona
+            try {
+                if ($db->tableExists('sanciones')) {
+                    $sancionesEliminadas = $db->table('sanciones')->where('idpersona', $idpersona)->delete();
+                    log_message('info', "Sanciones eliminadas para persona {$idpersona}: {$sancionesEliminadas}");
                 }
+            } catch (\Exception $e) {
+                log_message('error', "Error al eliminar sanciones: " . $e->getMessage());
+                throw new \Exception("Error al eliminar sanciones de la persona: " . $e->getMessage());
             }
 
-            // 5. Eliminar el usuario
+            // 6. Eliminar el usuario
             log_message('info', "Intentando eliminar usuario: ID {$id}");
             if (!$this->usuarioModel->delete($id)) {
                 $errors = $this->usuarioModel->errors();
@@ -683,7 +723,7 @@ class UsuarioController extends Controller
             }
             log_message('info', "Usuario eliminado exitosamente: ID {$id}");
 
-            // 6. Eliminar la persona
+            // 7. Eliminar la persona
             log_message('info', "Intentando eliminar persona: ID {$idpersona}");
             if (!$this->personaModel->delete($idpersona)) {
                 $errors = $this->personaModel->errors();
@@ -719,16 +759,36 @@ class UsuarioController extends Controller
 
         } catch (\Exception $e) {
             $db->transRollback();
+            
+            // Log detallado del error
             log_message('error', "Error al eliminar usuario ID {$id}: " . $e->getMessage());
+            log_message('error', "Archivo: " . $e->getFile() . " - Línea: " . $e->getLine());
             log_message('error', "Stack trace: " . $e->getTraceAsString());
+            
+            // Mensaje más específico según el tipo de error
+            $errorMessage = 'Error al eliminar el usuario.';
+            $errorDetails = $e->getMessage();
+            
+            if (strpos($errorDetails, 'foreign key constraint') !== false || 
+                strpos($errorDetails, 'FOREIGN KEY') !== false ||
+                strpos($errorDetails, 'Cannot delete') !== false) {
+                $errorMessage = 'No se puede eliminar el usuario porque tiene registros dependientes en la base de datos.';
+                $errorDetails = 'El usuario tiene préstamos, comentarios u otros registros asociados. Se intentó eliminar automáticamente pero falló.';
+            } elseif (strpos($errorDetails, 'doesn\'t exist') !== false) {
+                $errorMessage = 'El usuario que intenta eliminar no existe.';
+            }
             
             return $this->response->setStatusCode(500)->setJSON([
                 'success' => false,
-                'message' => 'Error interno del servidor: ' . $e->getMessage(),
+                'message' => $errorMessage,
                 'error_details' => [
                     'error_type' => get_class($e),
-                    'error_file' => $e->getFile(),
+                    'error_file' => basename($e->getFile()),
                     'error_line' => $e->getLine(),
+                    'original_message' => $errorDetails,
+                    'usuario_id' => $id,
+                    'nivel_acceso' => $nivelacceso ?? 'no definido',
+                    'id_persona' => $idpersona ?? 'no definido',
                     'timestamp' => date('Y-m-d H:i:s')
                 ]
             ]);
