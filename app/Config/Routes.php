@@ -127,6 +127,7 @@ $routes->get('/catalogo', 'CatalogoController::index');
 $routes->get('catalogo/subcategorias/(:num)', 'CatalogoController::getSubcategoriasPorCategoria/$1');
 $routes->get('catalogo/mis-prestamos', 'CatalogoController::misPrestamos');
 $routes->get('catalogo/favoritos', 'CatalogoController::favoritos');
+$routes->get('catalogo/insertar-datos-prueba', 'CatalogoController::insertarDatosPrueba');
 
 // Recursos Digitales
 $routes->get('/recurso-digital', 'RecursoDigitalController::index');
