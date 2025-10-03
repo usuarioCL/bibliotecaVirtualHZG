@@ -146,6 +146,16 @@ $routes->get('/recurso-digital', 'RecursoDigitalController::index');
 // Recursos Físicos
 $routes->get('/recurso-fisico', 'RecursoFisicoController::index');
 
+// Ejemplares Físicos
+$routes->get('/ejemplares-fisicos/(:num)', 'EjemplarFisicoController::index/$1');
+$routes->post('/ejemplares-fisicos/crear', 'EjemplarFisicoController::crearEjemplares');
+$routes->post('/ejemplares-fisicos/actualizar-estado', 'EjemplarFisicoController::actualizarEstado');
+$routes->get('/ejemplares-fisicos/buscar', 'EjemplarFisicoController::buscar');
+$routes->get('/ejemplares-fisicos/codigo/(:any)', 'EjemplarFisicoController::obtenerPorCodigo/$1');
+$routes->delete('/ejemplares-fisicos/eliminar/(:num)', 'EjemplarFisicoController::eliminar/$1');
+$routes->post('/ejemplares-fisicos/restaurar/(:num)', 'EjemplarFisicoController::restaurar/$1');
+$routes->get('/ejemplares-fisicos/estadisticas/(:num)', 'EjemplarFisicoController::estadisticas/$1');
+
 // Sanciones
 $routes->get('/sanciones', 'SancionController::index');
 $routes->get('/sanciones/crear', 'SancionController::crear');

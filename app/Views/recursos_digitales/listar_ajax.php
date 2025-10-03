@@ -86,10 +86,6 @@
                             </td>
                             <td>
                                 <div class="btn-group" role="group">
-                                    <button type="button" class="btn btn-sm btn-outline-info" 
-                                            onclick="verDetalles(<?= $recurso->idrecurso ?>)">
-                                        <i class="ti ti-eye"></i>
-                                    </button>
                                     <button type="button" class="btn btn-sm btn-outline-warning" 
                                             onclick="editarRecurso(<?= $recurso->idrecurso ?>)">
                                         <i class="ti ti-edit"></i>

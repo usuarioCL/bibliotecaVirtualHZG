@@ -107,13 +107,14 @@
                                     <span class="badge bg-<?= $recurso->stock > 0 ? 'success' : 'danger' ?>">
                                         <?= $recurso->stock ?>
                                     </span>
+                                    <br>
+                                    <a href="<?= base_url('ejemplares-fisicos/' . $recurso->idrecurso) ?>" 
+                                       class="btn btn-sm btn-outline-primary mt-1">
+                                        <i class="ti ti-list"></i> Ver Ejemplares
+                                    </a>
                                 </td>
                                 <td>
                                     <div class="btn-group" role="group">
-                                        <button type="button" class="btn btn-sm btn-outline-info" 
-                                                onclick="verDetalles(<?= $recurso->idrecurso ?>)">
-                                            <i class="ti ti-eye"></i>
-                                        </button>
                                         <button type="button" class="btn btn-sm btn-outline-warning" 
                                                 onclick="editarRecurso(<?= $recurso->idrecurso ?>)">
                                             <i class="ti ti-edit"></i>

@@ -53,7 +53,6 @@ class RecursoFisicoModel extends Model
         return $this->select('
             rf.*,
             r.titulo,
-            r.subtitulo,
             r.anio,
             r.numpaginas,
             r.isbn,
@@ -74,5 +73,33 @@ class RecursoFisicoModel extends Model
         ->join('tiporecursos t', 'r.idtiporecurso = t.idtiporecurso', 'left')
         ->where('rf.idrecurso', $idrecurso)
         ->first();
+    }
+
+    /**
+     * Obtener recurso físico con estadísticas de ejemplares
+     */
+    public function obtenerRecursoFisicoConEjemplares($idrecurso)
+    {
+        $recurso = $this->obtenerRecursoFisicoCompleto($idrecurso);
+        
+        if ($recurso) {
+            // Obtener estadísticas de ejemplares
+            $ejemplarModel = new \App\Models\EjemplarFisicoModel();
+            $recurso['estadisticas_ejemplares'] = $ejemplarModel->obtenerEstadisticasPorRecurso($idrecurso);
+            
+            // Obtener lista de ejemplares
+            $recurso['ejemplares'] = $ejemplarModel->obtenerEjemplaresCompletos($idrecurso);
+        }
+        
+        return $recurso;
+    }
+
+    /**
+     * Crear ejemplares para un recurso físico
+     */
+    public function crearEjemplaresParaRecurso($idrecurso, $cantidad)
+    {
+        $ejemplarModel = new \App\Models\EjemplarFisicoModel();
+        return $ejemplarModel->crearEjemplaresParaRecurso($idrecurso, $cantidad);
     }
 }
