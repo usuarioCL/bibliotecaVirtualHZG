@@ -83,10 +83,16 @@ $routes->get('/admin/register', 'AdminController::register');
 
 //Vistas de administrador
 $routes->get('Administrador/vistas/UsuariosRoles', 'AdminController::VistaUsuariosRoles');
-$routes->get('Administrador/vistas/PrestamosAlumnos', 'AdminController::VistaPrestamosAlumnos');
-$routes->get('Administrador/vistas/ReaccionesUsuarios', 'AdminController::VistaReaccionesUsuarios');
 $routes->get('Administrador/vistas/AlumnosSancionados', 'AdminController::VistaAlumnosSancionados');
-$routes->get('Administrador/vistas/RecursosPopulares', 'AdminController::VistaRecursosPopulares');
+
+// Rutas para Reportes y Estadísticas
+$routes->get('Administrador/vistas/PrestamosAlumnos', 'ReporteController::prestamosUsuarios');
+$routes->get('Administrador/vistas/RecursosPopulares', 'ReporteController::recursosPopulares');
+$routes->get('reportes/inventario', 'ReporteController::inventario');
+
+// Rutas principales para Sanciones (vistas de administrador)
+$routes->get('sanciones', 'SancionController::activas');
+$routes->get('sanciones/historial', 'SancionController::historial');
 
 // Importación de datos
 $routes->get('admin/importar-datos', 'AdminController::importarDatos');
@@ -157,8 +163,8 @@ $routes->delete('/ejemplares-fisicos/eliminar/(:num)', 'EjemplarFisicoController
 $routes->post('/ejemplares-fisicos/restaurar/(:num)', 'EjemplarFisicoController::restaurar/$1');
 $routes->get('/ejemplares-fisicos/estadisticas/(:num)', 'EjemplarFisicoController::estadisticas/$1');
 
-// Sanciones
-$routes->get('/sanciones', 'SancionController::index');
+// Sanciones - Gestión CRUD (rutas con prefijo para evitar conflictos)
+$routes->get('/sanciones/lista', 'SancionController::index');
 $routes->get('/sanciones/crear', 'SancionController::crear');
 $routes->post('/sanciones/guardar', 'SancionController::guardar');
 $routes->get('/sanciones/editar/(:num)', 'SancionController::editar/$1');

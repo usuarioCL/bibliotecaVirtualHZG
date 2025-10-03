@@ -5,6 +5,7 @@ namespace App\Controllers;
 use App\Models\SancionModel;
 use App\Models\TiposancionModel;
 use App\Models\personaModel;
+use Exception;
 
 class SancionController extends BaseController
 {
@@ -381,5 +382,133 @@ class SancionController extends BaseController
 
         session()->setFlashdata('success', 'Tipo de sanción eliminado exitosamente');
         return redirect()->to(base_url('sanciones/tipos'));
+    }
+
+    /**
+     * Mostrar vista de sanciones activas
+     */
+    public function activas()
+    {
+        try {
+            // Usar método existente del modelo
+            $sancionesCompletas = $this->sancionModel->getSancionesCompletas();
+            
+            // Estadísticas básicas con datos existentes
+            $totalSanciones = count($sancionesCompletas);
+            $estadisticas = [
+                'total_sanciones' => $totalSanciones,
+                'sanciones_graves' => 0, // Se calculará cuando se implemente la lógica completa
+                'sanciones_leves' => $totalSanciones,
+                'estudiantes_sancionados' => $totalSanciones
+            ];
+
+            $data = [
+                'title' => 'Sanciones Activas - Sistema Biblioteca',
+                'breadcrumb' => [
+                    'Inicio' => base_url('admin'),
+                    'Control y Sanciones' => '#',
+                    'Sanciones Activas' => ''
+                ],
+                'sanciones' => $sancionesCompletas,
+                'estadisticas' => $estadisticas,
+                'tipos_sancion' => $this->tiposancionModel->findAll()
+            ];
+
+            return view('Administrador/sanciones/activas', $data);
+            
+        } catch (Exception $e) {
+            log_message('error', 'Error en SancionController::activas: ' . $e->getMessage());
+            
+            // Vista de error básica
+            $data = [
+                'title' => 'Error - Sanciones Activas',
+                'error' => 'Error al cargar las sanciones. Por favor, inténtalo de nuevo.',
+                'sanciones' => [],
+                'estadisticas' => [
+                    'total_sanciones' => 0,
+                    'sanciones_graves' => 0, 
+                    'sanciones_leves' => 0,
+                    'estudiantes_sancionados' => 0
+                ],
+                'tipos_sancion' => []
+            ];
+            
+            return view('Administrador/sanciones/activas', $data);
+        }
+    }
+
+    /**
+     * Mostrar vista del historial de sanciones
+     */
+    public function historial()
+    {
+        try {
+            // Usar método existente del modelo
+            $historialCompleto = $this->sancionModel->getSancionesCompletas();
+            
+            // Estadísticas básicas con datos existentes
+            $totalRegistros = count($historialCompleto);
+            $estadisticas = [
+                'total_registros' => $totalRegistros,
+                'sanciones_activas' => $totalRegistros, // Temporalmente todas se consideran activas
+                'sanciones_levantadas' => 0,
+                'sanciones_vencidas' => 0,
+                'estudiantes_historial' => $totalRegistros,
+                'promedio_mensual' => round($totalRegistros / 12, 1)
+            ];
+
+            // Actividad reciente simulada
+            $actividadReciente = [
+                [
+                    'tipo' => 'nueva',
+                    'titulo' => 'Nueva sanción registrada',
+                    'descripcion' => 'Se registró una nueva sanción disciplinaria',
+                    'tiempo' => 'Hace 2 horas'
+                ],
+                [
+                    'tipo' => 'levantada',
+                    'titulo' => 'Sanción levantada',
+                    'descripcion' => 'Se levantó una sanción previamente aplicada',
+                    'tiempo' => 'Ayer a las 14:30'
+                ]
+            ];
+
+            $data = [
+                'title' => 'Historial de Sanciones - Sistema Biblioteca',
+                'breadcrumb' => [
+                    'Inicio' => base_url('admin'),
+                    'Control y Sanciones' => '#',
+                    'Historial de Sanciones' => ''
+                ],
+                'historial' => $historialCompleto,
+                'estadisticas' => $estadisticas,
+                'actividad_reciente' => $actividadReciente,
+                'tipos_sancion' => $this->tiposancionModel->findAll()
+            ];
+
+            return view('Administrador/sanciones/historial', $data);
+            
+        } catch (Exception $e) {
+            log_message('error', 'Error en SancionController::historial: ' . $e->getMessage());
+            
+            // Vista de error básica
+            $data = [
+                'title' => 'Error - Historial de Sanciones',
+                'error' => 'Error al cargar el historial. Por favor, inténtalo de nuevo.',
+                'historial' => [],
+                'estadisticas' => [
+                    'total_registros' => 0,
+                    'sanciones_activas' => 0,
+                    'sanciones_levantadas' => 0,
+                    'sanciones_vencidas' => 0,
+                    'estudiantes_historial' => 0,
+                    'promedio_mensual' => 0
+                ],
+                'actividad_reciente' => [],
+                'tipos_sancion' => []
+            ];
+            
+            return view('Administrador/sanciones/historial', $data);
+        }
     }
 }

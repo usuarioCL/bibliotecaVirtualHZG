@@ -119,7 +119,7 @@
              href="<?= base_url('prestamos'); ?>"
              title="Ver préstamos activos">
             <div class="d-flex align-items-center gap-3">
-              <i class="ti ti-bookmark-filled fs-5"></i>
+                <i class="ti ti-bookmark fs-5"></i>
               <span class="hide-menu">Préstamos Activos</span>
             </div>
           </a>

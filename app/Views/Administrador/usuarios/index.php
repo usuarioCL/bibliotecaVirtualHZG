@@ -128,7 +128,7 @@
                                     
                                     <td class="px-3 py-3">
                                         <div class="d-flex align-items-center">
-                                            <div class="user-avatar rounded-3 text-white d-flex align-items-center justify-content-center me-3 shadow-sm" style="width: 42px; height: 42px; font-weight: 600;">
+                                            <div class="user-avatar rounded-3 text-black d-flex align-items-center justify-content-center me-3 shadow-lg" style="width: 42px; height: 42px; font-weight: 600;">
                                                 <?= strtoupper(substr($usuario['nomuser'], 0, 2)) ?>
                                             </div>
                                             <div>
