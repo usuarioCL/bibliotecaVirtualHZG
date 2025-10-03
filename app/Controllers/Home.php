@@ -33,6 +33,7 @@ class Home extends Controller
         return view('paginaPrincipal', $data);
     }
 
+
     public function sobrePlataforma(): string
     {
         $data = [

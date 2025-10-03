@@ -30,12 +30,20 @@ class CatalogoController extends BaseController
         // Traemos libros para cada subcategoría
         $datosSub = [];
         foreach ($subcategorias as $sub) {
-            $libros = $recursoModel->where('idsubcategoria', $sub['idsubcategoria'])->findAll();
+            // Usar obtenerRecursosCompletos para obtener todos los datos necesarios
+            $libros = $recursoModel->obtenerRecursosCompletos();
+            $libros = array_filter($libros, function($libro) use ($sub) {
+                return $libro['idsubcategoria'] == $sub['idsubcategoria'];
+            });
             
             // agregar autores a cada libro
             foreach ($libros as &$libro) {
                 $libro['autores'] = $this->obtenerAutoresLibro($libro['idrecurso']);
+                
             }
+            
+            // Asegurar que $libros sea un array indexado numéricamente
+            $libros = array_values($libros);
             
             $datosSub[] = [
                 'subcategoria' => $sub['subcategoria'],
@@ -69,14 +77,26 @@ class CatalogoController extends BaseController
             log_message('info', 'Subcategorías encontradas: ' . count($subcategorias));
 
             foreach ($subcategorias as $sub) {
-                $libros = $recursoModel->where('idsubcategoria', $sub['idsubcategoria'])->findAll();
+                // Usar obtenerRecursosCompletos para obtener todos los datos necesarios
+                $libros = $recursoModel->obtenerRecursosCompletos();
+                $libros = array_filter($libros, function($libro) use ($sub) {
+                    return $libro['idsubcategoria'] == $sub['idsubcategoria'];
+                });
                 
                 log_message('info', "Subcategoría {$sub['subcategoria']}: " . count($libros) . " libros");
 
                 // agregar autores a cada libro
                 foreach ($libros as &$libro) {
                     $libro['autores'] = $this->obtenerAutoresLibro($libro['idrecurso']);
+                    
+                    // Debug: Log de información de imagen para cada libro
+                    log_message('info', "Libro {$libro['titulo']}: rutaportada = " . ($libro['rutaportada'] ?? 'NULL') . 
+                        ", archivo = " . ($libro['archivo'] ?? 'NULL') . 
+                        ", tiporecurso = " . ($libro['tiporecurso'] ?? 'NULL'));
                 }
+                
+                // Asegurar que $libros sea un array indexado numéricamente
+                $libros = array_values($libros);
 
                 $resultado[] = [
                     'subcategoria' => $sub['subcategoria'],
@@ -98,6 +118,8 @@ class CatalogoController extends BaseController
             ])->setStatusCode(500);
         }
     }
+
+
 
     // Método helper para obtener autores de un libro
     private function obtenerAutoresLibro($idRecurso)
@@ -141,12 +163,24 @@ class CatalogoController extends BaseController
             log_message('info', "Subcategorías para categoría {$idCategoria}: " . count($subs));
 
             foreach ($subs as $sub) {
-                $libros = $recursoModel->where('idsubcategoria', $sub['idsubcategoria'])->findAll();
+                // Usar obtenerRecursosCompletos para obtener todos los datos necesarios
+                $libros = $recursoModel->obtenerRecursosCompletos();
+                $libros = array_filter($libros, function($libro) use ($sub) {
+                    return $libro['idsubcategoria'] == $sub['idsubcategoria'];
+                });
 
                 // agregar autores a cada libro
                 foreach ($libros as &$libro) {
                     $libro['autores'] = $this->obtenerAutoresLibro($libro['idrecurso']);
+                    
+                    // Debug: Log de información de imagen para cada libro
+                    log_message('info', "Libro {$libro['titulo']}: rutaportada = " . ($libro['rutaportada'] ?? 'NULL') . 
+                        ", archivo = " . ($libro['archivo'] ?? 'NULL') . 
+                        ", tiporecurso = " . ($libro['tiporecurso'] ?? 'NULL'));
                 }
+                
+                // Asegurar que $libros sea un array indexado numéricamente
+                $libros = array_values($libros);
 
                 $resultado[] = [
                     'subcategoria' => $sub['subcategoria'],

@@ -57,9 +57,9 @@ $imagenPrefix = $imagenPrefix ?? '';
         
         <!-- Imagen del libro -->
         <div class="card-img-top-container" style="height: 250px; overflow: hidden;">
-            <?php if (!empty($libro['rutaportada'])): ?>
+            <?php if (!empty($libro['portada'])): ?>
                 <?php 
-                $rutaCompleta = $imagenPrefix . $libro['rutaportada'];
+                $rutaCompleta = $imagenPrefix . $libro['portada'];
                 ?>
                 <img src="<?= $rutaCompleta ?>" 
                      class="card-img-top h-100 w-100" 
