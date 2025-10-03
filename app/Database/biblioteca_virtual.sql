@@ -1,13 +1,9 @@
-
--- ==========================================
 -- BASE DE DATOS: Biblioteca Virtual Escolar
--- ==========================================
+
 CREATE DATABASE biblioteca_virtual;
 USE biblioteca_virtual;
 
--- ==============================
 -- TABLA: Personas
--- ==============================
 CREATE TABLE personas (
     idpersona INT AUTO_INCREMENT PRIMARY KEY,
     apellidos VARCHAR(50) NOT NULL,
@@ -20,9 +16,7 @@ CREATE TABLE personas (
     genero ENUM('Masculino','Femenino','Otro')
 );
 
--- ==============================
 -- TABLA: Usuarios
--- ==============================
 CREATE TABLE usuarios (
     idusuario INT AUTO_INCREMENT PRIMARY KEY,
     nomuser VARCHAR(30) NOT NULL UNIQUE,
@@ -32,9 +26,7 @@ CREATE TABLE usuarios (
     FOREIGN KEY (idpersona) REFERENCES personas(idpersona)
 );
 
--- ==============================
 -- TABLA: Grupos
--- ==============================
 CREATE TABLE grupos (
     idgrupo INT AUTO_INCREMENT PRIMARY KEY,
     aniolectivo YEAR NOT NULL,
@@ -43,9 +35,7 @@ CREATE TABLE grupos (
     nivel ENUM('Inicial','Primaria','Secundaria') NOT NULL
 );
 
--- ==============================
 -- TABLA: Matriculas
--- ==============================
 CREATE TABLE matriculas (
     idmatricula INT AUTO_INCREMENT PRIMARY KEY,
     idgrupo INT NOT NULL,
@@ -56,17 +46,13 @@ CREATE TABLE matriculas (
     FOREIGN KEY (idpersona) REFERENCES personas(idpersona)
 );
 
--- ==============================
 -- TABLA: Tipos de Recurso
--- ==============================
 CREATE TABLE tiporecursos (
     idtiporecurso INT AUTO_INCREMENT PRIMARY KEY,
     tiporecurso VARCHAR(50) NOT NULL -- ej: Libro físico, Libro digital
 );
 
--- ==============================
 -- TABLA: Categorías y Subcategorías
--- ==============================
 CREATE TABLE categorias (
     idcategoria INT AUTO_INCREMENT PRIMARY KEY,
     categoria VARCHAR(100) NOT NULL
@@ -79,17 +65,13 @@ CREATE TABLE subcategorias (
     FOREIGN KEY (idcategoria) REFERENCES categorias(idcategoria)
 );
 
--- ==============================
 -- TABLA: Editoriales
--- ==============================
 CREATE TABLE editoriales (
     ideditorial INT AUTO_INCREMENT PRIMARY KEY,
     editorial VARCHAR(100) NOT NULL
 );
 
--- ==============================
 -- TABLA: Recursos (Base General)
--- ==============================
 CREATE TABLE recursos (
     idrecurso INT AUTO_INCREMENT PRIMARY KEY,
     titulo VARCHAR(150) NOT NULL,
@@ -108,9 +90,7 @@ CREATE TABLE recursos (
     FOREIGN KEY (idtiporecurso) REFERENCES tiporecursos(idtiporecurso)
 );
 
--- ==============================
 -- TABLA: Recursos Físicos
--- ==============================
 CREATE TABLE recursos_fisicos (
     idrecurso INT PRIMARY KEY,
     portada VARCHAR(200), -- imagen de la portada
@@ -118,9 +98,7 @@ CREATE TABLE recursos_fisicos (
     FOREIGN KEY (idrecurso) REFERENCES recursos(idrecurso)
 );
 
--- ==============================
 -- TABLA: Recursos Digitales
--- ==============================
 CREATE TABLE recursos_digitales (
     idrecurso INT PRIMARY KEY,
     portada VARCHAR(200), -- opcional: imagen de la carátula
@@ -128,10 +106,7 @@ CREATE TABLE recursos_digitales (
     FOREIGN KEY (idrecurso) REFERENCES recursos(idrecurso)
 );
 
-
--- ==============================
--- TABLAS: Autores y Detalle
--- ==============================   
+-- TABLAS: Autores y Detalle 
 CREATE TABLE autores (
     idautor INT AUTO_INCREMENT PRIMARY KEY,
     apeautor VARCHAR(50),
@@ -147,9 +122,7 @@ CREATE TABLE detautores (
     FOREIGN KEY (idrecurso) REFERENCES recursos(idrecurso)
 );
 
--- ==============================
 -- TABLA: Prestamos
--- ==============================
 CREATE TABLE prestamos (
     idprestamo INT AUTO_INCREMENT PRIMARY KEY,
     idmatricula INT NOT NULL,
@@ -164,9 +137,7 @@ CREATE TABLE prestamos (
     FOREIGN KEY (idrecurso) REFERENCES recursos(idrecurso)
 );
 
--- ==============================
 -- TABLA: Solicitudes de Prestamo
--- ==============================
 CREATE TABLE solicitud (
     idsolicitud INT AUTO_INCREMENT PRIMARY KEY,
     validado BOOLEAN DEFAULT FALSE,
@@ -174,9 +145,7 @@ CREATE TABLE solicitud (
     FOREIGN KEY (idprestamo) REFERENCES prestamos(idprestamo)
 );
 
--- ==============================
 -- TABLAS: Sanciones y Tipos
--- ==============================
 CREATE TABLE tiposancion (
     idtiposancion INT AUTO_INCREMENT PRIMARY KEY,
     tiposancion VARCHAR(80) NOT NULL
@@ -191,9 +160,8 @@ CREATE TABLE sanciones (
     FOREIGN KEY (idpersona) REFERENCES personas(idpersona)
 );
 
--- ==============================
+
 -- TABLA: Ubicaciones (para libros físicos)
--- ==============================
 CREATE TABLE ubicaciones (
     idubicacion INT AUTO_INCREMENT PRIMARY KEY,
     ubicacion VARCHAR(100) NOT NULL,
@@ -201,9 +169,8 @@ CREATE TABLE ubicaciones (
     FOREIGN KEY (idrecurso) REFERENCES recursos(idrecurso)
 );
 
--- ==============================
+
 -- TABLAS: Interacciones Sociales
--- ==============================
 CREATE TABLE comentarios (
     idcomentario INT AUTO_INCREMENT PRIMARY KEY,
     comentario TEXT NOT NULL,
@@ -240,10 +207,21 @@ CREATE TABLE favoritos (
     FOREIGN KEY (idrecurso) REFERENCES recursos(idrecurso)
 );
 
-CREATE TABLE ejemplares (
+CREATE TABLE ejemplares_fisicos (
     idejemplar INT AUTO_INCREMENT PRIMARY KEY,
-    codigo VARCHAR(20) NOT NULL UNIQUE, -- Ej: PY-001
     idrecurso INT NOT NULL,
-    estado ENUM('disponible','prestado','perdido') DEFAULT 'disponible',
-    FOREIGN KEY (idrecurso) REFERENCES recursos(idrecurso)
+    codigo_ejemplar VARCHAR(20) NOT NULL UNIQUE,
+    estado_ejemplar ENUM('disponible','prestado','dañado','perdido','mantenimiento') DEFAULT 'disponible',
+    ubicacion VARCHAR(100), 
+    observaciones TEXT,
+    fecha_ingreso DATE DEFAULT (CURRENT_DATE),
+    fecha_ultima_revision DATE,
+    activo BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (idrecurso) REFERENCES recursos(idrecurso) ON DELETE CASCADE,
+    INDEX idx_codigo_ejemplar (codigo_ejemplar),
+    INDEX idx_estado_ejemplar (estado_ejemplar),
+    INDEX idx_activo (activo)
 );

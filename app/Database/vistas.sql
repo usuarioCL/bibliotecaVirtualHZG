@@ -1,40 +1,26 @@
--- Vista de usuarios y roles
-SELECT u.nomuser, u.nivelacceso, p.nombres, p.apellidos, p.email
-FROM usuarios u
-JOIN personas p ON u.idpersona = p.idpersona;
-
--- Vista prestamos con infor del alumno
-SELECT p.fechaprestamo, per.nombres, per.apellidos, r.titulo
-FROM prestamos p
-INNER JOIN matriculas m ON p.idmatricula = m.idmatricula
-INNER JOIN personas per ON m.idpersona = per.idpersona
-INNER JOIN recursos r ON p.idrecurso = r.idrecurso;
-
--- Vista reaccion de los usuarios
-SELECT u.nomuser, r.titulo, re.tiporeaccion
-FROM reacciones re
-INNER JOIN usuarios u ON re.idusuario = u.idusuario
-INNER JOIN recursos r ON re.idrecurso = r.idrecurso;
-
---Vista alumnos sancionados
-SELECT s.detallesancion, ts.tiposancion, per.nombres, per.apellidos
-FROM sanciones s
-INNER JOIN tiposancion ts ON s.idtiposancion = ts.idtiposancion
-INNER JOIN personas per ON s.idpersona = per.idpersona;
-
--- Vista recursos digitales
+CREATE VIEW vista_ejemplares_completos AS
 SELECT 
-    r.idrecurso,
+    e.idejemplar,
+    e.idrecurso,
+    e.codigo_ejemplar,
+    e.estado_ejemplar,
+    e.ubicacion,
+    e.observaciones,
+    e.fecha_ingreso,
+    e.fecha_ultima_revision,
+    e.activo,
     r.titulo,
     r.anio,
-    e.editorial,
+    r.isbn,
+    r.numedicion,
+    ed.editorial,
     c.categoria,
     s.subcategoria,
-    t.tiporecurso,
-    d.archivo
-FROM recursos r
-INNER JOIN recursos_digitales d ON r.idrecurso = d.idrecurso
-INNER JOIN editoriales e ON r.ideditorial = e.ideditorial
+    t.tiporecurso
+FROM ejemplares_fisicos e
+INNER JOIN recursos r ON e.idrecurso = r.idrecurso
+INNER JOIN editoriales ed ON r.ideditorial = ed.ideditorial
 INNER JOIN subcategorias s ON r.idsubcategoria = s.idsubcategoria
 INNER JOIN categorias c ON s.idcategoria = c.idcategoria
-INNER JOIN tiporecursos t ON r.idtiporecurso = t.idtiporecurso;
+INNER JOIN tiporecursos t ON r.idtiporecurso = t.idtiporecurso
+WHERE e.activo = TRUE;

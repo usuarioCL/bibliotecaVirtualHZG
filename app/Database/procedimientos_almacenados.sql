@@ -1,58 +1,68 @@
-DELIMITER $$
+DELIMITER //
 
-CREATE PROCEDURE crear_recurso_con_ejemplares(
-    IN p_titulo VARCHAR(150),
-    IN p_anio SMALLINT,
-    IN p_numpaginas SMALLINT,
-    IN p_isbn CHAR(13),
-    IN p_numedicion VARCHAR(50),
-    IN p_stock SMALLINT,
-    IN p_nivel ENUM('Inicial','Primaria','Secundaria'),
-    IN p_idsubcategoria INT,
-    IN p_ideditorial INT,
-    IN p_idtiporecurso INT
+CREATE PROCEDURE GenerarCodigoEjemplar(
+    IN p_idrecurso INT,
+    OUT p_codigo_ejemplar VARCHAR(20)
 )
 BEGIN
-    DECLARE i INT DEFAULT 1;
-    DECLARE nuevo_id INT;
-    DECLARE codigo_base VARCHAR(10);
-
-    -- Insertamos en recursos
-    INSERT INTO recursos (
-        titulo, anio, numpaginas, isbn, numedicion, estado, stock, nivel, 
-        idsubcategoria, ideditorial, idtiporecurso
-    )
-    VALUES (
-        p_titulo, p_anio, p_numpaginas, p_isbn, p_numedicion, 'disponible', p_stock, p_nivel,
-        p_idsubcategoria, p_ideditorial, p_idtiporecurso
-    );
-
-    -- Guardamos el id generado
-    SET nuevo_id = LAST_INSERT_ID();
-
-    -- Creamos un código base a partir de las 2 primeras letras del título
-    SET codigo_base = UPPER(LEFT(p_titulo, 4));
-
-    -- Insertamos los ejemplares
-    WHILE i <= p_stock DO
-        INSERT INTO ejemplares (codigo, idrecurso, estado)
-        VALUES (CONCAT(codigo_base, '-', LPAD(i, 3, '0')), nuevo_id, 'disponible');
-        SET i = i + 1;
-    END WHILE;
-END $$
-
+    DECLARE v_titulo VARCHAR(150);
+    DECLARE v_prefijo VARCHAR(4);
+    DECLARE v_siguiente_numero INT;
+    DECLARE v_codigo VARCHAR(20);
+    
+    SELECT titulo INTO v_titulo 
+    FROM recursos 
+    WHERE idrecurso = p_idrecurso;
+    
+    SET v_prefijo = LOWER(REPLACE(SUBSTRING(v_titulo, 1, 4), ' ', ''));
+    
+    IF LENGTH(v_prefijo) < 4 THEN
+        SET v_prefijo = LOWER(REPLACE(v_titulo, ' ', ''));
+    END IF;
+    
+    SELECT COALESCE(MAX(CAST(SUBSTRING(codigo_ejemplar, LENGTH(v_prefijo) + 2) AS UNSIGNED)), 0) + 1
+    INTO v_siguiente_numero
+    FROM ejemplares_fisicos 
+    WHERE codigo_ejemplar LIKE CONCAT(v_prefijo, '-%')
+    AND idrecurso = p_idrecurso;
+    
+    SET v_codigo = CONCAT(v_prefijo, '-', LPAD(v_siguiente_numero, 3, '0'));
+    
+    SET p_codigo_ejemplar = v_codigo;
+END //
 DELIMITER ;
 
--- Ejemplo de uso
-CALL crear_recurso_con_ejemplares(
-    'Java avanzado', 
-    2021, 
-    340, 
-    '3781234567890', 
-    '2da edición', 
-    2, 
-    'Secundaria', 
-    3,  -- idsubcategoria (ej. Programación)
-    3,  -- ideditorial (ej. O’Reilly Media)
-    1   -- idtiporecurso (ej. Libro Físico)
-);
+DELIMITER //
+
+CREATE PROCEDURE CrearEjemplaresParaRecurso(
+    IN p_idrecurso INT,
+    IN p_cantidad INT
+)
+BEGIN
+    DECLARE v_contador INT DEFAULT 1;
+    DECLARE v_codigo_ejemplar VARCHAR(20);
+    DECLARE v_exit_handler INT DEFAULT 0;
+    
+    DECLARE CONTINUE HANDLER FOR SQLEXCEPTION SET v_exit_handler = 1;
+    
+    IF NOT EXISTS (SELECT 1 FROM recursos WHERE idrecurso = p_idrecurso) THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'El recurso especificado no existe';
+    END IF;
+    
+    WHILE v_contador <= p_cantidad AND v_exit_handler = 0 DO
+
+        CALL GenerarCodigoEjemplar(p_idrecurso, v_codigo_ejemplar);
+        
+        INSERT INTO ejemplares_fisicos (idrecurso, codigo_ejemplar, estado_ejemplar)
+        VALUES (p_idrecurso, v_codigo_ejemplar, 'disponible');
+        
+        SET v_contador = v_contador + 1;
+    END WHILE;
+    
+    IF v_exit_handler = 1 THEN
+        ROLLBACK;
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Error al crear ejemplares';
+    END IF;
+END //
+
+DELIMITER ;
