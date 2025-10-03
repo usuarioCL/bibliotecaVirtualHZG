@@ -25,7 +25,8 @@ class RecursoDigitalController extends BaseController
                 c.categoria,
                 s.subcategoria,
                 t.tiporecurso,
-                d.archivo
+                d.archivo,
+                d.portada
             FROM recursos r
             INNER JOIN recursos_digitales d ON r.idrecurso = d.idrecurso
             INNER JOIN editoriales e ON r.ideditorial = e.ideditorial

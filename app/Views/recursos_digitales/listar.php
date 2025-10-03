@@ -22,15 +22,16 @@
                     <thead class="table-light">
                         <tr>
                             <th>ID</th>
+                            <th>Portada</th>
                             <th>Título</th>
                             <th>Año</th>
                             <th>Editorial</th>
                             <th>Categoría</th>
                             <th>Subcategoría</th>
                             <th>Tipo de Recurso</th>
-                        <th>Archivo</th>
-                        <th>Ver</th>
-                        <th>Acciones</th>
+                            <th>Archivo</th>
+                            <th>Ver</th>
+                            <th>Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -38,6 +39,18 @@
                             <?php foreach($recursos_digitales as $recurso): ?>
                             <tr>
                                 <td><?= $recurso->idrecurso ?></td>
+                                <td>
+                                    <?php if (!empty($recurso->portada)): ?>
+                                        <img src="<?= base_url(esc($recurso->portada)) ?>" 
+                                             alt="Portada" 
+                                             style="height:60px;width:auto;border-radius:4px;border:1px solid #e5e5e5;object-fit:cover;"
+                                             onerror="this.onerror=null;this.src='<?= base_url('img/portada_default.png') ?>';">
+                                    <?php else: ?>
+                                        <img src="<?= base_url('img/portada_default.png') ?>" 
+                                             alt="Sin portada" 
+                                             style="height:60px;width:auto;border-radius:4px;border:1px solid #e5e5e5;object-fit:cover;">
+                                    <?php endif; ?>
+                                </td>
                                 <td>
                                     <strong><?= esc($recurso->titulo) ?></strong>
                                 </td>
@@ -94,7 +107,7 @@
                             <?php endforeach; ?>
                         <?php else: ?>
                         <tr>
-                            <td colspan="10" class="text-center text-muted py-4">
+                            <td colspan="11" class="text-center text-muted py-4">
                                 <i class="ti ti-inbox fs-1 d-block mb-2"></i>
                                 No hay recursos digitales registrados
                             </td>
