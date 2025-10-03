@@ -53,8 +53,8 @@ BEGIN
 
         CALL GenerarCodigoEjemplar(p_idrecurso, v_codigo_ejemplar);
         
-        INSERT INTO ejemplares_fisicos (idrecurso, codigo_ejemplar, estado_ejemplar)
-        VALUES (p_idrecurso, v_codigo_ejemplar, 'disponible');
+        INSERT INTO ejemplares_fisicos (idrecurso, codigo_ejemplar, estado_ejemplar, fecha_ultima_revision)
+        VALUES (p_idrecurso, v_codigo_ejemplar, 'disponible', CURRENT_DATE);
         
         SET v_contador = v_contador + 1;
     END WHILE;

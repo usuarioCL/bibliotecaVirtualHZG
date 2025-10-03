@@ -412,6 +412,18 @@ function registrarRecurso()
         }
     }
     
+    // Mostrar loading con SweetAlert
+    Swal.fire({
+        title: 'Creando recurso...',
+        text: 'Por favor espera mientras procesamos tu solicitud',
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        showConfirmButton: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+
     fetch('<?= base_url('recursos/guardar') ?>', {
         method: 'POST',
         body: formData
@@ -419,57 +431,45 @@ function registrarRecurso()
     .then(response => response.json())
     .then(data => {
         if (data.status === 'success') {
-            alerta.className = 'alert alert-success';
-            alerta.innerHTML = `
-                <strong>¡Registro exitoso!</strong><br>
-                Recurso creado: <strong>${data.titulo || titulo}</strong>
-            `;
-            alerta.classList.remove('d-none');
+            // Cerrar loading
+            Swal.close();
             
-            // Cerrar modal después de 2 segundos y recargar vista de recursos en el dashboard
-            setTimeout(() => {
-                const modalElement = document.getElementById('modalCrearRecurso');
+            // Mostrar éxito con SweetAlert
+            Swal.fire({
+                icon: 'success',
+                title: '¡Recurso creado exitosamente!',
+                html: `
+                    <div class="text-center">
+                        <p><strong>${data.titulo || titulo}</strong></p>
+                        <p class="text-muted">El recurso ha sido registrado correctamente en el sistema</p>
+                    </div>
+                `,
+                confirmButtonText: 'Continuar',
+                confirmButtonColor: '#198754',
+                timer: 4000,
+                timerProgressBar: true,
+                showClass: {
+                    popup: 'animate__animated animate__fadeInDown'
+                },
+                hideClass: {
+                    popup: 'animate__animated animate__fadeOutUp'
+                }
+            }).then(() => {
+                // Limpiar el formulario
+                form.reset();
                 
-                // Verificar que el modal existe
+                // Cerrar el modal
+                const modalElement = document.getElementById('modalCrearRecurso');
                 if (modalElement) {
-                    // Intentar obtener la instancia del modal
                     let modalInstance = bootstrap.Modal.getInstance(modalElement);
-                    
-                    // Si no existe instancia, crear una nueva
                     if (!modalInstance) {
                         modalInstance = new bootstrap.Modal(modalElement);
                     }
-                    
-                    // Cerrar modal correctamente
                     modalInstance.hide();
                     
-                    // Limpiar backdrop y overlays manualmente
+                    // Limpiar backdrop y recargar vista
                     setTimeout(() => {
-                        // Función para limpiar completamente el modal
-                        function limpiarModalCompletamente() {
-                            // Eliminar todos los backdrops
-                            const backdrops = document.querySelectorAll('.modal-backdrop');
-                            backdrops.forEach(backdrop => backdrop.remove());
-                            
-                            // Restaurar scroll del body completamente
-                            document.body.classList.remove('modal-open');
-                            document.body.style.overflow = '';
-                            document.body.style.paddingRight = '';
-                            document.body.style.overflowX = '';
-                            document.body.style.overflowY = '';
-                            
-                            // Eliminar cualquier clase modal que pueda quedar
-                            document.body.classList.remove('modal-open');
-                            
-                            // Forzar reflow para asegurar que los cambios se apliquen
-                            document.body.offsetHeight;
-                        }
-                        
-                        // Limpiar inmediatamente
-                        limpiarModalCompletamente();
-                        
-                        // Limpiar nuevamente después de un breve delay para asegurar
-                        setTimeout(limpiarModalCompletamente, 100);
+                        limpiarBackdropModal();
                         
                         // Cargar la vista de recursos en el contenedor principal del dashboard
                         if (typeof $ !== 'undefined' && $('#contenedor-principal').length > 0) {
@@ -477,31 +477,55 @@ function registrarRecurso()
                                 $('#contenedor-principal').html(html); 
                             }).fail(function() {
                                 console.error('Error al recargar la vista de recursos');
-                                // Recargar la página como fallback
                                 window.location.reload();
                             });
                         } else {
-                            // Si no hay contenedor principal, recargar la página
                             window.location.reload();
                         }
                     }, 300);
                 } else {
-                    console.error('Modal element not found');
-                    // Recargar la página como fallback
                     window.location.reload();
                 }
-            }, 2000);
+            });
         } else {
-            alerta.className = 'alert alert-danger';
-            alerta.textContent = data.message || 'Error al registrar recurso';
-            alerta.classList.remove('d-none');
+            // Cerrar loading
+            Swal.close();
+            
+            // Mostrar error con SweetAlert
+            Swal.fire({
+                icon: 'error',
+                title: 'Error al crear recurso',
+                text: data.message || 'Ocurrió un error inesperado. Por favor, intenta nuevamente.',
+                confirmButtonText: 'Entendido',
+                confirmButtonColor: '#dc3545',
+                showClass: {
+                    popup: 'animate__animated animate__shakeX'
+                }
+            });
         }
     })
     .catch(error => {
         console.error('Error en registrarRecurso:', error);
-        alerta.className = 'alert alert-danger';
-        alerta.textContent = 'Error de conexión: ' + error.message;
-        alerta.classList.remove('d-none');
+        
+        // Cerrar loading
+        Swal.close();
+        
+        // Mostrar error de conexión con SweetAlert
+        Swal.fire({
+            icon: 'error',
+            title: 'Error de conexión',
+            html: `
+                <div class="text-center">
+                    <p>No se pudo conectar con el servidor</p>
+                    <p class="text-muted">Por favor, verifica tu conexión e intenta nuevamente</p>
+                </div>
+            `,
+            confirmButtonText: 'Entendido',
+            confirmButtonColor: '#dc3545',
+            showClass: {
+                popup: 'animate__animated animate__shakeX'
+            }
+        });
     });
 }
 
