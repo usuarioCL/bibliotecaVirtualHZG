@@ -67,7 +67,7 @@ if (isset($favorito['estado'])) {
                         <?= esc($favorito['titulo']) ?>
                     </h6>
                     <p class="card-text small text-muted mb-1">
-                        <strong>Autor:</strong> <?= esc($favorito['nomautor'] ?? 'Sin autor') ?>
+                        <strong>Autores:</strong> <?= esc($favorito['nomautor'] ?? 'Sin autor') ?>
                     </p>
                     <p class="card-text small text-muted mb-1">
                         <strong>Año:</strong> <?= esc($favorito['anio'] ?? 'N/A') ?>

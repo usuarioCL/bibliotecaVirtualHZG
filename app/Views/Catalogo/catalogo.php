@@ -164,9 +164,9 @@ function generarLibroCard(libro, colClasses = 'col-lg-2 col-md-4 col-sm-6') {
                     ${tituloCorto}
                 </h6>
                 
-                <!-- Autor -->
+                <!-- Autores -->
                 <p class="card-text text-muted small mb-2">
-                    <strong>Autor:</strong> ${autorTexto}
+                    <strong>Autores:</strong> ${autorTexto}
                 </p>
                 
                 <!-- Año -->
@@ -337,8 +337,38 @@ function cargarSubcategorias(idCat) {
 
 // Funciones auxiliares para las acciones de los botones
 function verDetalles(idRecurso) {
-    // Redirigir a la página de detalles del recurso
-    window.location.href = `<?= site_url('catalogo/detalle') ?>/${idRecurso}`;
+    // Cargar detalles en modal
+    const modalBody = document.getElementById('libroModalBody');
+    
+    // Mostrar loading
+    modalBody.innerHTML = `
+        <div class="text-center">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Cargando...</span>
+            </div>
+            <p class="mt-2">Cargando detalles del recurso...</p>
+        </div>
+    `;
+    
+    // Mostrar el modal
+    const modal = new bootstrap.Modal(document.getElementById('libroModal'));
+    modal.show();
+    
+    // Cargar detalles via AJAX
+    fetch(`<?= base_url('recursos/detalles/') ?>${idRecurso}`)
+        .then(response => response.text())
+        .then(html => {
+            modalBody.innerHTML = html;
+        })
+        .catch(error => {
+            console.error('Error al cargar detalles:', error);
+            modalBody.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Error al cargar los detalles del recurso.
+                </div>
+            `;
+        });
 }
 
 function solicitarPrestamo(idRecurso) {
@@ -1322,13 +1352,33 @@ function extractTextFromAllPages() {
 
 // Función para cargar detalles del libro (placeholder)
 function cargarDetallesLibro(idRecurso) {
-    // Por ahora solo mostrar un mensaje
-    document.getElementById('libroModalBody').innerHTML = `
+    const modalBody = document.getElementById('libroModalBody');
+    
+    // Mostrar loading
+    modalBody.innerHTML = `
         <div class="text-center">
-            <h5>Detalles del Recurso #${idRecurso}</h5>
-            <p class="text-muted">Funcionalidad de detalles en desarrollo...</p>
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Cargando...</span>
+            </div>
+            <p class="mt-2">Cargando detalles del recurso...</p>
         </div>
     `;
+    
+    // Cargar detalles via AJAX
+    fetch(`<?= base_url('recursos/detalles/') ?>${idRecurso}`)
+        .then(response => response.text())
+        .then(html => {
+            modalBody.innerHTML = html;
+        })
+        .catch(error => {
+            console.error('Error al cargar detalles:', error);
+            modalBody.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Error al cargar los detalles del recurso.
+                </div>
+            `;
+        });
 }
 
 // Limpiar modal cuando se cierre

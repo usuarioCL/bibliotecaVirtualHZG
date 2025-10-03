@@ -87,7 +87,7 @@ $textoEstado = [
                         <?= esc($prestamo['titulo']) ?>
                     </h6>
                     <p class="card-text small text-muted mb-2">
-                        <strong>Autor:</strong> <?= esc($prestamo['nomautor'] ?? 'Sin autor') ?>
+                        <strong>Autores:</strong> <?= esc($prestamo['nomautor'] ?? 'Sin autor') ?>
                     </p>
                     <p class="card-text small text-muted mb-2">
                         <strong>Prestado:</strong> 

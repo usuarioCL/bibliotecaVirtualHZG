@@ -255,10 +255,10 @@ document.addEventListener('DOMContentLoaded', function() {
         cards.forEach(card => {
             const titulo = card.querySelector('h6.card-title')?.textContent.toLowerCase() || '';
             
-            // Buscar el texto del autor (después de "Autor:")
+            // Buscar el texto del autor (después de "Autores:")
             const autorElement = card.querySelector('p.card-text');
             const autorTexto = autorElement?.textContent || '';
-            const autor = autorTexto.replace('autor:', '').trim().toLowerCase();
+            const autor = autorTexto.replace('autores:', '').trim().toLowerCase();
             
             // Buscar el texto de la categoría (después de "Categoría:")
             const categoriaElements = card.querySelectorAll('p.card-text');
@@ -382,8 +382,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 case 'autor':
                     const autorElementA = a.querySelector('p.card-text');
                     const autorElementB = b.querySelector('p.card-text');
-                    const autorA = autorElementA?.textContent.replace('Autor:', '').trim() || '';
-                    const autorB = autorElementB?.textContent.replace('Autor:', '').trim() || '';
+                    const autorA = autorElementA?.textContent.replace('Autores:', '').trim() || '';
+                    const autorB = autorElementB?.textContent.replace('Autores:', '').trim() || '';
                     return autorA.localeCompare(autorB);
                     
                 case 'categoria':
@@ -481,7 +481,37 @@ function quitarFavorito(idfavorito, idrecurso) {
 }
 
 function verDetalles(idrecurso) {
-    alert('Ver detalles del libro ID: ' + idrecurso);
+    const modalBody = document.getElementById('libroModalBody');
+    
+    // Mostrar loading
+    modalBody.innerHTML = `
+        <div class="text-center">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Cargando...</span>
+            </div>
+            <p class="mt-2">Cargando detalles del recurso...</p>
+        </div>
+    `;
+    
+    // Mostrar el modal
+    const modal = new bootstrap.Modal(document.getElementById('libroModal'));
+    modal.show();
+    
+    // Cargar detalles via AJAX
+    fetch(`<?= base_url('recursos/detalles/') ?>${idrecurso}`)
+        .then(response => response.text())
+        .then(html => {
+            modalBody.innerHTML = html;
+        })
+        .catch(error => {
+            console.error('Error al cargar detalles:', error);
+            modalBody.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Error al cargar los detalles del recurso.
+                </div>
+            `;
+        });
 }
 
 function solicitarPrestamo(idrecurso) {
@@ -496,6 +526,33 @@ function limpiarFiltros() {
     // Disparar evento para aplicar filtros
     document.getElementById('buscarFavoritos').dispatchEvent(new Event('input'));
 }
+</script>
+
+<!-- Modal para detalles del libro -->
+<div class="modal fade" id="libroModal" tabindex="-1" aria-labelledby="libroModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="libroModalLabel">Detalles del Recurso</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="libroModalBody">
+                <div class="text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                    <p class="mt-2">Cargando detalles del recurso...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Limpiar modal cuando se cierre -->
+<script>
+document.getElementById('libroModal').addEventListener('hidden.bs.modal', function() {
+    document.getElementById('libroModalBody').innerHTML = '';
+});
 </script>
 
 <?= $footer ?>

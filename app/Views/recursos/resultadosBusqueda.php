@@ -26,7 +26,7 @@
                 <div class="flex-grow-1">
                     <h5 class="mb-2 text-primary fw-bold"><?= esc($recurso['titulo']) ?></h5>
                     <div class="mb-1 text-muted">
-                        <i class="fas fa-user me-1"></i><span class="fw-bold">Autor:</span> <?= esc($recurso['nomautor'] ?? 'Sin autor') ?> |
+                        <i class="fas fa-user me-1"></i><span class="fw-bold">Autores:</span> <?= esc($recurso['nomautor'] ?? 'Sin autor') ?> |
                         <i class="fas fa-folder me-1"></i><span class="fw-bold">Categoría:</span> <?= esc($recurso['categoria'] ?? 'Sin categoría') ?> |
                         <i class="fas fa-layer-group me-1"></i><span class="fw-bold">Subcategoría:</span> <?= esc($recurso['subcategoria'] ?? 'Sin subcategoría') ?> |
                         <i class="fas fa-calendar me-1"></i><span class="fw-bold">Año:</span> <?= esc($recurso['anio']) ?>

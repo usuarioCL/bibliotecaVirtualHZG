@@ -88,15 +88,13 @@ $imagenPrefix = $imagenPrefix ?? '';
                 <?= esc(strlen($libro['titulo']) > 40 ? substr($libro['titulo'], 0, 40) . '...' : $libro['titulo']) ?>
             </h6>
             
-            <!-- Autor -->
+            <!-- Autores -->
             <p class="card-text text-muted small mb-2">
-                <strong>Autor:</strong> 
+                <strong>Autores:</strong> 
                 <?php 
                 $autorTexto = 'Sin autor';
                 if (isset($libro['autores']) && !empty($libro['autores'])) {
                     $autorTexto = $libro['autores'];
-                } elseif (isset($libro['apeautor']) && isset($libro['nomautor'])) {
-                    $autorTexto = trim($libro['apeautor'] . ' ' . $libro['nomautor']);
                 } elseif (isset($libro['nomautor']) && !empty($libro['nomautor'])) {
                     $autorTexto = $libro['nomautor'];
                 }

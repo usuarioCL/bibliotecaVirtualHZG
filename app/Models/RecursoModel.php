@@ -26,44 +26,109 @@ class RecursoModel extends Model
 
     public function buscarRecursos($query)
     {
-        return $this->select('recursos.*, autores.nomautor, subcategorias.subcategoria, categorias.categoria')
-            ->join('detautores', 'detautores.idrecurso = recursos.idrecurso', 'left')
-            ->join('autores', 'autores.idautor = detautores.idautor', 'left')
+        // Primero obtener los recursos sin autores para evitar duplicados
+        $recursos = $this->select('
+            recursos.idrecurso,
+            recursos.titulo,
+            recursos.anio,
+            recursos.numpaginas,
+            recursos.isbn,
+            recursos.numedicion,
+            recursos.estado,
+            recursos.stock,
+            recursos.nivel,
+            recursos.idsubcategoria,
+            recursos.ideditorial,
+            recursos.idtiporecurso,
+            subcategorias.subcategoria, 
+            categorias.categoria,
+            editoriales.editorial,
+            tiporecursos.tiporecurso,
+            COALESCE(rf.portada, rd.portada) as portada,
+            rd.archivo
+        ')
             ->join('subcategorias', 'subcategorias.idsubcategoria = recursos.idsubcategoria', 'left')
             ->join('categorias', 'categorias.idcategoria = subcategorias.idcategoria', 'left')
+            ->join('editoriales', 'editoriales.ideditorial = recursos.ideditorial', 'left')
+            ->join('tiporecursos', 'tiporecursos.idtiporecurso = recursos.idtiporecurso', 'left')
+            ->join('recursos_fisicos rf', 'rf.idrecurso = recursos.idrecurso', 'left')
+            ->join('recursos_digitales rd', 'rd.idrecurso = recursos.idrecurso', 'left')
             ->groupStart()
                 ->like('recursos.titulo', $query)
-                ->orLike('autores.nomautor', $query)
                 ->orLike('subcategorias.subcategoria', $query)
                 ->orLike('categorias.categoria', $query)
             ->groupEnd()
             ->findAll();
+        
+        // Filtrar por autores si es necesario
+        $recursosFiltrados = [];
+        foreach ($recursos as $recurso) {
+            // Buscar si el query coincide con algún autor del recurso
+            $autores = $this->db->table('detautores da')
+                ->select('a.nomautor, a.apeautor')
+                ->join('autores a', 'a.idautor = da.idautor')
+                ->where('da.idrecurso', $recurso['idrecurso'])
+                ->get()
+                ->getResultArray();
+            
+            $coincideAutor = false;
+            foreach ($autores as $autor) {
+                $nombreCompleto = trim($autor['apeautor'] . ' ' . $autor['nomautor']);
+                if (stripos($nombreCompleto, $query) !== false) {
+                    $coincideAutor = true;
+                    break;
+                }
+            }
+            
+            // Si coincide con título, categoría, subcategoría o autor, incluir el recurso
+            if ($coincideAutor || 
+                stripos($recurso['titulo'], $query) !== false ||
+                stripos($recurso['subcategoria'], $query) !== false ||
+                stripos($recurso['categoria'], $query) !== false) {
+                $recursosFiltrados[] = $recurso;
+            }
+        }
+        
+        // Agregar autores y eliminar duplicados
+        $recursosFiltrados = $this->agregarAutoresARecursos($recursosFiltrados);
+        $recursosUnicos = $this->eliminarDuplicadosPorId($recursosFiltrados);
+        
+        return $recursosUnicos;
     }
 
     public function filtrosBusqueda($filtros)
     {
-        $builder = $this->select('recursos.*, autores.nomautor, subcategorias.subcategoria, categorias.categoria, editoriales.editorial, tiporecursos.tiporecurso')
-            ->join('detautores', 'detautores.idrecurso = recursos.idrecurso', 'left')
-            ->join('autores', 'autores.idautor = detautores.idautor', 'left')
+        // Primero obtener los recursos sin autores para evitar duplicados
+        $builder = $this->select('
+            recursos.idrecurso,
+            recursos.titulo,
+            recursos.anio,
+            recursos.numpaginas,
+            recursos.isbn,
+            recursos.numedicion,
+            recursos.estado,
+            recursos.stock,
+            recursos.nivel,
+            recursos.idsubcategoria,
+            recursos.ideditorial,
+            recursos.idtiporecurso,
+            subcategorias.subcategoria, 
+            categorias.categoria,
+            editoriales.editorial,
+            tiporecursos.tiporecurso,
+            COALESCE(rf.portada, rd.portada) as portada,
+            rd.archivo
+        ')
             ->join('subcategorias', 'subcategorias.idsubcategoria = recursos.idsubcategoria', 'left')
             ->join('categorias', 'categorias.idcategoria = subcategorias.idcategoria', 'left')
             ->join('editoriales', 'editoriales.ideditorial = recursos.ideditorial', 'left')
-            ->join('tiporecursos', 'tiporecursos.idtiporecurso = recursos.idtiporecurso', 'left');
+            ->join('tiporecursos', 'tiporecursos.idtiporecurso = recursos.idtiporecurso', 'left')
+            ->join('recursos_fisicos rf', 'rf.idrecurso = recursos.idrecurso', 'left')
+            ->join('recursos_digitales rd', 'rd.idrecurso = recursos.idrecurso', 'left');
 
-        // Si viene un query global, buscar por título, autor, subcategoría o categoría
-        if (!empty($filtros['query'])) {
-            $builder->groupStart()
-                ->like('recursos.titulo', $filtros['query'])
-                ->orLike('autores.nomautor', $filtros['query'])
-                ->orLike('subcategorias.subcategoria', $filtros['query'])
-                ->orLike('categorias.categoria', $filtros['query'])
-            ->groupEnd();
-        }
+        // Aplicar filtros básicos
         if (!empty($filtros['titulo'])) {
             $builder->like('recursos.titulo', $filtros['titulo']);
-        }
-        if (!empty($filtros['autor'])) {
-            $builder->where('autores.idautor', $filtros['autor']);
         }
         if (!empty($filtros['categoria'])) {
             $builder->where('categorias.idcategoria', $filtros['categoria']);
@@ -84,35 +149,154 @@ class RecursoModel extends Model
             $builder->where('recursos.estado', $filtros['estado']);
         }
 
-        return $builder->findAll();
+        // Si viene un query global, buscar por título, subcategoría o categoría
+        if (!empty($filtros['query'])) {
+            $builder->groupStart()
+                ->like('recursos.titulo', $filtros['query'])
+                ->orLike('subcategorias.subcategoria', $filtros['query'])
+                ->orLike('categorias.categoria', $filtros['query'])
+            ->groupEnd();
+        }
+
+        $recursos = $builder->findAll();
+        
+        // Filtrar por autor si es necesario
+        if (!empty($filtros['autor'])) {
+            $recursosFiltrados = [];
+            foreach ($recursos as $recurso) {
+                $autores = $this->db->table('detautores da')
+                    ->select('a.idautor')
+                    ->join('autores a', 'a.idautor = da.idautor')
+                    ->where('da.idrecurso', $recurso['idrecurso'])
+                    ->get()
+                    ->getResultArray();
+                
+                foreach ($autores as $autor) {
+                    if ($autor['idautor'] == $filtros['autor']) {
+                        $recursosFiltrados[] = $recurso;
+                        break;
+                    }
+                }
+            }
+            $recursos = $recursosFiltrados;
+        }
+        
+        // Filtrar por query global en autores si es necesario
+        if (!empty($filtros['query'])) {
+            $recursosFiltrados = [];
+            foreach ($recursos as $recurso) {
+                $autores = $this->db->table('detautores da')
+                    ->select('a.nomautor, a.apeautor')
+                    ->join('autores a', 'a.idautor = da.idautor')
+                    ->where('da.idrecurso', $recurso['idrecurso'])
+                    ->get()
+                    ->getResultArray();
+                
+                $coincideAutor = false;
+                foreach ($autores as $autor) {
+                    $nombreCompleto = trim($autor['apeautor'] . ' ' . $autor['nomautor']);
+                    if (stripos($nombreCompleto, $filtros['query']) !== false) {
+                        $coincideAutor = true;
+                        break;
+                    }
+                }
+                
+                // Si coincide con título, categoría, subcategoría o autor, incluir el recurso
+                if ($coincideAutor || 
+                    stripos($recurso['titulo'], $filtros['query']) !== false ||
+                    stripos($recurso['subcategoria'], $filtros['query']) !== false ||
+                    stripos($recurso['categoria'], $filtros['query']) !== false) {
+                    $recursosFiltrados[] = $recurso;
+                }
+            }
+            $recursos = $recursosFiltrados;
+        }
+        
+        // Agregar autores y eliminar duplicados
+        $recursos = $this->agregarAutoresARecursos($recursos);
+        $recursosUnicos = $this->eliminarDuplicadosPorId($recursos);
+        
+        return $recursosUnicos;
     }
 
     public function obtenerDetallesCompletos($id)
     {
-        return $this->select('recursos.*, autores.nomautor, subcategorias.subcategoria, categorias.categoria, editoriales.editorial, tiporecursos.tiporecurso')
-            ->join('detautores', 'detautores.idrecurso = recursos.idrecurso', 'left')
-            ->join('autores', 'autores.idautor = detautores.idautor', 'left')
+        // Primero obtener los datos básicos del recurso sin autores, incluyendo portada
+        $recurso = $this->select('recursos.*, subcategorias.subcategoria, categorias.categoria, editoriales.editorial, tiporecursos.tiporecurso, COALESCE(rf.portada, rd.portada) as portada, rd.archivo')
             ->join('subcategorias', 'subcategorias.idsubcategoria = recursos.idsubcategoria', 'left')
             ->join('categorias', 'categorias.idcategoria = subcategorias.idcategoria', 'left')
             ->join('editoriales', 'editoriales.ideditorial = recursos.ideditorial', 'left')
             ->join('tiporecursos', 'tiporecursos.idtiporecurso = recursos.idtiporecurso', 'left')
+            ->join('recursos_fisicos rf', 'rf.idrecurso = recursos.idrecurso', 'left')
+            ->join('recursos_digitales rd', 'rd.idrecurso = recursos.idrecurso', 'left')
             ->where('recursos.idrecurso', $id)
             ->first();
+        
+        if (!$recurso) {
+            return null;
+        }
+        
+        // Obtener todos los autores del recurso
+        $autores = $this->db->table('detautores da')
+            ->select('a.nomautor, a.apeautor')
+            ->join('autores a', 'a.idautor = da.idautor')
+            ->where('da.idrecurso', $id)
+            ->get()
+            ->getResultArray();
+        
+        // Concatenar todos los autores
+        $nombresAutores = [];
+        foreach ($autores as $autor) {
+            $nombreCompleto = trim($autor['apeautor'] . ' ' . $autor['nomautor']);
+            if (!empty($nombreCompleto)) {
+                $nombresAutores[] = $nombreCompleto;
+            }
+        }
+        
+        $recurso['nomautor'] = implode(', ', $nombresAutores);
+        
+        return $recurso;
     }
 
     public function obtenerRecursosDestacados($limite = 8)
     {
-        return $this->select('recursos.*, autores.nomautor, subcategorias.subcategoria, categorias.categoria, editoriales.editorial, tiporecursos.tiporecurso')
-            ->join('detautores', 'detautores.idrecurso = recursos.idrecurso', 'left')
-            ->join('autores', 'autores.idautor = detautores.idautor', 'left')
+        // Primero obtener los recursos sin autores para evitar duplicados
+        $recursos = $this->select('
+            recursos.idrecurso,
+            recursos.titulo,
+            recursos.anio,
+            recursos.numpaginas,
+            recursos.isbn,
+            recursos.numedicion,
+            recursos.estado,
+            recursos.stock,
+            recursos.nivel,
+            recursos.idsubcategoria,
+            recursos.ideditorial,
+            recursos.idtiporecurso,
+            subcategorias.subcategoria, 
+            categorias.categoria,
+            editoriales.editorial,
+            tiporecursos.tiporecurso,
+            COALESCE(rf.portada, rd.portada) as portada,
+            rd.archivo
+        ')
             ->join('subcategorias', 'subcategorias.idsubcategoria = recursos.idsubcategoria', 'left')
             ->join('categorias', 'categorias.idcategoria = subcategorias.idcategoria', 'left')
             ->join('editoriales', 'editoriales.ideditorial = recursos.ideditorial', 'left')
             ->join('tiporecursos', 'tiporecursos.idtiporecurso = recursos.idtiporecurso', 'left')
+            ->join('recursos_fisicos rf', 'rf.idrecurso = recursos.idrecurso', 'left')
+            ->join('recursos_digitales rd', 'rd.idrecurso = recursos.idrecurso', 'left')
             ->where('recursos.estado', 'disponible')
             ->orderBy('recursos.idrecurso', 'DESC')
             ->limit($limite)
             ->findAll();
+        
+        // Agregar autores y eliminar duplicados
+        $recursos = $this->agregarAutoresARecursos($recursos);
+        $recursosUnicos = $this->eliminarDuplicadosPorId($recursos);
+        
+        return $recursosUnicos;
     }
 
     public function obtenerLibrosPopulares($limite = 6)
@@ -220,7 +404,7 @@ class RecursoModel extends Model
                 }
             }
             $recurso['nomautor'] = implode(', ', $nombresAutores);
-            $recurso['apeautor'] = !empty($nombresAutores) ? $nombresAutores[0] : '';
+            // No asignar apeautor para evitar duplicados en la vista
         }
         return $recursos;
     }

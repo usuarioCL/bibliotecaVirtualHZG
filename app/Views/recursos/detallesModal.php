@@ -9,7 +9,7 @@
     <div class="col-md-8">
         <h4><?= esc($recurso['titulo']) ?></h4>
         <div class="mb-2">
-            <strong>Autor:</strong> <?= esc($recurso['nomautor'] ?? 'Sin autor') ?>
+            <strong>Autores:</strong> <?= esc($recurso['nomautor'] ?? 'Sin autor') ?>
         </div>
         <div class="mb-2">
             <strong>Editorial:</strong> <?= esc($recurso['editorial'] ?? 'Sin editorial') ?>
