@@ -148,6 +148,7 @@ $routes->get('/recurso-fisico', 'RecursoFisicoController::index');
 
 // Ejemplares Físicos
 $routes->get('/ejemplares-fisicos/(:num)', 'EjemplarFisicoController::index/$1');
+$routes->get('/ejemplares-fisicos/modal/(:num)', 'EjemplarFisicoController::modal/$1');
 $routes->post('/ejemplares-fisicos/crear', 'EjemplarFisicoController::crearEjemplares');
 $routes->post('/ejemplares-fisicos/actualizar-estado', 'EjemplarFisicoController::actualizarEstado');
 $routes->get('/ejemplares-fisicos/buscar', 'EjemplarFisicoController::buscar');

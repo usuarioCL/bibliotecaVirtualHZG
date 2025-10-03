@@ -139,7 +139,7 @@ class EjemplarFisicoModel extends Model
         $sql .= " ORDER BY codigo_ejemplar ASC";
         
         $query = $db->query($sql, $params);
-        return $query->getResultArray();
+        return $query->getResult(); // Cambiado de getResultArray() a getResult() para devolver objetos
     }
 
     /**
@@ -168,7 +168,7 @@ class EjemplarFisicoModel extends Model
         
         $sql = "
             SELECT 
-                estado_ejemplar,
+                estado_ejemplar as estado,
                 COUNT(*) as cantidad
             FROM ejemplares_fisicos 
             WHERE idrecurso = ? AND activo = TRUE
@@ -176,24 +176,7 @@ class EjemplarFisicoModel extends Model
         ";
         
         $query = $db->query($sql, [$idrecurso]);
-        $resultados = $query->getResultArray();
-        
-        // Formatear resultados
-        $estadisticas = [
-            'total' => 0,
-            'disponible' => 0,
-            'prestado' => 0,
-            'dañado' => 0,
-            'perdido' => 0,
-            'mantenimiento' => 0
-        ];
-        
-        foreach ($resultados as $row) {
-            $estadisticas[$row['estado_ejemplar']] = (int)$row['cantidad'];
-            $estadisticas['total'] += (int)$row['cantidad'];
-        }
-        
-        return $estadisticas;
+        return $query->getResult();
     }
 
     /**

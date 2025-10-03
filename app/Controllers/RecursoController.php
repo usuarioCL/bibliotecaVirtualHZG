@@ -209,6 +209,18 @@ class RecursoController extends Controller
                     'portada' => $portadaPath,
                     'encuadernacion' => $encuadernacion
                 ]);
+                
+                // Crear ejemplares automáticamente para recursos físicos
+                $stock = $datosRecurso['stock'] ?? 1;
+                if ($stock > 0) {
+                    try {
+                        $recursoFisicoModel->crearEjemplaresParaRecurso($idRecurso, $stock);
+                        log_message('info', "Se crearon $stock ejemplares automáticamente para el recurso ID: $idRecurso");
+                    } catch (\Exception $e) {
+                        log_message('error', "Error creando ejemplares automáticamente para recurso ID $idRecurso: " . $e->getMessage());
+                        // No fallar la creación del recurso si hay error en ejemplares
+                    }
+                }
             }
             
             // 2. Insertar la relación autor-recurso en detautores

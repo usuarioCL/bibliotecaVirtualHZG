@@ -46,6 +46,51 @@ class EjemplarFisicoController extends BaseController
     }
 
     /**
+     * Devuelve solo el contenido del modal para mostrar ejemplares.
+     */
+    public function modal($idrecurso)
+    {
+        if ($idrecurso === null) {
+            return '<div class="alert alert-danger">ID de recurso no especificado.</div>';
+        }
+
+        try {
+            // Verificar si la tabla ejemplares_fisicos existe
+            $db = \Config\Database::connect();
+            $tables = $db->listTables();
+            
+            if (!in_array('ejemplares_fisicos', $tables)) {
+                return '<div class="alert alert-warning">
+                    <h5>⚠️ Tabla de ejemplares no encontrada</h5>
+                    <p>La tabla <code>ejemplares_fisicos</code> no existe en la base de datos.</p>
+                    <p>Para usar esta funcionalidad, necesitas ejecutar el archivo SQL:</p>
+                    <code>app/Database/ejemplares_fisicos.sql</code>
+                </div>';
+            }
+
+            $data = [
+                'ejemplares' => $this->ejemplarModel->obtenerEjemplaresCompletos($idrecurso),
+                'recurso' => $this->recursoFisicoModel->obtenerRecursoFisicoCompleto($idrecurso),
+                'estadisticas' => $this->ejemplarModel->obtenerEstadisticasPorRecurso($idrecurso)
+            ];
+
+            return view('ejemplares_fisicos/modal_content', $data);
+        } catch (\Exception $e) {
+            return '<div class="alert alert-danger">
+                <h5>❌ Error al cargar los ejemplares</h5>
+                <p>' . $e->getMessage() . '</p>
+                <p><strong>Posibles causas:</strong></p>
+                <ul>
+                    <li>La tabla <code>ejemplares_fisicos</code> no existe</li>
+                    <li>Los procedimientos almacenados no están creados</li>
+                    <li>Error en la estructura de la base de datos</li>
+                </ul>
+                <p><strong>Solución:</strong> Ejecuta el archivo <code>app/Database/ejemplares_fisicos.sql</code></p>
+            </div>';
+        }
+    }
+
+    /**
      * Crear nuevos ejemplares para un recurso
      */
     public function crearEjemplares()

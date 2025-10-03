@@ -31,6 +31,7 @@
                         <th>Encuadernación</th>
                         <th>Estado</th>
                         <th>Stock</th>
+                        <th>Ejemplares</th>
                         <th>Acciones</th>
                     </tr>
                 </thead>
@@ -104,11 +105,12 @@
                                 <span class="badge bg-<?= $recurso->stock > 0 ? 'success' : 'danger' ?>">
                                     <?= $recurso->stock ?>
                                 </span>
-                                <br>
-                                <a href="<?= base_url('ejemplares-fisicos/' . $recurso->idrecurso) ?>" 
-                                   class="btn btn-sm btn-outline-primary mt-1">
+                            </td>
+                            <td>
+                                <button type="button" class="btn btn-sm btn-outline-primary" 
+                                        onclick="verEjemplares(<?= $recurso->idrecurso ?>, '<?= esc($recurso->titulo) ?>')">
                                     <i class="ti ti-list"></i> Ver Ejemplares
-                                </a>
+                                </button>
                             </td>
                             <td>
                                 <div class="btn-group" role="group">
@@ -126,7 +128,7 @@
                         <?php endforeach; ?>
                     <?php else: ?>
                         <tr>
-                            <td colspan="14" class="text-center text-muted py-4">
+                            <td colspan="15" class="text-center text-muted py-4">
                                 <i class="ti ti-inbox fs-1 d-block mb-2"></i>
                                 No hay recursos físicos registrados
                             </td>
@@ -156,12 +158,56 @@
     </div>
 </div>
 
+<!-- Modal para ver ejemplares -->
+<div class="modal fade" id="modalEjemplares" tabindex="-1" aria-labelledby="modalEjemplaresLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalEjemplaresLabel">Ejemplares Físicos</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="contenidoEjemplares">
+                <div class="text-center">
+                    <div class="spinner-border" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                    <p class="mt-2">Cargando ejemplares...</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
 function verDetalles(id) {
     // Aquí puedes implementar la lógica para cargar los detalles
     document.getElementById('contenidoDetalles').innerHTML = '<p>Cargando detalles del recurso #' + id + '...</p>';
     var modal = new bootstrap.Modal(document.getElementById('modalDetalles'));
     modal.show();
+}
+
+function verEjemplares(idrecurso, titulo) {
+    // Actualizar el título del modal
+    document.getElementById('modalEjemplaresLabel').textContent = 'Ejemplares de: ' + titulo;
+    
+    // Mostrar el modal
+    var modal = new bootstrap.Modal(document.getElementById('modalEjemplares'));
+    modal.show();
+    
+    // Cargar los ejemplares via AJAX
+    fetch('<?= base_url('ejemplares-fisicos/modal/') ?>' + idrecurso)
+        .then(response => response.text())
+        .then(html => {
+            document.getElementById('contenidoEjemplares').innerHTML = html;
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            document.getElementById('contenidoEjemplares').innerHTML = 
+                '<div class="alert alert-danger">Error al cargar los ejemplares. Por favor, inténtalo de nuevo.</div>';
+        });
 }
 
 function editarRecurso(id) {
