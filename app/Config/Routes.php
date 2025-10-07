@@ -177,3 +177,9 @@ $routes->get('/sanciones/buscar', 'SancionController::buscar');
 $routes->get('/sanciones/tipos', 'SancionController::tiposSancion');
 $routes->post('/sanciones/crear-tipo', 'SancionController::crearTipo');
 $routes->post('/sanciones/eliminar-tipo/(:num)', 'SancionController::eliminarTipo/$1');
+
+// Sistema de Préstamos
+$routes->get('/prestamos', 'PrestamoController::index');                      // Préstamos Activos
+$routes->get('/solicitudes', 'PrestamoController::solicitudes');              // Solicitudes Pendientes
+$routes->get('/devoluciones', 'PrestamoController::devoluciones');            // Devoluciones
+$routes->get('/historial-prestamos', 'PrestamoController::historial');        // Historial Completo
