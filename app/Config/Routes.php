@@ -109,6 +109,11 @@ $routes->post('admin/restaurar-backup', 'AdminController::restaurarBackup');
 $routes->get('admin/descargar-backup/(:segment)', 'AdminController::descargarBackup/$1');
 $routes->delete('admin/eliminar-backup/(:segment)', 'AdminController::eliminarBackup/$1');
 
+// Configuración del sistema
+$routes->get('admin/configuracion', 'AdminController::configuracion');
+$routes->post('admin/guardar-configuracion', 'AdminController::guardarConfiguracion');
+$routes->post('admin/restaurar-configuracion', 'AdminController::restaurarConfiguracion');
+
 //Recursos
 $routes->get('/recursos', 'RecursoController::index');
 $routes->get('/recursos/crear', 'RecursoController::crear');
@@ -190,3 +195,16 @@ $routes->get('/prestamos', 'PrestamoController::index');                      //
 $routes->get('/solicitudes', 'PrestamoController::solicitudes');              // Solicitudes Pendientes
 $routes->get('/devoluciones', 'PrestamoController::devoluciones');            // Devoluciones
 $routes->get('/historial-prestamos', 'PrestamoController::historial');        // Historial Completo
+
+// =====================================
+// RUTAS PARA MODALES DEL SISTEMA
+// =====================================
+
+// Modal: Mi Perfil - Gestión del perfil del usuario actual
+$routes->get('/admin/mi-perfil', 'AdminController::miPerfil');
+
+// Modal: Mis Tareas - Gestión de tareas y actividades del usuario
+$routes->get('/admin/mis-tareas', 'AdminController::misTareas');
+
+// Modal: Ayuda - Centro de ayuda, documentación y soporte
+$routes->get('/admin/ayuda', 'AdminController::ayuda');

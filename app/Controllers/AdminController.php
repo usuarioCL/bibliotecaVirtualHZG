@@ -879,4 +879,536 @@ class AdminController extends BaseController
             ]
         ];
     }
+
+    /**
+     * Vista principal de configuración del sistema
+     */
+    public function configuracion()
+    {
+        $data = [
+            'title' => 'Configuración del Sistema',
+            'configuraciones' => $this->getDatosPruebaConfiguracion(),
+            'estadisticas' => [
+                'total_configuraciones' => 12,
+                'configuraciones_activas' => 10,
+                'ultima_modificacion' => '2024-10-07 10:15:00',
+                'configuraciones_por_defecto' => 8
+            ]
+        ];
+
+        return view('Administrador/configuracion', $data);
+    }
+
+    /**
+     * Guardar configuración
+     */
+    public function guardarConfiguracion()
+    {
+        try {
+            $configuraciones = $this->request->getPost();
+            
+            // TODO: Implementar guardado real de configuraciones
+            foreach ($configuraciones as $clave => $valor) {
+                // Guardar en base de datos o archivo de configuración
+                log_message('info', "Configuración actualizada: {$clave} = {$valor}");
+            }
+            
+            return $this->response->setJSON([
+                'success' => true,
+                'message' => 'Configuraciones guardadas exitosamente'
+            ]);
+        } catch (Exception $e) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Error al guardar configuraciones: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Restaurar configuración por defecto
+     */
+    public function restaurarConfiguracion()
+    {
+        try {
+            $seccion = $this->request->getPost('seccion');
+            
+            // TODO: Implementar restauración real
+            log_message('info', "Configuración restaurada para sección: {$seccion}");
+            
+            return $this->response->setJSON([
+                'success' => true,
+                'message' => 'Configuraciones restauradas a valores por defecto'
+            ]);
+        } catch (Exception $e) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Error al restaurar configuraciones: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Datos de prueba para configuraciones
+     */
+    private function getDatosPruebaConfiguracion()
+    {
+        return [
+            'general' => [
+                'nombre' => 'Configuración General',
+                'icono' => 'ti-settings',
+                'configuraciones' => [
+                    [
+                        'clave' => 'nombre_biblioteca',
+                        'nombre' => 'Nombre de la Biblioteca',
+                        'valor' => 'Biblioteca Virtual HZG',
+                        'tipo' => 'text',
+                        'descripcion' => 'Nombre que aparece en el sistema',
+                        'requerido' => true
+                    ],
+                    [
+                        'clave' => 'email_administrador',
+                        'nombre' => 'Email del Administrador',
+                        'valor' => 'admin@bibliotecahzg.edu.co',
+                        'tipo' => 'email',
+                        'descripcion' => 'Correo principal del administrador',
+                        'requerido' => true
+                    ],
+                    [
+                        'clave' => 'telefono_biblioteca',
+                        'nombre' => 'Teléfono de Contacto',
+                        'valor' => '+57 123 456 7890',
+                        'tipo' => 'tel',
+                        'descripcion' => 'Número de contacto principal',
+                        'requerido' => false
+                    ],
+                    [
+                        'clave' => 'direccion',
+                        'nombre' => 'Dirección',
+                        'valor' => 'Calle 123 #45-67, Ciudad, País',
+                        'tipo' => 'text',
+                        'descripcion' => 'Dirección física de la biblioteca',
+                        'requerido' => false
+                    ]
+                ]
+            ],
+            'prestamos' => [
+                'nombre' => 'Configuración de Préstamos',
+                'icono' => 'ti-bookmark',
+                'configuraciones' => [
+                    [
+                        'clave' => 'dias_prestamo_estudiante',
+                        'nombre' => 'Días de Préstamo - Estudiantes',
+                        'valor' => '14',
+                        'tipo' => 'number',
+                        'descripcion' => 'Número de días para préstamos de estudiantes',
+                        'requerido' => true,
+                        'min' => 1,
+                        'max' => 90
+                    ],
+                    [
+                        'clave' => 'dias_prestamo_docente',
+                        'nombre' => 'Días de Préstamo - Docentes',
+                        'valor' => '30',
+                        'tipo' => 'number',
+                        'descripcion' => 'Número de días para préstamos de docentes',
+                        'requerido' => true,
+                        'min' => 1,
+                        'max' => 180
+                    ],
+                    [
+                        'clave' => 'max_renovaciones',
+                        'nombre' => 'Máximo de Renovaciones',
+                        'valor' => '2',
+                        'tipo' => 'number',
+                        'descripcion' => 'Número máximo de renovaciones permitidas',
+                        'requerido' => true,
+                        'min' => 0,
+                        'max' => 5
+                    ],
+                    [
+                        'clave' => 'permitir_reservas',
+                        'nombre' => 'Permitir Reservas',
+                        'valor' => '1',
+                        'tipo' => 'boolean',
+                        'descripcion' => 'Habilitar sistema de reservas',
+                        'requerido' => true
+                    ]
+                ]
+            ],
+            'multas' => [
+                'nombre' => 'Configuración de Multas',
+                'icono' => 'ti-currency-dollar',
+                'configuraciones' => [
+                    [
+                        'clave' => 'multa_por_dia',
+                        'nombre' => 'Multa por Día de Retraso',
+                        'valor' => '2500',
+                        'tipo' => 'number',
+                        'descripcion' => 'Valor en pesos por día de retraso',
+                        'requerido' => true,
+                        'min' => 0
+                    ],
+                    [
+                        'clave' => 'multa_maxima',
+                        'nombre' => 'Multa Máxima',
+                        'valor' => '50000',
+                        'tipo' => 'number',
+                        'descripcion' => 'Valor máximo de multa por préstamo',
+                        'requerido' => true,
+                        'min' => 0
+                    ],
+                    [
+                        'clave' => 'dias_gracia',
+                        'nombre' => 'Días de Gracia',
+                        'valor' => '3',
+                        'tipo' => 'number',
+                        'descripcion' => 'Días sin multa después del vencimiento',
+                        'requerido' => true,
+                        'min' => 0,
+                        'max' => 7
+                    ]
+                ]
+            ],
+            'notificaciones' => [
+                'nombre' => 'Configuración de Notificaciones',
+                'icono' => 'ti-bell',
+                'configuraciones' => [
+                    [
+                        'clave' => 'notificar_vencimiento',
+                        'nombre' => 'Notificar Vencimientos',
+                        'valor' => '1',
+                        'tipo' => 'boolean',
+                        'descripcion' => 'Enviar recordatorios de vencimiento',
+                        'requerido' => true
+                    ],
+                    [
+                        'clave' => 'dias_aviso_vencimiento',
+                        'nombre' => 'Días de Aviso Previo',
+                        'valor' => '3',
+                        'tipo' => 'number',
+                        'descripcion' => 'Días antes del vencimiento para avisar',
+                        'requerido' => true,
+                        'min' => 1,
+                        'max' => 10
+                    ],
+                    [
+                        'clave' => 'email_notificaciones',
+                        'nombre' => 'Email para Notificaciones',
+                        'valor' => 'noreply@bibliotecahzg.edu.co',
+                        'tipo' => 'email',
+                        'descripcion' => 'Email remitente de notificaciones',
+                        'requerido' => true
+                    ]
+                ]
+            ]
+        ];
+    }
+
+    // =====================================
+    // MÉTODOS PARA MODALES DEL SISTEMA
+    // =====================================
+
+    /**
+     * Modal: Mi Perfil
+     * Muestra el modal con la información del perfil del usuario actual
+     */
+    public function miPerfil()
+    {
+        // Datos simulados del perfil del usuario actual
+        $data['usuario'] = [
+            'nombres' => 'María Elena',
+            'apellidos' => 'González Martínez',
+            'email' => 'admin@bibliotecahzg.edu.pe',
+            'telefono' => '+51 987 654 321',
+            'tipo_documento' => 'DNI',
+            'numero_documento' => '12345678',
+            'rol' => 'Administrador',
+            'direccion' => 'Av. Principal 123, Lima, Perú',
+            'foto_perfil' => base_url('./assets/images/profile/user-1.jpg'),
+            'fecha_registro' => '2024-01-15',
+            'ultimo_acceso' => date('Y-m-d H:i:s'),
+            'estado' => 'Activo'
+        ];
+
+        // Configuraciones de seguridad
+        $data['seguridad'] = [
+            'autenticacion_2fa_sms' => true,
+            'autenticacion_2fa_email' => false,
+            'cambio_password_requerido' => false,
+            'sesiones_simultaneas' => 3
+        ];
+
+        // Preferencias del usuario
+        $data['preferencias'] = [
+            'notificaciones_email' => true,
+            'notificaciones_sistema' => true,
+            'notificaciones_prestamos' => true,
+            'notificaciones_reportes' => false,
+            'tema_interfaz' => 'light',
+            'idioma' => 'es',
+            'elementos_por_pagina' => 25,
+            'formato_fecha' => 'dd/mm/yyyy',
+            'perfil_publico' => false,
+            'mostrar_actividad' => true,
+            'recopilacion_datos' => true
+        ];
+
+        return view('Administrador/modals/mi-perfil', $data);
+    }
+
+    /**
+     * Modal: Mis Tareas
+     * Muestra el modal con las tareas y actividades del usuario
+     */
+    public function misTareas()
+    {
+        // Estadísticas de tareas
+        $data['estadisticas'] = [
+            'pendientes' => 8,
+            'completadas' => 25,
+            'vencidas' => 3,
+            'en_progreso' => 5
+        ];
+
+        // Tareas pendientes
+        $data['tareas_pendientes'] = [
+            [
+                'id' => 1,
+                'titulo' => 'Revisar reportes mensuales de préstamos',
+                'descripcion' => 'Análisis de estadísticas y tendencias de préstamos del mes actual',
+                'prioridad' => 'alta',
+                'fecha_vencimiento' => '2025-10-15',
+                'asignado_por' => 'Director',
+                'categoria' => 'reportes',
+                'fecha_creacion' => '2025-10-01'
+            ],
+            [
+                'id' => 2,
+                'titulo' => 'Actualizar catálogo de nuevos libros',
+                'descripcion' => 'Catalogar e ingresar al sistema los 45 libros recibidos esta semana',
+                'prioridad' => 'media',
+                'fecha_vencimiento' => '2025-10-20',
+                'asignado_por' => 'Coordinador',
+                'categoria' => 'catalogacion',
+                'fecha_creacion' => '2025-10-02'
+            ],
+            [
+                'id' => 3,
+                'titulo' => 'Organizar evento "Semana del Libro"',
+                'descripcion' => 'Coordinar actividades y logística para la semana cultural',
+                'prioridad' => 'baja',
+                'fecha_vencimiento' => '2025-10-30',
+                'asignado_por' => 'Auto-asignada',
+                'categoria' => 'administracion',
+                'fecha_creacion' => '2025-10-01'
+            ]
+        ];
+
+        // Tareas en progreso
+        $data['tareas_progreso'] = [
+            [
+                'id' => 4,
+                'titulo' => 'Migración de datos históricos',
+                'descripcion' => 'Transferir registros del sistema anterior al nuevo',
+                'progreso' => 65,
+                'fecha_inicio' => '2025-10-01',
+                'estimado_finalizacion' => '2025-10-12'
+            ],
+            [
+                'id' => 5,
+                'titulo' => 'Capacitación del personal',
+                'descripcion' => 'Entrenar al equipo en el uso del nuevo sistema',
+                'progreso' => 40,
+                'fecha_inicio' => '2025-10-05',
+                'estimado_finalizacion' => '2025-10-18'
+            ]
+        ];
+
+        // Tareas completadas recientes
+        $data['tareas_completadas'] = [
+            [
+                'id' => 6,
+                'titulo' => 'Configuración inicial del sistema',
+                'fecha_completado' => '2025-10-06'
+            ],
+            [
+                'id' => 7,
+                'titulo' => 'Backup de datos mensuales',
+                'fecha_completado' => '2025-10-05'
+            ],
+            [
+                'id' => 8,
+                'titulo' => 'Inventario de libros de octubre',
+                'fecha_completado' => '2025-10-04'
+            ]
+        ];
+
+        // Tareas vencidas
+        $data['tareas_vencidas'] = [
+            [
+                'id' => 9,
+                'titulo' => 'Revisión de multas pendientes',
+                'descripcion' => 'Revisar y gestionar las multas acumuladas del mes',
+                'fecha_vencimiento' => '2025-10-03',
+                'dias_retraso' => 4,
+                'prioridad' => 'critica'
+            ],
+            [
+                'id' => 10,
+                'titulo' => 'Actualización de políticas',
+                'descripcion' => 'Revisar y actualizar las políticas de préstamo',
+                'fecha_vencimiento' => '2025-10-05',
+                'dias_retraso' => 2,
+                'prioridad' => 'alta'
+            ]
+        ];
+
+        return view('Administrador/modals/mis-tareas', $data);
+    }
+
+    /**
+     * Modal: Ayuda del Sistema
+     * Muestra el modal con documentación, FAQs y soporte
+     */
+    public function ayuda()
+    {
+        // Preguntas frecuentes organizadas por categorías
+        $data['faq'] = [
+            'general' => [
+                'categoria' => 'General',
+                'icono' => 'ti ti-settings',
+                'color' => 'primary',
+                'total' => 8,
+                'preguntas' => [
+                    [
+                        'pregunta' => '¿Cómo accedo al sistema por primera vez?',
+                        'respuesta' => 'Para acceder por primera vez, utiliza las credenciales proporcionadas por el administrador. Una vez dentro, se recomienda cambiar la contraseña desde el perfil de usuario.'
+                    ],
+                    [
+                        'pregunta' => '¿Cómo recupero mi contraseña?',
+                        'respuesta' => 'En la pantalla de login, haz clic en "¿Olvidaste tu contraseña?" e ingresa tu correo electrónico. Recibirás un enlace para restablecer tu contraseña.'
+                    ],
+                    [
+                        'pregunta' => '¿El sistema funciona en dispositivos móviles?',
+                        'respuesta' => 'Sí, el sistema está diseñado para ser completamente responsivo y funciona correctamente en tablets y smartphones.'
+                    ],
+                    [
+                        'pregunta' => '¿Puedo personalizar la interfaz?',
+                        'respuesta' => 'Desde tu perfil puedes cambiar el tema (claro/oscuro), idioma, y otras preferencias de visualización.'
+                    ]
+                ]
+            ],
+            'prestamos' => [
+                'categoria' => 'Préstamos',
+                'icono' => 'ti ti-book',
+                'color' => 'success',
+                'total' => 12,
+                'preguntas' => [
+                    [
+                        'pregunta' => '¿Cómo registro un nuevo préstamo?',
+                        'respuesta' => 'Ve a la sección "Préstamos" → "Solicitudes" → "Nuevo Préstamo". Busca el usuario y selecciona los recursos a prestar.'
+                    ],
+                    [
+                        'pregunta' => '¿Cómo proceso una devolución?',
+                        'respuesta' => 'En "Préstamos" → "Devoluciones", busca el préstamo y haz clic en "Procesar Devolución". Verifica el estado del material.'
+                    ],
+                    [
+                        'pregunta' => '¿Qué hago si un libro se devuelve dañado?',
+                        'respuesta' => 'Registra el daño en el sistema durante la devolución y genera una sanción si es necesario según las políticas de la biblioteca.'
+                    ]
+                ]
+            ]
+        ];
+
+        // Tutoriales disponibles
+        $data['tutoriales'] = [
+            [
+                'id' => 'intro',
+                'titulo' => 'Introducción al Sistema',
+                'duracion' => '15 minutos',
+                'nivel' => 'Básico',
+                'descripcion' => 'Aprende los conceptos básicos y navegación del sistema de biblioteca virtual.',
+                'icono' => 'ti ti-play',
+                'color' => 'primary'
+            ],
+            [
+                'id' => 'prestamos',
+                'titulo' => 'Gestión de Préstamos',
+                'duracion' => '25 minutos',
+                'nivel' => 'Intermedio',
+                'descripcion' => 'Tutorial completo sobre cómo gestionar préstamos, devoluciones y renovaciones.',
+                'icono' => 'ti ti-book',
+                'color' => 'success'
+            ],
+            [
+                'id' => 'usuarios',
+                'titulo' => 'Administración de Usuarios',
+                'duracion' => '20 minutos',
+                'nivel' => 'Intermedio',
+                'descripcion' => 'Cómo crear, editar y gestionar usuarios del sistema bibliotecario.',
+                'icono' => 'ti ti-users',
+                'color' => 'info'
+            ],
+            [
+                'id' => 'reportes',
+                'titulo' => 'Reportes y Estadísticas',
+                'duracion' => '18 minutos',
+                'nivel' => 'Avanzado',
+                'descripcion' => 'Genera reportes detallados y comprende las estadísticas del sistema.',
+                'icono' => 'ti ti-chart-bar',
+                'color' => 'warning'
+            ]
+        ];
+
+        // Manuales disponibles
+        $data['manuales'] = [
+            [
+                'tipo' => 'usuario',
+                'titulo' => 'Manual de Usuario',
+                'descripcion' => 'Guía completa para usuarios del sistema',
+                'paginas' => 45,
+                'version' => '2.1',
+                'icono' => 'ti ti-file-text',
+                'color' => 'primary'
+            ],
+            [
+                'tipo' => 'admin',
+                'titulo' => 'Manual de Administrador',
+                'descripcion' => 'Configuración y gestión avanzada del sistema',
+                'paginas' => 78,
+                'version' => '2.1',
+                'icono' => 'ti ti-settings',
+                'color' => 'success'
+            ],
+            [
+                'tipo' => 'tecnico',
+                'titulo' => 'Manual Técnico',
+                'descripcion' => 'Documentación técnica y API del sistema',
+                'paginas' => 124,
+                'version' => '2.1',
+                'icono' => 'ti ti-code',
+                'color' => 'info'
+            ]
+        ];
+
+        // Información de contacto
+        $data['contacto'] = [
+            'email_soporte' => 'soporte@bibliotecahzg.edu.pe',
+            'telefono' => '+51 (01) 234-5678',
+            'horarios' => [
+                'lunes_viernes' => '8:00 AM - 6:00 PM',
+                'sabado' => '9:00 AM - 2:00 PM'
+            ],
+            'direccion' => 'Biblioteca Central HZG, Av. Universitaria 123, Lima, Perú',
+            'tiempos_respuesta' => [
+                'baja' => '2-3 días hábiles',
+                'media' => '1-2 días hábiles',
+                'alta' => '4-6 horas',
+                'critica' => '1-2 horas'
+            ]
+        ];
+
+        return view('Administrador/modals/ayuda', $data);
+    }
 }

@@ -104,19 +104,15 @@
                 </a>
                 <div class="dropdown-menu dropdown-menu-end dropdown-menu-animate-up" aria-labelledby="drop2">
                   <div class="message-body">
-                    <a href="javascript:void(0)" class="dropdown-item">
+                    <a href="javascript:void(0)" class="dropdown-item" onclick="abrirModalPerfil()">
                       <i class="ti ti-user"></i>
                       <p class="mb-0">Mi Perfil</p>
                     </a>
-                    <a href="javascript:void(0)" class="dropdown-item">
-                      <i class="ti ti-settings"></i>
-                      <p class="mb-0">Configuración</p>
-                    </a>
-                    <a href="javascript:void(0)" class="dropdown-item">
+                    <a href="javascript:void(0)" class="dropdown-item" onclick="abrirModalTareas()">
                       <i class="ti ti-list-check"></i>
                       <p class="mb-0">Mis Tareas</p>
                     </a>
-                    <a href="javascript:void(0)" class="dropdown-item">
+                    <a href="javascript:void(0)" class="dropdown-item" onclick="abrirModalAyuda()">
                       <i class="ti ti-help"></i>
                       <p class="mb-0">Ayuda</p>
                     </a>
@@ -270,6 +266,85 @@
   $(document).ready(function() {
     initSidebarToggle();
   });
+
+  // =====================================
+  // FUNCIONES PARA MODALES DEL SISTEMA
+  // =====================================
+
+  // Función para abrir modal de Mi Perfil
+  function abrirModalPerfil() {
+    // Cargar contenido del modal
+    $.get('<?= base_url("admin/mi-perfil") ?>', function(data) {
+      // Si ya existe un modal similar, eliminarlo
+      $('#modalMiPerfil').remove();
+      
+      // Agregar el modal al body
+      $('body').append(data);
+      
+      // Mostrar el modal
+      const modalPerfil = new bootstrap.Modal(document.getElementById('modalMiPerfil'));
+      modalPerfil.show();
+    }).fail(function() {
+      Swal.fire({
+        title: 'Error',
+        text: 'No se pudo cargar la información del perfil',
+        icon: 'error'
+      });
+    });
+  }
+
+  // Función para abrir modal de Mis Tareas
+  function abrirModalTareas() {
+    // Cargar contenido del modal
+    $.get('<?= base_url("admin/mis-tareas") ?>', function(data) {
+      // Si ya existe un modal similar, eliminarlo
+      $('#modalMisTareas').remove();
+      
+      // Agregar el modal al body
+      $('body').append(data);
+      
+      // Mostrar el modal
+      const modalTareas = new bootstrap.Modal(document.getElementById('modalMisTareas'));
+      modalTareas.show();
+    }).fail(function() {
+      Swal.fire({
+        title: 'Error',
+        text: 'No se pudo cargar la información de tareas',
+        icon: 'error'
+      });
+    });
+  }
+
+  // Función para abrir modal de Ayuda
+  function abrirModalAyuda() {
+    // Cargar contenido del modal
+    $.get('<?= base_url("admin/ayuda") ?>', function(data) {
+      // Si ya existe un modal similar, eliminarlo
+      $('#modalAyuda').remove();
+      
+      // Agregar el modal al body
+      $('body').append(data);
+      
+      // Mostrar el modal
+      const modalAyuda = new bootstrap.Modal(document.getElementById('modalAyuda'));
+      modalAyuda.show();
+    }).fail(function() {
+      Swal.fire({
+        title: 'Error',
+        text: 'No se pudo cargar la información de ayuda',
+        icon: 'error'
+      });
+    });
+  }
+
+  // Limpiar modales al cerrarlos para evitar conflictos
+  $(document).on('hidden.bs.modal', '.modal', function () {
+    const modalId = $(this).attr('id');
+    if (modalId === 'modalMiPerfil' || modalId === 'modalMisTareas' || modalId === 'modalAyuda') {
+      $(this).remove();
+    }
+  });
+
   </script>
   <script src="<?= base_url('./assets/libs/bootstrap/dist/js/bootstrap.bundle.min.js') ?>"></script>
   <script src="<?= base_url('./assets/js/sidebarmenu.js') ?>"></script>
