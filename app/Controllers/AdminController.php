@@ -705,4 +705,178 @@ class AdminController extends BaseController
         // Verificar duplicados y procesar...
         return ['success' => true, 'duplicado' => false];
     }
+
+    /**
+     * Vista principal de gestión de respaldos
+     */
+    public function backup()
+    {
+        $data = [
+            'title' => 'Gestión de Respaldos',
+            'backups' => $this->getDatosPruebaBackups(),
+            'estadisticas' => [
+                'total_backups' => 8,
+                'espacio_utilizado' => '2.3 GB',
+                'ultimo_backup' => '2024-10-07 08:30:00',
+                'backups_automaticos' => 5
+            ]
+        ];
+
+        return view('Administrador/backup', $data);
+    }
+
+    /**
+     * Crear nuevo backup
+     */
+    public function crearBackup()
+    {
+        try {
+            // TODO: Implementar creación real de backup
+            $nombreBackup = 'backup_' . date('Y-m-d_H-i-s') . '.sql';
+            
+            // Simular tiempo de procesamiento
+            sleep(2);
+            
+            return $this->response->setJSON([
+                'success' => true,
+                'message' => 'Backup creado exitosamente',
+                'backup' => $nombreBackup
+            ]);
+        } catch (Exception $e) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Error al crear backup: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Restaurar backup
+     */
+    public function restaurarBackup()
+    {
+        try {
+            $backupFile = $this->request->getPost('backup_file');
+            
+            if (!$backupFile) {
+                throw new Exception('Archivo de backup no especificado');
+            }
+
+            // TODO: Implementar restauración real
+            sleep(3);
+            
+            return $this->response->setJSON([
+                'success' => true,
+                'message' => 'Base de datos restaurada exitosamente desde: ' . $backupFile
+            ]);
+        } catch (Exception $e) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Error al restaurar backup: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Descargar backup
+     */
+    public function descargarBackup($nombreArchivo)
+    {
+        try {
+            // TODO: Implementar descarga real del archivo
+            $rutaArchivo = WRITEPATH . 'backups/' . $nombreArchivo;
+            
+            if (!file_exists($rutaArchivo)) {
+                throw new Exception('Archivo de backup no encontrado');
+            }
+
+            return $this->response->download($rutaArchivo, null);
+        } catch (Exception $e) {
+            return redirect()->back()->with('error', 'Error al descargar backup: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Eliminar backup
+     */
+    public function eliminarBackup($nombreArchivo)
+    {
+        try {
+            // TODO: Implementar eliminación real del archivo
+            
+            return $this->response->setJSON([
+                'success' => true,
+                'message' => 'Backup eliminado exitosamente'
+            ]);
+        } catch (Exception $e) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Error al eliminar backup: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Datos de prueba para backups
+     */
+    private function getDatosPruebaBackups()
+    {
+        return [
+            [
+                'id' => 1,
+                'nombre' => 'backup_2024-10-07_08-30-00.sql',
+                'fecha_creacion' => '2024-10-07 08:30:00',
+                'tamaño' => '342.5 MB',
+                'tipo' => 'Automático',
+                'estado' => 'Completado',
+                'tablas' => 15,
+                'registros' => 2847,
+                'compresion' => true
+            ],
+            [
+                'id' => 2,
+                'nombre' => 'backup_2024-10-06_08-30-00.sql',
+                'fecha_creacion' => '2024-10-06 08:30:00',
+                'tamaño' => '338.2 MB',
+                'tipo' => 'Automático',
+                'estado' => 'Completado',
+                'tablas' => 15,
+                'registros' => 2821,
+                'compresion' => true
+            ],
+            [
+                'id' => 3,
+                'nombre' => 'backup_manual_2024-10-05_14-22-15.sql',
+                'fecha_creacion' => '2024-10-05 14:22:15',
+                'tamaño' => '335.8 MB',
+                'tipo' => 'Manual',
+                'estado' => 'Completado',
+                'tablas' => 15,
+                'registros' => 2795,
+                'compresion' => true
+            ],
+            [
+                'id' => 4,
+                'nombre' => 'backup_2024-10-05_08-30-00.sql',
+                'fecha_creacion' => '2024-10-05 08:30:00',
+                'tamaño' => '333.1 MB',
+                'tipo' => 'Automático',
+                'estado' => 'Completado',
+                'tablas' => 15,
+                'registros' => 2773,
+                'compresion' => true
+            ],
+            [
+                'id' => 5,
+                'nombre' => 'backup_2024-10-04_08-30-00.sql',
+                'fecha_creacion' => '2024-10-04 08:30:00',
+                'tamaño' => '329.7 MB',
+                'tipo' => 'Automático',
+                'estado' => 'Completado',
+                'tablas' => 15,
+                'registros' => 2751,
+                'compresion' => true
+            ]
+        ];
+    }
 }

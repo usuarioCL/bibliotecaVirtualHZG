@@ -1,35 +1,101 @@
-<!-- Incluir SweetAlert2 y jQuery al principio -->
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<!-- SweetAlert2 CDN -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-<!-- Script de debugging -->
-<script>
-// Debug inmediato
-console.log('=== DEBUGGING INICIAL ===');
-console.log('jQuery disponible:', typeof jQuery !== 'undefined');
-console.log('$ disponible:', typeof $ !== 'undefined');
-console.log('SweetAlert disponible:', typeof Swal !== 'undefined');
-console.log('DOM ready:', document.readyState);
+<div class="container-fluid">
+    <!-- Encabezado de la página con breadcrumb -->
+    <div class="row">
+        <div class="col-12">
+            <div class="page-title-box d-sm-flex align-items-center justify-content-between mb-4">
+                <div>
+                    <h1 class="h3 mb-1 fw-bold text-dark">
+                        <i class="ti ti-file-upload text-primary me-2"></i>
+                        Importar Datos
+                    </h1>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb mb-0">
+                            <li class="breadcrumb-item"><a href="<?= base_url('admin') ?>">Dashboard</a></li>
+                            <li class="breadcrumb-item"><a href="#">Administración de Datos</a></li>
+                            <li class="breadcrumb-item active">Importar Datos</li>
+                        </ol>
+                    </nav>
+                    <p class="text-muted mb-0 mt-1">Importa datos masivamente desde archivos Excel al sistema</p>
+                </div>
+                <div class="d-flex gap-2 flex-wrap">
+                    <button type="button" class="btn btn-outline-info btn-sm" onclick="mostrarGuiaImportacion()">
+                        <i class="ti ti-help"></i> Guía de Importación
+                    </button>
+                    <button type="button" class="btn btn-success btn-sm" id="btn-descargar-plantilla">
+                        <i class="ti ti-download"></i> Descargar Plantillas
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
-// Verificar cuando se carga todo
-window.addEventListener('load', function() {
-    console.log('=== WINDOW LOADED ===');
-    console.log('Botones encontrados:');
-    console.log('- btn-descargar-plantilla:', document.getElementById('btn-descargar-plantilla') !== null);
-    console.log('- btn-preview:', document.getElementById('btn-preview') !== null);
-    console.log('- form-importar:', document.getElementById('form-importar') !== null);
-});
-</script>
+    <!-- Estadísticas rápidas -->
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card stats-card primary h-100 shadow-sm">
+                <div class="card-body text-center">
+                    <div class="d-flex align-items-center justify-content-center mb-2">
+                        <div class="rounded-circle bg-primary bg-opacity-10 p-3">
+                            <i class="ti ti-file-spreadsheet text-primary" style="font-size: 2.5rem;"></i>
+                        </div>
+                    </div>
+                    <h3 class="fw-bold text-primary mb-1">6</h3>
+                    <p class="text-muted mb-0 small">Tipos de Datos</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card stats-card success h-100 shadow-sm">
+                <div class="card-body text-center">
+                    <div class="d-flex align-items-center justify-content-center mb-2">
+                        <div class="rounded-circle bg-success bg-opacity-10 p-3">
+                            <i class="ti ti-check-circle text-success" style="font-size: 2.5rem;"></i>
+                        </div>
+                    </div>
+                    <h3 class="fw-bold text-success mb-1">0</h3>
+                    <p class="text-muted mb-0 small">Importaciones Exitosas</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card stats-card warning h-100 shadow-sm">
+                <div class="card-body text-center">
+                    <div class="d-flex align-items-center justify-content-center mb-2">
+                        <div class="rounded-circle bg-warning bg-opacity-10 p-3">
+                            <i class="ti ti-alert-triangle text-warning" style="font-size: 2.5rem;"></i>
+                        </div>
+                    </div>
+                    <h3 class="fw-bold text-warning mb-1">0</h3>
+                    <p class="text-muted mb-0 small">Con Errores</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card stats-card info h-100 shadow-sm">
+                <div class="card-body text-center">
+                    <div class="d-flex align-items-center justify-content-center mb-2">
+                        <div class="rounded-circle bg-info bg-opacity-10 p-3">
+                            <i class="ti ti-database text-info" style="font-size: 2.5rem;"></i>
+                        </div>
+                    </div>
+                    <h3 class="fw-bold text-info mb-1">0</h3>
+                    <p class="text-muted mb-0 small">Registros Procesados</p>
+                </div>
+            </div>
+        </div>
+    </div>
 
-<div class="container">
-  <div class="row">
-    <div class="col-lg-12">
-      <div class="card">
-        <div class="card-header">
-          <h4 class="card-title mb-0">
-            <i class="ti ti-file-spreadsheet me-2"></i>
-            Importar Datos desde Excel
-          </h4>
+    <!-- Formulario de importación -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-white py-3">
+            <h5 class="card-title mb-0 fw-semibold">
+                <i class="ti ti-upload text-primary me-2"></i>
+                Formulario de Importación
+            </h5>
+            <p class="text-muted small mb-0 mt-1">Selecciona el tipo de datos y el archivo Excel para importar</p>
         </div>
         <div class="card-body">
           

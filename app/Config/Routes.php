@@ -102,6 +102,13 @@ $routes->post('admin/preview-csv', 'AdminController::previewCsv');
 $routes->post('admin/procesar-importacion', 'AdminController::procesarImportacion');
 $routes->post('admin/procesar-importacion-excel', 'AdminController::procesarImportacionExcel');
 
+// Administración de datos - Respaldos
+$routes->get('admin/backup', 'AdminController::backup');
+$routes->post('admin/crear-backup', 'AdminController::crearBackup');
+$routes->post('admin/restaurar-backup', 'AdminController::restaurarBackup');
+$routes->get('admin/descargar-backup/(:segment)', 'AdminController::descargarBackup/$1');
+$routes->delete('admin/eliminar-backup/(:segment)', 'AdminController::eliminarBackup/$1');
+
 //Recursos
 $routes->get('/recursos', 'RecursoController::index');
 $routes->get('/recursos/crear', 'RecursoController::crear');
