@@ -11,13 +11,18 @@
  * - $imagenPrefix: Prefijo para la ruta de imagen (default: '')
  */
 
-$colClasses = $colClasses ?? 'col-lg-2 col-md-4 col-sm-6';
+$colClasses = $colClasses ?? 'col-xl-2 col-lg-3 col-md-4 col-sm-6';
 $mostrarDetalles = $mostrarDetalles ?? [];
 $imagenPrefix = $imagenPrefix ?? '';
 ?>
 
-<div class="<?= $colClasses ?> mb-4">
-    <div class="card h-100 border-0 shadow-sm position-relative card-recurso-destacado">
+<div class="<?= $colClasses ?>">
+    <div class="card h-100 shadow-sm rounded" 
+         style="cursor: pointer;" 
+         data-bs-toggle="modal" 
+         data-bs-target="#libroModal"
+         data-libro-id="<?= $libro['idrecurso'] ?>"
+         onclick="cargarDetallesLibro(<?= $libro['idrecurso'] ?>)">
         <!-- Icono de tipo de recurso -->
         <?php 
         $esDigital = false;
@@ -45,69 +50,72 @@ $imagenPrefix = $imagenPrefix ?? '';
         ?>
         <div class="position-absolute top-0 start-0 m-2" style="z-index: 10;">
             <?php if ($esDigital): ?>
-                <span class="badge badge-tipo-recurso badge-digital text-white" title="Recurso Digital - <?= esc($debugText) ?>">
-                    <i class="fas fa-file-pdf"></i>
+                <span class="badge bg-info text-white" title="Recurso Digital - <?= esc($debugText) ?>">
+                    <i class="fas fa-file-pdf me-1"></i>
+                    Digital
                 </span>
             <?php else: ?>
-                <span class="badge badge-tipo-recurso badge-fisico text-white" title="Recurso Físico - <?= esc($debugText) ?>">
-                    <i class="fas fa-book"></i>
+                <span class="badge bg-primary text-white" title="Recurso Físico - <?= esc($debugText) ?>">
+                    <i class="fas fa-book me-1"></i>
+                    Físico
                 </span>
             <?php endif; ?>
         </div>
         
-        <!-- Imagen del libro -->
-        <div class="card-img-top-container" style="height: 250px; overflow: hidden;">
+        <!-- Imagen del libro con texto overlay -->
+        <div class="position-relative card" style="height: 300px; overflow: hidden;">
             <?php if (!empty($libro['portada'])): ?>
                 <?php 
                 $rutaCompleta = $imagenPrefix . $libro['portada'];
                 ?>
                 <img src="<?= $rutaCompleta ?>" 
                      class="card-img-top h-100 w-100" 
-                     style="object-fit: cover;" 
+                     style="object-fit: cover; border-top-left-radius: 0.375rem; border-top-right-radius: 0.375rem;" 
                      alt="<?= esc($libro['titulo']) ?>"
-                     data-recurso-id="<?= $libro['idrecurso'] ?>"
-                     title="Ruta: <?= esc($rutaCompleta) ?>">
+                     data-recurso-id="<?= $libro['idrecurso'] ?>">
             <?php else: ?>
-                <div class="bg-light h-100 d-flex align-items-center justify-content-center">
+                <div class="bg-light h-100 d-flex align-items-center justify-content-center" style="border-top-left-radius: 0.375rem; border-top-right-radius: 0.375rem;">
                     <div class="text-center text-muted">
                         <?php if ($esDigital): ?>
-                            <i class="fas fa-file-pdf fa-2x mb-2 text-info icono-sin-portada"></i>
+                            <i class="fas fa-file-pdf fa-2x mb-2 text-info"></i>
                         <?php else: ?>
-                            <i class="fas fa-book fa-2x mb-2 icono-sin-portada"></i>
+                            <i class="fas fa-book fa-2x mb-2"></i>
                         <?php endif; ?>
                         <small>Sin portada</small>
                     </div>
                 </div>
             <?php endif; ?>
+            
+            <!-- Overlay con información del libro -->
+            <div class="position-absolute bottom-0 start-0 end-0 p-3" style="background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.7) 80%, transparent 100%); text-shadow: 1px 1px 2px rgba(0,0,0,0.8);">
+                <!-- Título -->
+                <h6 class="text-white fw-bold mb-1 text-truncate" style="font-size: 0.95rem; line-height: 1.3; text-shadow: 2px 2px 4px rgba(0,0,0,0.9);" title="<?= esc($libro['titulo']) ?>">
+                    <?= esc($libro['titulo']) ?>
+                </h6>
+                
+                <!-- Autores -->
+                <p class="text-white small mb-0 text-truncate" style="text-shadow: 1px 1px 3px rgba(0,0,0,0.8);" title="<?php 
+                    $autorTexto = 'Sin autor';
+                    if (isset($libro['autores']) && !empty($libro['autores'])) {
+                        $autorTexto = $libro['autores'];
+                    } elseif (isset($libro['nomautor']) && !empty($libro['nomautor'])) {
+                        $autorTexto = $libro['nomautor'];
+                    }
+                    echo esc($autorTexto);
+                    ?>">
+                    <?php echo esc($autorTexto); ?>
+                </p>
+                
+                <!-- Año -->
+                <p class="text-white small mb-0" style="opacity: 0.9; text-shadow: 1px 1px 2px rgba(0,0,0,0.7);">
+                    <?= esc($libro['anio'] ?: 'N/A') ?>
+                </p>
+            </div>
         </div>
         
-        <!-- Contenido de la card -->
+        <!-- Detalles adicionales opcionales (solo si se solicitan) -->
+        <?php if (!empty($mostrarDetalles)): ?>
         <div class="card-body p-3">
-            <!-- Título -->
-            <h6 class="card-title fw-bold mb-2" style="font-size: 0.9rem; line-height: 1.2;">
-                <?= esc(strlen($libro['titulo']) > 40 ? substr($libro['titulo'], 0, 40) . '...' : $libro['titulo']) ?>
-            </h6>
-            
-            <!-- Autores -->
-            <p class="card-text text-muted small mb-2">
-                <strong>Autores:</strong> 
-                <?php 
-                $autorTexto = 'Sin autor';
-                if (isset($libro['autores']) && !empty($libro['autores'])) {
-                    $autorTexto = $libro['autores'];
-                } elseif (isset($libro['nomautor']) && !empty($libro['nomautor'])) {
-                    $autorTexto = $libro['nomautor'];
-                }
-                echo esc($autorTexto);
-                ?>
-            </p>
-            
-            <!-- Año -->
-            <p class="card-text text-muted small <?= !empty($mostrarDetalles) ? 'mb-1' : '' ?>">
-                <strong>Año:</strong> <?= esc($libro['anio']) ?>
-            </p>
-            
-            <!-- Detalles adicionales opcionales -->
             <?php if (in_array('isbn', $mostrarDetalles) && !empty($libro['isbn'])): ?>
                 <p class="card-text text-muted small mb-1">
                     <strong>ISBN:</strong> <?= esc($libro['isbn']) ?>
@@ -143,40 +151,6 @@ $imagenPrefix = $imagenPrefix ?? '';
                 </p>
             <?php endif; ?>
         </div>
-        
-        <!-- Footer de la card -->
-        <div class="card-footer bg-transparent border-top-0">
-            <?php if ($esDigital && isset($libro['archivo']) && !empty($libro['archivo'])): ?>
-                <!-- Botones para recursos digitales -->
-                <div class="d-flex gap-1">
-                    <button type="button" 
-                            class="btn btn-sm btn-success flex-fill btn-leer-pdf" 
-                            onclick="leerPDFDirecto('<?= base_url($libro['archivo']) ?>', '<?= esc($libro['titulo']) ?>')">
-                        <i class="fas fa-book-open me-1"></i>
-                        Leer
-                    </button>
-                    <button type="button" 
-                            class="btn btn-sm btn-outline-primary flex-fill btn-detalles-recurso" 
-                            data-bs-toggle="modal" 
-                            data-bs-target="#libroModal"
-                            data-libro-id="<?= $libro['idrecurso'] ?>"
-                            onclick="cargarDetallesLibro(<?= $libro['idrecurso'] ?>)">
-                        <i class="fas fa-info-circle me-1"></i>
-                        Detalles
-                    </button>
-                </div>
-            <?php else: ?>
-                <!-- Botón para recursos físicos -->
-                <button type="button" 
-                        class="btn btn-sm btn-outline-primary w-100 btn-detalles-recurso" 
-                        data-bs-toggle="modal" 
-                        data-bs-target="#libroModal"
-                        data-libro-id="<?= $libro['idrecurso'] ?>"
-                        onclick="cargarDetallesLibro(<?= $libro['idrecurso'] ?>)">
-                    <i class="fas fa-info-circle me-1"></i>
-                    Ver detalles
-                </button>
-            <?php endif; ?>
-        </div>
+        <?php endif; ?>
     </div>
 </div>

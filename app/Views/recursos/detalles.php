@@ -182,10 +182,50 @@
                         <div class="col-12">
                             <h6 class="text-primary mb-3">Acciones</h6>
                             <div class="d-flex gap-2 flex-wrap">
-                                <?php if ($recurso['estado'] === 'disponible' && $recurso['stock'] > 0): ?>
-                                    <button class="btn btn-success" onclick="solicitarPrestamo(<?= $recurso['idrecurso'] ?>)">
-                                        <i class="fas fa-hand-holding"></i> Solicitar Préstamo
+                                <?php 
+                                // Determinar si es un recurso digital
+                                $esDigital = false;
+                                
+                                if (isset($recurso['tiporecurso']) && stripos($recurso['tiporecurso'], 'digital') !== false) {
+                                    $esDigital = true;
+                                } elseif (isset($recurso['idtiporecurso']) && $recurso['idtiporecurso'] == 2) {
+                                    $esDigital = true;
+                                } elseif (isset($recurso['rutaarchivo']) && !empty($recurso['rutaarchivo'])) {
+                                    $esDigital = true;
+                                } elseif (isset($recurso['archivo']) && !empty($recurso['archivo'])) {
+                                    $esDigital = true;
+                                }
+                                ?>
+                                
+                                <?php if ($esDigital): ?>
+                                    <!-- Botón para recursos digitales -->
+                                    <button class="btn btn-success" onclick="
+                                        // Cerrar modal
+                                        const modal = document.getElementById('libroModal');
+                                        if (modal) {
+                                            const modalInstance = bootstrap.Modal.getInstance(modal);
+                                            if (modalInstance) {
+                                                modalInstance.hide();
+                                            }
+                                        }
+                                        // Llamar a leerPDFDirecto después de cerrar el modal
+                                        setTimeout(() => {
+                                            if (typeof leerPDFDirecto === 'function') {
+                                                leerPDFDirecto('<?= base_url($recurso['rutaarchivo'] ?? $recurso['archivo'] ?? '') ?>', '<?= esc($recurso['titulo']) ?>');
+                                            } else {
+                                                window.open('<?= base_url($recurso['rutaarchivo'] ?? $recurso['archivo'] ?? '') ?>', '_blank');
+                                            }
+                                        }, 300);
+                                    ">
+                                        <i class="fas fa-book-open"></i> Leer
                                     </button>
+                                <?php else: ?>
+                                    <!-- Botón para recursos físicos -->
+                                    <?php if ($recurso['estado'] === 'disponible' && $recurso['stock'] > 0): ?>
+                                        <button class="btn btn-success" onclick="solicitarPrestamo(<?= $recurso['idrecurso'] ?>)">
+                                            <i class="fas fa-hand-holding"></i> Solicitar Préstamo
+                                        </button>
+                                    <?php endif; ?>
                                 <?php endif; ?>
                                 
                                 <button class="btn btn-outline-primary" onclick="agregarFavorito(<?= $recurso['idrecurso'] ?>)">

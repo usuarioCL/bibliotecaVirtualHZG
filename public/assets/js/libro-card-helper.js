@@ -100,6 +100,7 @@ function generarLibroCard(libro, opciones = {}) {
                     Ver detalles
                 </a>
             </div>
+            
         </div>
     </div>`;
 }
