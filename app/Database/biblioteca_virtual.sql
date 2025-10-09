@@ -225,3 +225,16 @@ CREATE TABLE ejemplares_fisicos (
     INDEX idx_estado_ejemplar (estado_ejemplar),
     INDEX idx_activo (activo)
 );
+
+CREATE TABLE historial_usuarios (
+    id_historial INT AUTO_INCREMENT PRIMARY KEY,
+    accion VARCHAR(100) NOT NULL,
+    usuario_actor VARCHAR(50) NOT NULL,
+    usuario_afectado VARCHAR(50),
+    tipo_usuario ENUM('admin', 'docente', 'estudiante') NOT NULL,
+    fecha_accion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    detalles TEXT,
+    user_agent TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);

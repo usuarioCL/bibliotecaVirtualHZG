@@ -347,6 +347,16 @@
     });
   }
 
+  // Función para cargar historial de usuarios via AJAX
+  function cargarHistorialUsuarios() {
+    $('#contenedor-principal').html('<div class="text-center py-5">Cargando historial...</div>');
+    $.get('<?= base_url("historial-usuarios/ajax") ?>', function(data) {
+      $('#contenedor-principal').html(data);
+    }).fail(function() {
+      $('#contenedor-principal').html('<div class="text-danger text-center py-5">Error al cargar el historial.</div>');
+    });
+  }
+
   // Limpiar modales al cerrarlos para evitar conflictos
   $(document).on('hidden.bs.modal', '.modal', function () {
     const modalId = $(this).attr('id');

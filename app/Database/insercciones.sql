@@ -127,3 +127,18 @@ INSERT INTO compartidos (idusuario, idrecurso) VALUES
 INSERT INTO favoritos (idusuario, idrecurso) VALUES
 (1, 1),
 (2, 2);
+
+-- Historial de acciones de usuarios
+CREATE INDEX idx_historial_usuario_actor ON historial_usuarios(usuario_actor);
+CREATE INDEX idx_historial_usuario_afectado ON historial_usuarios(usuario_afectado);
+CREATE INDEX idx_historial_fecha ON historial_usuarios(fecha_accion);
+CREATE INDEX idx_historial_accion ON historial_usuarios(accion);
+CREATE INDEX idx_historial_tipo_usuario ON historial_usuarios(tipo_usuario);
+
+-- Datos de ejemplo para demostración
+INSERT INTO historial_usuarios (accion, usuario_actor, usuario_afectado, tipo_usuario, detalles) VALUES
+('Usuario creado', 'admin', 'juan.perez', 'estudiante', 'Nuevo estudiante registrado en el sistema'),
+('Usuario creado', 'admin', 'maria.garcia', 'docente', 'Nuevo docente registrado en el sistema'),
+('Usuario creado', 'carlos.lopez', 'carlos.lopez', 'docente', 'Información personal actualizada');
+
+

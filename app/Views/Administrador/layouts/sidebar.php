@@ -203,6 +203,16 @@
             </div>
           </a>
         </li>
+        <li class="sidebar-item">
+          <a class="sidebar-link ajax-link" 
+             href="<?= base_url('historial-usuarios'); ?>"
+             title="Ver historial de acciones de usuarios">
+            <div class="d-flex align-items-center gap-3">
+              <i class="ti ti-history fs-5"></i>
+              <span class="hide-menu">Historial</span>
+            </div>
+          </a>
+        </li>
       </ul>
     </li>
 

@@ -7,6 +7,9 @@ use App\Models\MatriculaModel;
 use CodeIgniter\Controller;
 use Exception;
 
+// Cargar helper de historial
+helper('historial');
+
 class UsuarioController extends Controller
 {
     protected $usuarioModel;
@@ -182,6 +185,9 @@ class UsuarioController extends Controller
                 if ($db->transStatus() === false) {
                     throw new Exception('Error en la transacción de base de datos');
                 }
+
+                // Registrar en el historial
+                registrarCreacionUsuario($datosUsuario['nomuser'], $datosUsuario['nivelacceso']);
 
                 return $this->response->setJSON([
                     'status' => 'success',
@@ -488,8 +494,10 @@ class UsuarioController extends Controller
 
             // Solo actualizar contraseña si se proporcionó una nueva
             $nuevaPassword = $this->request->getPost('passuser');
+            $cambioPassword = false;
             if (!empty($nuevaPassword)) {
                 $datosUsuario['passuser'] = password_hash($nuevaPassword, PASSWORD_DEFAULT);
+                $cambioPassword = true;
             }
 
             if (!$this->usuarioModel->update($idusuario, $datosUsuario)) {
@@ -550,6 +558,14 @@ class UsuarioController extends Controller
 
             if ($db->transStatus() === false) {
                 throw new Exception('Error en la transacción de base de datos');
+            }
+
+            // Registrar en el historial
+            registrarActualizacionUsuario($datosUsuario['nomuser'], $datosUsuario['nivelacceso'], 'Información de usuario actualizada');
+            
+            // Si se cambió la contraseña, registrar también ese evento
+            if ($cambioPassword) {
+                registrarCambioContraseña($datosUsuario['nomuser']);
             }
 
             return $this->response->setJSON([
@@ -743,6 +759,9 @@ class UsuarioController extends Controller
             }
 
             log_message('info', "Eliminación completada exitosamente para usuario: {$nomuser}");
+
+            // Registrar en el historial
+            registrarEliminacionUsuario($nomuser, $nivelacceso);
 
             return $this->response->setJSON([
                 'success' => true,

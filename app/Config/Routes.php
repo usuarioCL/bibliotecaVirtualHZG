@@ -179,6 +179,13 @@ $routes->get('/editoriales/estadisticas', 'EditorialController::estadisticas');
 $routes->get('/editoriales/ajax', 'EditorialController::ajaxIndex');
 $routes->get('/editoriales/ajax_detalles/(:num)', 'EditorialController::ajaxDetalles/$1');
 
+// Historial de Usuarios
+$routes->get('/historial-usuarios', 'HistorialUsuarioController::index');
+$routes->get('/historial-usuarios/ajax', 'HistorialUsuarioController::ajaxIndex');
+$routes->get('/historial-usuarios/getHistorialAjax', 'HistorialUsuarioController::getHistorialAjax');
+$routes->get('/historial-usuarios/estadisticas', 'HistorialUsuarioController::estadisticas');
+$routes->post('/historial-usuarios/registrar', 'HistorialUsuarioController::registrarAccion');
+
 // Ejemplares Físicos
 $routes->get('/ejemplares-fisicos/(:num)', 'EjemplarFisicoController::index/$1');
 $routes->get('/ejemplares-fisicos/modal/(:num)', 'EjemplarFisicoController::modal/$1');
