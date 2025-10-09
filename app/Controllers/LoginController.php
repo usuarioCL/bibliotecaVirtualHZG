@@ -37,7 +37,9 @@ class LoginController extends BaseController
                 // Guardamos en sesión
                 session()->set([
                     'usuario'    => $usuario['nomuser'],
+                    'nomuser'    => $usuario['nomuser'],
                     'nivel'      => $usuario['nivelacceso'],
+                    'nivelacceso' => $usuario['nivelacceso'],
                     'logged_in'  => true
                 ]);
 
