@@ -2,7 +2,7 @@
 <?= $navbar; ?>
 
 <!-- Estilos institucionales de la Biblioteca Virtual HZG -->
-<link rel="stylesheet" href="<?= base_url('assets/css/biblioteca-hzg.css') ?>")>
+<link rel="stylesheet" href="<?= base_url('assets/css/biblioteca-hzg.css') ?>">
 <div class="container">
     <!-- Hero section con buscador -->
     <div class="hero-section mt-4 mb-4">
@@ -191,7 +191,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body" id="libroModalBody">
-                <div class="text-center">
+            <div class="text-center">
                     <div class="spinner-border text-primary" role="status">
                         <span class="visually-hidden">Cargando...</span>
                     </div>
