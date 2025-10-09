@@ -337,6 +337,16 @@
     });
   }
 
+  // Función para cargar editoriales via AJAX
+  function cargarEditoriales() {
+    $('#contenedor-principal').html('<div class="text-center py-5">Cargando editoriales...</div>');
+    $.get('<?= base_url("editoriales/ajax") ?>', function(data) {
+      $('#contenedor-principal').html(data);
+    }).fail(function() {
+      $('#contenedor-principal').html('<div class="text-danger text-center py-5">Error al cargar las editoriales.</div>');
+    });
+  }
+
   // Limpiar modales al cerrarlos para evitar conflictos
   $(document).on('hidden.bs.modal', '.modal', function () {
     const modalId = $(this).attr('id');

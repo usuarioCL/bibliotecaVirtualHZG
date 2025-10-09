@@ -67,7 +67,7 @@
         </li>
         <li class="sidebar-item">
           <a class="sidebar-link ajax-link" 
-             href="<?= base_url('editoriales'); ?>"
+             href="<?= base_url('editoriales/ajax'); ?>"
              title="Gestionar editoriales">
             <div class="d-flex align-items-center gap-3">
               <i class="ti ti-building-store fs-5"></i>
