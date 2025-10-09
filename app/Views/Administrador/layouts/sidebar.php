@@ -57,7 +57,7 @@
         </li>
         <li class="sidebar-item">
           <a class="sidebar-link ajax-link" 
-             href="<?= base_url('categorias'); ?>"
+             href="<?= base_url('admin/categorias'); ?>"
              title="Gestionar categorías">
             <div class="d-flex align-items-center gap-3">
               <i class="ti ti-category-2 fs-5"></i>
