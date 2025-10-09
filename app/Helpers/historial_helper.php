@@ -1,5 +1,40 @@
 <?php
 
+if (!function_exists('obtenerTipoUsuario')) {
+    /**
+     * Obtener el tipo de usuario basándose en el nomuser
+     * 
+     * @param string $nomuser Nombre de usuario
+     * @return string Tipo de usuario (admin, docente, estudiante, desconocido)
+     */
+    function obtenerTipoUsuario($nomuser)
+    {
+        try {
+            $usuarioModel = new \App\Models\usuarioModel();
+            $usuario = $usuarioModel->where('nomuser', $nomuser)->first();
+            
+            if ($usuario) {
+                $tipo = $usuario['nivelacceso'] ?? 'estudiante';
+                // Debug temporal
+                log_message('debug', "Tipo de usuario para {$nomuser}: {$tipo}");
+                return $tipo;
+            }
+            
+            // Si no se encuentra, intentar inferir por el nombre
+            if (strpos($nomuser, 'admin') === 0) {
+                return 'admin';
+            }
+            
+            // Fallback a estudiante en lugar de desconocido (que no está en el ENUM)
+            return 'estudiante';
+            
+        } catch (\Exception $e) {
+            log_message('error', 'Error al obtener tipo de usuario: ' . $e->getMessage());
+            return 'estudiante'; // Fallback a estudiante
+        }
+    }
+}
+
 if (!function_exists('registrarAccionHistorial')) {
     /**
      * Registrar una acción en el historial de usuarios
@@ -11,20 +46,37 @@ if (!function_exists('registrarAccionHistorial')) {
      * @param string|null $detalles Detalles adicionales de la acción
      * @return bool|int ID del registro creado o false si hay error
      */
-    function registrarAccionHistorial($accion, $usuarioActor, $usuarioAfectado = null, $tipoUsuario = 'admin', $detalles = null)
+    function registrarAccionHistorial($accion, $usuarioActor, $usuarioAfectado = null, $detalles = null)
     {
         try {
+            // Debug: log de entrada
+            log_message('debug', "Intentando registrar acción: {$accion} por {$usuarioActor} afectando {$usuarioAfectado}");
+            
             $historialModel = new \App\Models\HistorialUsuarioModel();
+            
+            // Obtener el tipo del usuario afectado automáticamente
+            $tipoUsuarioAfectado = $usuarioAfectado ? obtenerTipoUsuario($usuarioAfectado) : 'admin';
+            
+            // Debug: log del tipo detectado
+            log_message('debug', "Tipo detectado para {$usuarioAfectado}: {$tipoUsuarioAfectado}");
             
             $data = [
                 'accion' => $accion,
                 'usuario_actor' => $usuarioActor,
                 'usuario_afectado' => $usuarioAfectado,
-                'tipo_usuario' => $tipoUsuario,
+                'tipo_usuario' => $tipoUsuarioAfectado,
                 'detalles' => $detalles
             ];
 
-            return $historialModel->registrarAccion($data);
+            // Debug: log de los datos a insertar
+            log_message('debug', "Datos a insertar: " . json_encode($data));
+
+            $resultado = $historialModel->registrarAccion($data);
+            
+            // Debug: log de resultado
+            log_message('debug', "Resultado del registro: " . ($resultado ? "Éxito ID {$resultado}" : "Falló"));
+            
+            return $resultado;
             
         } catch (\Exception $e) {
             log_message('error', 'Error al registrar acción en historial: ' . $e->getMessage());
@@ -83,11 +135,13 @@ if (!function_exists('registrarAccionAutomatica')) {
     {
         $usuarioActual = obtenerUsuarioActual();
         
+        // Debug: log del usuario actual
+        log_message('debug', "Usuario actual detectado: " . json_encode($usuarioActual));
+        
         return registrarAccionHistorial(
             $accion,
             $usuarioActual['usuario'],
             $usuarioAfectado,
-            $usuarioActual['tipo'],
             $detalles
         );
     }

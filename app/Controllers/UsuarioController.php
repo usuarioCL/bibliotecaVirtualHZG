@@ -561,7 +561,9 @@ class UsuarioController extends Controller
             }
 
             // Registrar en el historial
-            registrarActualizacionUsuario($datosUsuario['nomuser'], $datosUsuario['nivelacceso'], 'Información de usuario actualizada');
+            log_message('debug', "Llamando a registrarActualizacionUsuario para {$datosUsuario['nomuser']} tipo {$datosUsuario['nivelacceso']}");
+            $resultado = registrarActualizacionUsuario($datosUsuario['nomuser'], $datosUsuario['nivelacceso'], 'Información de usuario actualizada');
+            log_message('debug', "Resultado de registrarActualizacionUsuario: " . ($resultado ? "Éxito ID {$resultado}" : "Falló"));
             
             // Si se cambió la contraseña, registrar también ese evento
             if ($cambioPassword) {
@@ -761,7 +763,9 @@ class UsuarioController extends Controller
             log_message('info', "Eliminación completada exitosamente para usuario: {$nomuser}");
 
             // Registrar en el historial
-            registrarEliminacionUsuario($nomuser, $nivelacceso);
+            log_message('debug', "Llamando a registrarEliminacionUsuario para {$nomuser} tipo {$nivelacceso}");
+            $resultado = registrarEliminacionUsuario($nomuser, $nivelacceso);
+            log_message('debug', "Resultado de registrarEliminacionUsuario: " . ($resultado ? "Éxito ID {$resultado}" : "Falló"));
 
             return $this->response->setJSON([
                 'success' => true,

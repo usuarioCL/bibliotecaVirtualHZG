@@ -348,12 +348,19 @@ $(document).ready(function() {
     }
 
     function getTipoBadge(tipo) {
+        // Normalizar el tipo para evitar problemas de mayúsculas/minúsculas
+        const tipoNormalizado = (tipo || '').toLowerCase().trim();
+        
         const badges = {
             'admin': '<span class="badge bg-danger">Admin</span>',
-            'docente': '<span class="badge bg-primary">Docente</span>',
+            'docente': '<span class="badge bg-warning text-dark">Docente</span>',
             'estudiante': '<span class="badge bg-success">Estudiante</span>'
         };
-        return badges[tipo] || '<span class="badge bg-secondary">Desconocido</span>';
+        
+        // Debug: mostrar en consola qué valor está llegando
+        console.log('Tipo recibido:', tipo, 'Normalizado:', tipoNormalizado);
+        
+        return badges[tipoNormalizado] || '<span class="badge bg-secondary">Desconocido (' + tipo + ')</span>';
     }
 
     function getAccionBadge(accion) {
