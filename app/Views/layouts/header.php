@@ -18,8 +18,7 @@
     <script src="<?= base_url('assets/js/funciones-globales.js') ?>"></script>
     <!-- Animate.css para animaciones -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
-    <!-- Custom CSS -->
-    <link rel="stylesheet" href="/css/css.css">
+    <!-- Custom CSS -->>
     <link rel="stylesheet" href="<?= base_url('assets/css/recursos-destacados.css') ?>">
     <style>
         .sidebar {

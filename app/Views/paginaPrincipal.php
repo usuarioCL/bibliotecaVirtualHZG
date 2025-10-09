@@ -1142,33 +1142,87 @@ document.addEventListener('keydown', function(e) {
     }
 });
 
-// ===== FUNCIÓN PARA SOLICITAR PRÉSTAMOS =====
-
-/**
- * Solicitar préstamo de un recurso físico
- */
-function solicitarPrestamo(idRecurso) {
+// Función para agregar a favoritos
+function agregarFavorito(idRecurso) {
     Swal.fire({
-        title: '¿Solicitar Préstamo?',
-        text: 'Se enviará una solicitud de préstamo para este recurso',
+        title: 'Agregar a Favoritos',
+        text: '¿Deseas agregar este recurso a tus favoritos?',
         icon: 'question',
         showCancelButton: true,
-        confirmButtonColor: '#28a745',
-        cancelButtonColor: '#6c757d',
-        confirmButtonText: 'Sí, solicitar',
-        cancelButtonText: 'Cancelar'
+        confirmButtonText: 'Sí, agregar',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#dc3545',
+        cancelButtonColor: '#6c757d'
     }).then((result) => {
         if (result.isConfirmed) {
-            // Aquí iría la llamada AJAX para solicitar el préstamo
-            // Por ahora mostramos un mensaje de éxito
+            // Aquí iría la lógica para agregar a favoritos
             Swal.fire({
-                title: '¡Solicitud Enviada!',
-                text: 'Tu solicitud de préstamo ha sido enviada. Te notificaremos cuando sea procesada.',
+                title: 'Agregado a Favoritos',
+                text: 'El recurso ha sido agregado a tus favoritos.',
                 icon: 'success',
-                confirmButtonColor: '#28a745'
+                confirmButtonText: 'Entendido'
             });
         }
     });
 }
 
+// Función para compartir recurso
+function compartirRecurso(idRecurso) {
+    const url = window.location.href;
+    
+    if (navigator.share) {
+        navigator.share({
+            title: 'Recurso de Biblioteca Virtual HZG',
+            text: 'Mira este recurso de la Biblioteca Virtual HZG',
+            url: url
+        });
+    } else {
+        // Fallback: copiar al portapapeles
+        navigator.clipboard.writeText(url).then(() => {
+            Swal.fire({
+                title: 'Enlace copiado',
+                text: 'El enlace ha sido copiado al portapapeles.',
+                icon: 'success',
+                confirmButtonText: 'Entendido'
+            });
+        });
+    }
+}
+
+// Función para solicitar préstamo de un recurso
+function solicitarPrestamo(idRecurso) {
+    // Cerrar el modal de detalles del libro si está abierto
+    const libroModal = document.getElementById('libroModal');
+    if (libroModal) {
+        const modalInstance = bootstrap.Modal.getInstance(libroModal);
+        if (modalInstance) {
+            modalInstance.hide();
+        }
+    }
+    
+    // Esperar a que termine la animación de cierre del modal anterior
+    setTimeout(() => {
+        // Cargar el formulario de solicitud de préstamo
+        fetch(`<?= base_url('prestamo/formulario/') ?>${idRecurso}`)
+            .then(response => response.text())
+            .then(html => {
+                // Mostrar el formulario en un modal
+                Swal.fire({
+                    title: 'Solicitud de Préstamo',
+                    html: html,
+                    width: '600px',
+                    showConfirmButton: false,
+                    showCloseButton: true
+                });
+            })
+            .catch(error => {
+                console.error('Error al cargar el formulario:', error);
+                Swal.fire({
+                    title: 'Error',
+                    text: 'No se pudo cargar el formulario de solicitud.',
+                    icon: 'error'
+                });
+            });
+    }, 100); // Esperar 300ms para que el modal termine de cerrarse
+}
 </script>
