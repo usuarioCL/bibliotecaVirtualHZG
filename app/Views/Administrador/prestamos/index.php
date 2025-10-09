@@ -1,6 +1,125 @@
 <!-- SweetAlert2 CDN -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
+<style>
+/* Estilos personalizados para la tabla de préstamos */
+.table-hover tbody tr:hover {
+    background-color: rgba(0, 0, 0, 0.025);
+}
+
+.dropdown-menu {
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    min-width: 180px;
+}
+
+.dropdown-item {
+    padding: 8px 16px;
+    font-size: 0.875rem;
+    transition: background-color 0.15s ease-in-out;
+}
+
+.dropdown-item:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.dropdown-item i {
+    width: 16px;
+    text-align: center;
+}
+
+.stats-card {
+    transition: transform 0.2s ease-in-out;
+}
+
+.stats-card:hover {
+    transform: translateY(-2px);
+}
+
+.badge {
+    font-size: 0.75rem;
+    padding: 0.5em 0.75em;
+}
+
+.empty-state {
+    padding: 2rem;
+}
+
+.empty-state-icon {
+    opacity: 0.5;
+}
+
+/* Estilos para botones de acción */
+.btn-sm {
+    padding: 0.375rem 0.5rem;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    border-radius: 4px;
+    transition: all 0.15s ease-in-out;
+}
+
+.btn-sm i {
+    font-size: 0.9rem;
+}
+
+.btn-outline-info:hover {
+    background-color: #0dcaf0;
+    border-color: #0dcaf0;
+}
+
+.btn-outline-warning:hover {
+    background-color: #ffc107;
+    border-color: #ffc107;
+}
+
+.btn-outline-success:hover {
+    background-color: #198754;
+    border-color: #198754;
+}
+
+.btn-outline-danger:hover {
+    background-color: #dc3545;
+    border-color: #dc3545;
+}
+
+/* Responsive mejoras */
+@media (max-width: 768px) {
+    .table th, .table td {
+        padding: 0.5rem;
+        font-size: 0.85rem;
+    }
+    
+    .card-body {
+        padding: 1rem;
+    }
+    
+    .btn-sm {
+        padding: 0.25rem 0.375rem;
+        font-size: 0.8rem;
+    }
+    
+    .btn-sm i {
+        font-size: 0.8rem;
+    }
+    
+    .d-flex.gap-1 {
+        gap: 0.25rem !important;
+    }
+}
+
+@media (max-width: 576px) {
+    .d-flex.gap-1.flex-wrap {
+        flex-direction: column;
+        gap: 0.25rem !important;
+    }
+    
+    .btn-sm {
+        padding: 0.2rem 0.3rem;
+        min-width: 28px;
+    }
+}
+</style>
+
 <div class="container-fluid">
     <!-- Encabezado de la página con breadcrumb -->
     <div class="row">
@@ -149,7 +268,7 @@
                                     <td class="px-3 py-3">
                                         <div>
                                             <h6 class="mb-1 fw-medium"><?= esc($prestamo['recurso']) ?></h6>
-                                            <p class="text-muted mb-0 small">Código: <?= esc($prestamo['codigo_ejemplar']) ?></p>
+                                            <p class="text-muted mb-0 small">Ejemplar: <?= esc($prestamo['codigo_ejemplar']) ?></p>
                                         </div>
                                     </td>
                                     <td class="px-3 py-3">
@@ -195,33 +314,42 @@
                                         </span>
                                     </td>
                                     <td class="px-3 py-3 text-center">
-                                        <div class="dropdown">
-                                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                                                Acciones
+                                        <div class="d-flex gap-1 justify-content-center align-items-center flex-wrap">
+                                            <!-- Ver Detalles -->
+                                            <button type="button" 
+                                                    class="btn btn-sm btn-outline-info" 
+                                                    onclick="verDetallePrestamo(<?= $prestamo['idprestamo'] ?>)" 
+                                                    title="Ver Detalles"
+                                                    data-bs-toggle="tooltip">
+                                                <i class="ti ti-eye"></i>
                                             </button>
-                                            <ul class="dropdown-menu dropdown-menu-end">
-                                                <li>
-                                                    <a class="dropdown-item" href="#" onclick="verDetallePrestamo(<?= $prestamo['id'] ?>)">
-                                                        <i class="ti ti-eye me-2"></i>Ver Detalles
-                                                    </a>
-                                                </li>
-                                                <li>
-                                                    <a class="dropdown-item" href="#" onclick="renovarPrestamo(<?= $prestamo['id'] ?>)">
-                                                        <i class="ti ti-refresh me-2"></i>Renovar
-                                                    </a>
-                                                </li>
-                                                <li>
-                                                    <a class="dropdown-item" href="#" onclick="procesarDevolucion(<?= $prestamo['id'] ?>)">
-                                                        <i class="ti ti-book-upload me-2"></i>Procesar Devolución
-                                                    </a>
-                                                </li>
-                                                <li><hr class="dropdown-divider"></li>
-                                                <li>
-                                                    <a class="dropdown-item text-danger" href="#" onclick="cancelarPrestamo(<?= $prestamo['id'] ?>)">
-                                                        <i class="ti ti-x me-2"></i>Cancelar Préstamo
-                                                    </a>
-                                                </li>
-                                            </ul>
+                                            
+                                            <!-- Renovar -->
+                                            <button type="button" 
+                                                    class="btn btn-sm btn-outline-warning" 
+                                                    onclick="renovarPrestamo(<?= $prestamo['idprestamo'] ?>)" 
+                                                    title="Renovar Préstamo"
+                                                    data-bs-toggle="tooltip">
+                                                <i class="ti ti-refresh"></i>
+                                            </button>
+                                            
+                                            <!-- Procesar Devolución -->
+                                            <button type="button" 
+                                                    class="btn btn-sm btn-outline-success" 
+                                                    onclick="procesarDevolucion(<?= $prestamo['idprestamo'] ?>)" 
+                                                    title="Procesar Devolución"
+                                                    data-bs-toggle="tooltip">
+                                                <i class="ti ti-book-upload"></i>
+                                            </button>
+                                            
+                                            <!-- Cancelar -->
+                                            <button type="button" 
+                                                    class="btn btn-sm btn-outline-danger" 
+                                                    onclick="cancelarPrestamo(<?= $prestamo['idprestamo'] ?>)" 
+                                                    title="Cancelar Préstamo"
+                                                    data-bs-toggle="tooltip">
+                                                <i class="ti ti-x"></i>
+                                            </button>
                                         </div>
                                     </td>
                                 </tr>
@@ -322,4 +450,12 @@
             }
         });
     }
+
+    // Inicializar tooltips
+    document.addEventListener('DOMContentLoaded', function() {
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    });
 </script>
