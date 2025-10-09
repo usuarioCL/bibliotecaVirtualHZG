@@ -214,9 +214,7 @@
                                                 leerPDFDirecto('<?= base_url($recurso['rutaarchivo'] ?? $recurso['archivo'] ?? '') ?>', '<?= esc($recurso['titulo']) ?>');
                                             } else {
                                                 window.open('<?= base_url($recurso['rutaarchivo'] ?? $recurso['archivo'] ?? '') ?>', '_blank');
-                                            }
-                                        }, 300);
-                                    ">
+                                            }}, 300);">
                                         <i class="fas fa-book-open"></i> Leer
                                     </button>
                                 <?php else: ?>
@@ -267,32 +265,8 @@
 
 </div>
 
-<?php if (isset($footer)): ?>
-<?= $footer ?>
-<?php endif; ?>
-
 <!-- Incluir modal-fix.js para SweetAlert2 z-index -->
 <script src="<?= base_url('assets/js/modal-fix.js') ?>"></script>
-
-<!-- CSS específico para SweetAlert2 en modales -->
-<style>
-.swal2-container {
-    z-index: 999999 !important;
-}
-.swal2-popup {
-    z-index: 999999 !important;
-}
-.swal2-backdrop {
-    z-index: 999998 !important;
-}
-.swal2-top-container {
-    z-index: 999999 !important;
-}
-/* Asegurar que aparezca por encima de modales de Bootstrap */
-.modal-open .swal2-container {
-    z-index: 999999 !important;
-}
-</style>
 
 <script>
 // Configurar SweetAlert2 para que aparezca por encima de los modales
