@@ -222,19 +222,37 @@
                                 <?php else: ?>
                                     <!-- Botón para recursos físicos -->
                                     <?php if ($recurso['estado'] === 'disponible' && $recurso['stock'] > 0): ?>
-                                        <button class="btn btn-success" onclick="solicitarPrestamo(<?= $recurso['idrecurso'] ?>)">
-                                            <i class="fas fa-hand-holding"></i> Solicitar Préstamo
-                                        </button>
+                                        <?php if (session()->get('logged_in')): ?>
+                                            <button class="btn btn-success" onclick="solicitarPrestamo(<?= $recurso['idrecurso'] ?>)">
+                                                <i class="fas fa-hand-holding"></i> Solicitar Préstamo
+                                            </button>
+                                        <?php else: ?>
+                                            <button class="btn btn-success" onclick="mostrarAlertaLogin('solicitar préstamo')">
+                                                <i class="fas fa-hand-holding"></i> Solicitar Préstamo
+                                            </button>
+                                        <?php endif; ?>
                                     <?php endif; ?>
                                 <?php endif; ?>
                                 
-                                <button class="btn btn-outline-primary" onclick="agregarFavorito(<?= $recurso['idrecurso'] ?>)">
-                                    <i class="fas fa-heart"></i> Agregar a Favoritos
-                                </button>
+                                <?php if (session()->get('logged_in')): ?>
+                                    <button class="btn btn-outline-primary" onclick="agregarFavorito(<?= $recurso['idrecurso'] ?>)">
+                                        <i class="fas fa-heart"></i> Agregar a Favoritos
+                                    </button>
+                                <?php else: ?>
+                                    <button class="btn btn-outline-primary" onclick="mostrarAlertaLogin('agregar a favoritos')">
+                                        <i class="fas fa-heart"></i> Agregar a Favoritos
+                                    </button>
+                                <?php endif; ?>
                                 
-                                <button class="btn btn-outline-secondary" onclick="compartirRecurso(<?= $recurso['idrecurso'] ?>)">
-                                    <i class="fas fa-share"></i> Compartir
-                                </button>
+                                <?php if (session()->get('logged_in')): ?>
+                                    <button class="btn btn-outline-secondary" onclick="compartirRecurso(<?= $recurso['idrecurso'] ?>)">
+                                        <i class="fas fa-share"></i> Compartir
+                                    </button>
+                                <?php else: ?>
+                                    <button class="btn btn-outline-secondary" onclick="mostrarAlertaLogin('compartir')">
+                                        <i class="fas fa-share"></i> Compartir
+                                    </button>
+                                <?php endif; ?>
                                 
                                 <a href="<?= base_url('recursos') ?>" class="btn btn-outline-dark">
                                     <i class="fas fa-arrow-left"></i> Volver a Recursos
@@ -253,9 +271,42 @@
 <?= $footer ?>
 <?php endif; ?>
 
+<!-- Incluir modal-fix.js para SweetAlert2 z-index -->
+<script src="<?= base_url('assets/js/modal-fix.js') ?>"></script>
+
+<!-- CSS específico para SweetAlert2 en modales -->
+<style>
+.swal2-container {
+    z-index: 999999 !important;
+}
+.swal2-popup {
+    z-index: 999999 !important;
+}
+.swal2-backdrop {
+    z-index: 999998 !important;
+}
+.swal2-top-container {
+    z-index: 999999 !important;
+}
+/* Asegurar que aparezca por encima de modales de Bootstrap */
+.modal-open .swal2-container {
+    z-index: 999999 !important;
+}
+</style>
+
 <script>
+// Configurar SweetAlert2 para que aparezca por encima de los modales
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof setupSweetAlert2 === 'function') {
+        setupSweetAlert2();
+    }
+    if (typeof observeSweetAlert2 === 'function') {
+        observeSweetAlert2();
+    }
+});
+
 // Función para solicitar préstamo
-function solicitarPrestamo(idRecurso) {
+window.solicitarPrestamo = function(idRecurso) {
     Swal.fire({
         title: 'Solicitar Préstamo',
         text: '¿Deseas solicitar el préstamo de este recurso?',
@@ -276,10 +327,10 @@ function solicitarPrestamo(idRecurso) {
             });
         }
     });
-}
+};
 
 // Función para agregar a favoritos
-function agregarFavorito(idRecurso) {
+window.agregarFavorito = function(idRecurso) {
     Swal.fire({
         title: 'Agregar a Favoritos',
         text: '¿Deseas agregar este recurso a tus favoritos?',
@@ -300,10 +351,10 @@ function agregarFavorito(idRecurso) {
             });
         }
     });
-}
+};
 
 // Función para compartir recurso
-function compartirRecurso(idRecurso) {
+window.compartirRecurso = function(idRecurso) {
     const url = window.location.href;
     
     if (navigator.share) {
@@ -323,5 +374,5 @@ function compartirRecurso(idRecurso) {
             });
         });
     }
-}
+};
 </script>

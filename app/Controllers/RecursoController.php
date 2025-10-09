@@ -817,7 +817,7 @@ public function actualizar($idrecurso)
         $datos['recurso'] = $recurso;
         
         if ($this->request->isAJAX()) {
-            return view('recursos/detallesModal', $datos);
+            return view('recursos/detalles', $datos);
         }
         
         return view('recursos/detalles', $datos);
