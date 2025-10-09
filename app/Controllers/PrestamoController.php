@@ -3,12 +3,16 @@
 namespace App\Controllers;
 
 use CodeIgniter\Controller;
+use App\Models\PrestamoModel;
 
 class PrestamoController extends Controller
 {
+    protected $prestamoModel;
+
     public function __construct()
     {
         helper(['url', 'form']);
+        $this->prestamoModel = new PrestamoModel();
     }
 
     /**
@@ -16,18 +20,34 @@ class PrestamoController extends Controller
      */
     public function index()
     {
-        $data = [
-            'title' => 'Préstamos Activos',
-            'prestamos' => $this->getDatosPruebaPrestamos(),
-            'estadisticas' => [
-                'total_prestamos' => 25,
-                'vencidos_hoy' => 3,
-                'proximos_vencer' => 8,
-                'renovaciones_pendientes' => 2
-            ]
-        ];
+        try {
+            $prestamos = $this->prestamoModel->getPrestamosActivos();
+            $estadisticas = $this->prestamoModel->getEstadisticasPrestamos();
 
-        return view('Administrador/prestamos/index', $data);
+            $data = [
+                'title' => 'Préstamos Activos',
+                'prestamos' => $prestamos,
+                'estadisticas' => $estadisticas
+            ];
+
+            return view('Administrador/prestamos/index', $data);
+        } catch (\Exception $e) {
+            // En caso de error, mostrar datos de fallback
+            log_message('error', 'Error en PrestamoController::index(): ' . $e->getMessage());
+            
+            $data = [
+                'title' => 'Préstamos Activos',
+                'prestamos' => $this->getDatosPruebaPrestamos(),
+                'estadisticas' => [
+                    'total_prestamos' => 0,
+                    'vencidos_hoy' => 0,
+                    'proximos_vencer' => 0,
+                    'renovaciones_pendientes' => 0
+                ]
+            ];
+
+            return view('Administrador/prestamos/index', $data);
+        }
     }
 
     /**
@@ -35,18 +55,43 @@ class PrestamoController extends Controller
      */
     public function solicitudes()
     {
-        $data = [
-            'title' => 'Solicitudes Pendientes',
-            'solicitudes' => $this->getDatosPruebaSolicitudes(),
-            'estadisticas' => [
-                'total_solicitudes' => 12,
-                'hoy' => 4,
-                'esta_semana' => 8,
-                'esperando_aprobacion' => 12
-            ]
-        ];
+        try {
+            $solicitudes = $this->prestamoModel->getSolicitudesPendientes();
+            
+            $estadisticas = [
+                'total_solicitudes' => count($solicitudes),
+                'hoy' => count(array_filter($solicitudes, function($s) {
+                    return date('Y-m-d', strtotime($s['fecha_solicitud'])) == date('Y-m-d');
+                })),
+                'esta_semana' => count(array_filter($solicitudes, function($s) {
+                    return date('Y-W', strtotime($s['fecha_solicitud'])) == date('Y-W');
+                })),
+                'esperando_aprobacion' => count($solicitudes)
+            ];
 
-        return view('Administrador/prestamos/solicitudes', $data);
+            $data = [
+                'title' => 'Solicitudes Pendientes',
+                'solicitudes' => $solicitudes,
+                'estadisticas' => $estadisticas
+            ];
+
+            return view('Administrador/prestamos/solicitudes', $data);
+        } catch (\Exception $e) {
+            log_message('error', 'Error en PrestamoController::solicitudes(): ' . $e->getMessage());
+            
+            $data = [
+                'title' => 'Solicitudes Pendientes',
+                'solicitudes' => $this->getDatosPruebaSolicitudes(),
+                'estadisticas' => [
+                    'total_solicitudes' => 0,
+                    'hoy' => 0,
+                    'esta_semana' => 0,
+                    'esperando_aprobacion' => 0
+                ]
+            ];
+
+            return view('Administrador/prestamos/solicitudes', $data);
+        }
     }
 
     /**
@@ -54,18 +99,33 @@ class PrestamoController extends Controller
      */
     public function devoluciones()
     {
-        $data = [
-            'title' => 'Devoluciones',
-            'devoluciones' => $this->getDatosPruebaDevoluciones(),
-            'estadisticas' => [
-                'devoluciones_hoy' => 5,
-                'con_retraso' => 2,
-                'danos_reportados' => 1,
-                'multas_generadas' => 3
-            ]
-        ];
+        try {
+            $devoluciones = $this->prestamoModel->getDevolucionesHoy();
+            $estadisticas = $this->prestamoModel->getEstadisticasDevoluciones();
 
-        return view('Administrador/prestamos/devoluciones', $data);
+            $data = [
+                'title' => 'Devoluciones',
+                'devoluciones' => $devoluciones,
+                'estadisticas' => $estadisticas
+            ];
+
+            return view('Administrador/prestamos/devoluciones', $data);
+        } catch (\Exception $e) {
+            log_message('error', 'Error en PrestamoController::devoluciones(): ' . $e->getMessage());
+            
+            $data = [
+                'title' => 'Devoluciones',
+                'devoluciones' => $this->getDatosPruebaDevoluciones(),
+                'estadisticas' => [
+                    'devoluciones_hoy' => 0,
+                    'con_retraso' => 0,
+                    'danos_reportados' => 0,
+                    'multas_generadas' => 0
+                ]
+            ];
+
+            return view('Administrador/prestamos/devoluciones', $data);
+        }
     }
 
     /**
@@ -73,177 +133,33 @@ class PrestamoController extends Controller
      */
     public function historial()
     {
-        $data = [
-            'title' => 'Historial de Préstamos',
-            'historial' => $this->getDatosPruebaHistorial(),
-            'estadisticas' => [
-                'total_registros' => 156,
-                'este_mes' => 28,
-                'promedio_mensual' => 35,
-                'tasa_devolucion' => 98.5
-            ]
-        ];
+        try {
+            $historial = $this->prestamoModel->getHistorialCompleto();
+            $estadisticas = $this->prestamoModel->getEstadisticasHistorial();
 
-        return view('Administrador/prestamos/historial', $data);
+            $data = [
+                'title' => 'Historial de Préstamos',
+                'historial' => $historial,
+                'estadisticas' => $estadisticas
+            ];
+
+            return view('Administrador/prestamos/historial', $data);
+        } catch (\Exception $e) {
+            log_message('error', 'Error en PrestamoController::historial(): ' . $e->getMessage());
+            
+            $data = [
+                'title' => 'Historial de Préstamos',
+                'historial' => $this->getDatosPruebaHistorial(),
+                'estadisticas' => [
+                    'total_registros' => 0,
+                    'este_mes' => 0,
+                    'promedio_mensual' => 0,
+                    'tasa_devolucion' => 0
+                ]
+            ];
+
+            return view('Administrador/prestamos/historial', $data);
+        }
     }
 
-    /**
-     * Datos de prueba para préstamos activos
-     */
-    private function getDatosPruebaPrestamos()
-    {
-        return [
-            [
-                'id' => 1,
-                'codigo_prestamo' => 'PREST-2024-001',
-                'usuario' => 'Juan Carlos Pérez',
-                'documento' => '12345678',
-                'recurso' => 'Cálculo Diferencial e Integral',
-                'codigo_ejemplar' => 'LIB-MAT-001',
-                'fecha_prestamo' => '2024-10-01',
-                'fecha_vencimiento' => '2024-10-15',
-                'dias_restantes' => 8,
-                'estado' => 'Activo',
-                'renovaciones' => 0
-            ],
-            [
-                'id' => 2,
-                'codigo_prestamo' => 'PREST-2024-002',
-                'usuario' => 'María González',
-                'documento' => '87654321',
-                'recurso' => 'Física General',
-                'codigo_ejemplar' => 'LIB-FIS-002',
-                'fecha_prestamo' => '2024-09-28',
-                'fecha_vencimiento' => '2024-10-07',
-                'dias_restantes' => 0,
-                'estado' => 'Vencido',
-                'renovaciones' => 1
-            ],
-            [
-                'id' => 3,
-                'codigo_prestamo' => 'PREST-2024-003',
-                'usuario' => 'Carlos Rodriguez',
-                'documento' => '11223344',
-                'recurso' => 'Química Orgánica',
-                'codigo_ejemplar' => 'LIB-QUI-003',
-                'fecha_prestamo' => '2024-10-05',
-                'fecha_vencimiento' => '2024-10-19',
-                'dias_restantes' => 12,
-                'estado' => 'Activo',
-                'renovaciones' => 0
-            ]
-        ];
-    }
-
-    /**
-     * Datos de prueba para solicitudes
-     */
-    private function getDatosPruebaSolicitudes()
-    {
-        return [
-            [
-                'id' => 1,
-                'usuario' => 'Ana López',
-                'documento' => '55667788',
-                'recurso' => 'Álgebra Lineal',
-                'codigo_ejemplar' => 'LIB-MAT-004',
-                'fecha_solicitud' => '2024-10-07 09:30:00',
-                'estado' => 'Pendiente',
-                'prioridad' => 'Normal',
-                'disponible' => true
-            ],
-            [
-                'id' => 2,
-                'usuario' => 'Pedro Martínez',
-                'documento' => '99887766',
-                'recurso' => 'Base de Datos',
-                'codigo_ejemplar' => 'LIB-INF-001',
-                'fecha_solicitud' => '2024-10-07 10:15:00',
-                'estado' => 'Pendiente',
-                'prioridad' => 'Alta',
-                'disponible' => false
-            ],
-            [
-                'id' => 3,
-                'usuario' => 'Lucía Fernández',
-                'documento' => '44556677',
-                'recurso' => 'Estadística Aplicada',
-                'codigo_ejemplar' => 'LIB-EST-001',
-                'fecha_solicitud' => '2024-10-06 16:45:00',
-                'estado' => 'Pendiente',
-                'prioridad' => 'Normal',
-                'disponible' => true
-            ]
-        ];
-    }
-
-    /**
-     * Datos de prueba para devoluciones
-     */
-    private function getDatosPruebaDevoluciones()
-    {
-        return [
-            [
-                'id' => 1,
-                'codigo_prestamo' => 'PREST-2024-010',
-                'usuario' => 'Roberto Silva',
-                'documento' => '33445566',
-                'recurso' => 'Programación en Java',
-                'fecha_devolucion' => '2024-10-07 14:30:00',
-                'fecha_vencimiento' => '2024-10-05',
-                'dias_retraso' => 2,
-                'estado_ejemplar' => 'Bueno',
-                'multa' => 5000,
-                'observaciones' => ''
-            ],
-            [
-                'id' => 2,
-                'codigo_prestamo' => 'PREST-2024-011',
-                'usuario' => 'Sandra Castro',
-                'documento' => '77889900',
-                'recurso' => 'Historia de Colombia',
-                'fecha_devolucion' => '2024-10-07 11:15:00',
-                'fecha_vencimiento' => '2024-10-08',
-                'dias_retraso' => 0,
-                'estado_ejemplar' => 'Bueno',
-                'multa' => 0,
-                'observaciones' => 'Devolución temprana'
-            ]
-        ];
-    }
-
-    /**
-     * Datos de prueba para historial
-     */
-    private function getDatosPruebaHistorial()
-    {
-        return [
-            [
-                'id' => 1,
-                'codigo_prestamo' => 'PREST-2024-008',
-                'usuario' => 'Miguel Torres',
-                'documento' => '66778899',
-                'recurso' => 'Contabilidad Básica',
-                'fecha_prestamo' => '2024-09-15',
-                'fecha_devolucion' => '2024-09-28',
-                'estado_final' => 'Devuelto',
-                'dias_prestamo' => 13,
-                'renovaciones' => 1,
-                'multas' => 0
-            ],
-            [
-                'id' => 2,
-                'codigo_prestamo' => 'PREST-2024-009',
-                'usuario' => 'Elena Vargas',
-                'documento' => '22334455',
-                'recurso' => 'Derecho Civil',
-                'fecha_prestamo' => '2024-09-20',
-                'fecha_devolucion' => '2024-10-02',
-                'estado_final' => 'Devuelto con retraso',
-                'dias_prestamo' => 12,
-                'renovaciones' => 0,
-                'multas' => 7500
-            ]
-        ];
-    }
 }
