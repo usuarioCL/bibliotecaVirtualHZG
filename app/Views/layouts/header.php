@@ -10,6 +10,12 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- Funciones globales para JS -->
+    <script>
+        // Definir la URL de login global para todas las vistas
+        window.base_url_login = '<?= base_url('login') ?>';
+    </script>
+    <script src="<?= base_url('assets/js/funciones-globales.js') ?>"></script>
     <!-- Animate.css para animaciones -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
     <!-- Custom CSS -->

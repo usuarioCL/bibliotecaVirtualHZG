@@ -10,18 +10,10 @@
             onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.1)'">
             <div class="card-body d-flex align-items-center p-3">
                 <div class="me-3" style="width: 80px;">
-                    <?php if (!empty($recurso['rutaportada'])): ?>
-                        <img src="<?= base_url('public/' . $recurso['rutaportada']) ?>" 
-                             class="img-fluid rounded shadow-sm" 
-                             alt="Portada" 
-                             style="max-height: 100px; object-fit: cover;"
-                             data-recurso-id="<?= $recurso['idrecurso'] ?>">
-                    <?php else: ?>
-                        <div class="bg-light rounded shadow-sm d-flex align-items-center justify-content-center" 
-                             style="width: 70px; height: 100px;">
-                            <i class="fas fa-book fa-2x text-muted"></i>
-                        </div>
-                    <?php endif; ?>
+                    <div class="bg-light rounded shadow-sm d-flex align-items-center justify-content-center" 
+                         style="width: 70px; height: 100px;">
+                        <i class="fas fa-book fa-2x text-muted"></i>
+                    </div>
                 </div>
                 <div class="flex-grow-1">
                     <h5 class="mb-2 text-primary fw-bold"><?= esc($recurso['titulo']) ?></h5>
@@ -54,14 +46,6 @@
                         </div>
                         <p class="text-muted mt-2">Cargando detalles del libro...</p>
                     </div>
-                </div>
-                <div class="modal-footer bg-light">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                        <i class="fas fa-times me-1"></i>Cerrar
-                    </button>
-                    <button type="button" class="btn btn-primary">
-                        <i class="fas fa-book me-1"></i>Solicitar Préstamo
-                    </button>
                 </div>
             </div>
         </div>
