@@ -50,7 +50,7 @@
              href="<?= base_url('autores'); ?>"
              title="Gestionar autores">
             <div class="d-flex align-items-center gap-3">
-              <i class="ti ti-user-edit fs-5"></i>
+              <i class="ti ti-user-plus fs-5"></i>
               <span class="hide-menu">Autores</span>
             </div>
           </a>

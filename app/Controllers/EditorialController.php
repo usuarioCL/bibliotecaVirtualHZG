@@ -92,6 +92,9 @@ class EditorialController extends BaseController
             ->orderBy('editoriales.editorial', 'ASC')
             ->findAll();
 
+        // Log para depuración
+        log_message('debug', 'Editoriales obtenidas: ' . json_encode($editoriales));
+
         return $this->response->setJSON([
             'success' => true,
             'data' => $editoriales
@@ -326,27 +329,31 @@ class EditorialController extends BaseController
      */
     public function estadisticas()
     {
-        $totalEditoriales = $this->editorialModel->countAllResults();
-        
-        $editorialesConRecursos = $this->editorialModel
-            ->join('recursos', 'recursos.ideditorial = editoriales.ideditorial')
-            ->groupBy('editoriales.ideditorial')
-            ->countAllResults();
+        try {
+            // Obtener estadísticas básicas usando el modelo
+            $estadisticas = $this->editorialModel->getEstadisticas();
+            
+            // Obtener editoriales populares
+            $editorialesPopulares = $this->editorialModel->getEditorialesPopulares(5);
 
-        $editorialesPopulares = $this->editorialModel
-            ->select('editoriales.editorial, COUNT(recursos.idrecurso) as total_recursos')
-            ->join('recursos', 'recursos.ideditorial = editoriales.ideditorial', 'left')
-            ->groupBy('editoriales.ideditorial')
-            ->orderBy('total_recursos', 'DESC')
-            ->findAll(5);
+            // Log para depuración
+            log_message('debug', 'Estadísticas obtenidas: ' . json_encode($estadisticas));
 
-        return $this->response->setJSON([
-            'success' => true,
-            'data' => [
-                'total_editoriales' => $totalEditoriales,
-                'editoriales_con_recursos' => $editorialesConRecursos,
-                'editoriales_populares' => $editorialesPopulares
-            ]
-        ]);
+            return $this->response->setJSON([
+                'success' => true,
+                'data' => [
+                    'total_editoriales' => $estadisticas['total_editoriales'],
+                    'editoriales_con_recursos' => $estadisticas['editoriales_con_recursos'],
+                    'editoriales_sin_recursos' => $estadisticas['editoriales_sin_recursos'],
+                    'editoriales_populares' => $editorialesPopulares
+                ]
+            ]);
+        } catch (\Exception $e) {
+            log_message('error', 'Error en estadísticas de editoriales: ' . $e->getMessage());
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Error al obtener estadísticas: ' . $e->getMessage()
+            ]);
+        }
     }
 }

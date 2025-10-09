@@ -345,16 +345,26 @@ $(document).ready(function() {
             type: 'GET',
             dataType: 'json',
             success: function(response) {
+                console.log('Respuesta de estadísticas:', response);
                 if (response.success) {
                     const stats = response.data;
-                    $('#totalEditoriales').text(stats.total_editoriales);
-                    $('#editorialesConRecursos').text(stats.editoriales_con_recursos);
-                    $('#editorialesSinRecursos').text(stats.total_editoriales - stats.editoriales_con_recursos);
+                    $('#totalEditoriales').text(stats.total_editoriales || 0);
+                    $('#editorialesConRecursos').text(stats.editoriales_con_recursos || 0);
+                    $('#editorialesSinRecursos').text(stats.editoriales_sin_recursos || 0);
                     
-                    if (stats.editoriales_populares.length > 0) {
+                    if (stats.editoriales_populares && stats.editoriales_populares.length > 0) {
                         $('#editorialPopular').text(stats.editoriales_populares[0].editorial);
+                    } else {
+                        $('#editorialPopular').text('N/A');
                     }
+                } else {
+                    console.error('Error en estadísticas:', response.message);
                 }
+            },
+            error: function(xhr, status, error) {
+                console.error('Error AJAX en estadísticas:', error);
+                console.error('Status:', status);
+                console.error('Response:', xhr.responseText);
             }
         });
     }

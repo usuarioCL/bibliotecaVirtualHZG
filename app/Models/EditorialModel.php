@@ -79,8 +79,10 @@ class EditorialModel extends Model
     {
         $totalEditoriales = $this->countAllResults();
         
-        $editorialesConRecursos = $this->select('DISTINCT editoriales.ideditorial')
-                                     ->join('recursos', 'recursos.ideditorial = editoriales.ideditorial')
+        // Contar editoriales que tienen al menos un recurso
+        $editorialesConRecursos = $this->select('editoriales.ideditorial')
+                                     ->join('recursos', 'recursos.ideditorial = editoriales.ideditorial', 'inner')
+                                     ->groupBy('editoriales.ideditorial')
                                      ->countAllResults();
 
         return [
