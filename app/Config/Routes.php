@@ -234,3 +234,23 @@ $routes->get('/admin/mis-tareas', 'AdminController::misTareas');
 
 // Modal: Ayuda - Centro de ayuda, documentación y soporte
 $routes->get('/admin/ayuda', 'AdminController::ayuda');
+
+// =====================================
+// RUTAS PARA GESTIÓN DE CATEGORÍAS
+// =====================================
+
+// Vista principal de categorías
+$routes->get('/admin/categorias', 'AdminController::categorias');
+
+// CRUD de categorías
+$routes->post('/admin/crear-categoria', 'AdminController::crearCategoria');
+$routes->post('/admin/editar-categoria/(:num)', 'AdminController::editarCategoria/$1');
+$routes->delete('/admin/eliminar-categoria/(:num)', 'AdminController::eliminarCategoria/$1');
+
+// CRUD de subcategorías
+$routes->post('/admin/crear-subcategoria', 'AdminController::crearSubcategoria');
+$routes->post('/admin/editar-subcategoria/(:num)', 'AdminController::editarSubcategoria/$1');
+$routes->delete('/admin/eliminar-subcategoria/(:num)', 'AdminController::eliminarSubcategoria/$1');
+
+// API para obtener subcategorías
+$routes->get('/admin/obtener-subcategorias/(:num)', 'AdminController::obtenerSubcategorias/$1');

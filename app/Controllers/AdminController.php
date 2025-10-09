@@ -1411,4 +1411,397 @@ class AdminController extends BaseController
 
         return view('Administrador/modals/ayuda', $data);
     }
+
+    // =====================================
+    // MÉTODOS PARA GESTIÓN DE CATEGORÍAS
+    // =====================================
+
+    /**
+     * Vista principal de gestión de categorías
+     */
+    public function categorias()
+    {
+        try {
+            $categoriaModel = new \App\Models\CategoriaModel();
+            $subcategoriaModel = new \App\Models\SubcategoriaModel();
+
+            // Obtener todas las categorías con sus subcategorías
+            $categorias = $categoriaModel->findAll();
+            $categoriasConSubcategorias = [];
+
+            foreach ($categorias as $categoria) {
+                $subcategorias = $subcategoriaModel->where('idcategoria', $categoria['idcategoria'])->findAll();
+                $categoria['subcategorias'] = $subcategorias;
+                $categoria['total_subcategorias'] = count($subcategorias);
+                $categoriasConSubcategorias[] = $categoria;
+            }
+
+            $data = [
+                'title' => 'Gestión de Categorías',
+                'categorias' => $categoriasConSubcategorias,
+                'estadisticas' => [
+                    'total_categorias' => count($categorias),
+                    'total_subcategorias' => $subcategoriaModel->countAll(),
+                    'categorias_con_subcategorias' => count(array_filter($categoriasConSubcategorias, function($c) { return $c['total_subcategorias'] > 0; })),
+                    'categorias_sin_subcategorias' => count(array_filter($categoriasConSubcategorias, function($c) { return $c['total_subcategorias'] == 0; }))
+                ]
+            ];
+
+            return view('Administrador/categorias/basic', $data);
+        } catch (\Exception $e) {
+            // Si hay error, devolver vista de error
+            return view('Administrador/categorias/basic', [
+                'title' => 'Gestión de Categorías',
+                'categorias' => [],
+                'estadisticas' => [
+                    'total_categorias' => 0,
+                    'total_subcategorias' => 0,
+                    'categorias_con_subcategorias' => 0,
+                    'categorias_sin_subcategorias' => 0
+                ],
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Crear nueva categoría
+     */
+    public function crearCategoria()
+    {
+        try {
+            $categoriaModel = new \App\Models\CategoriaModel();
+            
+            $categoria = $this->request->getPost('categoria');
+            
+            if (empty($categoria)) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'El nombre de la categoría es requerido'
+                ]);
+            }
+
+            // Verificar si ya existe
+            $existe = $categoriaModel->where('categoria', $categoria)->first();
+            if ($existe) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Ya existe una categoría con ese nombre'
+                ]);
+            }
+
+            $idCategoria = $categoriaModel->insert(['categoria' => $categoria]);
+            
+            if ($idCategoria) {
+                return $this->response->setJSON([
+                    'success' => true,
+                    'message' => 'Categoría creada exitosamente',
+                    'categoria' => [
+                        'idcategoria' => $idCategoria,
+                        'categoria' => $categoria,
+                        'subcategorias' => [],
+                        'total_subcategorias' => 0
+                    ]
+                ]);
+            } else {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Error al crear la categoría'
+                ]);
+            }
+        } catch (\Exception $e) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Error al crear la categoría: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Editar categoría
+     */
+    public function editarCategoria($id)
+    {
+        try {
+            $categoriaModel = new \App\Models\CategoriaModel();
+            
+            $categoria = $this->request->getPost('categoria');
+            
+            if (empty($categoria)) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'El nombre de la categoría es requerido'
+                ]);
+            }
+
+            // Verificar si ya existe (excluyendo la categoría actual)
+            $existe = $categoriaModel->where('categoria', $categoria)
+                                   ->where('idcategoria !=', $id)
+                                   ->first();
+            if ($existe) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Ya existe una categoría con ese nombre'
+                ]);
+            }
+
+            $actualizado = $categoriaModel->update($id, ['categoria' => $categoria]);
+            
+            if ($actualizado) {
+                return $this->response->setJSON([
+                    'success' => true,
+                    'message' => 'Categoría actualizada exitosamente',
+                    'categoria' => [
+                        'idcategoria' => $id,
+                        'categoria' => $categoria
+                    ]
+                ]);
+            } else {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Error al actualizar la categoría'
+                ]);
+            }
+        } catch (\Exception $e) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Error al actualizar la categoría: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Eliminar categoría
+     */
+    public function eliminarCategoria($id)
+    {
+        try {
+            $categoriaModel = new \App\Models\CategoriaModel();
+            $subcategoriaModel = new \App\Models\SubcategoriaModel();
+            
+            // Verificar si la categoría tiene subcategorías
+            $subcategorias = $subcategoriaModel->where('idcategoria', $id)->findAll();
+            if (!empty($subcategorias)) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'No se puede eliminar la categoría porque tiene subcategorías asociadas'
+                ]);
+            }
+
+            // Verificar si hay recursos asociados
+            $recursos = $this->db->query("
+                SELECT COUNT(*) as total 
+                FROM recursos r 
+                INNER JOIN subcategorias s ON r.idsubcategoria = s.idsubcategoria 
+                WHERE s.idcategoria = ?
+            ", [$id])->getRow();
+            
+            if ($recursos && $recursos->total > 0) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'No se puede eliminar la categoría porque tiene recursos asociados'
+                ]);
+            }
+
+            $eliminado = $categoriaModel->delete($id);
+            
+            if ($eliminado) {
+                return $this->response->setJSON([
+                    'success' => true,
+                    'message' => 'Categoría eliminada exitosamente'
+                ]);
+            } else {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Error al eliminar la categoría'
+                ]);
+            }
+        } catch (\Exception $e) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Error al eliminar la categoría: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Crear nueva subcategoría
+     */
+    public function crearSubcategoria()
+    {
+        try {
+            $subcategoriaModel = new \App\Models\SubcategoriaModel();
+            
+            $subcategoria = $this->request->getPost('subcategoria');
+            $idcategoria = $this->request->getPost('idcategoria');
+            
+            if (empty($subcategoria) || empty($idcategoria)) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'El nombre de la subcategoría y la categoría son requeridos'
+                ]);
+            }
+
+            // Verificar si ya existe en esta categoría
+            $existe = $subcategoriaModel->where('subcategoria', $subcategoria)
+                                      ->where('idcategoria', $idcategoria)
+                                      ->first();
+            if ($existe) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Ya existe una subcategoría con ese nombre en esta categoría'
+                ]);
+            }
+
+            $idSubcategoria = $subcategoriaModel->insert([
+                'subcategoria' => $subcategoria,
+                'idcategoria' => $idcategoria
+            ]);
+            
+            if ($idSubcategoria) {
+                return $this->response->setJSON([
+                    'success' => true,
+                    'message' => 'Subcategoría creada exitosamente',
+                    'subcategoria' => [
+                        'idsubcategoria' => $idSubcategoria,
+                        'subcategoria' => $subcategoria,
+                        'idcategoria' => $idcategoria
+                    ]
+                ]);
+            } else {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Error al crear la subcategoría'
+                ]);
+            }
+        } catch (\Exception $e) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Error al crear la subcategoría: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Editar subcategoría
+     */
+    public function editarSubcategoria($id)
+    {
+        try {
+            $subcategoriaModel = new \App\Models\SubcategoriaModel();
+            
+            $subcategoria = $this->request->getPost('subcategoria');
+            $idcategoria = $this->request->getPost('idcategoria');
+            
+            if (empty($subcategoria) || empty($idcategoria)) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'El nombre de la subcategoría y la categoría son requeridos'
+                ]);
+            }
+
+            // Verificar si ya existe (excluyendo la subcategoría actual)
+            $existe = $subcategoriaModel->where('subcategoria', $subcategoria)
+                                      ->where('idcategoria', $idcategoria)
+                                      ->where('idsubcategoria !=', $id)
+                                      ->first();
+            if ($existe) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Ya existe una subcategoría con ese nombre en esta categoría'
+                ]);
+            }
+
+            $actualizado = $subcategoriaModel->update($id, [
+                'subcategoria' => $subcategoria,
+                'idcategoria' => $idcategoria
+            ]);
+            
+            if ($actualizado) {
+                return $this->response->setJSON([
+                    'success' => true,
+                    'message' => 'Subcategoría actualizada exitosamente',
+                    'subcategoria' => [
+                        'idsubcategoria' => $id,
+                        'subcategoria' => $subcategoria,
+                        'idcategoria' => $idcategoria
+                    ]
+                ]);
+            } else {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Error al actualizar la subcategoría'
+                ]);
+            }
+        } catch (\Exception $e) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Error al actualizar la subcategoría: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Eliminar subcategoría
+     */
+    public function eliminarSubcategoria($id)
+    {
+        try {
+            $subcategoriaModel = new \App\Models\SubcategoriaModel();
+            
+            // Verificar si hay recursos asociados
+            $recursos = $this->db->query("
+                SELECT COUNT(*) as total 
+                FROM recursos 
+                WHERE idsubcategoria = ?
+            ", [$id])->getRow();
+            
+            if ($recursos && $recursos->total > 0) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'No se puede eliminar la subcategoría porque tiene recursos asociados'
+                ]);
+            }
+
+            $eliminado = $subcategoriaModel->delete($id);
+            
+            if ($eliminado) {
+                return $this->response->setJSON([
+                    'success' => true,
+                    'message' => 'Subcategoría eliminada exitosamente'
+                ]);
+            } else {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Error al eliminar la subcategoría'
+                ]);
+            }
+        } catch (\Exception $e) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Error al eliminar la subcategoría: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Obtener subcategorías de una categoría específica
+     */
+    public function obtenerSubcategorias($idcategoria)
+    {
+        try {
+            $subcategoriaModel = new \App\Models\SubcategoriaModel();
+            $subcategorias = $subcategoriaModel->where('idcategoria', $idcategoria)->findAll();
+            
+            return $this->response->setJSON([
+                'success' => true,
+                'subcategorias' => $subcategorias
+            ]);
+        } catch (\Exception $e) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Error al obtener las subcategorías: ' . $e->getMessage()
+            ]);
+        }
+    }
 }
