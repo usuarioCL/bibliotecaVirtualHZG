@@ -48,19 +48,6 @@
         </div>
     </div>
 
-    <!-- Pestañas de navegación -->
-    <ul class="nav nav-tabs mb-4" id="prestamosTabs" role="tablist">
-        <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="activos-tab" data-bs-toggle="tab" data-bs-target="#activos" type="button" role="tab">
-                <i class="fas fa-book-open me-2"></i>Préstamos Activos
-            </button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="historial-tab" data-bs-toggle="tab" data-bs-target="#historial" type="button" role="tab">
-                <i class="fas fa-history me-2"></i>Historial
-            </button>
-        </li>
-    </ul>
 
     <!-- Contenido de pestañas -->
     <div class="tab-content" id="prestamosTabContent">

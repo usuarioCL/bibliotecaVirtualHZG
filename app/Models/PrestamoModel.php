@@ -33,11 +33,12 @@ class PrestamoModel extends Model
     }
 
     /**
-     * Obtener préstamos activos de un usuario (por matrícula)
+     * Obtener préstamos activos de un usuario específico (por matrícula)
+     * SOLO retorna préstamos del usuario cuya matrícula se pasa como parámetro
      */
     public function getPrestamosActivosByUsuario($idmatricula)
     {
-        // Consulta más simple para evitar problemas
+        // Consulta que filtra estrictamente por matrícula del usuario
         $db = \Config\Database::connect();
         
         $sql = "SELECT p.*, r.titulo, r.anio, 
@@ -58,7 +59,8 @@ class PrestamoModel extends Model
     }
 
     /**
-     * Obtener historial completo de préstamos de un usuario
+     * Obtener historial completo de préstamos de un usuario específico
+     * SOLO retorna préstamos del usuario cuya matrícula se pasa como parámetro
      */
     public function getHistorialPrestamosByUsuario($idmatricula, $limit = null)
     {

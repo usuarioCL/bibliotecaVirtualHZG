@@ -205,6 +205,7 @@ class CatalogoController extends BaseController
 
     /**
      * Vista de Mis Préstamos
+     * Solo muestra préstamos del usuario logueado
      */
     public function misPrestamos()
     {
@@ -216,13 +217,24 @@ class CatalogoController extends BaseController
         $prestamoModel = new PrestamoModel();
         $nomuser = session()->get('usuario');
         
+        // Verificar que tenemos un usuario válido
+        if (!$nomuser) {
+            return redirect()->to('/login')->with('error', 'Sesión inválida');
+        }
+        
         // Obtener ID del usuario desde el nombre
         $usuarioModel = new \App\Models\usuarioModel();
         $usuario = $usuarioModel->where('nomuser', $nomuser)->first();
         $idusuario = $usuario ? $usuario['idusuario'] : null;
         
+        // Si no encontramos el usuario, terminar la sesión
+        if (!$idusuario) {
+            session()->destroy();
+            return redirect()->to('/login')->with('error', 'Usuario no encontrado');
+        }
+        
         // Obtener matrícula del usuario
-        $idmatricula = $idusuario ? $prestamoModel->getMatriculaByUsuario($idusuario) : null;
+        $idmatricula = $prestamoModel->getMatriculaByUsuario($idusuario);
         
         $prestamosActivos = [];
         $historialPrestamos = [];
