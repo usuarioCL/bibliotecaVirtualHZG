@@ -168,8 +168,8 @@ if (modal) {
                         </div>
                         <div class="col-md-3" id="campoEstado">
                             <div class="mb-3">
-                                <label for="estado" class="form-label">Estado <small class="text-muted" id="estadoHelp">(No aplica para digitales)</small></label>
-                                <select class="form-select" id="estado" name="estado" required>
+                                <label for="estado" class="form-label">Estado <small class="text-muted" id="estadoHelp">(Por defecto)</small></label>
+                                <select class="form-select" id="estado" name="estado" required disabled>
                                     <option value="disponible" selected>Disponible</option>
                                     <option value="prestado">Prestado</option>
                                     <option value="perdido">Perdido</option>
@@ -285,13 +285,22 @@ function toggleCamposDigital()
         estadoSelect.classList.add('form-select-disabled');
         encuadernacionSelect.classList.add('form-select-disabled');
         
-        // Cambiar color del texto de ayuda
+        // Cambiar texto de ayuda para digitales
         const stockHelp = document.getElementById('stockHelp');
         const estadoHelp = document.getElementById('estadoHelp');
         const encuadernacionHelp = document.getElementById('encuadernacionHelp');
-        if (stockHelp) stockHelp.style.color = '#6c757d';
-        if (estadoHelp) estadoHelp.style.color = '#6c757d';
-        if (encuadernacionHelp) encuadernacionHelp.style.color = '#6c757d';
+        if (stockHelp) {
+            stockHelp.textContent = '(No aplica para digitales)';
+            stockHelp.style.color = '#6c757d';
+        }
+        if (estadoHelp) {
+            estadoHelp.textContent = '(No aplica para digitales)';
+            estadoHelp.style.color = '#6c757d';
+        }
+        if (encuadernacionHelp) {
+            encuadernacionHelp.textContent = '(No aplica para digitales)';
+            encuadernacionHelp.style.color = '#6c757d';
+        }
         
         // Limpiar valores de stock, estado y encuadernación para recursos digitales
         stockInput.value = '0';
@@ -304,33 +313,42 @@ function toggleCamposDigital()
             archivoInput.setAttribute('required', 'required');
         }
     } else {
-        // Para recursos físicos: ocultar archivo, habilitar stock, estado y encuadernación
+        // Para recursos físicos: ocultar archivo, habilitar stock y encuadernación
         campoArchivo.style.display = 'none';
         campoStock.style.display = 'block';
         campoEstado.style.display = 'block';
         campoEncuadernacion.style.display = 'block';
         
-        // Habilitar campos de stock, estado y encuadernación
+        // Habilitar campos de stock y encuadernación (estado siempre deshabilitado al crear)
         stockInput.disabled = false;
-        estadoSelect.disabled = false;
+        estadoSelect.disabled = true; // Siempre deshabilitado - siempre será "disponible" al crear
         encuadernacionSelect.disabled = false;
         
         // Restaurar atributo required para recursos físicos
         stockInput.setAttribute('required', 'required');
         estadoSelect.setAttribute('required', 'required');
         
-        // Remover clase de estilo
+        // Remover clase de estilo solo para campos habilitados
         stockInput.classList.remove('form-control-disabled');
-        estadoSelect.classList.remove('form-select-disabled');
+        estadoSelect.classList.add('form-select-disabled'); // Estado siempre deshabilitado
         encuadernacionSelect.classList.remove('form-select-disabled');
         
-        // Restaurar color del texto de ayuda
+        // Actualizar texto de ayuda para físicos
         const stockHelp = document.getElementById('stockHelp');
         const estadoHelp = document.getElementById('estadoHelp');
         const encuadernacionHelp = document.getElementById('encuadernacionHelp');
-        if (stockHelp) stockHelp.style.color = '';
-        if (estadoHelp) estadoHelp.style.color = '';
-        if (encuadernacionHelp) encuadernacionHelp.style.color = '';
+        if (stockHelp) {
+            stockHelp.textContent = '';
+            stockHelp.style.color = '';
+        }
+        if (estadoHelp) {
+            estadoHelp.textContent = '(Por defecto)';
+            estadoHelp.style.color = '#6c757d';
+        }
+        if (encuadernacionHelp) {
+            encuadernacionHelp.textContent = '';
+            encuadernacionHelp.style.color = '';
+        }
         
         // Limpiar archivo y restaurar valores por defecto
         if (archivoInput) {
@@ -339,7 +357,7 @@ function toggleCamposDigital()
             archivoInput.removeAttribute('required');
         }
         stockInput.value = '1';
-        estadoSelect.value = 'disponible';
+        estadoSelect.value = 'disponible'; // Siempre disponible al crear
         encuadernacionSelect.value = '';
     }
 }

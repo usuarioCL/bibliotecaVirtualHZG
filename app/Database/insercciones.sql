@@ -22,7 +22,7 @@ INSERT INTO grupos (aniolectivo, grado, seccion, nivel) VALUES
 -- Matriculas
 INSERT INTO matriculas (idgrupo, idpersona, fechamatricula, estadomatricula) VALUES
 (1, 1, '2025-03-01', TRUE),
-(2, 2, '2025-03-02', TRUE),
+(2, 2, '2025-03-02', TRUE),    
 (3, 3, '2025-03-03', TRUE),
 (4, 4, '2025-03-04', TRUE);
 

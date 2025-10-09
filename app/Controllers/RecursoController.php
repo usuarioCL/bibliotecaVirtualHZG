@@ -125,7 +125,8 @@ class RecursoController extends Controller
 
             // Solo agregar stock y estado para recursos físicos
             if (!$esDigital) {
-                $datosRecurso['estado'] = $this->request->getVar('estado') ?: 'disponible';
+                // Para recursos físicos, SIEMPRE establecer estado como 'disponible' al crear
+                $datosRecurso['estado'] = 'disponible';
                 $datosRecurso['stock'] = $this->request->getVar('stock') ?: 1;
             } else {
                 // Para recursos digitales, establecer valores por defecto
