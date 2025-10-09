@@ -164,6 +164,21 @@ $routes->get('/recurso-digital', 'RecursoDigitalController::index');
 // Recursos Físicos
 $routes->get('/recurso-fisico', 'RecursoFisicoController::index');
 
+// Gestión de Editoriales
+$routes->get('/editoriales', 'EditorialController::index');
+$routes->get('/editoriales/crear', 'EditorialController::crear');
+$routes->post('/editoriales/crear', 'EditorialController::crear');
+$routes->get('/editoriales/editar/(:num)', 'EditorialController::editar/$1');
+$routes->post('/editoriales/editar/(:num)', 'EditorialController::editar/$1');
+$routes->post('/editoriales/eliminar/(:num)', 'EditorialController::eliminar/$1');
+$routes->get('/editoriales/detalles/(:num)', 'EditorialController::detalles/$1');
+$routes->get('/editoriales/getEditorialesAjax', 'EditorialController::getEditorialesAjax');
+$routes->get('/editoriales/buscar', 'EditorialController::buscar');
+$routes->get('/editoriales/estadisticas', 'EditorialController::estadisticas');
+// Rutas AJAX para panel de administración
+$routes->get('/editoriales/ajax', 'EditorialController::ajaxIndex');
+$routes->get('/editoriales/ajax_detalles/(:num)', 'EditorialController::ajaxDetalles/$1');
+
 // Ejemplares Físicos
 $routes->get('/ejemplares-fisicos/(:num)', 'EjemplarFisicoController::index/$1');
 $routes->get('/ejemplares-fisicos/modal/(:num)', 'EjemplarFisicoController::modal/$1');

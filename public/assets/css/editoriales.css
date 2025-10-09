@@ -1,0 +1,477 @@
+/* 
+ * Estilos para el módulo de Editoriales
+ * Diseño minimalista y moderno
+ */
+
+/* Variables de colores específicas para editoriales */
+:root {
+    --editorial-primary: #B91C1C;
+    --editorial-primary-light: #FEF2F2;
+    --editorial-secondary: #6B7280;
+    --editorial-success: #10B981;
+    --editorial-warning: #F59E0B;
+    --editorial-danger: #EF4444;
+    --editorial-info: #3B82F6;
+    --editorial-light: #F9FAFB;
+    --editorial-border: #E5E7EB;
+    --editorial-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+}
+
+/* ========================================
+   TARJETAS DE ESTADÍSTICAS
+======================================== */
+.editorial-stats-card {
+    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+    border: 1px solid var(--editorial-border);
+    border-radius: 12px;
+    box-shadow: var(--editorial-shadow);
+    transition: all 0.3s ease;
+}
+
+.editorial-stats-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.15);
+}
+
+.editorial-stats-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+}
+
+/* ========================================
+   TABLA DE EDITORIALES
+======================================== */
+.editorial-table {
+    background: #ffffff;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: var(--editorial-shadow);
+}
+
+.editorial-table thead {
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+}
+
+.editorial-table th {
+    border: none;
+    padding: 16px;
+    font-weight: 600;
+    color: var(--editorial-secondary);
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.editorial-table td {
+    border: none;
+    padding: 16px;
+    border-bottom: 1px solid #f1f5f9;
+    vertical-align: middle;
+}
+
+.editorial-table tbody tr {
+    transition: all 0.2s ease;
+}
+
+.editorial-table tbody tr:hover {
+    background-color: #f8fafc;
+    transform: scale(1.01);
+}
+
+/* ========================================
+   AVATARES DE EDITORIALES
+======================================== */
+.editorial-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: 600;
+    color: #ffffff;
+    background: linear-gradient(135deg, var(--editorial-primary) 0%, #DC2626 100%);
+    box-shadow: 0 2px 8px rgba(185, 28, 28, 0.3);
+}
+
+.editorial-avatar-lg {
+    width: 60px;
+    height: 60px;
+    border-radius: 16px;
+    font-size: 24px;
+}
+
+/* ========================================
+   BADGES Y ETIQUETAS
+======================================== */
+.editorial-badge {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.editorial-badge-success {
+    background: linear-gradient(135deg, #DCFCE7 0%, #BBF7D0 100%);
+    color: var(--editorial-success);
+    border: 1px solid #A7F3D0;
+}
+
+.editorial-badge-warning {
+    background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
+    color: var(--editorial-warning);
+    border: 1px solid #FCD34D;
+}
+
+.editorial-badge-info {
+    background: linear-gradient(135deg, #DBEAFE 0%, #BFDBFE 100%);
+    color: var(--editorial-info);
+    border: 1px solid #93C5FD;
+}
+
+.editorial-badge-danger {
+    background: linear-gradient(135deg, #FEE2E2 0%, #FECACA 100%);
+    color: var(--editorial-danger);
+    border: 1px solid #FCA5A5;
+}
+
+/* ========================================
+   BOTONES DE ACCIÓN
+======================================== */
+.editorial-btn-group {
+    display: flex;
+    gap: 4px;
+}
+
+.editorial-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid transparent;
+    transition: all 0.2s ease;
+    font-size: 14px;
+}
+
+.editorial-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.editorial-btn-info {
+    background: linear-gradient(135deg, #DBEAFE 0%, #BFDBFE 100%);
+    color: var(--editorial-info);
+    border-color: #93C5FD;
+}
+
+.editorial-btn-info:hover {
+    background: var(--editorial-info);
+    color: #ffffff;
+}
+
+.editorial-btn-primary {
+    background: linear-gradient(135deg, #FEE2E2 0%, #FECACA 100%);
+    color: var(--editorial-primary);
+    border-color: #FCA5A5;
+}
+
+.editorial-btn-primary:hover {
+    background: var(--editorial-primary);
+    color: #ffffff;
+}
+
+.editorial-btn-danger {
+    background: linear-gradient(135deg, #FEE2E2 0%, #FECACA 100%);
+    color: var(--editorial-danger);
+    border-color: #FCA5A5;
+}
+
+.editorial-btn-danger:hover {
+    background: var(--editorial-danger);
+    color: #ffffff;
+}
+
+/* ========================================
+   MODALES
+======================================== */
+.editorial-modal .modal-content {
+    border: none;
+    border-radius: 16px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.editorial-modal .modal-header {
+    background: linear-gradient(135deg, var(--editorial-primary) 0%, #DC2626 100%);
+    border-radius: 16px 16px 0 0;
+    border-bottom: none;
+    padding: 20px 24px;
+}
+
+.editorial-modal .modal-title {
+    font-weight: 600;
+    font-size: 18px;
+}
+
+.editorial-modal .modal-body {
+    padding: 24px;
+}
+
+.editorial-modal .modal-footer {
+    background: #f8fafc;
+    border-radius: 0 0 16px 16px;
+    border-top: 1px solid var(--editorial-border);
+    padding: 16px 24px;
+}
+
+/* ========================================
+   FORMULARIOS
+======================================== */
+.editorial-form-group {
+    margin-bottom: 20px;
+}
+
+.editorial-form-label {
+    font-weight: 600;
+    color: var(--editorial-secondary);
+    margin-bottom: 8px;
+    font-size: 14px;
+}
+
+.editorial-form-control {
+    border: 2px solid var(--editorial-border);
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-size: 14px;
+    transition: all 0.2s ease;
+    background: #ffffff;
+}
+
+.editorial-form-control:focus {
+    border-color: var(--editorial-primary);
+    box-shadow: 0 0 0 3px rgba(185, 28, 28, 0.1);
+    background: #ffffff;
+}
+
+.editorial-form-control.is-invalid {
+    border-color: var(--editorial-danger);
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+/* ========================================
+   BÚSQUEDA Y FILTROS
+======================================== */
+.editorial-search-container {
+    position: relative;
+}
+
+.editorial-search-input {
+    padding-left: 40px;
+    border-radius: 25px;
+    border: 2px solid var(--editorial-border);
+    background: #ffffff;
+    transition: all 0.2s ease;
+}
+
+.editorial-search-input:focus {
+    border-color: var(--editorial-primary);
+    box-shadow: 0 0 0 3px rgba(185, 28, 28, 0.1);
+}
+
+.editorial-search-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--editorial-secondary);
+    font-size: 16px;
+}
+
+.editorial-filter-select {
+    border-radius: 10px;
+    border: 2px solid var(--editorial-border);
+    background: #ffffff;
+    transition: all 0.2s ease;
+}
+
+.editorial-filter-select:focus {
+    border-color: var(--editorial-primary);
+    box-shadow: 0 0 0 3px rgba(185, 28, 28, 0.1);
+}
+
+/* ========================================
+   ESTADOS VACÍOS
+======================================== */
+.editorial-empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--editorial-secondary);
+}
+
+.editorial-empty-state .empty-icon {
+    font-size: 64px;
+    color: #D1D5DB;
+    margin-bottom: 20px;
+    display: block;
+}
+
+.editorial-empty-state h5 {
+    font-weight: 600;
+    color: var(--editorial-secondary);
+    margin-bottom: 12px;
+}
+
+.editorial-empty-state p {
+    color: #9CA3AF;
+    margin-bottom: 24px;
+}
+
+/* ========================================
+   ANIMACIONES
+======================================== */
+@keyframes editorialFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes editorialSlideIn {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.editorial-fade-in {
+    animation: editorialFadeIn 0.5s ease-out;
+}
+
+.editorial-slide-in {
+    animation: editorialSlideIn 0.3s ease-out;
+}
+
+/* ========================================
+   RESPONSIVE
+======================================== */
+@media (max-width: 768px) {
+    .editorial-table {
+        font-size: 14px;
+    }
+    
+    .editorial-table th,
+    .editorial-table td {
+        padding: 12px 8px;
+    }
+    
+    .editorial-btn-group {
+        flex-direction: column;
+        gap: 2px;
+    }
+    
+    .editorial-stats-card {
+        margin-bottom: 16px;
+    }
+    
+    .editorial-modal .modal-body {
+        padding: 16px;
+    }
+}
+
+@media (max-width: 576px) {
+    .editorial-table th:nth-child(2),
+    .editorial-table td:nth-child(2),
+    .editorial-table th:nth-child(3),
+    .editorial-table td:nth-child(3) {
+        display: none;
+    }
+}
+
+/* ========================================
+   LOADING STATES
+======================================== */
+.editorial-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    color: var(--editorial-secondary);
+}
+
+.editorial-spinner {
+    width: 24px;
+    height: 24px;
+    border: 2px solid #f3f4f6;
+    border-top: 2px solid var(--editorial-primary);
+    border-radius: 50%;
+    animation: editorialSpin 1s linear infinite;
+    margin-right: 12px;
+}
+
+@keyframes editorialSpin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* ========================================
+   TOOLTIPS PERSONALIZADOS
+======================================== */
+.editorial-tooltip {
+    position: relative;
+    cursor: help;
+}
+
+.editorial-tooltip::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 125%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1F2937;
+    color: #ffffff;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s ease;
+    z-index: 1000;
+}
+
+.editorial-tooltip::before {
+    content: '';
+    position: absolute;
+    bottom: 115%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: #1F2937;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s ease;
+    z-index: 1000;
+}
+
+.editorial-tooltip:hover::after,
+.editorial-tooltip:hover::before {
+    opacity: 1;
+    visibility: visible;
+}
