@@ -87,124 +87,131 @@
 </div>
 
 <script>
-// Función para generar el HTML del libro_card (replica el componente PHP)
-function generarLibroCard(libro, colClasses = 'col-lg-2 col-md-4 col-sm-6') {
+// Función para generar tarjetas usando el componente PHP como fuente única
+async function generarTarjetasDesdeServidor(libros, colClasses = 'col-lg-2 col-md-4 col-sm-6') {
+    try {
+        // Enviar los datos al endpoint PHP que renderiza usando libro_card.php
+        const response = await fetch('<?= base_url("app/Views/Catalogo/render_cards.php") ?>', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                libros: libros,
+                colClasses: colClasses
+            })
+        });
+        
+        if (response.ok) {
+            return await response.text();
+        } else {
+            console.warn('Error en endpoint PHP, usando fallback JavaScript');
+            return generarTarjetasFallback(libros, colClasses);
+        }
+    } catch (error) {
+        console.warn('Error conectando con endpoint PHP, usando fallback JavaScript:', error);
+        return generarTarjetasFallback(libros, colClasses);
+    }
+}
+
+// Función fallback que genera múltiples tarjetas
+function generarTarjetasFallback(libros, colClasses = 'col-lg-2 col-md-4 col-sm-6') {
+    return libros.map(libro => {
+        // Mapear datos para que coincidan con el formato del componente PHP
+        const libroFormateado = {
+            ...libro,
+            portada: libro.portada || libro.rutaportada,
+            nomautor: libro.autores || libro.nomautor || 'Sin autor'
+        };
+        
+        return generarLibroCardFallback(libroFormateado, colClasses);
+    }).join('');
+}
+
+// Función fallback que replica exactamente el componente PHP
+function generarLibroCardFallback(libro, colClasses = 'col-lg-2 col-md-4 col-sm-6') {
     const autorTexto = libro.autores || libro.nomautor || 'Sin autor';
-    const tituloCorto = libro.titulo.length > 40 ? libro.titulo.substring(0, 40) + '...' : libro.titulo;
-    const detalleUrl = libro.detalle_url || '#';
     
     // Detectar si es recurso digital
     let esDigital = false;
     let debugInfo = [];
     
-    // Verificar por el tipo de recurso
     if (libro.tiporecurso) {
         esDigital = libro.tiporecurso.toLowerCase().includes('digital');
         debugInfo.push("Tipo: " + libro.tiporecurso);
     }
     
-    // Verificar por el ID del tipo de recurso (ID 2 = Libro Digital)
     if (!esDigital && libro.idtiporecurso) {
         esDigital = (libro.idtiporecurso == 2);
         debugInfo.push("ID Tipo: " + libro.idtiporecurso);
     }
     
-    // Verificar por la existencia de archivo digital
     if (!esDigital && libro.archivo && libro.archivo.trim() !== '') {
         esDigital = true;
         debugInfo.push("Archivo: " + libro.archivo);
     }
     
     const debugText = debugInfo.join(', ');
-    
-    // Construir ruta de imagen con base_url (usar 'portada' en lugar de 'rutaportada')
     const rutaImagen = libro.portada ? '<?= base_url() ?>' + libro.portada : null;
     
-    
     return `
-    <div class="${colClasses} mb-4">
-        <div class="card h-100 border-0 shadow-sm position-relative card-recurso-destacado">
+    <div class="${colClasses}">
+        <div class="card h-100 shadow-sm rounded" 
+             style="cursor: pointer;" 
+             data-bs-toggle="modal" 
+             data-bs-target="#libroModal"
+             data-libro-id="${libro.idrecurso}"
+             onclick="cargarDetallesLibro(${libro.idrecurso})">
             <!-- Icono de tipo de recurso -->
             <div class="position-absolute top-0 start-0 m-2" style="z-index: 10;">
                 ${esDigital ? 
-                    `<span class="badge badge-tipo-recurso badge-digital text-white" title="Recurso Digital - ${debugText}">
-                        <i class="fas fa-file-pdf"></i>
+                    `<span class="badge bg-info text-white" title="Recurso Digital - ${debugText}">
+                        <i class="fas fa-file-pdf me-1"></i>
+                        Digital
                     </span>` :
-                    `<span class="badge badge-tipo-recurso badge-fisico text-white" title="Recurso Físico - ${debugText}">
-                        <i class="fas fa-book"></i>
+                    `<span class="badge bg-primary text-white" title="Recurso Físico - ${debugText}">
+                        <i class="fas fa-book me-1"></i>
+                        Físico
                     </span>`
                 }
             </div>
             
-            <!-- Imagen del libro -->
-            <div class="card-img-top-container" style="height: 250px; overflow: hidden;">
+            <!-- Imagen del libro con texto overlay -->
+            <div class="position-relative card" style="height: 300px; overflow: hidden;">
                 ${rutaImagen ? 
                     `<img src="${rutaImagen}" 
                          class="card-img-top h-100 w-100" 
-                         style="object-fit: cover;" 
+                         style="object-fit: cover; border-top-left-radius: 0.375rem; border-top-right-radius: 0.375rem;" 
                          alt="${libro.titulo}"
-                         data-recurso-id="${libro.idrecurso}"
-                         title="Ruta: ${rutaImagen}">` :
-                    `<div class="bg-light h-100 d-flex align-items-center justify-content-center">
+                         data-recurso-id="${libro.idrecurso}">` :
+                    `<div class="bg-light h-100 d-flex align-items-center justify-content-center" style="border-top-left-radius: 0.375rem; border-top-right-radius: 0.375rem;">
                         <div class="text-center text-muted">
                             ${esDigital ? 
-                                `<i class="fas fa-file-pdf fa-2x mb-2 text-info icono-sin-portada"></i>` :
-                                `<i class="fas fa-book fa-2x mb-2 icono-sin-portada"></i>`
+                                `<i class="fas fa-file-pdf fa-2x mb-2 text-info"></i>` :
+                                `<i class="fas fa-book fa-2x mb-2"></i>`
                             }
                             <small>Sin portada</small>
                         </div>
                     </div>`
                 }
-            </div>
-            
-            <!-- Contenido de la card -->
-            <div class="card-body p-3">
-                <!-- Título -->
-                <h6 class="card-title fw-bold mb-2" style="font-size: 0.9rem; line-height: 1.2;">
-                    ${tituloCorto}
-                </h6>
                 
-                <!-- Autores -->
-                <p class="card-text text-muted small mb-2">
-                    <strong>Autores:</strong> ${autorTexto}
-                </p>
-                
-                <!-- Año -->
-                <p class="card-text text-muted small">
-                    <strong>Año:</strong> ${libro.anio || 'N/A'}
-                </p>
-            </div>
-            
-            <!-- Footer de la card -->
-            <div class="card-footer bg-transparent border-top-0">
-                ${esDigital && libro.archivo && libro.archivo.trim() !== '' ? 
-                    `<div class="d-flex gap-1">
-                        <button type="button" 
-                                class="btn btn-sm btn-success flex-fill btn-leer-pdf" 
-                                onclick="leerPDFDirecto('<?= base_url() ?>${libro.archivo}', '${libro.titulo}')">
-                            <i class="fas fa-book-open me-1"></i>
-                            Leer
-                        </button>
-                        <button type="button" 
-                                class="btn btn-sm btn-outline-primary flex-fill btn-detalles-recurso" 
-                                data-bs-toggle="modal" 
-                                data-bs-target="#libroModal"
-                                data-libro-id="${libro.idrecurso}"
-                                onclick="cargarDetallesLibro(${libro.idrecurso})">
-                            <i class="fas fa-info-circle me-1"></i>
-                            Detalles
-                        </button>
-                    </div>` :
-                    `<button type="button" 
-                            class="btn btn-sm btn-outline-primary w-100 btn-detalles-recurso" 
-                            data-bs-toggle="modal" 
-                            data-bs-target="#libroModal"
-                            data-libro-id="${libro.idrecurso}"
-                            onclick="cargarDetallesLibro(${libro.idrecurso})">
-                        <i class="fas fa-info-circle me-1"></i>
-                        Ver detalles
-                    </button>`
-                }
+                <!-- Overlay con información del libro -->
+                <div class="position-absolute bottom-0 start-0 end-0 p-3" style="background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.7) 80%, transparent 100%); text-shadow: 1px 1px 2px rgba(0,0,0,0.8);">
+                    <!-- Título -->
+                    <h6 class="text-white fw-bold mb-1 text-truncate" style="font-size: 0.95rem; line-height: 1.3; text-shadow: 2px 2px 4px rgba(0,0,0,0.9);" title="${libro.titulo}">
+                        ${libro.titulo}
+                    </h6>
+                    
+                    <!-- Autores -->
+                    <p class="text-white small mb-0 text-truncate" style="text-shadow: 1px 1px 3px rgba(0,0,0,0.8);" title="${autorTexto}">
+                        ${autorTexto}
+                    </p>
+                    
+                    <!-- Año -->
+                    <p class="text-white small mb-0" style="opacity: 0.9; text-shadow: 1px 1px 2px rgba(0,0,0,0.7);">
+                        ${libro.anio || 'N/A'}
+                    </p>
+                </div>
             </div>
         </div>
     </div>`;
@@ -279,9 +286,9 @@ function cargarSubcategorias(idCat) {
                     <div class="row">`;
                 
                 if (sub.libros && sub.libros.length > 0) {
-                    sub.libros.forEach(lib => {
-                        html += generarLibroCard(lib);
-                    });
+                    // Usar el sistema fallback que replica el componente PHP
+                    const tarjetasHtml = generarTarjetasFallback(sub.libros);
+                    html += tarjetasHtml;
                 } else {
                     html += `
                     <div class="col-12">
