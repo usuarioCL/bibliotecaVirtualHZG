@@ -76,5 +76,3 @@
 </form>
 
 
-
-<!-- contenido adicional -->
