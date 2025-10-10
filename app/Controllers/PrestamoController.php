@@ -123,6 +123,8 @@ class PrestamoController extends Controller
         return view('prestamos/formulario', $data);
     }
     
+
+
     /**
      * Procesa la solicitud de préstamo desde el formulario
      */
@@ -166,17 +168,69 @@ class PrestamoController extends Controller
         }
         
         try {
-            // Obtener ID del usuario
+            // Obtener datos del usuario
             $idUsuario = session()->get('id');
+            $nivelAcceso = session()->get('nivelacceso');
+            $nombreUsuario = session()->get('nomuser');
             
-            // Obtener matrícula del usuario
-            $prestamoModel = new PrestamoModel();
-            $idMatricula = $prestamoModel->getMatriculaByUsuario($idUsuario);
+            $db = \Config\Database::connect();
             
-            if (!$idMatricula) {
+            // Si no hay ID en la sesión, buscar por nombre de usuario
+            if (!$idUsuario && $nombreUsuario) {
+                $usuario = $db->table('usuarios')
+                    ->where('nomuser', $nombreUsuario)
+                    ->get()->getRow();
+                    
+                if ($usuario) {
+                    $idUsuario = $usuario->idusuario;
+                    // Actualizar la sesión con el ID correcto
+                    session()->set('id', $idUsuario);
+                } else {
+                    return $this->response->setJSON([
+                        'success' => false,
+                        'message' => 'Usuario no encontrado'
+                    ]);
+                }
+            }
+            
+            // Verificar que tenemos los datos necesarios
+            if (!$idUsuario || !$nivelAcceso) {
                 return $this->response->setJSON([
                     'success' => false,
-                    'message' => 'No se encontró matrícula asociada a su usuario'
+                    'message' => 'Datos de sesión incompletos'
+                ]);
+            }
+            
+            // Asegurar que existe una matrícula básica para usar
+            $matriculaBasica = $db->table('matriculas')
+                ->orderBy('idmatricula', 'ASC')
+                ->get()->getRow();
+                
+            if (!$matriculaBasica) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'No hay matrículas disponibles en el sistema. Por favor contacte al administrador.'
+                ]);
+            }
+            
+            // Para administradores y docentes, usar la primera matrícula disponible
+            if ($nivelAcceso === 'admin' || $nivelAcceso === 'docente') {
+                $idMatricula = $matriculaBasica->idmatricula;
+            } else if ($nivelAcceso === 'estudiante') {
+                // Obtener matrícula del estudiante
+                $prestamoModel = new PrestamoModel();
+                $idMatricula = $prestamoModel->getMatriculaByUsuario($idUsuario);
+                
+                if (!$idMatricula) {
+                    return $this->response->setJSON([
+                        'success' => false,
+                        'message' => 'No se encontró matrícula activa asociada a su usuario.'
+                    ]);
+                }
+            } else {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Tipo de usuario no válido para solicitar préstamos.'
                 ]);
             }
             
@@ -209,10 +263,10 @@ class PrestamoController extends Controller
                 'idrecurso' => $idRecurso,
                 'fechaprestamo' => $fechaInicio . ' 00:00:00',
                 'fechadevolucion' => $fechaDevolucion . ' 23:59:59'
-                // Las observaciones se añadirán después con la actualización
             ];
             
             // Insertar el préstamo
+            $prestamoModel = new PrestamoModel();
             $prestamoModel->insert($prestamo);
             $idPrestamo = $prestamoModel->insertID();
             

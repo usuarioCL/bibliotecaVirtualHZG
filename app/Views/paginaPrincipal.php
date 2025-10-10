@@ -1226,3 +1226,99 @@ function solicitarPrestamo(idRecurso) {
     }, 100); // Esperar 300ms para que el modal termine de cerrarse
 }
 </script>
+<script>
+// Función para enviar la solicitud (definida globalmente)
+function enviarSolicitudPrestamo() {
+    const form = document.getElementById('formSolicitudPrestamo');
+    
+    // Validar el formulario antes de enviar
+    if (!form.checkValidity()) {
+        form.classList.add('was-validated');
+        return;
+    }
+        const formData = new FormData(form);
+        // Si el motivo es "Otro", reemplazamos el valor del motivo con el texto proporcionado
+        if (document.getElementById('motivo').value === 'Otro') {
+            formData.set('motivo', document.getElementById('otroMotivo').value);
+        }
+        
+
+        
+        // Mostrar indicador de carga
+        Swal.fire({
+            title: 'Enviando solicitud',
+            text: 'Por favor espere...',
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+        
+        // Enviar solicitud mediante AJAX
+        fetch('<?= base_url('prestamo/solicitar') ?>', {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                Swal.fire({
+                    title: '¡Solicitud Enviada!',
+                    text: 'Tu solicitud de préstamo ha sido enviada. Te notificaremos cuando sea procesada.',
+                    icon: 'success',
+                    confirmButtonColor: '#28a745',
+                    showCancelButton: false,
+                    confirmButtonText: 'Entendido'
+                }).then((result) => {
+                    // Cerrar el modal de SweetAlert (formulario)
+                    if (result.isConfirmed) {
+                        Swal.close();
+                    }
+                });
+            } else {
+                Swal.fire({
+                    title: 'Error',
+                    text: data.message || 'Ha ocurrido un error al procesar tu solicitud',
+                    icon: 'error'
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            Swal.fire({
+                title: 'Error',
+                text: 'Ha ocurrido un error al enviar tu solicitud',
+                icon: 'error'
+            });
+        });
+}
+
+// Validación del formulario
+document.addEventListener('DOMContentLoaded', function() {
+    // Mostrar el campo "otro motivo" cuando se selecciona "Otro"
+    document.getElementById('motivo').addEventListener('change', function() {
+        const otroMotivoContainer = document.getElementById('otroMotivoContainer');
+        otroMotivoContainer.style.display = this.value === 'Otro' ? 'block' : 'none';
+        // Solo requerido si está visible
+        const otroMotivo = document.getElementById('otroMotivo');
+        otroMotivo.required = this.value === 'Otro';
+    });
+
+    // Validar que fecha devolución sea posterior a fecha inicio
+    document.getElementById('fechaInicio').addEventListener('change', function() {
+        const fechaDevolucion = document.getElementById('fechaDevolucion');
+        const fechaInicioValue = new Date(this.value);
+        // Sumamos un día para la fecha mínima de devolución
+        fechaInicioValue.setDate(fechaInicioValue.getDate() + 1);
+        fechaDevolucion.min = fechaInicioValue.toISOString().split('T')[0];
+        // Si la fecha actual es menor que la mínima, actualizar
+        if (fechaDevolucion.value < fechaDevolucion.min) {
+            fechaDevolucion.value = fechaDevolucion.min;
+        }
+    });
+});
+</script>
