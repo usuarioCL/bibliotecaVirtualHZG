@@ -607,7 +607,7 @@ function cargarDetallesLibro(idRecurso) {
     `;
     
     // Cargar detalles via AJAX
-    fetch(`<?= base_url('recursos/detalles/') ?>${idRecurso}`)
+    fetch(`<?= base_url('recurso/detalles/') ?>${idRecurso}`)
         .then(response => response.text())
         .then(html => {
             modalBody.innerHTML = html;

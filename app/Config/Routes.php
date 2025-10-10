@@ -15,6 +15,9 @@ $routes->get('/archivo/imagen/(:any)', 'ArchivoController::imagen/$1');
 //Libros
 $routes->get('/recurso', 'RecursoController::buscar');
 
+// Ruta pública para detalles de recursos (sin autenticación)
+$routes->get('/recurso/detalles/(:num)', 'RecursoController::detalles/$1');
+
 // Inicio de sesión
 $routes->get('/login', 'LoginController::loginForm'); // Muestra el formulario de login
 $routes->post('/login', 'LoginController::login');    // Procesa el login
