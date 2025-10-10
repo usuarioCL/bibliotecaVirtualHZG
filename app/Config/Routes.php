@@ -218,6 +218,10 @@ $routes->get('/solicitudes', 'PrestamoController::solicitudes');              //
 $routes->get('/devoluciones', 'PrestamoController::devoluciones');            // Devoluciones
 $routes->get('/historial-prestamos', 'PrestamoController::historial');        // Historial Completo
 
+// Formulario de préstamos (para usuarios)
+$routes->get('/prestamo/formulario/(:num)', 'PrestamoController::formulario/$1');  // Formulario de solicitud
+$routes->post('/prestamo/solicitar', 'PrestamoController::solicitar');            // Procesar solicitud
+
 // =====================================
 // RUTAS PARA MODALES DEL SISTEMA
 // =====================================
