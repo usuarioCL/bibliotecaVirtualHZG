@@ -1,125 +1,6 @@
 <!-- SweetAlert2 CDN -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-<style>
-/* Estilos personalizados para la tabla de préstamos */
-.table-hover tbody tr:hover {
-    background-color: rgba(0, 0, 0, 0.025);
-}
-
-.dropdown-menu {
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    border-radius: 8px;
-    min-width: 180px;
-}
-
-.dropdown-item {
-    padding: 8px 16px;
-    font-size: 0.875rem;
-    transition: background-color 0.15s ease-in-out;
-}
-
-.dropdown-item:hover {
-    background-color: rgba(0, 0, 0, 0.05);
-}
-
-.dropdown-item i {
-    width: 16px;
-    text-align: center;
-}
-
-.stats-card {
-    transition: transform 0.2s ease-in-out;
-}
-
-.stats-card:hover {
-    transform: translateY(-2px);
-}
-
-.badge {
-    font-size: 0.75rem;
-    padding: 0.5em 0.75em;
-}
-
-.empty-state {
-    padding: 2rem;
-}
-
-.empty-state-icon {
-    opacity: 0.5;
-}
-
-/* Estilos para botones de acción */
-.btn-sm {
-    padding: 0.375rem 0.5rem;
-    font-size: 0.875rem;
-    line-height: 1.5;
-    border-radius: 4px;
-    transition: all 0.15s ease-in-out;
-}
-
-.btn-sm i {
-    font-size: 0.9rem;
-}
-
-.btn-outline-info:hover {
-    background-color: #0dcaf0;
-    border-color: #0dcaf0;
-}
-
-.btn-outline-warning:hover {
-    background-color: #ffc107;
-    border-color: #ffc107;
-}
-
-.btn-outline-success:hover {
-    background-color: #198754;
-    border-color: #198754;
-}
-
-.btn-outline-danger:hover {
-    background-color: #dc3545;
-    border-color: #dc3545;
-}
-
-/* Responsive mejoras */
-@media (max-width: 768px) {
-    .table th, .table td {
-        padding: 0.5rem;
-        font-size: 0.85rem;
-    }
-    
-    .card-body {
-        padding: 1rem;
-    }
-    
-    .btn-sm {
-        padding: 0.25rem 0.375rem;
-        font-size: 0.8rem;
-    }
-    
-    .btn-sm i {
-        font-size: 0.8rem;
-    }
-    
-    .d-flex.gap-1 {
-        gap: 0.25rem !important;
-    }
-}
-
-@media (max-width: 576px) {
-    .d-flex.gap-1.flex-wrap {
-        flex-direction: column;
-        gap: 0.25rem !important;
-    }
-    
-    .btn-sm {
-        padding: 0.2rem 0.3rem;
-        min-width: 28px;
-    }
-}
-</style>
-
 <div class="container-fluid">
     <!-- Encabezado de la página con breadcrumb -->
     <div class="row">
@@ -436,17 +317,75 @@
     // Función para cancelar préstamo
     function cancelarPrestamo(prestamoId) {
         console.log('Cancelar préstamo:', prestamoId);
+        
         Swal.fire({
             title: '¿Cancelar Préstamo?',
-            text: 'Esta acción no se puede deshacer',
+            input: 'textarea',
+            inputLabel: 'Motivo de cancelación',
+            inputPlaceholder: 'Escribe el motivo por el cual se cancela el préstamo...',
+            inputAttributes: {
+                'aria-label': 'Motivo de cancelación'
+            },
+            text: 'Esta acción no se puede deshacer. El recurso volverá a estar disponible.',
             icon: 'warning',
             showCancelButton: true,
-            confirmButtonText: 'Sí, cancelar',
+            confirmButtonText: 'Sí, cancelar préstamo',
             cancelButtonText: 'No cancelar',
-            confirmButtonColor: '#d33'
+            confirmButtonColor: '#d33',
+            inputValidator: (value) => {
+                if (!value) {
+                    return 'Debes proporcionar un motivo para la cancelación'
+                }
+            }
         }).then((result) => {
             if (result.isConfirmed) {
-                Swal.fire('Cancelado', 'El préstamo ha sido cancelado', 'success');
+                // Mostrar loading
+                Swal.fire({
+                    title: 'Procesando...',
+                    text: 'Cancelando préstamo',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
+                // Enviar solicitud AJAX
+                fetch('<?= base_url('prestamos/cancelar') ?>', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: 'idprestamo=' + encodeURIComponent(prestamoId) + '&motivo=' + encodeURIComponent(result.value)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        Swal.fire({
+                            title: 'Préstamo Cancelado',
+                            text: data.message || 'El préstamo ha sido cancelado correctamente',
+                            icon: 'success',
+                            timer: 2000,
+                            showConfirmButton: false
+                        }).then(() => {
+                            location.reload();
+                        });
+                    } else {
+                        Swal.fire({
+                            title: 'Error',
+                            text: data.message || 'No se pudo cancelar el préstamo',
+                            icon: 'error'
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    Swal.fire({
+                        title: 'Error',
+                        text: 'Ha ocurrido un error de conexión',
+                        icon: 'error'
+                    });
+                });
             }
         });
     }

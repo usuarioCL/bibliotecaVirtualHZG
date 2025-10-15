@@ -225,6 +225,14 @@ $routes->get('/historial-prestamos', 'PrestamoController::historial');        //
 $routes->get('/prestamo/formulario/(:num)', 'PrestamoController::formulario/$1');  // Formulario de solicitud
 $routes->post('/prestamo/solicitar', 'PrestamoController::solicitar');            // Procesar solicitud
 
+// Gestión de solicitudes de préstamo (Admin/Docente)
+$routes->post('/prestamos/aprobar', 'PrestamoController::aprobar');               // Aprobar solicitud individual
+$routes->post('/prestamos/rechazar', 'PrestamoController::rechazar');             // Rechazar solicitud individual
+$routes->post('/prestamos/aprobarTodas', 'PrestamoController::aprobarTodas');     // Aprobar solicitudes masivamente
+
+// Gestión de préstamos activos (Admin/Docente)
+$routes->post('/prestamos/cancelar', 'PrestamoController::cancelar');             // Cancelar préstamo activo
+
 // =====================================
 // RUTAS PARA MODALES DEL SISTEMA
 // =====================================

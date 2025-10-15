@@ -33,12 +33,12 @@ class PrestamoController extends Controller
 
             return view('Administrador/prestamos/index', $data);
         } catch (\Exception $e) {
-            // En caso de error, mostrar datos de fallback
+            // En caso de error, mostrar lista vacía y estadísticas en cero
             log_message('error', 'Error en PrestamoController::index(): ' . $e->getMessage());
             
             $data = [
                 'title' => 'Préstamos Activos',
-                'prestamos' => $this->getDatosPruebaPrestamos(),
+                'prestamos' => [],
                 'estadisticas' => [
                     'total_prestamos' => 0,
                     'vencidos_hoy' => 0,
@@ -80,9 +80,10 @@ class PrestamoController extends Controller
         } catch (\Exception $e) {
             log_message('error', 'Error en PrestamoController::solicitudes(): ' . $e->getMessage());
             
+            // En caso de error, mostrar una lista vacía y estadísticas en cero
             $data = [
                 'title' => 'Solicitudes Pendientes',
-                'solicitudes' => $this->getDatosPruebaSolicitudes(),
+                'solicitudes' => [],
                 'estadisticas' => [
                     'total_solicitudes' => 0,
                     'hoy' => 0,
@@ -533,5 +534,272 @@ class PrestamoController extends Controller
                 'estado' => 'No devuelto (perdido)'
             ]
         ];
+    }
+
+    /**
+     * Aprobar una solicitud de préstamo
+     */
+    public function aprobar()
+    {
+        // Verificar si es una solicitud AJAX
+        if (!$this->request->isAJAX()) {
+            return $this->response->setStatusCode(400)->setJSON([
+                'success' => false,
+                'message' => 'Solicitud inválida'
+            ]);
+        }
+
+        // Verificar si el usuario está autenticado y es admin/docente
+        if (!session()->get('logged_in')) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Debe iniciar sesión'
+            ]);
+        }
+
+        $nivelAcceso = session()->get('nivelacceso');
+        if (!in_array($nivelAcceso, ['admin', 'docente'])) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'No tiene permisos para aprobar solicitudes'
+            ]);
+        }
+
+        // Obtener ID de la solicitud
+        $idsolicitud = $this->request->getPost('idsolicitud');
+        
+        if (!$idsolicitud) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'ID de solicitud requerido'
+            ]);
+        }
+
+        try {
+            // Aprobar la solicitud
+            $resultado = $this->prestamoModel->aprobarSolicitud($idsolicitud);
+            
+            // Registrar acción en historial si existe el helper
+            if ($resultado['success'] && function_exists('registrar_accion')) {
+                helper('historial');
+                registrar_accion(
+                    'Aprobación de Solicitud de Préstamo',
+                    session()->get('nomuser'),
+                    null,
+                    session()->get('nivelacceso'),
+                    "Solicitud #{$idsolicitud} aprobada exitosamente"
+                );
+            }
+
+            return $this->response->setJSON($resultado);
+            
+        } catch (\Exception $e) {
+            log_message('error', 'Error en PrestamoController::aprobar(): ' . $e->getMessage());
+            
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Error interno del servidor'
+            ]);
+        }
+    }
+
+    /**
+     * Rechazar una solicitud de préstamo
+     */
+    public function rechazar()
+    {
+        // Verificar si es una solicitud AJAX
+        if (!$this->request->isAJAX()) {
+            return $this->response->setStatusCode(400)->setJSON([
+                'success' => false,
+                'message' => 'Solicitud inválida'
+            ]);
+        }
+
+        // Verificar si el usuario está autenticado y es admin/docente
+        if (!session()->get('logged_in')) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Debe iniciar sesión'
+            ]);
+        }
+
+        $nivelAcceso = session()->get('nivelacceso');
+        if (!in_array($nivelAcceso, ['admin', 'docente'])) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'No tiene permisos para rechazar solicitudes'
+            ]);
+        }
+
+        // Obtener datos del formulario
+        $idsolicitud = $this->request->getPost('idsolicitud');
+        $motivo = $this->request->getPost('motivo') ?? '';
+        
+        if (!$idsolicitud) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'ID de solicitud requerido'
+            ]);
+        }
+
+        try {
+            // Rechazar la solicitud
+            $resultado = $this->prestamoModel->rechazarSolicitud($idsolicitud, $motivo);
+            
+            // Registrar acción en historial si existe el helper
+            if ($resultado['success'] && function_exists('registrar_accion')) {
+                helper('historial');
+                registrar_accion(
+                    'Rechazo de Solicitud de Préstamo',
+                    session()->get('nomuser'),
+                    null,
+                    session()->get('nivelacceso'),
+                    "Solicitud #{$idsolicitud} rechazada. Motivo: {$motivo}"
+                );
+            }
+
+            return $this->response->setJSON($resultado);
+            
+        } catch (\Exception $e) {
+            log_message('error', 'Error en PrestamoController::rechazar(): ' . $e->getMessage());
+            
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Error interno del servidor'
+            ]);
+        }
+    }
+
+    /**
+     * Aprobar múltiples solicitudes disponibles
+     */
+    public function aprobarTodas()
+    {
+        // Verificar si es una solicitud AJAX
+        if (!$this->request->isAJAX()) {
+            return $this->response->setStatusCode(400)->setJSON([
+                'success' => false,
+                'message' => 'Solicitud inválida'
+            ]);
+        }
+
+        // Verificar si el usuario está autenticado y es admin/docente
+        if (!session()->get('logged_in')) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Debe iniciar sesión'
+            ]);
+        }
+
+        $nivelAcceso = session()->get('nivelacceso');
+        if (!in_array($nivelAcceso, ['admin', 'docente'])) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'No tiene permisos para aprobar solicitudes'
+            ]);
+        }
+
+        try {
+            // Obtener IDs de solicitudes específicas (opcional)
+            $idsolicitudes = $this->request->getPost('solicitudes') ?? [];
+            
+            // Aprobar solicitudes
+            $resultados = $this->prestamoModel->aprobarSolicitudesDisponibles($idsolicitudes);
+            
+            // Registrar acción en historial si existe el helper
+            if ($resultados['aprobadas'] > 0 && function_exists('registrar_accion')) {
+                helper('historial');
+                registrar_accion(
+                    'Aprobación Masiva de Solicitudes',
+                    session()->get('nomuser'),
+                    null,
+                    session()->get('nivelacceso'),
+                    "Aprobadas: {$resultados['aprobadas']} solicitudes. Rechazadas: {$resultados['rechazadas']}"
+                );
+            }
+
+            return $this->response->setJSON([
+                'success' => true,
+                'message' => "Se aprobaron {$resultados['aprobadas']} solicitudes exitosamente",
+                'data' => $resultados
+            ]);
+            
+        } catch (\Exception $e) {
+            log_message('error', 'Error en PrestamoController::aprobarTodas(): ' . $e->getMessage());
+            
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Error interno del servidor'
+            ]);
+        }
+    }
+
+    /**
+     * Cancelar un préstamo activo
+     */
+    public function cancelar()
+    {
+        // Verificar si es una solicitud AJAX
+        if (!$this->request->isAJAX()) {
+            return $this->response->setStatusCode(400)->setJSON([
+                'success' => false,
+                'message' => 'Solicitud inválida'
+            ]);
+        }
+
+        // Verificar si el usuario está autenticado y es admin/docente
+        if (!session()->get('logged_in')) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Debe iniciar sesión'
+            ]);
+        }
+
+        $nivelAcceso = session()->get('nivelacceso');
+        if (!in_array($nivelAcceso, ['admin', 'docente'])) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'No tiene permisos para cancelar préstamos'
+            ]);
+        }
+
+        // Obtener datos del formulario
+        $idprestamo = $this->request->getPost('idprestamo');
+        $motivo = $this->request->getPost('motivo') ?? '';
+        
+        if (!$idprestamo) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'ID de préstamo requerido'
+            ]);
+        }
+
+        try {
+            // Cancelar el préstamo
+            $resultado = $this->prestamoModel->cancelarPrestamo($idprestamo, $motivo);
+            
+            // Registrar acción en historial si existe el helper
+            if ($resultado['success'] && function_exists('registrar_accion')) {
+                helper('historial');
+                registrar_accion(
+                    'Cancelación de Préstamo',
+                    session()->get('nomuser'),
+                    null,
+                    session()->get('nivelacceso'),
+                    "Préstamo #{$idprestamo} cancelado. Motivo: {$motivo}"
+                );
+            }
+
+            return $this->response->setJSON($resultado);
+            
+        } catch (\Exception $e) {
+            log_message('error', 'Error en PrestamoController::cancelar(): ' . $e->getMessage());
+            
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Error interno del servidor'
+            ]);
+        }
     }
 }

@@ -259,16 +259,52 @@
             confirmButtonColor: '#28a745'
         }).then((result) => {
             if (result.isConfirmed) {
-                // TODO: Implementar aprobación
+                // Mostrar loading
                 Swal.fire({
-                    title: 'Solicitud Aprobada',
-                    text: 'La solicitud ha sido aprobada y se ha generado el préstamo',
-                    icon: 'success',
-                    timer: 2000,
-                    showConfirmButton: false
-                }).then(() => {
-                    // Recargar la tabla o remover la fila
-                    location.reload();
+                    title: 'Procesando...',
+                    text: 'Aprobando solicitud de préstamo',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
+                // Enviar solicitud AJAX
+                fetch('<?= base_url('prestamos/aprobar') ?>', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: 'idsolicitud=' + encodeURIComponent(solicitudId)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        Swal.fire({
+                            title: 'Solicitud Aprobada',
+                            text: data.message || 'La solicitud ha sido aprobada y se ha generado el préstamo',
+                            icon: 'success',
+                            timer: 2000,
+                            showConfirmButton: false
+                        }).then(() => {
+                            location.reload();
+                        });
+                    } else {
+                        Swal.fire({
+                            title: 'Error',
+                            text: data.message || 'No se pudo aprobar la solicitud',
+                            icon: 'error'
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    Swal.fire({
+                        title: 'Error',
+                        text: 'Ha ocurrido un error de conexión',
+                        icon: 'error'
+                    });
                 });
             }
         });
@@ -297,16 +333,52 @@
             }
         }).then((result) => {
             if (result.isConfirmed) {
-                // TODO: Implementar rechazo con motivo
+                // Mostrar loading
                 Swal.fire({
-                    title: 'Solicitud Rechazada',
-                    text: 'La solicitud ha sido rechazada y se ha notificado al usuario',
-                    icon: 'success',
-                    timer: 2000,
-                    showConfirmButton: false
-                }).then(() => {
-                    // Recargar la tabla o remover la fila
-                    location.reload();
+                    title: 'Procesando...',
+                    text: 'Rechazando solicitud de préstamo',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
+                // Enviar solicitud AJAX
+                fetch('<?= base_url('prestamos/rechazar') ?>', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: 'idsolicitud=' + encodeURIComponent(solicitudId) + '&motivo=' + encodeURIComponent(result.value)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        Swal.fire({
+                            title: 'Solicitud Rechazada',
+                            text: data.message || 'La solicitud ha sido rechazada correctamente',
+                            icon: 'success',
+                            timer: 2000,
+                            showConfirmButton: false
+                        }).then(() => {
+                            location.reload();
+                        });
+                    } else {
+                        Swal.fire({
+                            title: 'Error',
+                            text: data.message || 'No se pudo rechazar la solicitud',
+                            icon: 'error'
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    Swal.fire({
+                        title: 'Error',
+                        text: 'Ha ocurrido un error de conexión',
+                        icon: 'error'
+                    });
                 });
             }
         });
@@ -347,7 +419,7 @@
             confirmButtonColor: '#28a745'
         }).then((result) => {
             if (result.isConfirmed) {
-                // TODO: Implementar aprobación masiva
+                // Mostrar loading
                 Swal.fire({
                     title: 'Procesando...',
                     text: 'Aprobando solicitudes disponibles',
@@ -357,16 +429,52 @@
                     }
                 });
 
-                // Simular procesamiento
-                setTimeout(() => {
+                // Preparar IDs de solicitudes disponibles
+                const solicitudesIds = disponibles.map(s => s.id);
+
+                // Enviar solicitud AJAX
+                fetch('<?= base_url('prestamos/aprobarTodas') ?>', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: 'solicitudes=' + encodeURIComponent(JSON.stringify(solicitudesIds))
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const resultados = data.data;
+                        let mensaje = `Se aprobaron ${resultados.aprobadas} solicitudes exitosamente`;
+                        
+                        if (resultados.rechazadas > 0) {
+                            mensaje += `\n${resultados.rechazadas} solicitudes no pudieron ser procesadas`;
+                        }
+
+                        Swal.fire({
+                            title: 'Proceso Completado',
+                            text: mensaje,
+                            icon: resultados.rechazadas > 0 ? 'warning' : 'success',
+                            confirmButtonText: 'Entendido'
+                        }).then(() => {
+                            location.reload();
+                        });
+                    } else {
+                        Swal.fire({
+                            title: 'Error',
+                            text: data.message || 'No se pudieron aprobar las solicitudes',
+                            icon: 'error'
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
                     Swal.fire({
-                        title: 'Solicitudes Aprobadas',
-                        text: `Se han aprobado ${disponibles.length} solicitudes exitosamente`,
-                        icon: 'success'
-                    }).then(() => {
-                        location.reload();
+                        title: 'Error',
+                        text: 'Ha ocurrido un error de conexión',
+                        icon: 'error'
                     });
-                }, 2000);
+                });
             }
         });
     }

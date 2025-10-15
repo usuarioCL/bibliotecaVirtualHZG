@@ -195,8 +195,12 @@ class PrestamoModel extends Model
                     END as codigo_ejemplar,
                     p.fechaprestamo as fecha_solicitud,
                     'Pendiente' as estado,
-                    'Normal' as prioridad,
-                    CASE WHEN r.stock > 0 THEN true ELSE false END as disponible
+                    CASE 
+                        WHEN DATEDIFF(NOW(), p.fechaprestamo) >= 7 THEN 'Alta'
+                        WHEN DATEDIFF(NOW(), p.fechaprestamo) >= 3 THEN 'Media'
+                        ELSE 'Normal'
+                    END as prioridad,
+                    CASE WHEN r.stock > 0 AND r.estado = 'disponible' THEN true ELSE false END as disponible
                 FROM solicitud s
                 JOIN prestamos p ON p.idprestamo = s.idprestamo
                 JOIN matriculas m ON m.idmatricula = p.idmatricula
@@ -204,7 +208,13 @@ class PrestamoModel extends Model
                 JOIN recursos r ON r.idrecurso = p.idrecurso
                 LEFT JOIN recursos_fisicos rf ON rf.idrecurso = r.idrecurso
                 WHERE s.validado = false
-                ORDER BY p.fechaprestamo DESC";
+                ORDER BY 
+                    CASE 
+                        WHEN DATEDIFF(NOW(), p.fechaprestamo) >= 7 THEN 1
+                        WHEN DATEDIFF(NOW(), p.fechaprestamo) >= 3 THEN 2
+                        ELSE 3
+                    END,
+                    p.fechaprestamo ASC";
         
         $query = $db->query($sql);
         return $query->getResultArray();
@@ -356,5 +366,255 @@ class PrestamoModel extends Model
             'promedio_mensual' => round($promedioMensual),
             'tasa_devolucion' => round($tasaDevolucion, 1)
         ];
+    }
+
+    /**
+     * Aprobar una solicitud de préstamo
+     */
+    public function aprobarSolicitud($idsolicitud)
+    {
+        $db = \Config\Database::connect();
+        
+        try {
+            $db->transStart();
+            
+            // Obtener información de la solicitud
+            $solicitud = $db->table('solicitud s')
+                ->select('s.*, p.idrecurso, p.idprestamo')
+                ->join('prestamos p', 'p.idprestamo = s.idprestamo')
+                ->where('s.idsolicitud', $idsolicitud)
+                ->where('s.validado', false)
+                ->get()
+                ->getRow();
+            
+            if (!$solicitud) {
+                throw new \Exception('Solicitud no encontrada o ya procesada');
+            }
+            
+            // Verificar disponibilidad del recurso
+            $recurso = $db->table('recursos')
+                ->where('idrecurso', $solicitud->idrecurso)
+                ->get()
+                ->getRow();
+            
+            if (!$recurso || $recurso->stock <= 0 || $recurso->estado !== 'disponible') {
+                throw new \Exception('El recurso no está disponible para préstamo');
+            }
+            
+            // Actualizar la solicitud como validada
+            $db->table('solicitud')
+                ->where('idsolicitud', $idsolicitud)
+                ->update([
+                    'validado' => true
+                ]);
+            
+            // Actualizar el préstamo con fecha de validación
+            $db->table('prestamos')
+                ->where('idprestamo', $solicitud->idprestamo)
+                ->update([
+                    'fechahoravalidacion' => date('Y-m-d H:i:s')
+                ]);
+            
+            // Actualizar stock del recurso (si es físico)
+            if ($recurso->stock > 0) {
+                $nuevoStock = $recurso->stock - 1;
+                $nuevoEstado = $nuevoStock > 0 ? 'disponible' : 'prestado';
+                
+                $db->table('recursos')
+                    ->where('idrecurso', $solicitud->idrecurso)
+                    ->update([
+                        'stock' => $nuevoStock,
+                        'estado' => $nuevoEstado
+                    ]);
+            }
+            
+            $db->transComplete();
+            
+            if ($db->transStatus() === false) {
+                throw new \Exception('Error en la transacción');
+            }
+            
+            return [
+                'success' => true,
+                'message' => 'Solicitud aprobada correctamente'
+            ];
+            
+        } catch (\Exception $e) {
+            $db->transRollback();
+            log_message('error', 'Error al aprobar solicitud: ' . $e->getMessage());
+            
+            return [
+                'success' => false,
+                'message' => $e->getMessage()
+            ];
+        }
+    }
+
+    /**
+     * Aprobar múltiples solicitudes disponibles
+     */
+    public function aprobarSolicitudesDisponibles($idsolicitudes = [])
+    {
+        $db = \Config\Database::connect();
+        $resultados = [
+            'aprobadas' => 0,
+            'rechazadas' => 0,
+            'errores' => []
+        ];
+        
+        // Si no se proporcionan IDs específicos, obtener todas las disponibles
+        if (empty($idsolicitudes)) {
+            $solicitudesDisponibles = $db->query("
+                SELECT s.idsolicitud
+                FROM solicitud s
+                JOIN prestamos p ON p.idprestamo = s.idprestamo
+                JOIN recursos r ON r.idrecurso = p.idrecurso
+                WHERE s.validado = false 
+                AND r.stock > 0 
+                AND r.estado = 'disponible'
+            ")->getResultArray();
+            
+            $idsolicitudes = array_column($solicitudesDisponibles, 'idsolicitud');
+        }
+        
+        foreach ($idsolicitudes as $idsolicitud) {
+            $resultado = $this->aprobarSolicitud($idsolicitud);
+            
+            if ($resultado['success']) {
+                $resultados['aprobadas']++;
+            } else {
+                $resultados['rechazadas']++;
+                $resultados['errores'][] = "Solicitud {$idsolicitud}: " . $resultado['message'];
+            }
+        }
+        
+        return $resultados;
+    }
+
+    /**
+     * Rechazar una solicitud de préstamo
+     */
+    public function rechazarSolicitud($idsolicitud, $motivo = '')
+    {
+        $db = \Config\Database::connect();
+        
+        try {
+            $db->transStart();
+            
+            // Verificar que la solicitud existe y no está procesada
+            $solicitud = $db->table('solicitud s')
+                ->select('s.*, p.idprestamo')
+                ->join('prestamos p', 'p.idprestamo = s.idprestamo')
+                ->where('s.idsolicitud', $idsolicitud)
+                ->where('s.validado', false)
+                ->get()
+                ->getRow();
+            
+            if (!$solicitud) {
+                throw new \Exception('Solicitud no encontrada o ya procesada');
+            }
+            
+            // Eliminar la solicitud
+            $db->table('solicitud')
+                ->where('idsolicitud', $idsolicitud)
+                ->delete();
+            
+            // Eliminar el préstamo asociado
+            $db->table('prestamos')
+                ->where('idprestamo', $solicitud->idprestamo)
+                ->delete();
+            
+            // TODO: Aquí se podría agregar un log del rechazo con el motivo
+            log_message('info', "Solicitud {$idsolicitud} rechazada. Motivo: {$motivo}");
+            
+            $db->transComplete();
+            
+            if ($db->transStatus() === false) {
+                throw new \Exception('Error en la transacción');
+            }
+            
+            return [
+                'success' => true,
+                'message' => 'Solicitud rechazada correctamente'
+            ];
+            
+        } catch (\Exception $e) {
+            $db->transRollback();
+            log_message('error', 'Error al rechazar solicitud: ' . $e->getMessage());
+            
+            return [
+                'success' => false,
+                'message' => $e->getMessage()
+            ];
+        }
+    }
+
+    /**
+     * Cancelar un préstamo activo
+     */
+    public function cancelarPrestamo($idprestamo, $motivo = '')
+    {
+        $db = \Config\Database::connect();
+        
+        try {
+            $db->transStart();
+            
+            // Obtener información del préstamo
+            $prestamo = $db->table('prestamos p')
+                ->select('p.*, r.stock')
+                ->join('recursos r', 'r.idrecurso = p.idrecurso')
+                ->where('p.idprestamo', $idprestamo)
+                ->where('p.fechahoraretorno IS NULL', null, false) // Solo préstamos activos
+                ->get()
+                ->getRow();
+            
+            if (!$prestamo) {
+                throw new \Exception('Préstamo no encontrado o ya finalizado');
+            }
+            
+            // Marcar el préstamo como devuelto/cancelado
+            $db->table('prestamos')
+                ->where('idprestamo', $idprestamo)
+                ->update([
+                    'fechahoraretorno' => date('Y-m-d H:i:s')
+                ]);
+            
+            // Restaurar stock del recurso
+            $nuevoStock = $prestamo->stock + 1;
+            $db->table('recursos')
+                ->where('idrecurso', $prestamo->idrecurso)
+                ->update([
+                    'stock' => $nuevoStock,
+                    'estado' => 'disponible'
+                ]);
+            
+            // Eliminar solicitudes relacionadas si existen
+            $db->table('solicitud')
+                ->where('idprestamo', $idprestamo)
+                ->delete();
+            
+            // Registrar el motivo en logs
+            log_message('info', "Préstamo {$idprestamo} cancelado. Motivo: {$motivo}");
+            
+            $db->transComplete();
+            
+            if ($db->transStatus() === false) {
+                throw new \Exception('Error en la transacción');
+            }
+            
+            return [
+                'success' => true,
+                'message' => 'Préstamo cancelado correctamente'
+            ];
+            
+        } catch (\Exception $e) {
+            $db->transRollback();
+            log_message('error', 'Error al cancelar préstamo: ' . $e->getMessage());
+            
+            return [
+                'success' => false,
+                'message' => $e->getMessage()
+            ];
+        }
     }
 }
