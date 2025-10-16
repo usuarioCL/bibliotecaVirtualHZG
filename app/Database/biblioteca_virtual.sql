@@ -144,6 +144,23 @@ CREATE TABLE solicitud (
     idprestamo INT NOT NULL,
     FOREIGN KEY (idprestamo) REFERENCES prestamos(idprestamo)
 );
+-- TABLA:renovaciones
+CREATE TABLE IF NOT EXISTS renovaciones_prestamo (
+    idrenovacion INT AUTO_INCREMENT PRIMARY KEY,
+    idprestamo INT NOT NULL,
+    fecha_renovacion DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    fecha_vencimiento_anterior DATETIME NOT NULL,
+    fecha_vencimiento_nueva DATETIME NOT NULL,
+    motivo TEXT,
+    usuario_renueva INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (idprestamo) REFERENCES prestamos(idprestamo) ON DELETE CASCADE,
+    FOREIGN KEY (usuario_renueva) REFERENCES usuarios(idusuario),
+    
+    INDEX idx_idprestamo (idprestamo),
+    INDEX idx_fecha_renovacion (fecha_renovacion)
+);
 
 -- TABLAS: Sanciones y Tipos
 CREATE TABLE tiposancion (
