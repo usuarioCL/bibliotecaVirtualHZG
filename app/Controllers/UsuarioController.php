@@ -867,4 +867,67 @@ class UsuarioController extends Controller
         ]);
     }
 
+    /**
+     * Buscar usuarios por AJAX (para préstamos)
+     */
+    public function buscarAjax()
+    {
+        try {
+            $termino = $this->request->getPost('termino');
+            
+            if (empty($termino)) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Debe proporcionar un término de búsqueda'
+                ]);
+            }
+
+            // Buscar usuarios activos
+            $db = \Config\Database::connect();
+            $builder = $db->table('usuarios');
+            
+            $usuarios = $builder
+                ->select('usuarios.idusuario, usuarios.nomuser, usuarios.nivelacceso, 
+                         personas.nombres, personas.apellidos, personas.tipodoc, personas.numerodoc,
+                         personas.email')
+                ->join('personas', 'personas.idpersona = usuarios.idpersona')
+                ->groupStart()
+                    ->like('CONCAT(personas.nombres, " ", personas.apellidos)', $termino)
+                    ->orLike('personas.numerodoc', $termino)
+                    ->orLike('usuarios.nomuser', $termino)
+                ->groupEnd()
+                ->limit(10)
+                ->get()
+                ->getResultArray();
+
+            // Formatear resultados
+            $usuariosFormateados = [];
+            foreach ($usuarios as $usuario) {
+                $usuariosFormateados[] = [
+                    'idusuario' => $usuario['idusuario'],
+                    'nombre_completo' => trim($usuario['nombres'] . ' ' . $usuario['apellidos']),
+                    'documento' => $usuario['numerodoc'],
+                    'tipo_documento' => $usuario['tipodoc'],
+                    'nombre_usuario' => $usuario['nomuser'],
+                    'nivel_acceso' => $usuario['nivelacceso'],
+                    'email' => $usuario['email'] ?? 'No registrado'
+                ];
+            }
+
+            return $this->response->setJSON([
+                'success' => true,
+                'usuarios' => $usuariosFormateados,
+                'total' => count($usuariosFormateados)
+            ]);
+
+        } catch (\Exception $e) {
+            log_message('error', 'Error en buscarAjax: ' . $e->getMessage());
+            log_message('error', 'Stack trace: ' . $e->getTraceAsString());
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Error al buscar usuarios: ' . $e->getMessage()
+            ]);
+        }
+    }
+
 }  

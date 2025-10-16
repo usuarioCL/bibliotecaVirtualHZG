@@ -261,6 +261,17 @@
                             <label for="estudiante" class="form-label">Estudiante <span class="text-danger">*</span></label>
                             <select id="estudiante" name="idpersona" class="form-select" required>
                                 <option value="">Buscar estudiante...</option>
+                                <?php if (isset($sanciones) && is_array($sanciones)) : ?>
+                                    <?php 
+                                    $personas = [];
+                                    foreach ($sanciones as $s) {
+                                        $personas[$s['idpersona'] ?? ''] = ($s['apellidos'] ?? '').' '.($s['nombres'] ?? '');
+                                    }
+                                    foreach ($personas as $id => $nombre) :
+                                        if ($id) : ?>
+                                            <option value="<?= esc($id) ?>"><?= esc($nombre) ?></option>
+                                        <?php endif; endforeach; ?>
+                                <?php endif; ?>
                             </select>
                         </div>
                         <div class="col-12">
