@@ -114,6 +114,16 @@
         </div>
       </a>
       <ul aria-expanded="false" class="collapse first-level" role="menu" aria-hidden="true">
+                <li class="sidebar-item">
+          <a class="sidebar-link ajax-link" 
+             href="<?= base_url('solicitudes'); ?>"
+             title="Gestionar solicitudes pendientes">
+            <div class="d-flex align-items-center gap-3">
+              <i class="ti ti-clock-hour-3 fs-5"></i>
+              <span class="hide-menu">Solicitudes Pendientes</span>
+            </div>
+          </a>
+        </li>
         <li class="sidebar-item">
           <a class="sidebar-link ajax-link" 
              href="<?= base_url('prestamos'); ?>"
@@ -121,16 +131,6 @@
             <div class="d-flex align-items-center gap-3">
                 <i class="ti ti-bookmark fs-5"></i>
               <span class="hide-menu">Préstamos Activos</span>
-            </div>
-          </a>
-        </li>
-        <li class="sidebar-item">
-          <a class="sidebar-link ajax-link" 
-             href="<?= base_url('solicitudes'); ?>"
-             title="Gestionar solicitudes pendientes">
-            <div class="d-flex align-items-center gap-3">
-              <i class="ti ti-clock-hour-3 fs-5"></i>
-              <span class="hide-menu">Solicitudes Pendientes</span>
             </div>
           </a>
         </li>

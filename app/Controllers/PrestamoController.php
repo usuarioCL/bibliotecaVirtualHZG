@@ -702,10 +702,34 @@ class PrestamoController extends Controller
 
         try {
             // Obtener IDs de solicitudes específicas (opcional)
-            $idsolicitudes = $this->request->getPost('solicitudes') ?? [];
+            $solicitudesParam = $this->request->getPost('solicitudes');
+            $idsolicitudes = [];
+            
+            if (!empty($solicitudesParam)) {
+                // Si viene como string JSON, decodificarlo
+                if (is_string($solicitudesParam)) {
+                    $idsolicitudes = json_decode($solicitudesParam, true) ?? [];
+                } else {
+                    $idsolicitudes = $solicitudesParam;
+                }
+            }
+            
+            // Log de debug
+            log_message('info', 'PrestamoController::aprobarTodas() - IDs recibidos: ' . json_encode($idsolicitudes));
+            
+            // Validar que tenemos IDs para procesar
+            if (empty($idsolicitudes)) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'No se proporcionaron IDs de solicitudes para aprobar'
+                ]);
+            }
             
             // Aprobar solicitudes
             $resultados = $this->prestamoModel->aprobarSolicitudesDisponibles($idsolicitudes);
+            
+            // Log de debug
+            log_message('info', 'PrestamoController::aprobarTodas() - Resultados: ' . json_encode($resultados));
             
             // Registrar acción en historial si existe el helper
             if ($resultados['aprobadas'] > 0 && function_exists('registrar_accion')) {
@@ -727,6 +751,64 @@ class PrestamoController extends Controller
             
         } catch (\Exception $e) {
             log_message('error', 'Error en PrestamoController::aprobarTodas(): ' . $e->getMessage());
+            log_message('error', 'Trace: ' . $e->getTraceAsString());
+            
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Error interno del servidor: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Obtener detalles de una solicitud de préstamo
+     */
+    public function detalleSolicitud()
+    {
+        // Verificar si es una solicitud AJAX
+        if (!$this->request->isAJAX()) {
+            return $this->response->setStatusCode(400)->setJSON([
+                'success' => false,
+                'message' => 'Solicitud inválida'
+            ]);
+        }
+
+        // Verificar si el usuario está autenticado
+        if (!session()->get('logged_in')) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Debe iniciar sesión'
+            ]);
+        }
+
+        // Obtener ID de la solicitud
+        $idsolicitud = $this->request->getPost('idsolicitud');
+        
+        if (!$idsolicitud) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'ID de solicitud requerido'
+            ]);
+        }
+
+        try {
+            // Obtener detalles de la solicitud
+            $detalle = $this->prestamoModel->getDetalleSolicitud($idsolicitud);
+            
+            if (!$detalle) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Solicitud no encontrada'
+                ]);
+            }
+
+            return $this->response->setJSON([
+                'success' => true,
+                'data' => $detalle
+            ]);
+            
+        } catch (\Exception $e) {
+            log_message('error', 'Error en PrestamoController::detalleSolicitud(): ' . $e->getMessage());
             
             return $this->response->setJSON([
                 'success' => false,

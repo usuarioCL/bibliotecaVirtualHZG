@@ -229,6 +229,7 @@ $routes->post('/prestamo/solicitar', 'PrestamoController::solicitar');          
 $routes->post('/prestamos/aprobar', 'PrestamoController::aprobar');               // Aprobar solicitud individual
 $routes->post('/prestamos/rechazar', 'PrestamoController::rechazar');             // Rechazar solicitud individual
 $routes->post('/prestamos/aprobarTodas', 'PrestamoController::aprobarTodas');     // Aprobar solicitudes masivamente
+$routes->post('/prestamos/detalleSolicitud', 'PrestamoController::detalleSolicitud'); // Obtener detalles de solicitud
 
 // Gestión de préstamos activos (Admin/Docente)
 $routes->post('/prestamos/cancelar', 'PrestamoController::cancelar');             // Cancelar préstamo activo

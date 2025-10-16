@@ -441,7 +441,8 @@ class PrestamoModel extends Model
             
         } catch (\Exception $e) {
             $db->transRollback();
-            log_message('error', 'Error al aprobar solicitud: ' . $e->getMessage());
+            log_message('error', 'Error al aprobar solicitud ' . $idsolicitud . ': ' . $e->getMessage());
+            log_message('error', 'Trace: ' . $e->getTraceAsString());
             
             return [
                 'success' => false,
@@ -462,6 +463,9 @@ class PrestamoModel extends Model
             'errores' => []
         ];
         
+        // Log para debugging
+        log_message('info', 'Iniciando aprobarSolicitudesDisponibles con IDs: ' . json_encode($idsolicitudes));
+        
         // Si no se proporcionan IDs específicos, obtener todas las disponibles
         if (empty($idsolicitudes)) {
             $solicitudesDisponibles = $db->query("
@@ -478,6 +482,13 @@ class PrestamoModel extends Model
         }
         
         foreach ($idsolicitudes as $idsolicitud) {
+            // Validar que el ID sea válido
+            if (!is_numeric($idsolicitud) || $idsolicitud <= 0) {
+                $resultados['rechazadas']++;
+                $resultados['errores'][] = "ID de solicitud inválido: {$idsolicitud}";
+                continue;
+            }
+            
             $resultado = $this->aprobarSolicitud($idsolicitud);
             
             if ($resultado['success']) {
@@ -487,6 +498,9 @@ class PrestamoModel extends Model
                 $resultados['errores'][] = "Solicitud {$idsolicitud}: " . $resultado['message'];
             }
         }
+        
+        // Log final de resultados
+        log_message('info', 'Resultados finales de aprobarSolicitudesDisponibles: ' . json_encode($resultados));
         
         return $resultados;
     }
@@ -547,6 +561,148 @@ class PrestamoModel extends Model
                 'message' => $e->getMessage()
             ];
         }
+    }
+
+    /**
+     * Obtener detalles completos de una solicitud
+     */
+    public function getDetalleSolicitud($idsolicitud)
+    {
+        $db = \Config\Database::connect();
+        
+        $sql = "SELECT 
+                    s.idsolicitud,
+                    s.validado,
+                    p.idprestamo,
+                    p.fechaprestamo as fecha_solicitud,
+                    p.fechadevolucion as fecha_devolucion_esperada,
+                    p.fechahoravalidacion,
+                    
+                    -- Información del usuario
+                    per.idpersona,
+                    CONCAT(per.nombres, ' ', per.apellidos) as usuario_completo,
+                    per.nombres as usuario_nombres,
+                    per.apellidos as usuario_apellidos,
+                    per.numerodoc as documento,
+                    per.tipodoc as tipo_documento,
+                    per.telefono,
+                    per.email,
+                    per.direccion,
+                    
+                    -- Información del recurso
+                    r.idrecurso,
+                    r.titulo as recurso_titulo,
+                    r.isbn,
+                    r.anio as anio_publicacion,
+                    r.numpaginas,
+                    r.numedicion,
+                    r.estado as estado_recurso,
+                    r.stock,
+                    r.nivel as nivel_educativo,
+                    
+                    -- Información de la editorial
+                    e.editorial,
+                    
+                    -- Información de la categoría
+                    c.categoria,
+                    sc.subcategoria,
+                    
+                    -- Información del tipo de recurso
+                    tr.tiporecurso,
+                    
+                    -- Información del autor principal
+                    CONCAT(COALESCE(a.nomautor, ''), ' ', COALESCE(a.apeautor, '')) as autor_principal,
+                    a.nacionalidad as autor_nacionalidad,
+                    
+                    -- Código del ejemplar
+                    CASE 
+                        WHEN rf.idrecurso IS NOT NULL THEN CONCAT('LIB-FIS-', LPAD(r.idrecurso, 3, '0'))
+                        ELSE CONCAT('LIB-DIG-', LPAD(r.idrecurso, 3, '0'))
+                    END as codigo_ejemplar,
+                    
+                    -- Información de la matrícula
+                    g.aniolectivo,
+                    g.grado,
+                    g.seccion,
+                    g.nivel as nivel_estudiante,
+                    
+                    -- Información adicional de la solicitud
+                    CASE 
+                        WHEN DATEDIFF(NOW(), p.fechaprestamo) >= 7 THEN 'Alta'
+                        WHEN DATEDIFF(NOW(), p.fechaprestamo) >= 3 THEN 'Media'
+                        ELSE 'Normal'
+                    END as prioridad,
+                    
+                    CASE WHEN r.stock > 0 AND r.estado = 'disponible' THEN true ELSE false END as disponible,
+                    
+                    DATEDIFF(NOW(), p.fechaprestamo) as dias_desde_solicitud,
+                    
+                    -- Portada del recurso
+                    COALESCE(rf.portada, rd.portada) as portada_recurso,
+                    
+                    -- Información del recurso físico o digital
+                    rf.encuadernacion,
+                    rd.archivo as archivo_digital
+                    
+                FROM solicitud s
+                JOIN prestamos p ON p.idprestamo = s.idprestamo
+                JOIN matriculas m ON m.idmatricula = p.idmatricula
+                JOIN personas per ON per.idpersona = m.idpersona
+                JOIN recursos r ON r.idrecurso = p.idrecurso
+                LEFT JOIN grupos g ON g.idgrupo = m.idgrupo
+                LEFT JOIN editoriales e ON e.ideditorial = r.ideditorial
+                LEFT JOIN subcategorias sc ON sc.idsubcategoria = r.idsubcategoria
+                LEFT JOIN categorias c ON c.idcategoria = sc.idcategoria
+                LEFT JOIN tiporecursos tr ON tr.idtiporecurso = r.idtiporecurso
+                LEFT JOIN recursos_fisicos rf ON rf.idrecurso = r.idrecurso
+                LEFT JOIN recursos_digitales rd ON rd.idrecurso = r.idrecurso
+                LEFT JOIN detautores da ON da.idrecurso = r.idrecurso
+                LEFT JOIN autores a ON a.idautor = da.idautor
+                WHERE s.idsolicitud = ?
+                ORDER BY da.iddetautor ASC
+                LIMIT 1";
+        
+        $query = $db->query($sql, [$idsolicitud]);
+        $detalle = $query->getRow();
+        
+        if ($detalle) {
+            // Obtener todos los autores del recurso
+            $autoresQuery = $db->query("
+                SELECT CONCAT(COALESCE(a.nomautor, ''), ' ', COALESCE(a.apeautor, '')) as nombre_completo,
+                       a.nacionalidad
+                FROM detautores da
+                JOIN autores a ON a.idautor = da.idautor
+                WHERE da.idrecurso = ?
+            ", [$detalle->idrecurso]);
+            
+            $detalle->autores = $autoresQuery->getResultArray();
+            
+            // Verificar si hay otros préstamos activos del mismo recurso
+            $otrosPrestamosQuery = $db->query("
+                SELECT COUNT(*) as total
+                FROM prestamos p2
+                WHERE p2.idrecurso = ?
+                AND p2.fechahoraretorno IS NULL
+                AND p2.idprestamo != ?
+            ", [$detalle->idrecurso, $detalle->idprestamo]);
+            
+            $detalle->otros_prestamos_activos = $otrosPrestamosQuery->getRow()->total;
+            
+            // Obtener historial previo del usuario con este tipo de recursos
+            $historialQuery = $db->query("
+                SELECT COUNT(*) as total_prestamos,
+                       COUNT(CASE WHEN p.fechahoraretorno IS NOT NULL THEN 1 END) as prestamos_devueltos,
+                       COUNT(CASE WHEN p.fechahoraretorno IS NULL AND DATEDIFF(NOW(), DATE_ADD(p.fechaprestamo, INTERVAL 14 DAY)) > 0 THEN 1 END) as prestamos_vencidos
+                FROM prestamos p
+                JOIN matriculas m2 ON m2.idmatricula = p.idmatricula
+                WHERE m2.idpersona = ?
+            ", [$detalle->idpersona ?? 0]);
+            
+            $historial = $historialQuery->getRow();
+            $detalle->historial_usuario = $historial;
+        }
+        
+        return $detalle;
     }
 
     /**
