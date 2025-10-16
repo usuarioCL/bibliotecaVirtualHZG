@@ -291,13 +291,16 @@ class PrestamoController extends Controller
             ]);
             
             // Registrar en historial de usuario si existe el helper
-            if (function_exists('historial_helper')) {
+            try {
                 helper('historial');
                 if (function_exists('registrar_accion')) {
                     // Verificar si es un array o un objeto
                     $titulo = is_array($recurso) ? $recurso['titulo'] : $recurso->titulo;
                     registrar_accion("Solicitó préstamo del recurso #$idRecurso: $titulo");
                 }
+            } catch (\Exception $e) {
+                // Si el helper no existe, simplemente continuar sin registrar
+                log_message('debug', 'Helper historial no disponible: ' . $e->getMessage());
             }
             
             return $this->response->setJSON([
@@ -316,37 +319,12 @@ class PrestamoController extends Controller
     }
     
     /**
-     * Devoluciones
+     * Devoluciones - Redirige a historial (funcionalidad consolidada)
      */
     public function devoluciones()
     {
-        try {
-            $devoluciones = $this->prestamoModel->getDevolucionesHoy();
-            $estadisticas = $this->prestamoModel->getEstadisticasDevoluciones();
-
-            $data = [
-                'title' => 'Devoluciones',
-                'devoluciones' => $devoluciones,
-                'estadisticas' => $estadisticas
-            ];
-
-            return view('Administrador/prestamos/devoluciones', $data);
-        } catch (\Exception $e) {
-            log_message('error', 'Error en PrestamoController::devoluciones(): ' . $e->getMessage());
-            
-            $data = [
-                'title' => 'Devoluciones',
-                'devoluciones' => $this->getDatosPruebaDevoluciones(),
-                'estadisticas' => [
-                    'devoluciones_hoy' => 0,
-                    'con_retraso' => 0,
-                    'danos_reportados' => 0,
-                    'multas_generadas' => 0
-                ]
-            ];
-
-            return view('Administrador/prestamos/devoluciones', $data);
-        }
+        // Redirigir a historial ya que las funcionalidades se consolidaron
+        return redirect()->to(base_url('/historial-prestamos'));
     }
 
     /**
@@ -381,6 +359,22 @@ class PrestamoController extends Controller
 
             return view('Administrador/prestamos/historial', $data);
         }
+    }
+    
+    /**
+     * Datos de prueba para devoluciones cuando hay error
+     */
+    private function getDatosPruebaDevoluciones()
+    {
+        return [];
+    }
+
+    /**
+     * Datos de prueba para historial cuando hay error
+     */
+    private function getDatosPruebaHistorial()
+    {
+        return [];
     }
     
     
@@ -428,15 +422,21 @@ class PrestamoController extends Controller
             $resultado = $this->prestamoModel->aprobarSolicitud($idsolicitud);
             
             // Registrar acción en historial si existe el helper
-            if ($resultado['success'] && function_exists('registrar_accion')) {
-                helper('historial');
-                registrar_accion(
-                    'Aprobación de Solicitud de Préstamo',
-                    session()->get('nomuser'),
-                    null,
-                    session()->get('nivelacceso'),
-                    "Solicitud #{$idsolicitud} aprobada exitosamente"
-                );
+            if ($resultado['success']) {
+                try {
+                    helper('historial');
+                    if (function_exists('registrar_accion')) {
+                        registrar_accion(
+                            'Aprobación de Solicitud de Préstamo',
+                            session()->get('nomuser'),
+                            null,
+                            session()->get('nivelacceso'),
+                            "Solicitud #{$idsolicitud} aprobada exitosamente"
+                        );
+                    }
+                } catch (\Exception $e) {
+                    log_message('debug', 'Helper historial no disponible: ' . $e->getMessage());
+                }
             }
 
             return $this->response->setJSON($resultado);
@@ -496,15 +496,21 @@ class PrestamoController extends Controller
             $resultado = $this->prestamoModel->rechazarSolicitud($idsolicitud, $motivo);
             
             // Registrar acción en historial si existe el helper
-            if ($resultado['success'] && function_exists('registrar_accion')) {
-                helper('historial');
-                registrar_accion(
-                    'Rechazo de Solicitud de Préstamo',
-                    session()->get('nomuser'),
-                    null,
-                    session()->get('nivelacceso'),
-                    "Solicitud #{$idsolicitud} rechazada." . (!empty($motivo) ? " Motivo: {$motivo}" : " Sin motivo especificado.")
-                );
+            if ($resultado['success']) {
+                try {
+                    helper('historial');
+                    if (function_exists('registrar_accion')) {
+                        registrar_accion(
+                            'Rechazo de Solicitud de Préstamo',
+                            session()->get('nomuser'),
+                            null,
+                            session()->get('nivelacceso'),
+                            "Solicitud #{$idsolicitud} rechazada." . (!empty($motivo) ? " Motivo: {$motivo}" : " Sin motivo especificado.")
+                        );
+                    }
+                } catch (\Exception $e) {
+                    log_message('debug', 'Helper historial no disponible: ' . $e->getMessage());
+                }
             }
 
             return $this->response->setJSON($resultado);
@@ -580,15 +586,21 @@ class PrestamoController extends Controller
             log_message('info', 'PrestamoController::aprobarTodas() - Resultados: ' . json_encode($resultados));
             
             // Registrar acción en historial si existe el helper
-            if ($resultados['aprobadas'] > 0 && function_exists('registrar_accion')) {
-                helper('historial');
-                registrar_accion(
-                    'Aprobación Masiva de Solicitudes',
-                    session()->get('nomuser'),
-                    null,
-                    session()->get('nivelacceso'),
-                    "Aprobadas: {$resultados['aprobadas']} solicitudes. Rechazadas: {$resultados['rechazadas']}"
-                );
+            if ($resultados['aprobadas'] > 0) {
+                try {
+                    helper('historial');
+                    if (function_exists('registrar_accion')) {
+                        registrar_accion(
+                            'Aprobación Masiva de Solicitudes',
+                            session()->get('nomuser'),
+                            null,
+                            session()->get('nivelacceso'),
+                            "Aprobadas: {$resultados['aprobadas']} solicitudes. Rechazadas: {$resultados['rechazadas']}"
+                        );
+                    }
+                } catch (\Exception $e) {
+                    log_message('debug', 'Helper historial no disponible: ' . $e->getMessage());
+                }
             }
 
             return $this->response->setJSON([
@@ -671,16 +683,22 @@ class PrestamoController extends Controller
             log_message('info', 'PrestamoController::rechazarTodas() - Resultados: ' . json_encode($resultados));
             
             // Registrar acción en historial si existe el helper
-            if ($resultados['rechazadas'] > 0 && function_exists('registrar_accion')) {
-                helper('historial');
-                $motivoTexto = !empty($motivo) ? " Motivo: {$motivo}" : ' Sin motivo especificado';
-                registrar_accion(
-                    'Rechazo Masivo de Solicitudes',
-                    session()->get('nomuser'),
-                    null,
-                    session()->get('nivelacceso'),
-                    "Rechazadas: {$resultados['rechazadas']} solicitudes.{$motivoTexto}"
-                );
+            if ($resultados['rechazadas'] > 0) {
+                try {
+                    helper('historial');
+                    if (function_exists('registrar_accion')) {
+                        $motivoTexto = !empty($motivo) ? " Motivo: {$motivo}" : ' Sin motivo especificado';
+                        registrar_accion(
+                            'Rechazo Masivo de Solicitudes',
+                            session()->get('nomuser'),
+                            null,
+                            session()->get('nivelacceso'),
+                            "Rechazadas: {$resultados['rechazadas']} solicitudes.{$motivoTexto}"
+                        );
+                    }
+                } catch (\Exception $e) {
+                    log_message('debug', 'Helper historial no disponible: ' . $e->getMessage());
+                }
             }
 
             return $this->response->setJSON([
@@ -801,15 +819,21 @@ class PrestamoController extends Controller
             $resultado = $this->prestamoModel->procesarDevolucion($idprestamo, $observaciones);
             
             // Registrar acción en historial si existe el helper
-            if ($resultado['success'] && function_exists('registrar_accion')) {
-                helper('historial');
-                registrar_accion(
-                    'Devolución de Préstamo',
-                    session()->get('nomuser'),
-                    null,
-                    session()->get('nivelacceso'),
-                    "Préstamo #{$idprestamo} devuelto. Observaciones: {$observaciones}"
-                );
+            if ($resultado['success']) {
+                try {
+                    helper('historial');
+                    if (function_exists('registrar_accion')) {
+                        registrar_accion(
+                            'Devolución de Préstamo',
+                            session()->get('nomuser'),
+                            null,
+                            session()->get('nivelacceso'),
+                            "Préstamo #{$idprestamo} devuelto. Observaciones: {$observaciones}"
+                        );
+                    }
+                } catch (\Exception $e) {
+                    log_message('debug', 'Helper historial no disponible: ' . $e->getMessage());
+                }
             }
             
             return $this->response->setJSON($resultado);
@@ -868,15 +892,21 @@ class PrestamoController extends Controller
             $resultado = $this->prestamoModel->cancelarPrestamo($idprestamo, $motivo);
             
             // Registrar acción en historial si existe el helper
-            if ($resultado['success'] && function_exists('registrar_accion')) {
-                helper('historial');
-                registrar_accion(
-                    'Cancelación de Préstamo',
-                    session()->get('nomuser'),
-                    null,
-                    session()->get('nivelacceso'),
-                    "Préstamo #{$idprestamo} cancelado. Motivo: {$motivo}"
-                );
+            if ($resultado['success']) {
+                try {
+                    helper('historial');
+                    if (function_exists('registrar_accion')) {
+                        registrar_accion(
+                            'Cancelación de Préstamo',
+                            session()->get('nomuser'),
+                            null,
+                            session()->get('nivelacceso'),
+                            "Préstamo #{$idprestamo} cancelado. Motivo: {$motivo}"
+                        );
+                    }
+                } catch (\Exception $e) {
+                    log_message('debug', 'Helper historial no disponible: ' . $e->getMessage());
+                }
             }
 
             return $this->response->setJSON($resultado);
@@ -980,15 +1010,21 @@ class PrestamoController extends Controller
             log_message('info', 'Resultado de renovación: ' . json_encode($resultado));
             
             // Registrar acción en historial si existe el helper
-            if ($resultado['success'] && function_exists('registrar_accion')) {
-                helper('historial');
-                registrar_accion(
-                    'Renovación de Préstamo',
-                    session()->get('nomuser'),
-                    null,
-                    session()->get('nivelacceso'),
-                    "Préstamo #{$idprestamo} renovado. Nueva fecha inicio: {$nuevaFechaPrestamo}, Nueva fecha fin: {$nuevaFechaDevolucion}. Motivo: {$motivo}"
-                );
+            if ($resultado['success']) {
+                try {
+                    helper('historial');
+                    if (function_exists('registrar_accion')) {
+                        registrar_accion(
+                            'Renovación de Préstamo',
+                            session()->get('nomuser'),
+                            null,
+                            session()->get('nivelacceso'),
+                            "Préstamo #{$idprestamo} renovado. Nueva fecha inicio: {$nuevaFechaPrestamo}, Nueva fecha fin: {$nuevaFechaDevolucion}. Motivo: {$motivo}"
+                        );
+                    }
+                } catch (\Exception $e) {
+                    log_message('debug', 'Helper historial no disponible: ' . $e->getMessage());
+                }
             }
             
             return $this->response->setJSON($resultado);
@@ -1206,15 +1242,36 @@ class PrestamoController extends Controller
             }
 
             // Registrar en historial si existe el helper
-            if (function_exists('registrar_accion')) {
+            try {
                 helper('historial');
-                registrar_accion("Creó préstamo #$idPrestamo del recurso: {$recurso->titulo}");
+                if (function_exists('registrar_accion')) {
+                    registrar_accion("Creó préstamo #$idPrestamo del recurso: {$recurso->titulo}");
+                }
+            } catch (\Exception $e) {
+                log_message('debug', 'Helper historial no disponible: ' . $e->getMessage());
             }
+
+            // Obtener información del usuario que recibe el préstamo
+            $personaUsuario = $db->table('personas per')
+                ->select('per.nombres, per.apellidos')
+                ->where('per.idpersona', $usuario->idpersona)
+                ->get()->getRow();
+
+            $nombreCompleto = $personaUsuario ? trim($personaUsuario->nombres . ' ' . $personaUsuario->apellidos) : 'Usuario desconocido';
+
+            // Formatear fecha de devolución
+            $fechaDevFormateada = date('d/m/Y H:i', strtotime($fechaDevolucionCompleta));
+
+            // Generar código de préstamo
+            $codigoPrestamo = 'PREST-' . str_pad($idPrestamo, 6, '0', STR_PAD_LEFT);
 
             return $this->response->setJSON([
                 'success' => true,
                 'message' => 'Préstamo creado exitosamente',
-                'idprestamo' => $idPrestamo
+                'idprestamo' => $idPrestamo,
+                'codigo_prestamo' => $codigoPrestamo,
+                'fecha_devolucion' => $fechaDevFormateada,
+                'usuario' => $nombreCompleto
             ]);
 
         } catch (\Exception $e) {
@@ -1226,4 +1283,268 @@ class PrestamoController extends Controller
             ]);
         }
     }
+
+    /**
+     * Procesar devolución con estado del recurso y generación de sanciones
+     */
+    public function procesarDevolucionCompleta()
+    {
+        // Verificar si es una solicitud AJAX
+        if (!$this->request->isAJAX()) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Solicitud no válida'
+            ]);
+        }
+
+        // Verificar autenticación y permisos
+        if (!session()->get('logged_in')) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'No tienes permisos para realizar esta acción'
+            ]);
+        }
+
+        $nivelAcceso = session()->get('nivelacceso');
+        if (!in_array($nivelAcceso, ['admin', 'docente'])) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'No tienes permisos para procesar devoluciones'
+            ]);
+        }
+
+        // Obtener datos del formulario
+        $idprestamo = $this->request->getPost('idprestamo');
+        $estadoRecurso = $this->request->getPost('estado_recurso') ?? 'bueno';
+        $observaciones = $this->request->getPost('observaciones') ?? '';
+        
+        if (!$idprestamo) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'ID de préstamo requerido'
+            ]);
+        }
+
+        try {
+            $resultado = $this->prestamoModel->procesarDevolucionCompleta($idprestamo, $estadoRecurso, $observaciones);
+            
+            // Registrar acción en historial
+            if ($resultado['success']) {
+                try {
+                    helper('historial');
+                    if (function_exists('registrar_accion')) {
+                        $detalle = "Préstamo #{$idprestamo} devuelto. Estado: {$estadoRecurso}";
+                        if ($resultado['con_retraso']) {
+                            $detalle .= ". Retraso: {$resultado['dias_retraso']} días. Multa: $" . number_format($resultado['multa']);
+                        }
+                        registrar_accion($detalle);
+                    }
+                } catch (\Exception $e) {
+                    log_message('debug', 'Helper historial no disponible: ' . $e->getMessage());
+                }
+            }
+            
+            return $this->response->setJSON($resultado);
+            
+        } catch (\Exception $e) {
+            log_message('error', 'Error en PrestamoController::procesarDevolucionCompleta(): ' . $e->getMessage());
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Error interno del servidor: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Obtener detalle completo de una devolución
+     */
+    public function obtenerDetalleDevolucion()
+    {
+        // Verificar si es una solicitud AJAX
+        if (!$this->request->isAJAX()) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Solicitud no válida'
+            ]);
+        }
+
+        // Verificar autenticación
+        if (!session()->get('logged_in')) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'No tienes permisos para realizar esta acción'
+            ]);
+        }
+
+        // Obtener ID del préstamo
+        $idprestamo = $this->request->getPost('idprestamo') ?? $this->request->getGet('idprestamo');
+        
+        if (!$idprestamo) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'ID de préstamo requerido'
+            ]);
+        }
+
+        try {
+            $detalle = $this->prestamoModel->getDetalleDevolucion($idprestamo);
+            
+            if (!$detalle) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Devolución no encontrada'
+                ]);
+            }
+
+            return $this->response->setJSON([
+                'success' => true,
+                'data' => $detalle
+            ]);
+            
+        } catch (\Exception $e) {
+            log_message('error', 'Error en PrestamoController::obtenerDetalleDevolucion(): ' . $e->getMessage());
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Error interno del servidor: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Buscar préstamo por código para procesar devolución
+     */
+    public function buscarPrestamoPorCodigo()
+    {
+        // Verificar si es una solicitud AJAX
+        if (!$this->request->isAJAX()) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Solicitud no válida'
+            ]);
+        }
+
+        // Verificar autenticación
+        if (!session()->get('logged_in')) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Debe iniciar sesión'
+            ]);
+        }
+
+        $codigo = $this->request->getPost('codigo');
+        
+        if (empty($codigo)) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Debe proporcionar un código de préstamo'
+            ]);
+        }
+
+        try {
+            $db = \Config\Database::connect();
+            
+            // Buscar préstamo activo por código aproximado
+            $sql = "SELECT 
+                        p.idprestamo,
+                        CONCAT('PREST-', LPAD(p.idprestamo, 6, '0')) as codigo,
+                        CONCAT(per.nombres, ' ', per.apellidos) as usuario,
+                        per.numerodoc as documento,
+                        r.titulo as recurso,
+                        r.isbn,
+                        p.fechaprestamo,
+                        p.fechadevolucion,
+                        DATEDIFF(NOW(), p.fechadevolucion) as dias_diferencia
+                    FROM prestamos p
+                    JOIN matriculas m ON m.idmatricula = p.idmatricula
+                    JOIN personas per ON per.idpersona = m.idpersona
+                    JOIN recursos r ON r.idrecurso = p.idrecurso
+                    WHERE p.fechahoraretorno IS NULL
+                    AND (p.idprestamo = ? OR CONCAT('PREST-', LPAD(p.idprestamo, 6, '0')) = ?)
+                    LIMIT 1";
+            
+            // Extraer número del código si viene en formato PREST-XXXXXX
+            $numero = preg_replace('/[^0-9]/', '', $codigo);
+            
+            $query = $db->query($sql, [$numero, $codigo]);
+            $prestamo = $query->getRowArray();
+            
+            if (!$prestamo) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'No se encontró un préstamo activo con ese código'
+                ]);
+            }
+
+            return $this->response->setJSON([
+                'success' => true,
+                'data' => $prestamo
+            ]);
+            
+        } catch (\Exception $e) {
+            log_message('error', 'Error en PrestamoController::buscarPrestamoPorCodigo(): ' . $e->getMessage());
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Error al buscar el préstamo: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Obtener observaciones de un préstamo desde los logs
+     */
+    public function obtenerObservaciones()
+    {
+        // Verificar si es una solicitud AJAX
+        if (!$this->request->isAJAX()) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Solicitud no válida'
+            ]);
+        }
+
+        // Verificar autenticación
+        if (!session()->get('logged_in')) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'No tienes permisos para realizar esta acción'
+            ]);
+        }
+
+        // Obtener ID del préstamo
+        $idprestamo = $this->request->getPost('idprestamo') ?? $this->request->getGet('idprestamo');
+        
+        if (!$idprestamo) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'ID de préstamo requerido'
+            ]);
+        }
+
+        try {
+            $observaciones = $this->prestamoModel->obtenerObservacionesDesdeLog($idprestamo);
+            
+            if (empty($observaciones)) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'No se encontraron observaciones para este préstamo'
+                ]);
+            }
+
+            return $this->response->setJSON([
+                'success' => true,
+                'data' => [
+                    'idprestamo' => $idprestamo,
+                    'observaciones' => $observaciones
+                ]
+            ]);
+            
+        } catch (\Exception $e) {
+            log_message('error', 'Error en PrestamoController::obtenerObservaciones(): ' . $e->getMessage());
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Error al obtener las observaciones: ' . $e->getMessage()
+            ]);
+        }
+    }
 }
+
