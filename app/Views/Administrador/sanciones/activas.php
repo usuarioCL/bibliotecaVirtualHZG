@@ -69,7 +69,7 @@
                 <div class="card-body">
                     <div class="d-flex align-items-center">
                         <div>
-                            <h4 class="mb-0" id="totalSanciones">12</h4>
+                            <h4 class="mb-0" id="totalSanciones"><?= $estadisticas['total'] ?? 0 ?></h4>
                             <p class="mb-0 small">Total Sanciones</p>
                         </div>
                         <div class="ms-auto">
@@ -84,7 +84,7 @@
                 <div class="card-body">
                     <div class="d-flex align-items-center">
                         <div>
-                            <h4 class="mb-0" id="sancionesGraves">3</h4>
+                            <h4 class="mb-0" id="sancionesGraves"><?= $estadisticas['suspensiones'] ?? 0 ?></h4>
                             <p class="mb-0 small">Suspensiones</p>
                         </div>
                         <div class="ms-auto">
@@ -99,7 +99,7 @@
                 <div class="card-body">
                     <div class="d-flex align-items-center">
                         <div>
-                            <h4 class="mb-0" id="sancionesLeves">9</h4>
+                            <h4 class="mb-0" id="sancionesLeves"><?= $estadisticas['amonestaciones'] ?? 0 ?></h4>
                             <p class="mb-0 small">Amonestaciones</p>
                         </div>
                         <div class="ms-auto">
@@ -114,7 +114,7 @@
                 <div class="card-body">
                     <div class="d-flex align-items-center">
                         <div>
-                            <h4 class="mb-0" id="estudiantesSancionados">8</h4>
+                            <h4 class="mb-0" id="estudiantesSancionados"><?= $estadisticas['estudiantes_afectados'] ?? 0 ?></h4>
                             <p class="mb-0 small">Estudiantes Afectados</p>
                         </div>
                         <div class="ms-auto">
@@ -160,55 +160,66 @@
                         </tr>
                     </thead>
                     <tbody id="cuerpoTablaSanciones">
-                        <!-- Datos cargados dinámicamente -->
-                        <tr>
-                            <td class="text-center">1</td>
-                            <td>
-                                <div class="d-flex align-items-center">
-                                    <div class="avatar-sm bg-danger text-white rounded-circle d-flex align-items-center justify-content-center me-2">
-                                        <span class="small fw-bold">JP</span>
+                        <?php if (!empty($sanciones)): ?>
+                            <?php foreach ($sanciones as $index => $sancion): ?>
+                                <tr>
+                                    <td class="text-center"><?= $index + 1 ?></td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar-sm bg-danger text-white rounded-circle d-flex align-items-center justify-content-center me-2">
+                                                <span class="small fw-bold"><?= strtoupper(substr($sancion['nombres'], 0, 1) . substr($sancion['apellidos'], 0, 1)) ?></span>
+                                            </div>
+                                            <div>
+                                                <div class="fw-medium"><?= esc($sancion['apellidos'] . ' ' . $sancion['nombres']) ?></div>
+                                                <small class="text-muted"><?= esc($sancion['email'] ?? 'No disponible') ?></small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td><?= esc($sancion['numerodoc']) ?></td>
+                                    <td>
+                                        <span class="badge bg-primary"><?= esc($sancion['nivel'] . '° ' . $sancion['grado'] . ' ' . $sancion['seccion']) ?></span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-warning text-dark"><?= esc($sancion['tiposancion']) ?></span>
+                                    </td>
+                                    <td>
+                                        <span class="text-truncate d-inline-block" style="max-width: 200px;" 
+                                              title="<?= esc($sancion['detallesancion']) ?>">
+                                            <?= esc(substr($sancion['detallesancion'], 0, 30) . '...') ?>
+                                        </span>
+                                    </td>
+                                    <td class="text-center"><?= esc($sancion['fecha_sancion']) ?></td>
+                                    <td class="text-center">
+                                        <span class="badge bg-danger"><?= esc($sancion['estado']) ?></span>
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <button type="button" class="btn btn-outline-primary" 
+                                                    onclick="verDetalle(<?= $sancion['idsancion'] ?>)" title="Ver detalles">
+                                                <i class="ti ti-eye"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-outline-warning" 
+                                                    onclick="editarSancion(<?= $sancion['idsancion'] ?>)" title="Editar sanción">
+                                                <i class="ti ti-edit"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-outline-success" 
+                                                    onclick="levantarSancion(<?= $sancion['idsancion'] ?>)" title="Levantar sanción">
+                                                <i class="ti ti-check"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <tr>
+                                <td colspan="9" class="text-center py-4">
+                                    <div class="text-muted">
+                                        <i class="ti ti-shield-check fs-1 d-block mb-2"></i>
+                                        <p class="mb-0">No hay sanciones activas</p>
                                     </div>
-                                    <div>
-                                        <div class="fw-medium">Juan Pérez López</div>
-                                        <small class="text-muted">juan.perez@email.com</small>
-                                    </div>
-                                </div>
-                            </td>
-                            <td>12345678</td>
-                            <td>
-                                <span class="badge bg-primary">5° Secundaria A</span>
-                            </td>
-                            <td>
-                                <span class="badge bg-warning text-dark">Suspensión de Préstamos</span>
-                            </td>
-                            <td>
-                                <span class="text-truncate d-inline-block" style="max-width: 200px;" 
-                                      title="Daño intencional a libro de texto de Matemáticas">
-                                    Daño intencional a libro...
-                                </span>
-                            </td>
-                            <td class="text-center">15/03/2024</td>
-                            <td class="text-center">
-                                <span class="badge bg-danger">Activa</span>
-                            </td>
-                            <td class="text-center">
-                                <div class="btn-group btn-group-sm" role="group">
-                                    <button type="button" class="btn btn-outline-primary" 
-                                            onclick="verDetalle(1)" title="Ver detalles">
-                                        <i class="ti ti-eye"></i>
-                                    </button>
-                                    <button type="button" class="btn btn-outline-warning" 
-                                            onclick="editarSancion(1)" title="Editar sanción">
-                                        <i class="ti ti-edit"></i>
-                                    </button>
-                                    <button type="button" class="btn btn-outline-success" 
-                                            onclick="levantarSancion(1)" title="Levantar sanción">
-                                        <i class="ti ti-check"></i>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                        <!-- Más filas de ejemplo... -->
+                                </td>
+                            </tr>
+                        <?php endif; ?>
                     </tbody>
                 </table>
             </div>
@@ -789,4 +800,36 @@ function ocultarModal(id) {
         el.style.display = 'none';
     }
 }
+
+// Función para debuggear desde consola con try-catch
+window.debugSanciones = async function() {
+    try {
+        console.log('=== Probando endpoints de sanciones ===');
+        
+        // Probar endpoint de lista
+        const responseLista = await fetch('/sanciones/lista');
+        console.log('Status lista:', responseLista.status);
+        const dataLista = await responseLista.json();
+        console.log('Datos lista:', dataLista);
+        
+        // Probar endpoint de estadísticas
+        const responseStats = await fetch('/sanciones/estadisticas');
+        console.log('Status estadísticas:', responseStats.status);
+        const dataStats = await responseStats.json();
+        console.log('Datos estadísticas:', dataStats);
+        
+        // Probar endpoint de estudiantes
+        const responseEstudiantes = await fetch('/usuarios/estudiantes');
+        console.log('Status estudiantes:', responseEstudiantes.status);
+        const dataEstudiantes = await responseEstudiantes.json();
+        console.log('Datos estudiantes:', dataEstudiantes);
+        
+        return { estadisticas: dataStats, sanciones: dataLista, estudiantes: dataEstudiantes };
+    } catch (error) {
+        console.error('Error capturado:', error);
+        console.error('Tipo de error:', error.name);
+        console.error('Mensaje:', error.message);
+        return null;
+    }
+};
 </script>

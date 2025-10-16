@@ -206,6 +206,7 @@ $routes->post('/ejemplares-fisicos/restaurar/(:num)', 'EjemplarFisicoController:
 $routes->get('/ejemplares-fisicos/estadisticas/(:num)', 'EjemplarFisicoController::estadisticas/$1');
 
 // Sanciones - Gestión CRUD (rutas con prefijo para evitar conflictos)
+$routes->get('/sanciones', 'SancionController::activas');  // Ruta principal para AJAX
 $routes->get('/sanciones/lista', 'SancionController::index');
 $routes->get('/sanciones/crear', 'SancionController::crear');
 $routes->post('/sanciones/guardar', 'SancionController::guardar');
