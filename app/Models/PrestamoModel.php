@@ -236,29 +236,29 @@ class PrestamoModel extends Model
                         WHEN rf.idrecurso IS NOT NULL THEN CONCAT('LIB-FIS-', LPAD(r.idrecurso, 3, '0'))
                         ELSE CONCAT('LIB-DIG-', LPAD(r.idrecurso, 3, '0'))
                     END as codigo_ejemplar,
-                    p.fechaprestamo as fecha_solicitud,
-                    p.fechadevolucion as fecha_devolucion,
+                    s.fechaprestamo as fecha_solicitud,
+                    s.fechadevolucion as fecha_devolucion,
+                    s.fecha_solicitud as fecha_creacion,
                     'Pendiente' as estado,
                     CASE 
-                        WHEN DATEDIFF(NOW(), p.fechaprestamo) >= 7 THEN 'Alta'
-                        WHEN DATEDIFF(NOW(), p.fechaprestamo) >= 3 THEN 'Media'
+                        WHEN DATEDIFF(NOW(), s.fecha_solicitud) >= 7 THEN 'Alta'
+                        WHEN DATEDIFF(NOW(), s.fecha_solicitud) >= 3 THEN 'Media'
                         ELSE 'Normal'
                     END as prioridad,
                     CASE WHEN r.stock > 0 AND r.estado = 'disponible' THEN true ELSE false END as disponible
                 FROM solicitud s
-                JOIN prestamos p ON p.idprestamo = s.idprestamo
-                JOIN matriculas m ON m.idmatricula = p.idmatricula
+                JOIN matriculas m ON m.idmatricula = s.idmatricula
                 JOIN personas per ON per.idpersona = m.idpersona
-                JOIN recursos r ON r.idrecurso = p.idrecurso
+                JOIN recursos r ON r.idrecurso = s.idrecurso
                 LEFT JOIN recursos_fisicos rf ON rf.idrecurso = r.idrecurso
                 WHERE s.validado = false
                 ORDER BY 
                     CASE 
-                        WHEN DATEDIFF(NOW(), p.fechaprestamo) >= 7 THEN 1
-                        WHEN DATEDIFF(NOW(), p.fechaprestamo) >= 3 THEN 2
+                        WHEN DATEDIFF(NOW(), s.fecha_solicitud) >= 7 THEN 1
+                        WHEN DATEDIFF(NOW(), s.fecha_solicitud) >= 3 THEN 2
                         ELSE 3
                     END,
-                    p.fechaprestamo ASC";
+                    s.fecha_solicitud ASC";
         
         $query = $db->query($sql);
         return $query->getResultArray();
@@ -479,10 +479,9 @@ class PrestamoModel extends Model
         try {
             $db->transStart();
             
-            // Obtener información de la solicitud
+            // Obtener información de la solicitud (ahora sin JOIN con prestamos)
             $solicitud = $db->table('solicitud s')
-                ->select('s.*, p.idrecurso, p.idprestamo')
-                ->join('prestamos p', 'p.idprestamo = s.idprestamo')
+                ->select('s.*')
                 ->where('s.idsolicitud', $idsolicitud)
                 ->where('s.validado', false)
                 ->get()
@@ -502,21 +501,29 @@ class PrestamoModel extends Model
                 throw new \Exception('El recurso no está disponible para préstamo');
             }
             
-            // Actualizar la solicitud como validada
+            // Crear el préstamo cuando se aprueba la solicitud
+            $prestamo = [
+                'idmatricula' => $solicitud->idmatricula,
+                'idusuario' => $solicitud->idusuario,
+                'idrecurso' => $solicitud->idrecurso,
+                'fechaprestamo' => $solicitud->fechaprestamo,
+                'fechadevolucion' => $solicitud->fechadevolucion,
+                'fechahoravalidacion' => date('Y-m-d H:i:s')
+            ];
+            
+            $db->table('prestamos')->insert($prestamo);
+            $idPrestamo = $db->insertID();
+            
+            // Actualizar la solicitud como validada y asociar con el préstamo creado
             $db->table('solicitud')
                 ->where('idsolicitud', $idsolicitud)
                 ->update([
-                    'validado' => true
+                    'validado' => true,
+                    'fecha_procesado' => date('Y-m-d H:i:s'),
+                    'idprestamo' => $idPrestamo
                 ]);
             
-            // Actualizar el préstamo con fecha de validación
-            $db->table('prestamos')
-                ->where('idprestamo', $solicitud->idprestamo)
-                ->update([
-                    'fechahoravalidacion' => date('Y-m-d H:i:s')
-                ]);
-            
-            // Actualizar stock del recurso (si es físico)
+            // Actualizar stock del recurso
             if ($recurso->stock > 0) {
                 $nuevoStock = $recurso->stock - 1;
                 $nuevoEstado = $nuevoStock > 0 ? 'disponible' : 'prestado';
@@ -537,7 +544,7 @@ class PrestamoModel extends Model
             
             return [
                 'success' => true,
-                'message' => 'Solicitud aprobada correctamente'
+                'message' => 'Solicitud aprobada correctamente y préstamo creado'
             ];
             
         } catch (\Exception $e) {
@@ -618,8 +625,7 @@ class PrestamoModel extends Model
             
             // Verificar que la solicitud existe y no está procesada
             $solicitud = $db->table('solicitud s')
-                ->select('s.*, p.idprestamo')
-                ->join('prestamos p', 'p.idprestamo = s.idprestamo')
+                ->select('s.*')
                 ->where('s.idsolicitud', $idsolicitud)
                 ->where('s.validado', false)
                 ->get()
@@ -629,17 +635,17 @@ class PrestamoModel extends Model
                 throw new \Exception('Solicitud no encontrada o ya procesada');
             }
             
-            // Eliminar la solicitud
+            // Marcar la solicitud como rechazada en lugar de eliminarla (para historial)
             $db->table('solicitud')
                 ->where('idsolicitud', $idsolicitud)
-                ->delete();
+                ->update([
+                    'validado' => true,  // Marcada como procesada
+                    'motivo_rechazo' => $motivo,
+                    'fecha_procesado' => date('Y-m-d H:i:s'),
+                    'idprestamo' => null  // No se crea préstamo
+                ]);
             
-            // Eliminar el préstamo asociado
-            $db->table('prestamos')
-                ->where('idprestamo', $solicitud->idprestamo)
-                ->delete();
-            
-            // TODO: Aquí se podría agregar un log del rechazo con el motivo
+            // Registrar en log el rechazo con el motivo
             log_message('info', "Solicitud {$idsolicitud} rechazada. Motivo: {$motivo}");
             
             $db->transComplete();
@@ -674,10 +680,15 @@ class PrestamoModel extends Model
         $sql = "SELECT 
                     s.idsolicitud,
                     s.validado,
-                    p.idprestamo,
-                    p.fechaprestamo as fecha_solicitud,
-                    p.fechadevolucion as fecha_devolucion_esperada,
-                    p.fechadevolucion as fecha_devolucion,
+                    s.idprestamo,
+                    s.fechaprestamo as fecha_solicitud,
+                    s.fechadevolucion as fecha_devolucion_esperada,
+                    s.fechadevolucion as fecha_devolucion,
+                    s.fecha_solicitud as fecha_creacion,
+                    s.motivo_rechazo,
+                    s.fecha_procesado,
+                    
+                    -- Si existe préstamo asociado, obtener su info
                     p.fechahoravalidacion,
                     
                     -- Información del usuario
@@ -730,14 +741,14 @@ class PrestamoModel extends Model
                     
                     -- Información adicional de la solicitud
                     CASE 
-                        WHEN DATEDIFF(NOW(), p.fechaprestamo) >= 7 THEN 'Alta'
-                        WHEN DATEDIFF(NOW(), p.fechaprestamo) >= 3 THEN 'Media'
+                        WHEN DATEDIFF(NOW(), s.fecha_solicitud) >= 7 THEN 'Alta'
+                        WHEN DATEDIFF(NOW(), s.fecha_solicitud) >= 3 THEN 'Media'
                         ELSE 'Normal'
                     END as prioridad,
                     
                     CASE WHEN r.stock > 0 AND r.estado = 'disponible' THEN true ELSE false END as disponible,
                     
-                    DATEDIFF(NOW(), p.fechaprestamo) as dias_desde_solicitud,
+                    DATEDIFF(NOW(), s.fecha_solicitud) as dias_desde_solicitud,
                     
                     -- Portada del recurso
                     COALESCE(rf.portada, rd.portada) as portada_recurso,
@@ -747,10 +758,10 @@ class PrestamoModel extends Model
                     rd.archivo as archivo_digital
                     
                 FROM solicitud s
-                JOIN prestamos p ON p.idprestamo = s.idprestamo
-                JOIN matriculas m ON m.idmatricula = p.idmatricula
+                JOIN matriculas m ON m.idmatricula = s.idmatricula
                 JOIN personas per ON per.idpersona = m.idpersona
-                JOIN recursos r ON r.idrecurso = p.idrecurso
+                JOIN recursos r ON r.idrecurso = s.idrecurso
+                LEFT JOIN prestamos p ON p.idprestamo = s.idprestamo
                 LEFT JOIN grupos g ON g.idgrupo = m.idgrupo
                 LEFT JOIN editoriales e ON e.ideditorial = r.ideditorial
                 LEFT JOIN subcategorias sc ON sc.idsubcategoria = r.idsubcategoria
@@ -785,8 +796,8 @@ class PrestamoModel extends Model
                 FROM prestamos p2
                 WHERE p2.idrecurso = ?
                 AND p2.fechahoraretorno IS NULL
-                AND p2.idprestamo != ?
-            ", [$detalle->idrecurso, $detalle->idprestamo]);
+                " . ($detalle->idprestamo ? "AND p2.idprestamo != ?" : ""), 
+                $detalle->idprestamo ? [$detalle->idrecurso, $detalle->idprestamo] : [$detalle->idrecurso]);
             
             $detalle->otros_prestamos_activos = $otrosPrestamosQuery->getRow()->total;
             
