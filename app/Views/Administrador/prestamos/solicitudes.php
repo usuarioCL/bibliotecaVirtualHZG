@@ -24,6 +24,9 @@
                     <button type="button" class="btn btn-success btn-sm" onclick="aprobarTodas()">
                         <i class="ti ti-check-all"></i> Aprobar Disponibles
                     </button>
+                    <button type="button" class="btn btn-danger btn-sm" onclick="rechazarTodas()">
+                        <i class="ti ti-x-all"></i> Rechazar Todas
+                    </button>
                 </div>
             </div>
         </div>
@@ -305,8 +308,8 @@
         Swal.fire({
             title: '¿Rechazar Solicitud?',
             input: 'textarea',
-            inputLabel: 'Motivo del rechazo',
-            inputPlaceholder: 'Escribe el motivo por el cual se rechaza la solicitud...',
+            inputLabel: 'Motivo del rechazo (opcional)',
+            inputPlaceholder: 'Escribe el motivo por el cual se rechaza la solicitud (opcional)...',
             inputAttributes: {
                 'aria-label': 'Motivo del rechazo'
             },
@@ -315,9 +318,8 @@
             cancelButtonText: 'Cancelar',
             confirmButtonColor: '#dc3545',
             inputValidator: (value) => {
-                if (!value) {
-                    return 'Debes proporcionar un motivo para el rechazo'
-                }
+                // El motivo es opcional, no se requiere validación
+                return null;
             }
         }).then((result) => {
             if (result.isConfirmed) {
@@ -745,6 +747,122 @@
                         Swal.fire({
                             title: 'Error en el Servidor',
                             text: data.message || 'No se pudieron aprobar las solicitudes',
+                            icon: 'error'
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    Swal.fire({
+                        title: 'Error',
+                        text: 'Ha ocurrido un error de conexión',
+                        icon: 'error'
+                    });
+                });
+            }
+        });
+    }
+
+    // Función para rechazar todas las solicitudes
+    function rechazarTodas() {
+        // Obtener todas las solicitudes desde los datos PHP
+        const todasLasSolicitudes = <?= json_encode($solicitudes ?? []) ?>;
+        
+        console.log('Todas las solicitudes para rechazar:', todasLasSolicitudes);
+        
+        if (todasLasSolicitudes.length === 0) {
+            Swal.fire({
+                title: 'Sin Solicitudes',
+                text: 'No hay solicitudes para rechazar',
+                icon: 'info'
+            });
+            return;
+        }
+
+        Swal.fire({
+            title: `¿Rechazar todas las ${todasLasSolicitudes.length} solicitudes?`,
+            input: 'textarea',
+            inputLabel: 'Motivo del rechazo masivo (opcional)',
+            inputPlaceholder: 'Escribe el motivo por el cual se rechazan todas las solicitudes (opcional)...',
+            inputAttributes: {
+                'aria-label': 'Motivo del rechazo masivo'
+            },
+            text: 'Esta acción rechazará TODAS las solicitudes pendientes',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: `Sí, rechazar ${todasLasSolicitudes.length} solicitudes`,
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#dc3545',
+            inputValidator: (value) => {
+                // El motivo es opcional, no se requiere validación
+                return null;
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Mostrar loading
+                Swal.fire({
+                    title: 'Procesando...',
+                    text: 'Rechazando todas las solicitudes',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
+                // Preparar IDs de todas las solicitudes
+                const solicitudesIds = todasLasSolicitudes.map(s => parseInt(s.id)).filter(id => !isNaN(id));
+                
+                console.log('Solicitjudes a rechazar:', solicitudesIds);
+
+                // Validar que tenemos IDs para enviar
+                if (solicitudesIds.length === 0) {
+                    Swal.fire({
+                        title: 'Error',
+                        text: 'No se encontraron IDs válidos de solicitudes para rechazar',
+                        icon: 'error'
+                    });
+                    return;
+                }
+
+                // Enviar solicitud AJAX
+                fetch('<?= base_url('prestamos/rechazarTodas') ?>', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: 'solicitudes=' + encodeURIComponent(JSON.stringify(solicitudesIds)) + '&motivo=' + encodeURIComponent(result.value || '')
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Respuesta del servidor:', data);
+                    
+                    if (data.success) {
+                        const resultados = data.data;
+                        let mensaje = `Se rechazaron ${resultados.rechazadas} solicitudes exitosamente`;
+                        
+                        if (resultados.errores && resultados.errores.length > 0) {
+                            mensaje += `\n\nErrores específicos:\n${resultados.errores.join('\n')}`;
+                        }
+
+                        Swal.fire({
+                            title: 'Proceso Completado',
+                            text: mensaje,
+                            icon: 'success',
+                            confirmButtonText: 'Entendido'
+                        }).then(() => {
+                            // Recargar solo el contenido de solicitudes sin perder el contexto del panel
+                            recargarContenidoSolicitudes();
+                        });
+                    } else {
+                        Swal.fire({
+                            title: 'Error en el Servidor',
+                            text: data.message || 'No se pudieron rechazar las solicitudes',
                             icon: 'error'
                         });
                     }

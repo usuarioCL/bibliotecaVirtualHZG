@@ -1291,4 +1291,84 @@ class PrestamoModel extends Model
         
         return $detalle;
     }
+
+    /**
+     * Rechazar múltiples solicitudes de préstamo
+     */
+    public function rechazarSolicitudesMultiples($idsolicitudes = [], $motivo = '')
+    {
+        $db = \Config\Database::connect();
+        
+        if (empty($idsolicitudes)) {
+            return [
+                'rechazadas' => 0,
+                'errores' => ['No se proporcionaron IDs de solicitudes']
+            ];
+        }
+        
+        log_message('info', 'Iniciando rechazarSolicitudesMultiples con IDs: ' . json_encode($idsolicitudes));
+        log_message('info', 'Motivo: ' . $motivo);
+        
+        $resultados = [
+            'rechazadas' => 0,
+            'errores' => []
+        ];
+        
+        foreach ($idsolicitudes as $idsolicitud) {
+            if (!is_numeric($idsolicitud)) {
+                $resultados['errores'][] = "ID de solicitud inválido: {$idsolicitud}";
+                continue;
+            }
+            
+            try {
+                $db->transStart();
+                
+                // Verificar que la solicitud existe y no está procesada
+                $solicitud = $db->table('solicitud s')
+                    ->select('s.*, p.idprestamo, r.titulo as recurso_titulo')
+                    ->join('prestamos p', 'p.idprestamo = s.idprestamo')
+                    ->join('recursos r', 'r.idrecurso = p.idrecurso')
+                    ->where('s.idsolicitud', $idsolicitud)
+                    ->where('s.validado', false)
+                    ->get()
+                    ->getRow();
+                
+                if (!$solicitud) {
+                    $resultados['errores'][] = "Solicitud #{$idsolicitud} no encontrada o ya procesada";
+                    $db->transRollback();
+                    continue;
+                }
+                
+                // Eliminar la solicitud
+                $db->table('solicitud')
+                    ->where('idsolicitud', $idsolicitud)
+                    ->delete();
+                
+                // Eliminar el préstamo asociado
+                $db->table('prestamos')
+                    ->where('idprestamo', $solicitud->idprestamo)
+                    ->delete();
+                
+                $db->transComplete();
+                
+                if ($db->transStatus() === false) {
+                    $resultados['errores'][] = "Error en la transacción para solicitud #{$idsolicitud}";
+                    continue;
+                }
+                
+                $resultados['rechazadas']++;
+                $motivoTexto = !empty($motivo) ? $motivo : 'Sin motivo especificado';
+                log_message('info', "Solicitud {$idsolicitud} rechazada masivamente. Recurso: {$solicitud->recurso_titulo}. Motivo: {$motivoTexto}");
+                
+            } catch (\Exception $e) {
+                $db->transRollback();
+                $resultados['errores'][] = "Error al rechazar solicitud #{$idsolicitud}: " . $e->getMessage();
+                log_message('error', 'Error al rechazar solicitud ' . $idsolicitud . ': ' . $e->getMessage());
+            }
+        }
+        
+        log_message('info', 'Resultados finales de rechazarSolicitudesMultiples: ' . json_encode($resultados));
+        
+        return $resultados;
+    }
 }

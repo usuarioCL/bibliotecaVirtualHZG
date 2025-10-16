@@ -503,7 +503,7 @@ class PrestamoController extends Controller
                     session()->get('nomuser'),
                     null,
                     session()->get('nivelacceso'),
-                    "Solicitud #{$idsolicitud} rechazada. Motivo: {$motivo}"
+                    "Solicitud #{$idsolicitud} rechazada." . (!empty($motivo) ? " Motivo: {$motivo}" : " Sin motivo especificado.")
                 );
             }
 
@@ -599,6 +599,98 @@ class PrestamoController extends Controller
             
         } catch (\Exception $e) {
             log_message('error', 'Error en PrestamoController::aprobarTodas(): ' . $e->getMessage());
+            log_message('error', 'Trace: ' . $e->getTraceAsString());
+            
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Error interno del servidor: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Rechazar múltiples solicitudes
+     */
+    public function rechazarTodas()
+    {
+        // Verificar si es una solicitud AJAX
+        if (!$this->request->isAJAX()) {
+            return $this->response->setStatusCode(400)->setJSON([
+                'success' => false,
+                'message' => 'Solicitud inválida'
+            ]);
+        }
+
+        // Verificar si el usuario está autenticado y es admin/docente
+        if (!session()->get('logged_in')) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Debe iniciar sesión'
+            ]);
+        }
+
+        $nivelAcceso = session()->get('nivelacceso');
+        if (!in_array($nivelAcceso, ['admin', 'docente'])) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'No tiene permisos para rechazar solicitudes'
+            ]);
+        }
+
+        try {
+            // Obtener IDs de solicitudes y motivo
+            $solicitudesParam = $this->request->getPost('solicitudes');
+            $motivo = $this->request->getPost('motivo') ?? '';
+            $idsolicitudes = [];
+            
+            if (!empty($solicitudesParam)) {
+                // Si viene como string JSON, decodificarlo
+                if (is_string($solicitudesParam)) {
+                    $idsolicitudes = json_decode($solicitudesParam, true) ?? [];
+                } else {
+                    $idsolicitudes = $solicitudesParam;
+                }
+            }
+            
+            // Log de debug
+            log_message('info', 'PrestamoController::rechazarTodas() - IDs recibidos: ' . json_encode($idsolicitudes));
+            log_message('info', 'PrestamoController::rechazarTodas() - Motivo: ' . $motivo);
+            
+            // Validar que tenemos IDs para procesar
+            if (empty($idsolicitudes)) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'No se proporcionaron IDs de solicitudes para rechazar'
+                ]);
+            }
+            
+            // Rechazar solicitudes
+            $resultados = $this->prestamoModel->rechazarSolicitudesMultiples($idsolicitudes, $motivo);
+            
+            // Log de debug
+            log_message('info', 'PrestamoController::rechazarTodas() - Resultados: ' . json_encode($resultados));
+            
+            // Registrar acción en historial si existe el helper
+            if ($resultados['rechazadas'] > 0 && function_exists('registrar_accion')) {
+                helper('historial');
+                $motivoTexto = !empty($motivo) ? " Motivo: {$motivo}" : ' Sin motivo especificado';
+                registrar_accion(
+                    'Rechazo Masivo de Solicitudes',
+                    session()->get('nomuser'),
+                    null,
+                    session()->get('nivelacceso'),
+                    "Rechazadas: {$resultados['rechazadas']} solicitudes.{$motivoTexto}"
+                );
+            }
+
+            return $this->response->setJSON([
+                'success' => true,
+                'message' => "Se rechazaron {$resultados['rechazadas']} solicitudes exitosamente",
+                'data' => $resultados
+            ]);
+            
+        } catch (\Exception $e) {
+            log_message('error', 'Error en PrestamoController::rechazarTodas(): ' . $e->getMessage());
             log_message('error', 'Trace: ' . $e->getTraceAsString());
             
             return $this->response->setJSON([
