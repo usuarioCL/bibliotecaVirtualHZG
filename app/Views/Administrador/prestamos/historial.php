@@ -159,9 +159,9 @@
                             <th class="border-0 px-3 py-3">Usuario</th>
                             <th class="border-0 px-3 py-3">Recurso</th>
                             <th class="border-0 px-3 py-3">Fechas</th>
-                            <th class="border-0 text-center px-3 py-3">Estado Final</th>
+                            <th class="border-0 text-center px-3 py-3">Estado</th>
+                            <th class="border-0 px-3 py-3">Observaciones</th>
                             <th class="border-0 text-center px-3 py-3">Duración</th>
-                            <th class="border-0 text-center px-3 py-3">Multas</th>
                             <th class="border-0 text-center px-3 py-3">Acciones</th>
                         </tr>
                     </thead>
@@ -172,8 +172,8 @@
                                     <td class="px-3 py-3">
                                         <div class="d-flex align-items-center">
                                             <div class="me-3">
-                                                <div class="rounded-2 bg-info bg-opacity-10 p-2">
-                                                    <i class="ti ti-history text-info fs-5"></i>
+                                                <div class="rounded-2 bg-success bg-opacity-10 p-2">
+                                                    <i class="ti ti-book-upload text-success fs-5"></i>
                                                 </div>
                                             </div>
                                             <div>
@@ -191,41 +191,53 @@
                                     <td class="px-3 py-3">
                                         <div>
                                             <h6 class="mb-1 fw-medium"><?= esc($registro['recurso']) ?></h6>
-                                            <p class="text-muted mb-0 small">
-                                                <?php if ($registro['renovaciones'] > 0): ?>
-                                                    <i class="ti ti-refresh me-1"></i><?= $registro['renovaciones'] ?> renovación(es)
-                                                <?php else: ?>
-                                                    Sin renovaciones
-                                                <?php endif; ?>
-                                            </p>
+                                            <p class="text-muted mb-0 small">Estado: <?= esc($registro['estado_ejemplar']) ?></p>
                                         </div>
                                     </td>
                                     <td class="px-3 py-3">
                                         <div>
                                             <p class="mb-1 small">
-                                                <i class="ti ti-calendar-event me-1"></i>
-                                                Préstamo: <?= date('d/m/Y', strtotime($registro['fecha_prestamo'])) ?>
+                                                <i class="ti ti-calendar-check me-1"></i>
+                                                Devuelto: <?= date('d/m/Y H:i', strtotime($registro['fecha_devolucion'])) ?>
                                             </p>
                                             <p class="mb-0 small">
-                                                <i class="ti ti-calendar-check me-1"></i>
-                                                Devolución: <?= date('d/m/Y', strtotime($registro['fecha_devolucion'])) ?>
+                                                <i class="ti ti-calendar-due me-1"></i>
+                                                Vencía: <?= date('d/m/Y H:i', strtotime($registro['fecha_vencimiento'])) ?>
                                             </p>
                                         </div>
                                     </td>
                                     <td class="px-3 py-3 text-center">
-                                        <?php if ($registro['estado_final'] == 'Devuelto'): ?>
+                                        <?php if ($registro['dias_retraso'] == 0): ?>
                                             <span class="badge bg-success-subtle text-success">
-                                                <i class="ti ti-check-circle me-1"></i>Devuelto
+                                                <i class="ti ti-check-circle me-1"></i>A Tiempo
                                             </span>
-                                        <?php elseif ($registro['estado_final'] == 'Devuelto con retraso'): ?>
-                                            <span class="badge bg-warning-subtle text-warning">
+                                        <?php elseif ($registro['dias_retraso'] > 0): ?>
+                                            <span class="badge bg-danger-subtle text-danger">
                                                 <i class="ti ti-alert-circle me-1"></i>Con Retraso
                                             </span>
+                                            <?php if ($registro['horas_retraso'] < 24): ?>
+                                                <small class="d-block text-danger fw-semibold mt-1"><?= $registro['horas_retraso'] ?> hora(s)</small>
+                                            <?php else: ?>
+                                                <small class="d-block text-danger fw-semibold mt-1"><?= $registro['dias_retraso'] ?> día(s)</small>
+                                            <?php endif; ?>
                                         <?php else: ?>
-                                            <span class="badge bg-secondary-subtle text-secondary">
-                                                <i class="ti ti-x me-1"></i><?= esc($registro['estado_final']) ?>
+                                            <span class="badge bg-info-subtle text-info">
+                                                <i class="ti ti-clock me-1"></i>Temprana
                                             </span>
+                                            <small class="d-block text-muted mt-1"><?= abs($registro['dias_retraso']) ?> día(s)</small>
                                         <?php endif; ?>
+                                    </td>
+                                    <td class="px-3 py-3">
+                                        <div class="d-flex align-items-center">
+                                            <?php if (isset($registro['tiene_observaciones']) && $registro['tiene_observaciones']): ?>
+                                                <div>
+                                                    <i class="ti ti-note text-primary me-2"></i>
+                                                    <span class="text-muted small"><?= esc($registro['observaciones']) ?></span>
+                                                </div>
+                                            <?php else: ?>
+                                                <span class="text-muted fst-italic small">Sin observaciones</span>
+                                            <?php endif; ?>
+                                        </div>
                                     </td>
                                     <td class="px-3 py-3 text-center">
                                         <span class="badge bg-info-subtle text-info">
@@ -233,38 +245,22 @@
                                         </span>
                                     </td>
                                     <td class="px-3 py-3 text-center">
-                                        <?php if ($registro['multas'] > 0): ?>
-                                            <span class="badge bg-danger-subtle text-danger">
-                                                $<?= number_format($registro['multas']) ?>
-                                            </span>
-                                        <?php else: ?>
-                                            <span class="badge bg-success-subtle text-success">
-                                                Sin multa
-                                            </span>
-                                        <?php endif; ?>
-                                    </td>
-                                    <td class="px-3 py-3 text-center">
-                                        <div class="dropdown">
-                                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                                                Ver
+                                        <div class="d-flex gap-2 justify-content-center">
+                                            <button type="button" class="btn btn-sm btn-outline-info" 
+                                                    onclick="verDetalleHistorial(<?= $registro['id'] ?>)"
+                                                    title="Ver Detalles">
+                                                <i class="ti ti-eye"></i>
                                             </button>
-                                            <ul class="dropdown-menu dropdown-menu-end">
-                                                <li>
-                                                    <a class="dropdown-item" href="#" onclick="verDetalleHistorial(<?= $registro['id'] ?>)">
-                                                        <i class="ti ti-eye me-2"></i>Ver Detalles Completos
-                                                    </a>
-                                                </li>
-                                                <li>
-                                                    <a class="dropdown-item" href="#" onclick="generarReporte(<?= $registro['id'] ?>)">
-                                                        <i class="ti ti-file-report me-2"></i>Generar Reporte
-                                                    </a>
-                                                </li>
-                                                <li>
-                                                    <a class="dropdown-item" href="#" onclick="verLinea Tiempo(<?= $registro['id'] ?>)">
-                                                        <i class="ti ti-timeline me-2"></i>Línea de Tiempo
-                                                    </a>
-                                                </li>
-                                            </ul>
+                                            <button type="button" class="btn btn-sm btn-outline-secondary" 
+                                                    onclick="imprimirRecibo(<?= $registro['id'] ?>)"
+                                                    title="Imprimir Recibo">
+                                                <i class="ti ti-printer"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-outline-danger" 
+                                                    onclick="confirmarEliminacion(<?= $registro['id'] ?>)"
+                                                    title="Eliminar">
+                                                <i class="ti ti-x"></i>
+                                            </button>
                                         </div>
                                     </td>
                                 </tr>
@@ -397,12 +393,139 @@
 
     // Función para ver detalles completos del historial
     function verDetalleHistorial(registroId) {
-        console.log('Ver detalle historial:', registroId);
-        // TODO: Implementar modal de detalles completos
+        fetch('<?= base_url('prestamos/obtenerDetalleDevolucion') ?>', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: 'idprestamo=' + registroId
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const detalle = data.data;
+                Swal.fire({
+                    title: '<i class="ti ti-info-circle me-2"></i>Detalles del Préstamo',
+                    html: `
+                        <div class="text-start">
+                            <div class="row mb-3">
+                                <div class="col-6">
+                                    <strong>Código:</strong><br>
+                                    ${detalle.codigo_prestamo}
+                                </div>
+                                <div class="col-6">
+                                    <strong>Usuario:</strong><br>
+                                    ${detalle.usuario}
+                                </div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-6">
+                                    <strong>Documento:</strong><br>
+                                    ${detalle.documento}
+                                </div>
+                                <div class="col-6">
+                                    <strong>Teléfono:</strong><br>
+                                    ${detalle.telefono || 'N/A'}
+                                </div>
+                            </div>
+                            <hr>
+                            <div class="row mb-3">
+                                <div class="col-12">
+                                    <strong>Recurso:</strong><br>
+                                    ${detalle.recurso}
+                                </div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-6">
+                                    <strong>Fecha de préstamo:</strong><br>
+                                    ${new Date(detalle.fechaprestamo).toLocaleString('es-ES')}
+                                </div>
+                                <div class="col-6">
+                                    <strong>Fecha límite:</strong><br>
+                                    ${new Date(detalle.fecha_limite).toLocaleString('es-ES')}
+                                </div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-6">
+                                    <strong>Fecha de devolución:</strong><br>
+                                    ${new Date(detalle.fecha_devolucion_real).toLocaleString('es-ES')}
+                                </div>
+                                <div class="col-6">
+                                    <strong>Días de retraso:</strong><br>
+                                    <span class="${detalle.dias_retraso > 0 ? 'text-danger' : 'text-success'}">
+                                        ${detalle.dias_retraso > 0 ? detalle.dias_retraso + ' días' : 'A tiempo'}
+                                    </span>
+                                </div>
+                            </div>
+                            ${detalle.dias_retraso > 0 ? `
+                            <div class="alert alert-warning">
+                                <strong><i class="ti ti-alert-triangle me-2"></i>Retraso detectado</strong><br>
+                                Se generó una sanción por ${detalle.dias_retraso} día(s) de retraso en la devolución.
+                            </div>
+                            ` : ''}
+                            ${detalle.sanciones ? `
+                            <div class="alert alert-danger">
+                                <strong>Sanciones registradas:</strong><br>
+                                ${detalle.sanciones}
+                            </div>
+                            ` : ''}
+                        </div>
+                    `,
+                    width: 700,
+                    confirmButtonText: 'Cerrar'
+                });
+            } else {
+                Swal.fire({
+                    title: 'Error',
+                    text: data.message,
+                    icon: 'error'
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            Swal.fire({
+                title: 'Error',
+                text: 'Ocurrió un error al obtener los detalles',
+                icon: 'error'
+            });
+        });
+    }
+
+    // Función para imprimir recibo
+    function imprimirRecibo(registroId) {
+        console.log('Imprimir recibo:', registroId);
         Swal.fire({
-            title: 'Detalles Completos del Préstamo',
-            text: 'Funcionalidad en desarrollo',
-            icon: 'info'
+            title: 'Generando Recibo',
+            text: 'Funcionalidad en desarrollo - Se generará un PDF con el recibo de devolución',
+            icon: 'info',
+            timer: 2000,
+            showConfirmButton: false
+        });
+    }
+
+    // Función para confirmar eliminación
+    function confirmarEliminacion(registroId) {
+        Swal.fire({
+            title: '¿Estás seguro?',
+            text: "Esta acción no se puede deshacer",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                Swal.fire({
+                    title: 'Funcionalidad en desarrollo',
+                    text: 'La eliminación de registros estará disponible próximamente',
+                    icon: 'info',
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+            }
         });
     }
 

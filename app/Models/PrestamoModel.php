@@ -236,29 +236,29 @@ class PrestamoModel extends Model
                         WHEN rf.idrecurso IS NOT NULL THEN CONCAT('LIB-FIS-', LPAD(r.idrecurso, 3, '0'))
                         ELSE CONCAT('LIB-DIG-', LPAD(r.idrecurso, 3, '0'))
                     END as codigo_ejemplar,
-                    p.fechaprestamo as fecha_solicitud,
-                    p.fechadevolucion as fecha_devolucion,
+                    s.fechaprestamo as fecha_solicitud,
+                    s.fechadevolucion as fecha_devolucion,
+                    s.fecha_solicitud as fecha_creacion,
                     'Pendiente' as estado,
                     CASE 
-                        WHEN DATEDIFF(NOW(), p.fechaprestamo) >= 7 THEN 'Alta'
-                        WHEN DATEDIFF(NOW(), p.fechaprestamo) >= 3 THEN 'Media'
+                        WHEN DATEDIFF(NOW(), s.fecha_solicitud) >= 7 THEN 'Alta'
+                        WHEN DATEDIFF(NOW(), s.fecha_solicitud) >= 3 THEN 'Media'
                         ELSE 'Normal'
                     END as prioridad,
                     CASE WHEN r.stock > 0 AND r.estado = 'disponible' THEN true ELSE false END as disponible
                 FROM solicitud s
-                JOIN prestamos p ON p.idprestamo = s.idprestamo
-                JOIN matriculas m ON m.idmatricula = p.idmatricula
+                JOIN matriculas m ON m.idmatricula = s.idmatricula
                 JOIN personas per ON per.idpersona = m.idpersona
-                JOIN recursos r ON r.idrecurso = p.idrecurso
+                JOIN recursos r ON r.idrecurso = s.idrecurso
                 LEFT JOIN recursos_fisicos rf ON rf.idrecurso = r.idrecurso
                 WHERE s.validado = false
                 ORDER BY 
                     CASE 
-                        WHEN DATEDIFF(NOW(), p.fechaprestamo) >= 7 THEN 1
-                        WHEN DATEDIFF(NOW(), p.fechaprestamo) >= 3 THEN 2
+                        WHEN DATEDIFF(NOW(), s.fecha_solicitud) >= 7 THEN 1
+                        WHEN DATEDIFF(NOW(), s.fecha_solicitud) >= 3 THEN 2
                         ELSE 3
                     END,
-                    p.fechaprestamo ASC";
+                    s.fecha_solicitud ASC";
         
         $query = $db->query($sql);
         return $query->getResultArray();
@@ -278,15 +278,16 @@ class PrestamoModel extends Model
                     per.numerodoc as documento,
                     r.titulo as recurso,
                     p.fechahoraretorno as fecha_devolucion,
-                    DATE_ADD(DATE(p.fechaprestamo), INTERVAL 14 DAY) as fecha_vencimiento,
-                    DATEDIFF(DATE(p.fechahoraretorno), DATE_ADD(DATE(p.fechaprestamo), INTERVAL 14 DAY)) as dias_retraso,
-                    'Bueno' as estado_ejemplar,
+                    p.fechadevolucion as fecha_vencimiento,
                     CASE 
-                        WHEN DATEDIFF(DATE(p.fechahoraretorno), DATE_ADD(DATE(p.fechaprestamo), INTERVAL 14 DAY)) > 0 
-                        THEN DATEDIFF(DATE(p.fechahoraretorno), DATE_ADD(DATE(p.fechaprestamo), INTERVAL 14 DAY)) * 2500 
-                        ELSE 0 
-                    END as multa,
-                    '' as observaciones
+                        WHEN p.fechahoraretorno <= p.fechadevolucion THEN 0
+                        ELSE CEIL(TIMESTAMPDIFF(HOUR, p.fechadevolucion, p.fechahoraretorno) / 24.0)
+                    END as dias_retraso,
+                    CASE 
+                        WHEN p.fechahoraretorno <= p.fechadevolucion THEN 0
+                        ELSE TIMESTAMPDIFF(HOUR, p.fechadevolucion, p.fechahoraretorno)
+                    END as horas_retraso,
+                    'Bueno' as estado_ejemplar
                 FROM prestamos p
                 JOIN matriculas m ON m.idmatricula = p.idmatricula
                 JOIN personas per ON per.idpersona = m.idpersona
@@ -295,7 +296,46 @@ class PrestamoModel extends Model
                 ORDER BY p.fechahoraretorno DESC";
         
         $query = $db->query($sql);
-        return $query->getResultArray();
+        $devoluciones = $query->getResultArray();
+        
+        // Agregar observaciones desde logs
+        foreach ($devoluciones as &$devolucion) {
+            $observaciones = $this->obtenerObservacionesDesdeLog($devolucion['id']);
+            $devolucion['observaciones'] = $observaciones ?: 'Sin observaciones';
+            $devolucion['tiene_observaciones'] = !empty($observaciones);
+        }
+        
+        return $devoluciones;
+    }
+    
+    /**
+     * Verificar si un préstamo tiene observaciones en los logs
+     */
+    public function tieneObservaciones($idprestamo)
+    {
+        $observaciones = $this->obtenerObservacionesDesdeLog($idprestamo);
+        return !empty($observaciones);
+    }
+    
+    /**
+     * Obtener observaciones de un préstamo desde los logs
+     */
+    public function obtenerObservacionesDesdeLog($idprestamo)
+    {
+        $logPath = WRITEPATH . 'logs/log-' . date('Y-m-d') . '.log';
+        
+        if (!file_exists($logPath)) {
+            return '';
+        }
+        
+        $logContent = file_get_contents($logPath);
+        $pattern = "/Devolución préstamo {$idprestamo}\. Observaciones: (.+)/";
+        
+        if (preg_match($pattern, $logContent, $matches)) {
+            return trim($matches[1]);
+        }
+        
+        return '';
     }
 
     /**
@@ -311,29 +351,46 @@ class PrestamoModel extends Model
                     CONCAT(per.nombres, ' ', per.apellidos) as usuario,
                     per.numerodoc as documento,
                     r.titulo as recurso,
-                    DATE(p.fechaprestamo) as fecha_prestamo,
-                    DATE(p.fechahoraretorno) as fecha_devolucion,
+                    p.fechaprestamo as fecha_prestamo,
+                    p.fechahoraretorno as fecha_devolucion,
+                    p.fechadevolucion as fecha_vencimiento,
                     CASE 
-                        WHEN p.fechahoraretorno IS NOT NULL THEN 'Devuelto'
-                        WHEN DATEDIFF(DATE_ADD(DATE(p.fechaprestamo), INTERVAL 14 DAY), CURDATE()) < 0 THEN 'Devuelto con retraso'
-                        ELSE 'Activo'
+                        WHEN p.fechahoraretorno IS NULL THEN 'Activo'
+                        WHEN p.fechahoraretorno <= p.fechadevolucion THEN 'Devuelto'
+                        ELSE 'Devuelto con retraso'
                     END as estado_final,
                     DATEDIFF(COALESCE(DATE(p.fechahoraretorno), CURDATE()), DATE(p.fechaprestamo)) as dias_prestamo,
-                    0 as renovaciones,
                     CASE 
-                        WHEN p.fechahoraretorno IS NOT NULL AND DATEDIFF(DATE(p.fechahoraretorno), DATE_ADD(DATE(p.fechaprestamo), INTERVAL 14 DAY)) > 0 
-                        THEN DATEDIFF(DATE(p.fechahoraretorno), DATE_ADD(DATE(p.fechaprestamo), INTERVAL 14 DAY)) * 2500 
-                        ELSE 0 
-                    END as multas
+                        WHEN p.fechahoraretorno IS NULL THEN 0
+                        WHEN p.fechahoraretorno <= p.fechadevolucion THEN 0
+                        ELSE CEIL(TIMESTAMPDIFF(HOUR, p.fechadevolucion, p.fechahoraretorno) / 24.0)
+                    END as dias_retraso,
+                    CASE 
+                        WHEN p.fechahoraretorno IS NULL THEN 0
+                        WHEN p.fechahoraretorno <= p.fechadevolucion THEN 0
+                        ELSE TIMESTAMPDIFF(HOUR, p.fechadevolucion, p.fechahoraretorno)
+                    END as horas_retraso,
+                    0 as renovaciones,
+                    'Bueno' as estado_ejemplar
                 FROM prestamos p
                 JOIN matriculas m ON m.idmatricula = p.idmatricula
                 JOIN personas per ON per.idpersona = m.idpersona
                 JOIN recursos r ON r.idrecurso = p.idrecurso
-                ORDER BY p.fechaprestamo DESC
-                LIMIT 50";
+                WHERE p.fechahoraretorno IS NOT NULL
+                ORDER BY p.fechahoraretorno DESC
+                LIMIT 100";
         
         $query = $db->query($sql);
-        return $query->getResultArray();
+        $historial = $query->getResultArray();
+        
+        // Agregar observaciones desde logs
+        foreach ($historial as &$registro) {
+            $observaciones = $this->obtenerObservacionesDesdeLog($registro['id']);
+            $registro['observaciones'] = $observaciones ?: 'Sin observaciones';
+            $registro['tiene_observaciones'] = !empty($observaciones);
+        }
+        
+        return $historial;
     }
 
     /**
@@ -422,10 +479,9 @@ class PrestamoModel extends Model
         try {
             $db->transStart();
             
-            // Obtener información de la solicitud
+            // Obtener información de la solicitud (ahora sin JOIN con prestamos)
             $solicitud = $db->table('solicitud s')
-                ->select('s.*, p.idrecurso, p.idprestamo')
-                ->join('prestamos p', 'p.idprestamo = s.idprestamo')
+                ->select('s.*')
                 ->where('s.idsolicitud', $idsolicitud)
                 ->where('s.validado', false)
                 ->get()
@@ -445,21 +501,29 @@ class PrestamoModel extends Model
                 throw new \Exception('El recurso no está disponible para préstamo');
             }
             
-            // Actualizar la solicitud como validada
+            // Crear el préstamo cuando se aprueba la solicitud
+            $prestamo = [
+                'idmatricula' => $solicitud->idmatricula,
+                'idusuario' => $solicitud->idusuario,
+                'idrecurso' => $solicitud->idrecurso,
+                'fechaprestamo' => $solicitud->fechaprestamo,
+                'fechadevolucion' => $solicitud->fechadevolucion,
+                'fechahoravalidacion' => date('Y-m-d H:i:s')
+            ];
+            
+            $db->table('prestamos')->insert($prestamo);
+            $idPrestamo = $db->insertID();
+            
+            // Actualizar la solicitud como validada y asociar con el préstamo creado
             $db->table('solicitud')
                 ->where('idsolicitud', $idsolicitud)
                 ->update([
-                    'validado' => true
+                    'validado' => true,
+                    'fecha_procesado' => date('Y-m-d H:i:s'),
+                    'idprestamo' => $idPrestamo
                 ]);
             
-            // Actualizar el préstamo con fecha de validación
-            $db->table('prestamos')
-                ->where('idprestamo', $solicitud->idprestamo)
-                ->update([
-                    'fechahoravalidacion' => date('Y-m-d H:i:s')
-                ]);
-            
-            // Actualizar stock del recurso (si es físico)
+            // Actualizar stock del recurso
             if ($recurso->stock > 0) {
                 $nuevoStock = $recurso->stock - 1;
                 $nuevoEstado = $nuevoStock > 0 ? 'disponible' : 'prestado';
@@ -480,7 +544,7 @@ class PrestamoModel extends Model
             
             return [
                 'success' => true,
-                'message' => 'Solicitud aprobada correctamente'
+                'message' => 'Solicitud aprobada correctamente y préstamo creado'
             ];
             
         } catch (\Exception $e) {
@@ -561,8 +625,7 @@ class PrestamoModel extends Model
             
             // Verificar que la solicitud existe y no está procesada
             $solicitud = $db->table('solicitud s')
-                ->select('s.*, p.idprestamo')
-                ->join('prestamos p', 'p.idprestamo = s.idprestamo')
+                ->select('s.*')
                 ->where('s.idsolicitud', $idsolicitud)
                 ->where('s.validado', false)
                 ->get()
@@ -572,17 +635,17 @@ class PrestamoModel extends Model
                 throw new \Exception('Solicitud no encontrada o ya procesada');
             }
             
-            // Eliminar la solicitud
+            // Marcar la solicitud como rechazada en lugar de eliminarla (para historial)
             $db->table('solicitud')
                 ->where('idsolicitud', $idsolicitud)
-                ->delete();
+                ->update([
+                    'validado' => true,  // Marcada como procesada
+                    'motivo_rechazo' => $motivo,
+                    'fecha_procesado' => date('Y-m-d H:i:s'),
+                    'idprestamo' => null  // No se crea préstamo
+                ]);
             
-            // Eliminar el préstamo asociado
-            $db->table('prestamos')
-                ->where('idprestamo', $solicitud->idprestamo)
-                ->delete();
-            
-            // TODO: Aquí se podría agregar un log del rechazo con el motivo
+            // Registrar en log el rechazo con el motivo
             log_message('info', "Solicitud {$idsolicitud} rechazada. Motivo: {$motivo}");
             
             $db->transComplete();
@@ -617,10 +680,15 @@ class PrestamoModel extends Model
         $sql = "SELECT 
                     s.idsolicitud,
                     s.validado,
-                    p.idprestamo,
-                    p.fechaprestamo as fecha_solicitud,
-                    p.fechadevolucion as fecha_devolucion_esperada,
-                    p.fechadevolucion as fecha_devolucion,
+                    s.idprestamo,
+                    s.fechaprestamo as fecha_solicitud,
+                    s.fechadevolucion as fecha_devolucion_esperada,
+                    s.fechadevolucion as fecha_devolucion,
+                    s.fecha_solicitud as fecha_creacion,
+                    s.motivo_rechazo,
+                    s.fecha_procesado,
+                    
+                    -- Si existe préstamo asociado, obtener su info
                     p.fechahoravalidacion,
                     
                     -- Información del usuario
@@ -673,14 +741,14 @@ class PrestamoModel extends Model
                     
                     -- Información adicional de la solicitud
                     CASE 
-                        WHEN DATEDIFF(NOW(), p.fechaprestamo) >= 7 THEN 'Alta'
-                        WHEN DATEDIFF(NOW(), p.fechaprestamo) >= 3 THEN 'Media'
+                        WHEN DATEDIFF(NOW(), s.fecha_solicitud) >= 7 THEN 'Alta'
+                        WHEN DATEDIFF(NOW(), s.fecha_solicitud) >= 3 THEN 'Media'
                         ELSE 'Normal'
                     END as prioridad,
                     
                     CASE WHEN r.stock > 0 AND r.estado = 'disponible' THEN true ELSE false END as disponible,
                     
-                    DATEDIFF(NOW(), p.fechaprestamo) as dias_desde_solicitud,
+                    DATEDIFF(NOW(), s.fecha_solicitud) as dias_desde_solicitud,
                     
                     -- Portada del recurso
                     COALESCE(rf.portada, rd.portada) as portada_recurso,
@@ -690,10 +758,10 @@ class PrestamoModel extends Model
                     rd.archivo as archivo_digital
                     
                 FROM solicitud s
-                JOIN prestamos p ON p.idprestamo = s.idprestamo
-                JOIN matriculas m ON m.idmatricula = p.idmatricula
+                JOIN matriculas m ON m.idmatricula = s.idmatricula
                 JOIN personas per ON per.idpersona = m.idpersona
-                JOIN recursos r ON r.idrecurso = p.idrecurso
+                JOIN recursos r ON r.idrecurso = s.idrecurso
+                LEFT JOIN prestamos p ON p.idprestamo = s.idprestamo
                 LEFT JOIN grupos g ON g.idgrupo = m.idgrupo
                 LEFT JOIN editoriales e ON e.ideditorial = r.ideditorial
                 LEFT JOIN subcategorias sc ON sc.idsubcategoria = r.idsubcategoria
@@ -728,8 +796,8 @@ class PrestamoModel extends Model
                 FROM prestamos p2
                 WHERE p2.idrecurso = ?
                 AND p2.fechahoraretorno IS NULL
-                AND p2.idprestamo != ?
-            ", [$detalle->idrecurso, $detalle->idprestamo]);
+                " . ($detalle->idprestamo ? "AND p2.idprestamo != ?" : ""), 
+                $detalle->idprestamo ? [$detalle->idrecurso, $detalle->idprestamo] : [$detalle->idrecurso]);
             
             $detalle->otros_prestamos_activos = $otrosPrestamosQuery->getRow()->total;
             
@@ -1423,5 +1491,167 @@ class PrestamoModel extends Model
         log_message('info', 'Resultados finales de rechazarSolicitudesMultiples: ' . json_encode($resultados));
         
         return $resultados;
+    }
+
+    /**
+     * Procesar devolución con estado del recurso y generar sanción si hay retraso
+     */
+    public function procesarDevolucionCompleta($idprestamo, $estadoRecurso = 'bueno', $observaciones = '')
+    {
+        $db = \Config\Database::connect();
+        
+        try {
+            $db->transStart();
+            
+            // Verificar que el préstamo existe y está activo
+            $prestamo = $this->find($idprestamo);
+            if (!$prestamo) {
+                throw new \Exception('El préstamo no existe');
+            }
+            
+            if ($prestamo['fechahoraretorno'] !== null) {
+                throw new \Exception('Este préstamo ya ha sido devuelto');
+            }
+            
+            // Actualizar el préstamo con la fecha de devolución
+            $fechaRetorno = date('Y-m-d H:i:s');
+            $this->update($idprestamo, ['fechahoraretorno' => $fechaRetorno]);
+            
+            // Actualizar el stock del recurso
+            $db->table('recursos')
+               ->where('idrecurso', $prestamo['idrecurso'])
+               ->set('stock', 'stock + 1', false)
+               ->update();
+            
+            // Verificar si hay más préstamos activos del mismo recurso
+            $prestamosActivos = $this->where('idrecurso', $prestamo['idrecurso'])
+                                    ->where('fechahoraretorno IS NULL', null, false)
+                                    ->countAllResults();
+            
+            if ($prestamosActivos == 0) {
+                $db->table('recursos')
+                   ->where('idrecurso', $prestamo['idrecurso'])
+                   ->update(['estado' => 'disponible']);
+            }
+            
+            // Calcular si hubo retraso
+            $fechaPrestamo = new \DateTime($prestamo['fechaprestamo']);
+            $fechaDevolucion = new \DateTime($fechaRetorno);
+            $fechaLimite = new \DateTime($prestamo['fechadevolucion']);
+            
+            $diasRetraso = 0;
+            $multaGenerada = 0;
+            $sancionCreada = false;
+            
+            if ($fechaDevolucion > $fechaLimite) {
+                $diasRetraso = $fechaDevolucion->diff($fechaLimite)->days;
+                $multaGenerada = $diasRetraso * 2500; // $2500 por día de retraso
+                
+                // Obtener la persona asociada al préstamo
+                $matricula = $db->table('matriculas')
+                    ->where('idmatricula', $prestamo['idmatricula'])
+                    ->get()->getRow();
+                
+                if ($matricula) {
+                    // Buscar o usar tipo de sanción por defecto para retrasos
+                    $tipoSancion = $db->table('tiposancion')
+                        ->where('tiposancion', 'Retraso en devolución')
+                        ->get()->getRow();
+                    
+                    if (!$tipoSancion) {
+                        // Si no existe, crear uno por defecto
+                        $db->table('tiposancion')->insert([
+                            'tiposancion' => 'Retraso en devolución',
+                            'descripcion' => 'Sanción por retraso en la devolución de recursos'
+                        ]);
+                        $idtiposancion = $db->insertID();
+                    } else {
+                        $idtiposancion = $tipoSancion->idtiposancion;
+                    }
+                    
+                    // Crear la sanción
+                    $detalleSancion = "Retraso de {$diasRetraso} días. Multa: $" . number_format($multaGenerada);
+                    if (!empty($observaciones)) {
+                        $detalleSancion .= ". Obs: " . $observaciones;
+                    }
+                    
+                    $db->table('sanciones')->insert([
+                        'idtiposancion' => $idtiposancion,
+                        'idpersona' => $matricula->idpersona,
+                        'detallesancion' => $detalleSancion
+                    ]);
+                    
+                    $sancionCreada = true;
+                }
+            }
+            
+            $db->transComplete();
+            
+            if ($db->transStatus() === false) {
+                throw new \Exception('Error en la transacción de devolución');
+            }
+            
+            $mensaje = 'Devolución procesada correctamente';
+            if ($sancionCreada) {
+                $mensaje .= ". Se generó una sanción por {$diasRetraso} días de retraso (Multa: $" . number_format($multaGenerada) . ")";
+            }
+            
+            return [
+                'success' => true,
+                'message' => $mensaje,
+                'con_retraso' => $diasRetraso > 0,
+                'dias_retraso' => $diasRetraso,
+                'multa' => $multaGenerada,
+                'sancion_creada' => $sancionCreada,
+                'fecha_devolucion' => $fechaRetorno
+            ];
+            
+        } catch (\Exception $e) {
+            $db->transRollback();
+            log_message('error', 'Error al procesar devolución completa: ' . $e->getMessage());
+            
+            return [
+                'success' => false,
+                'message' => $e->getMessage()
+            ];
+        }
+    }
+
+    /**
+     * Obtener detalle completo de una devolución
+     */
+    public function getDetalleDevolucion($idprestamo)
+    {
+        $db = \Config\Database::connect();
+        
+        $sql = "SELECT 
+                    p.idprestamo,
+                    CONCAT('PREST-', LPAD(p.idprestamo, 6, '0')) as codigo_prestamo,
+                    CONCAT(per.nombres, ' ', per.apellidos) as usuario,
+                    per.numerodoc as documento,
+                    per.telefono,
+                    per.email,
+                    r.titulo as recurso,
+                    r.isbn,
+                    p.fechaprestamo,
+                    p.fechadevolucion as fecha_limite,
+                    p.fechahoraretorno as fecha_devolucion_real,
+                    DATEDIFF(p.fechahoraretorno, p.fechadevolucion) as dias_retraso,
+                    CASE 
+                        WHEN DATEDIFF(p.fechahoraretorno, p.fechadevolucion) > 0 
+                        THEN DATEDIFF(p.fechahoraretorno, p.fechadevolucion) * 2500 
+                        ELSE 0 
+                    END as multa,
+                    GROUP_CONCAT(DISTINCT s.detallesancion SEPARATOR '; ') as sanciones
+                FROM prestamos p
+                JOIN matriculas m ON m.idmatricula = p.idmatricula
+                JOIN personas per ON per.idpersona = m.idpersona
+                JOIN recursos r ON r.idrecurso = p.idrecurso
+                LEFT JOIN sanciones s ON s.idpersona = per.idpersona
+                WHERE p.idprestamo = ?
+                GROUP BY p.idprestamo";
+        
+        $query = $db->query($sql, [$idprestamo]);
+        return $query->getRowArray();
     }
 }

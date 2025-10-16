@@ -255,3 +255,39 @@ if (!function_exists('registrarReactivacionUsuario')) {
         );
     }
 }
+
+if (!function_exists('registrar_accion')) {
+    /**
+     * Función simplificada para registrar acciones en el historial
+     * Compatible con el código existente que llama a registrar_accion()
+     * 
+     * @param string $accion La acción realizada o descripción completa
+     * @param string|null $usuarioActor Usuario que realizó la acción (opcional, se usa el actual si no se especifica)
+     * @param string|null $usuarioAfectado Usuario afectado por la acción (opcional)
+     * @param string|null $tipoUsuario Tipo de usuario (opcional, se detecta automáticamente)
+     * @param string|null $detalles Detalles adicionales de la acción (opcional)
+     * @return bool|int ID del registro creado o false si hay error
+     */
+    function registrar_accion($accion, $usuarioActor = null, $usuarioAfectado = null, $tipoUsuario = null, $detalles = null)
+    {
+        try {
+            // Si solo se pasa la acción como parámetro, usar la función automática
+            if (func_num_args() === 1) {
+                return registrarAccionAutomatica($accion);
+            }
+            
+            // Si no se especifica usuario actor, usar el actual
+            if ($usuarioActor === null) {
+                $usuarioActual = obtenerUsuarioActual();
+                $usuarioActor = $usuarioActual['usuario'];
+            }
+            
+            // Usar la función completa de registro
+            return registrarAccionHistorial($accion, $usuarioActor, $usuarioAfectado, $detalles);
+            
+        } catch (\Exception $e) {
+            log_message('error', 'Error en registrar_accion: ' . $e->getMessage());
+            return false;
+        }
+    }
+}

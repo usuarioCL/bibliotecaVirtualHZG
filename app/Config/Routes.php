@@ -237,6 +237,10 @@ $routes->post('/prestamos/cancelar', 'PrestamoController::cancelar');           
 $routes->post('/prestamos/procesar-devolucion', 'PrestamoController::procesarDevolucion'); // Procesar devolución
 $routes->post('/prestamos/renovar', 'PrestamoController::renovarPrestamo');       // Renovar préstamo
 $routes->post('/prestamos/detalle', 'PrestamoController::obtenerDetallePrestamo'); // Obtener detalles de préstamo
+$routes->post('/prestamos/obtenerDetalleDevolucion', 'PrestamoController::obtenerDetalleDevolucion'); // Obtener detalles de devolución
+$routes->post('/prestamos/obtenerObservaciones', 'PrestamoController::obtenerObservaciones'); // Obtener observaciones desde logs
+$routes->post('/prestamos/buscarPrestamoPorCodigo', 'PrestamoController::buscarPrestamoPorCodigo'); // Buscar préstamo por código
+$routes->post('/prestamos/procesarDevolucionCompleta', 'PrestamoController::procesarDevolucionCompleta'); // Procesar devolución completa
 
 // =====================================
 // RUTAS PARA MODALES DEL SISTEMA
