@@ -63,16 +63,30 @@ class SancionModel extends Model
      */
     public function getSancionesCompletas()
     {
+        // Subconsulta para obtener la última matrícula de la persona y su grupo
+        $subQuery = "SELECT m.idpersona, g.nivel, g.grado, g.seccion
+                      FROM matriculas m
+                      INNER JOIN grupos g ON g.idgrupo = m.idgrupo
+                      WHERE m.idpersona = sanciones.idpersona AND m.estadomatricula = 1
+                      ORDER BY m.fechamatricula DESC
+                      LIMIT 1";
+
         return $this->select('
                 sanciones.idsancion,
                 sanciones.detallesancion,
+                personas.idpersona,
                 personas.apellidos,
                 personas.nombres,
                 personas.numerodoc,
-                tiposancion.tiposancion
+                tiposancion.idtiposancion,
+                tiposancion.tiposancion,
+                mat.nivel as nivel,
+                mat.grado as grado,
+                mat.seccion as seccion
             ')
             ->join('personas', 'personas.idpersona = sanciones.idpersona')
             ->join('tiposancion', 'tiposancion.idtiposancion = sanciones.idtiposancion')
+            ->join("($subQuery) mat", 'mat.idpersona = sanciones.idpersona', 'left', false)
             ->orderBy('sanciones.idsancion', 'DESC')
             ->findAll();
     }

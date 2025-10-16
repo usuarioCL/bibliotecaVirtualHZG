@@ -24,6 +24,42 @@ class UsuarioController extends Controller
     }
 
     /**
+     * Obtener lista de estudiantes para select
+     */
+    public function estudiantes()
+    {
+        try {
+            // Obtener solo estudiantes con información de personas
+            $estudiantes = $this->usuarioModel->select('usuarios.idusuario, personas.idpersona, personas.apellidos, personas.nombres, personas.email, personas.numerodoc')
+                                            ->join('personas', 'personas.idpersona = usuarios.idpersona')
+                                            ->where('usuarios.nivelacceso', 'estudiante')
+                                            ->where('usuarios.estado', 'activo')
+                                            ->orderBy('personas.apellidos', 'ASC')
+                                            ->findAll();
+
+            if ($this->request->isAJAX()) {
+                return $this->response->setJSON([
+                    'success' => true,
+                    'estudiantes' => $estudiantes
+                ]);
+            }
+
+            return $estudiantes;
+        } catch (Exception $e) {
+            log_message('error', 'Error en UsuarioController::estudiantes: ' . $e->getMessage());
+            
+            if ($this->request->isAJAX()) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Error al cargar los estudiantes'
+                ]);
+            }
+            
+            return [];
+        }
+    }
+
+    /**
      * Página principal de gestión de usuarios (para AJAX)
      */
     public function index()

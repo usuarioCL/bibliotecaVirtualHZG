@@ -78,6 +78,9 @@ $routes->group('api/usuarios', function($routes) {
     $routes->get('matricula/(:num)', 'UsuarioController::infoMatricula/$1');
 });
 
+// Ruta para obtener estudiantes
+$routes->get('usuarios/estudiantes', 'UsuarioController::estudiantes');
+
 // Panel de administración
 $routes->get('/admin', 'AdminController::dashboard');
 $routes->get('/admin/dashboard-default', 'AdminController::dashboardDefault');
@@ -214,6 +217,10 @@ $routes->get('/sanciones/buscar', 'SancionController::buscar');
 $routes->get('/sanciones/tipos', 'SancionController::tiposSancion');
 $routes->post('/sanciones/crear-tipo', 'SancionController::crearTipo');
 $routes->post('/sanciones/eliminar-tipo/(:num)', 'SancionController::eliminarTipo/$1');
+
+// Nuevas rutas para AJAX
+$routes->get('/sanciones/estadisticas', 'SancionController::estadisticas');
+$routes->post('/sanciones/levantar/(:num)', 'SancionController::levantar/$1');
 
 // Sistema de Préstamos
 $routes->get('/prestamos', 'PrestamoController::index');                      // Préstamos Activos
