@@ -45,6 +45,7 @@ $routes->group('usuarios', function($routes) {
     $routes->get('test', 'UsuarioController::test');                      // Método de prueba sin parámetros
     $routes->get('verificar-elegibilidad', 'UsuarioController::verificarElegibilidad'); // Verificar si puede crear usuario
     $routes->get('info-matricula/(:num)', 'UsuarioController::infoMatricula/$1'); // Info matrícula de persona
+    $routes->post('buscar-ajax', 'UsuarioController::buscarAjax');         // Buscar usuarios para préstamos (AJAX)
 });
 
 // Gestión de Estudiantes/Matrículas
@@ -151,6 +152,7 @@ $routes->group('autores', function($routes) {
 // Buscar recursos
 $routes->get('/recursos/buscarRecursos', 'RecursoController::buscarRecursos');
 $routes->get('/recursos/filtrosBusqueda', 'RecursoController::filtrosBusqueda');
+$routes->post('/recursos/buscar-disponibles-ajax', 'RecursoController::buscarDisponiblesAjax'); // Buscar recursos disponibles para préstamos (AJAX)
 
 // Catalogo
 $routes->get('/catalogo', 'CatalogoController::index');
@@ -233,6 +235,7 @@ $routes->post('/prestamos/rechazarTodas', 'PrestamoController::rechazarTodas'); 
 $routes->post('/prestamos/detalleSolicitud', 'PrestamoController::detalleSolicitud'); // Obtener detalles de solicitud
 
 // Gestión de préstamos activos (Admin/Docente)
+$routes->post('/prestamos/crear', 'PrestamoController::crearPrestamo');           // Crear nuevo préstamo
 $routes->post('/prestamos/cancelar', 'PrestamoController::cancelar');             // Cancelar préstamo activo
 $routes->post('/prestamos/procesar-devolucion', 'PrestamoController::procesarDevolucion'); // Procesar devolución
 $routes->post('/prestamos/renovar', 'PrestamoController::renovarPrestamo');       // Renovar préstamo

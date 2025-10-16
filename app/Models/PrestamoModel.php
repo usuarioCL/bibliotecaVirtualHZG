@@ -119,38 +119,38 @@ class PrestamoModel extends Model
                         WHEN rf.idrecurso IS NOT NULL THEN CONCAT('LIB-FIS-', LPAD(r.idrecurso, 3, '0'))
                         ELSE CONCAT('LIB-DIG-', LPAD(r.idrecurso, 3, '0'))
                     END as codigo_ejemplar,
-                    DATE(p.fechaprestamo) as fecha_prestamo,
+                    p.fechaprestamo as fecha_prestamo,
+                    DATE(p.fechaprestamo) as fecha_prestamo_solo,
+                    TIME_FORMAT(p.fechaprestamo, '%H:%i') as hora_inicio,
+                    p.fechadevolucion as fecha_devolucion,
+                    TIME_FORMAT(p.fechadevolucion, '%H:%i') as hora_fin,
                     CASE 
-                        WHEN p.fechadevolucion IS NOT NULL THEN DATE(p.fechadevolucion)
-                        ELSE DATE_ADD(DATE(p.fechaprestamo), INTERVAL 14 DAY)
+                        WHEN p.fechadevolucion IS NOT NULL THEN p.fechadevolucion
+                        ELSE DATE_ADD(p.fechaprestamo, INTERVAL 14 DAY)
                     END as fecha_vencimiento,
                     CASE 
-                        WHEN p.fechadevolucion IS NOT NULL THEN DATEDIFF(DATE(p.fechadevolucion), CURDATE())
-                        ELSE DATEDIFF(DATE_ADD(DATE(p.fechaprestamo), INTERVAL 14 DAY), CURDATE())
+                        WHEN p.fechadevolucion IS NOT NULL THEN TIMESTAMPDIFF(HOUR, NOW(), p.fechadevolucion) / 24.0
+                        ELSE TIMESTAMPDIFF(HOUR, NOW(), DATE_ADD(p.fechaprestamo, INTERVAL 14 DAY)) / 24.0
                     END as dias_restantes,
                     CASE 
                         WHEN p.fechahoraretorno IS NULL AND 
                              CASE 
-                                WHEN p.fechadevolucion IS NOT NULL THEN DATEDIFF(DATE(p.fechadevolucion), CURDATE())
-                                ELSE DATEDIFF(DATE_ADD(DATE(p.fechaprestamo), INTERVAL 14 DAY), CURDATE())
-                             END >= 0 THEN 'Activo'
+                                WHEN p.fechadevolucion IS NOT NULL THEN p.fechadevolucion > NOW()
+                                ELSE DATE_ADD(p.fechaprestamo, INTERVAL 14 DAY) > NOW()
+                             END THEN 'Activo'
                         WHEN p.fechahoraretorno IS NULL AND 
                              CASE 
-                                WHEN p.fechadevolucion IS NOT NULL THEN DATEDIFF(DATE(p.fechadevolucion), CURDATE())
-                                ELSE DATEDIFF(DATE_ADD(DATE(p.fechaprestamo), INTERVAL 14 DAY), CURDATE())
-                             END < 0 THEN 'Vencido'
+                                WHEN p.fechadevolucion IS NOT NULL THEN p.fechadevolucion <= NOW()
+                                ELSE DATE_ADD(p.fechadevolucion, INTERVAL 14 DAY) <= NOW()
+                             END THEN 'Vencido'
                         ELSE 'Devuelto'
                     END as estado,
-                    CASE 
-                        WHEN (SELECT COUNT(*) FROM information_schema.tables 
-                              WHERE table_schema = DATABASE() 
-                              AND table_name = 'renovaciones_prestamo') > 0 
-                        THEN COALESCE(
-                            (SELECT COUNT(*) FROM renovaciones_prestamo rp WHERE rp.idprestamo = p.idprestamo), 
-                            0
-                        )
-                        ELSE 0
-                    END as renovaciones
+                    COALESCE(
+                        (SELECT COUNT(*) 
+                         FROM renovaciones_prestamo rp 
+                         WHERE rp.idprestamo = p.idprestamo), 
+                        0
+                    ) as renovaciones
                 FROM prestamos p
                 JOIN matriculas m ON m.idmatricula = p.idmatricula
                 JOIN personas per ON per.idpersona = m.idpersona
@@ -173,26 +173,28 @@ class PrestamoModel extends Model
         // Total de préstamos activos
         $totalPrestamos = $this->where('fechahoraretorno IS NULL', null, false)->countAllResults();
         
-        // Préstamos vencidos hoy
+        // Préstamos vencidos hoy (que ya pasaron su hora de vencimiento)
         $vencidosHoy = $db->query("
             SELECT COUNT(*) as total 
             FROM prestamos p 
             WHERE p.fechahoraretorno IS NULL 
             AND CASE 
-                WHEN p.fechadevolucion IS NOT NULL THEN DATE(p.fechadevolucion)
-                ELSE DATE_ADD(DATE(p.fechaprestamo), INTERVAL 14 DAY)
-            END = CURDATE()
+                WHEN p.fechadevolucion IS NOT NULL THEN p.fechadevolucion < NOW() AND DATE(p.fechadevolucion) = CURDATE()
+                ELSE DATE_ADD(p.fechaprestamo, INTERVAL 14 DAY) < NOW() AND DATE(DATE_ADD(p.fechaprestamo, INTERVAL 14 DAY)) = CURDATE()
+            END
         ")->getRow()->total;
         
-        // Próximos a vencer (en los próximos 3 días)
+        // Próximos a vencer (en los próximos 3 días, considerando hora)
         $proximosVencer = $db->query("
             SELECT COUNT(*) as total 
             FROM prestamos p 
             WHERE p.fechahoraretorno IS NULL 
             AND CASE 
-                WHEN p.fechadevolucion IS NOT NULL THEN DATEDIFF(DATE(p.fechadevolucion), CURDATE())
-                ELSE DATEDIFF(DATE_ADD(DATE(p.fechaprestamo), INTERVAL 14 DAY), CURDATE())
-            END BETWEEN 0 AND 3
+                WHEN p.fechadevolucion IS NOT NULL THEN 
+                    FLOOR(TIMESTAMPDIFF(HOUR, NOW(), p.fechadevolucion) / 24) BETWEEN 0 AND 3
+                ELSE 
+                    FLOOR(TIMESTAMPDIFF(HOUR, NOW(), DATE_ADD(p.fechaprestamo, INTERVAL 14 DAY)) / 24) BETWEEN 0 AND 3
+            END
         ")->getRow()->total;
         
         // Renovaciones pendientes (préstamos que podrían necesitar renovación)
@@ -201,13 +203,13 @@ class PrestamoModel extends Model
             FROM prestamos p 
             WHERE p.fechahoraretorno IS NULL 
             AND CASE 
-                WHEN p.fechadevolucion IS NOT NULL THEN DATEDIFF(DATE(p.fechadevolucion), CURDATE())
-                ELSE DATEDIFF(DATE_ADD(DATE(p.fechaprestamo), INTERVAL 14 DAY), CURDATE())
-            END <= 2
-            AND CASE 
-                WHEN p.fechadevolucion IS NOT NULL THEN DATEDIFF(DATE(p.fechadevolucion), CURDATE())
-                ELSE DATEDIFF(DATE_ADD(DATE(p.fechaprestamo), INTERVAL 14 DAY), CURDATE())
-            END >= -5
+                WHEN p.fechadevolucion IS NOT NULL THEN 
+                    FLOOR(TIMESTAMPDIFF(HOUR, NOW(), p.fechadevolucion) / 24) <= 2
+                    AND FLOOR(TIMESTAMPDIFF(HOUR, NOW(), p.fechadevolucion) / 24) >= -5
+                ELSE 
+                    FLOOR(TIMESTAMPDIFF(HOUR, NOW(), DATE_ADD(p.fechaprestamo, INTERVAL 14 DAY)) / 24) <= 2
+                    AND FLOOR(TIMESTAMPDIFF(HOUR, NOW(), DATE_ADD(p.fechaprestamo, INTERVAL 14 DAY)) / 24) >= -5
+            END
         ")->getRow()->total;
         
         return [
@@ -971,20 +973,26 @@ class PrestamoModel extends Model
     /**
      * Renovar un préstamo activo con fecha específica
      */
-    public function renovarPrestamoConFecha($idprestamo, $nuevaFechaDevolucion, $motivo = '')
+    public function renovarPrestamoConFecha($idprestamo, $nuevaFechaDevolucion, $motivo = '', $nuevaFechaPrestamo = null)
     {
         $db = \Config\Database::connect();
         
         try {
+            log_message('info', 'Iniciando renovación de préstamo ' . $idprestamo);
+            
             $db->transStart();
             
             // Verificar que el préstamo existe y está activo
             $prestamo = $this->find($idprestamo);
             if (!$prestamo) {
+                log_message('error', 'Préstamo no encontrado: ' . $idprestamo);
                 throw new \Exception('El préstamo no existe');
             }
             
+            log_message('info', 'Préstamo encontrado: ' . json_encode($prestamo));
+            
             if ($prestamo['fechahoraretorno'] !== null) {
+                log_message('error', 'Intento de renovar préstamo ya devuelto: ' . $idprestamo);
                 throw new \Exception('No se puede renovar un préstamo ya devuelto');
             }
             
@@ -1008,32 +1016,57 @@ class PrestamoModel extends Model
                 $renovacionesActuales = 0;
             }
             
-            // Validar y parsear la nueva fecha
+            // Validar y parsear las nuevas fechas
             $fechaDevolucion = new \DateTime($nuevaFechaDevolucion);
             $fechaActual = new \DateTime();
+            
+            // Si se proporciona nueva fecha de préstamo, también actualizarla
+            $datosActualizacion = [
+                'fechadevolucion' => $fechaDevolucion->format('Y-m-d H:i:s')
+            ];
+            
+            if ($nuevaFechaPrestamo) {
+                $fechaPrestamo = new \DateTime($nuevaFechaPrestamo);
+                $datosActualizacion['fechaprestamo'] = $fechaPrestamo->format('Y-m-d H:i:s');
+            }
             
             // Calcular días de extensión
             $diasExtension = $fechaActual->diff($fechaDevolucion)->days;
             
-            // Actualizar la tabla de préstamos con nueva fecha de devolución
-            $this->update($idprestamo, [
-                'fechadevolucion' => $fechaDevolucion->format('Y-m-d H:i:s')
-            ]);
+            // Log de datos a actualizar
+            log_message('info', 'Datos a actualizar: ' . json_encode($datosActualizacion));
+            
+            // Actualizar la tabla de préstamos con las nuevas fechas
+            $updateResult = $this->update($idprestamo, $datosActualizacion);
+            
+            if ($updateResult === false) {
+                log_message('error', 'Fallo al actualizar préstamo ' . $idprestamo);
+                throw new \Exception('No se pudo actualizar el préstamo');
+            }
+            
+            log_message('info', 'Préstamo actualizado correctamente');
             
             // Registrar la renovación en tabla auxiliar (si existe)
             try {
                 if ($db->tableExists('renovaciones_prestamo')) {
-                    $db->table('renovaciones_prestamo')->insert([
+                    // Obtener la fecha de vencimiento anterior del préstamo
+                    $fechaVencimientoAnterior = $prestamo['fechadevolucion'] ?? $fechaActual->format('Y-m-d H:i:s');
+                    
+                    $insertData = [
                         'idprestamo' => $idprestamo,
                         'fecha_renovacion' => $fechaActual->format('Y-m-d H:i:s'),
-                        'dias_extension' => $diasExtension,
+                        'fecha_vencimiento_anterior' => $fechaVencimientoAnterior,
+                        'fecha_vencimiento_nueva' => $fechaDevolucion->format('Y-m-d H:i:s'),
                         'motivo' => $motivo,
-                        'nueva_fecha_devolucion' => $fechaDevolucion->format('Y-m-d H:i:s'),
-                        'usuario_renovacion' => session()->get('idusuario') ?? 1
-                    ]);
+                        'usuario_renueva' => session()->get('idusuario') ?? 1
+                    ];
+                    
+                    log_message('info', 'Insertando en renovaciones_prestamo: ' . json_encode($insertData));
+                    $db->table('renovaciones_prestamo')->insert($insertData);
                 }
             } catch (\Exception $e) {
                 log_message('warning', 'No se pudo registrar en tabla de renovaciones: ' . $e->getMessage());
+                log_message('warning', 'Error detallado: ' . $e->getTraceAsString());
             }
             
             // Registrar en logs
@@ -1042,20 +1075,26 @@ class PrestamoModel extends Model
             $db->transComplete();
             
             if ($db->transStatus() === false) {
+                log_message('error', 'Transacción fallida para préstamo ' . $idprestamo);
                 throw new \Exception('Error en la transacción de renovación');
             }
             
+            log_message('info', 'Transacción completada exitosamente');
+            
             return [
                 'success' => true,
-                'message' => "Préstamo renovado exitosamente hasta {$fechaDevolucion->format('d/m/Y')}",
-                'nueva_fecha_devolucion' => $fechaDevolucion->format('d/m/Y'),
+                'message' => "Préstamo renovado exitosamente hasta {$fechaDevolucion->format('d/m/Y H:i')}",
+                'nueva_fecha_devolucion' => $fechaDevolucion->format('d/m/Y H:i'),
                 'renovaciones_totales' => $renovacionesActuales + 1,
                 'dias_extension' => $diasExtension
             ];
             
         } catch (\Exception $e) {
-            $db->transRollback();
+            if ($db->transStatus() !== false) {
+                $db->transRollback();
+            }
             log_message('error', 'Error al renovar préstamo: ' . $e->getMessage());
+            log_message('error', 'Stack trace: ' . $e->getTraceAsString());
             
             return [
                 'success' => false,
@@ -1147,8 +1186,8 @@ class PrestamoModel extends Model
                     p.fechahoravalidacion as fecha_aprobacion,
                     p.fechahoraretorno as fecha_devolucion_real,
                     
-                    -- Cálculo de días
-                    DATEDIFF(p.fechadevolucion, CURDATE()) as dias_restantes,
+                    -- Cálculo de días (con horas incluidas)
+                    TIMESTAMPDIFF(HOUR, NOW(), p.fechadevolucion) / 24.0 as dias_restantes,
                     DATEDIFF(CURDATE(), DATE(p.fechaprestamo)) as dias_transcurridos,
                     
                     -- Información del usuario
@@ -1241,7 +1280,12 @@ class PrestamoModel extends Model
             if ($tablesQuery->getNumRows() > 0) {
                 // Obtener historial de renovaciones
                 $renovacionesQuery = $db->query("
-                    SELECT fecha_renovacion, nueva_fecha_devolucion, motivo, dias_extension
+                    SELECT 
+                        fecha_renovacion, 
+                        fecha_vencimiento_anterior,
+                        fecha_vencimiento_nueva, 
+                        motivo,
+                        DATEDIFF(fecha_vencimiento_nueva, fecha_vencimiento_anterior) as dias_extension
                     FROM renovaciones_prestamo 
                     WHERE idprestamo = ? 
                     ORDER BY fecha_renovacion DESC
@@ -1254,13 +1298,13 @@ class PrestamoModel extends Model
             
             $detalle->total_renovaciones = count($detalle->renovaciones);
             
-            // Calcular estado del préstamo
-            $diasRestantes = intval($detalle->dias_restantes ?? 0);
+            // Calcular estado del préstamo (considerando horas)
+            $diasRestantes = floatval($detalle->dias_restantes ?? 0);
             if ($diasRestantes > 3) {
                 $detalle->estado_prestamo = 'Activo';
                 $detalle->color_estado = 'success';
                 $detalle->icono_estado = 'ti-check-circle';
-            } elseif ($diasRestantes > 0) {
+            } elseif ($diasRestantes >= 0) {
                 $detalle->estado_prestamo = 'Por Vencer';
                 $detalle->color_estado = 'warning';
                 $detalle->icono_estado = 'ti-alert-triangle';
@@ -1276,6 +1320,14 @@ class PrestamoModel extends Model
             $detalle->fecha_vencimiento_formatted = $detalle->fecha_vencimiento ? 
                 date('d/m/Y', strtotime($detalle->fecha_vencimiento)) : 'No disponible';
             
+            // Formatear hora de inicio y fin
+            $detalle->hora_inicio = $detalle->fecha_prestamo ? 
+                date('H:i', strtotime($detalle->fecha_prestamo)) : 'No disponible';
+            $detalle->hora_fin = $detalle->fecha_vencimiento ? 
+                date('H:i', strtotime($detalle->fecha_vencimiento)) : 'No especificada';
+            $detalle->fecha_prestamo_solo = $detalle->fecha_prestamo ? 
+                date('d/m/Y', strtotime($detalle->fecha_prestamo)) : 'No disponible';
+            
             if ($detalle->fecha_aprobacion) {
                 $detalle->fecha_aprobacion_formatted = date('d/m/Y H:i', strtotime($detalle->fecha_aprobacion));
             } else {
@@ -1285,7 +1337,8 @@ class PrestamoModel extends Model
             // Formatear fechas de renovaciones
             foreach ($detalle->renovaciones as &$renovacion) {
                 $renovacion['fecha_renovacion_formatted'] = date('d/m/Y H:i', strtotime($renovacion['fecha_renovacion']));
-                $renovacion['nueva_fecha_devolucion_formatted'] = date('d/m/Y', strtotime($renovacion['nueva_fecha_devolucion']));
+                $renovacion['fecha_vencimiento_anterior_formatted'] = date('d/m/Y', strtotime($renovacion['fecha_vencimiento_anterior']));
+                $renovacion['fecha_vencimiento_nueva_formatted'] = date('d/m/Y', strtotime($renovacion['fecha_vencimiento_nueva']));
             }
         }
         

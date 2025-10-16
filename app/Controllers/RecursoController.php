@@ -1488,4 +1488,144 @@ public function actualizar($idrecurso)
             'FCPATH' => FCPATH
         ]);
     }
+
+    /**
+     * Método de prueba para verificar recursos en la base de datos
+     */
+    public function testBusquedaRecursos()
+    {
+        $db = \Config\Database::connect();
+        
+        // Verificar tablas existentes
+        $tablas = $db->listTables();
+        
+        // Verificar estructura de recursos
+        $recursos = $db->query("SELECT * FROM recursos LIMIT 5")->getResultArray();
+        
+        // Verificar si existe ejemplares_fisicos
+        $ejemplares = [];
+        if (in_array('ejemplares_fisicos', $tablas)) {
+            $ejemplares = $db->query("SELECT * FROM ejemplares_fisicos LIMIT 5")->getResultArray();
+        }
+        
+        // Verificar recursos_fisicos
+        $recursos_fisicos = [];
+        if (in_array('recursos_fisicos', $tablas)) {
+            $recursos_fisicos = $db->query("SELECT * FROM recursos_fisicos LIMIT 5")->getResultArray();
+        }
+        
+        // Hacer la consulta de búsqueda exacta
+        $termino = '123';
+        $builder = $db->table('recursos');
+        
+        if (in_array('ejemplares_fisicos', $tablas)) {
+            $resultado = $builder
+                ->select('recursos.idrecurso, recursos.titulo, recursos.isbn, recursos.estado,
+                         ejemplares_fisicos.idejemplar, ejemplares_fisicos.codigo_ejemplar, 
+                         ejemplares_fisicos.estado_ejemplar')
+                ->join('ejemplares_fisicos', 'ejemplares_fisicos.idrecurso = recursos.idrecurso', 'inner')
+                ->groupStart()
+                    ->like('recursos.titulo', $termino)
+                    ->orLike('recursos.isbn', $termino)
+                    ->orLike('ejemplares_fisicos.codigo_ejemplar', $termino)
+                ->groupEnd()
+                ->limit(5)
+                ->get()
+                ->getResultArray();
+        } else {
+            $resultado = $builder
+                ->select('recursos.idrecurso, recursos.titulo, recursos.isbn, recursos.estado')
+                ->groupStart()
+                    ->like('recursos.titulo', $termino)
+                    ->orLike('recursos.isbn', $termino)
+                ->groupEnd()
+                ->limit(5)
+                ->get()
+                ->getResultArray();
+        }
+        
+        return $this->response->setJSON([
+            'tablas_existentes' => $tablas,
+            'recursos_sample' => $recursos,
+            'ejemplares_sample' => $ejemplares,
+            'recursos_fisicos_sample' => $recursos_fisicos,
+            'resultado_busqueda' => $resultado,
+            'query_ejecutado' => $db->getLastQuery()->getQuery()
+        ]);
+    }
+
+    /**
+     * Buscar recursos disponibles por AJAX (para préstamos)
+     */
+    public function buscarDisponiblesAjax()
+    {
+        try {
+            $termino = $this->request->getPost('termino');
+            
+            if (empty($termino)) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Debe proporcionar un término de búsqueda'
+                ]);
+            }
+
+            // Usar el query builder directamente
+            $db = \Config\Database::connect();
+            $builder = $db->table('recursos');
+            
+            // Búsqueda directa en la tabla recursos (más simple y confiable)
+            $recursos = $builder
+                ->select('recursos.idrecurso, 
+                         recursos.titulo, 
+                         recursos.isbn, 
+                         recursos.estado,
+                         recursos.stock,
+                         recursos_fisicos.portada,
+                         tiporecursos.tiporecurso as tipo_recurso,
+                         recursos.idrecurso as idejemplar,
+                         CONCAT("REC-", recursos.idrecurso) as codigo_ejemplar')
+                ->join('recursos_fisicos', 'recursos_fisicos.idrecurso = recursos.idrecurso', 'left')
+                ->join('tiporecursos', 'tiporecursos.idtiporecurso = recursos.idtiporecurso', 'left')
+                ->where('recursos.estado', 'disponible')
+                ->where('recursos.stock >', 0)
+                ->groupStart()
+                    ->like('recursos.titulo', $termino)
+                    ->orLike('recursos.isbn', $termino)
+                ->groupEnd()
+                ->limit(10)
+                ->get()
+                ->getResultArray();
+
+            // Formatear resultados
+            $recursosFormateados = [];
+            foreach ($recursos as $recurso) {
+                $recursosFormateados[] = [
+                    'idrecurso' => $recurso['idrecurso'],
+                    'idejemplar' => $recurso['idejemplar'],
+                    'titulo' => $recurso['titulo'],
+                    'isbn' => $recurso['isbn'] ?? 'N/A',
+                    'codigo_ejemplar' => $recurso['codigo_ejemplar'],
+                    'tipo_recurso' => $recurso['tipo_recurso'] ?? 'Físico',
+                    'estado_ejemplar' => $recurso['estado'],
+                    'stock' => $recurso['stock'],
+                    'portada' => $recurso['portada'] ? base_url($recurso['portada']) : null
+                ];
+            }
+
+            return $this->response->setJSON([
+                'success' => true,
+                'recursos' => $recursosFormateados,
+                'total' => count($recursosFormateados)
+            ]);
+
+        } catch (\Exception $e) {
+            log_message('error', 'Error en buscarDisponiblesAjax: ' . $e->getMessage());
+            log_message('error', 'Stack trace: ' . $e->getTraceAsString());
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Error al buscar recursos: ' . $e->getMessage(),
+                'error_detail' => $e->getMessage()
+            ]);
+        }
+    }
 }

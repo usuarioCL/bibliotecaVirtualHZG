@@ -924,6 +924,15 @@ class PrestamoController extends Controller
         $idprestamo = $this->request->getPost('idprestamo');
         $motivo = $this->request->getPost('motivo') ?? '';
         $nuevaFechaDevolucion = $this->request->getPost('nueva_fecha_devolucion');
+        $nuevaFechaPrestamo = $this->request->getPost('nueva_fecha_prestamo');
+        
+        // Log para debugging
+        log_message('info', 'Datos recibidos para renovación: ' . json_encode([
+            'idprestamo' => $idprestamo,
+            'nueva_fecha_prestamo' => $nuevaFechaPrestamo,
+            'nueva_fecha_devolucion' => $nuevaFechaDevolucion,
+            'motivo' => $motivo
+        ]));
         
         if (!$idprestamo) {
             return $this->response->setJSON([
@@ -940,26 +949,35 @@ class PrestamoController extends Controller
             ]);
         }
 
-        // Validar que la fecha sea válida y posterior a hoy
+        // Validar que las fechas sean válidas
         try {
             $fechaDevolucion = new \DateTime($nuevaFechaDevolucion);
             $hoy = new \DateTime();
             
-            if ($fechaDevolucion <= $hoy) {
-                return $this->response->setJSON([
-                    'success' => false,
-                    'message' => 'La fecha de devolución debe ser posterior a hoy'
-                ]);
+            // Si se proporciona fecha de préstamo, validarla también
+            if ($nuevaFechaPrestamo) {
+                $fechaPrestamo = new \DateTime($nuevaFechaPrestamo);
+                
+                // Validar que fecha de devolución sea posterior a fecha de préstamo
+                if ($fechaDevolucion <= $fechaPrestamo) {
+                    return $this->response->setJSON([
+                        'success' => false,
+                        'message' => 'La fecha de devolución debe ser posterior a la fecha de inicio'
+                    ]);
+                }
             }
         } catch (\Exception $e) {
             return $this->response->setJSON([
                 'success' => false,
-                'message' => 'Fecha de devolución inválida'
+                'message' => 'Fechas inválidas: ' . $e->getMessage()
             ]);
         }
 
         try {
-            $resultado = $this->prestamoModel->renovarPrestamoConFecha($idprestamo, $nuevaFechaDevolucion, $motivo);
+            $resultado = $this->prestamoModel->renovarPrestamoConFecha($idprestamo, $nuevaFechaDevolucion, $motivo, $nuevaFechaPrestamo);
+            
+            // Log del resultado
+            log_message('info', 'Resultado de renovación: ' . json_encode($resultado));
             
             // Registrar acción en historial si existe el helper
             if ($resultado['success'] && function_exists('registrar_accion')) {
@@ -969,7 +987,7 @@ class PrestamoController extends Controller
                     session()->get('nomuser'),
                     null,
                     session()->get('nivelacceso'),
-                    "Préstamo #{$idprestamo} renovado hasta {$nuevaFechaDevolucion}. Motivo: {$motivo}"
+                    "Préstamo #{$idprestamo} renovado. Nueva fecha inicio: {$nuevaFechaPrestamo}, Nueva fecha fin: {$nuevaFechaDevolucion}. Motivo: {$motivo}"
                 );
             }
             
@@ -977,9 +995,10 @@ class PrestamoController extends Controller
             
         } catch (\Exception $e) {
             log_message('error', 'Error en PrestamoController::renovarPrestamo(): ' . $e->getMessage());
+            log_message('error', 'Stack trace: ' . $e->getTraceAsString());
             return $this->response->setJSON([
                 'success' => false,
-                'message' => 'Error interno del servidor'
+                'message' => 'Error interno del servidor: ' . $e->getMessage()
             ]);
         }
     }
@@ -1038,6 +1057,172 @@ class PrestamoController extends Controller
             return $this->response->setJSON([
                 'success' => false,
                 'message' => 'Error interno del servidor: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Crear un nuevo préstamo
+     */
+    public function crearPrestamo()
+    {
+        // Verificar que sea una petición AJAX
+        if (!$this->request->isAJAX()) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Solicitud no válida'
+            ]);
+        }
+
+        try {
+            $db = \Config\Database::connect();
+            
+            // Obtener datos del formulario
+            $idusuario = $this->request->getPost('idusuario');
+            $idrecurso = $this->request->getPost('idejemplar'); // El frontend envía como idejemplar
+            $fechaPrestamo = $this->request->getPost('fechaPrestamo');
+            $horaInicio = $this->request->getPost('horaInicio');
+            $horaFin = $this->request->getPost('horaFin');
+            $observaciones = $this->request->getPost('observaciones');
+
+            // Validaciones
+            if (empty($idusuario) || empty($idrecurso) || empty($fechaPrestamo)) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Faltan datos requeridos (usuario, recurso o fecha de préstamo)'
+                ]);
+            }
+            
+            if (empty($horaInicio) || empty($horaFin)) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Faltan las horas de inicio y fin del préstamo'
+                ]);
+            }
+
+            // Obtener información del usuario
+            $usuario = $db->table('usuarios u')
+                ->select('u.idusuario, u.nivelacceso, u.idpersona')
+                ->where('u.idusuario', $idusuario)
+                ->get()->getRow();
+
+            if (!$usuario) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Usuario no encontrado'
+                ]);
+            }
+
+            // Obtener idmatricula del usuario
+            $idmatricula = null;
+            if ($usuario->nivelacceso === 'estudiante') {
+                $idmatricula = $this->prestamoModel->getMatriculaByUsuario($usuario->idusuario);
+                if (!$idmatricula) {
+                    return $this->response->setJSON([
+                        'success' => false,
+                        'message' => 'No se encontró matrícula activa para el estudiante'
+                    ]);
+                }
+            } else {
+                // Para admin y docente, buscar o crear matrícula básica
+                $matricula = $db->table('matriculas')
+                    ->where('idpersona', $usuario->idpersona)
+                    ->where('estadomatricula', true)
+                    ->get()->getRow();
+
+                if (!$matricula) {
+                    // Si no existe matrícula, crear una básica (requiere un grupo por defecto)
+                    $grupoDefault = $db->table('grupos')->orderBy('idgrupo', 'ASC')->get()->getRow();
+                    if (!$grupoDefault) {
+                        return $this->response->setJSON([
+                            'success' => false,
+                            'message' => 'No hay grupos disponibles en el sistema. Contacte al administrador.'
+                        ]);
+                    }
+
+                    $db->table('matriculas')->insert([
+                        'idgrupo' => $grupoDefault->idgrupo,
+                        'idpersona' => $usuario->idpersona,
+                        'fechamatricula' => date('Y-m-d'),
+                        'estadomatricula' => true
+                    ]);
+                    $idmatricula = $db->insertID();
+                } else {
+                    $idmatricula = $matricula->idmatricula;
+                }
+            }
+
+            // Verificar disponibilidad del recurso
+            $recurso = $db->table('recursos')
+                ->where('idrecurso', $idrecurso)
+                ->get()->getRow();
+
+            if (!$recurso) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'El recurso no existe'
+                ]);
+            }
+
+            if ($recurso->estado !== 'disponible' || $recurso->stock <= 0) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'El recurso no está disponible para préstamo'
+                ]);
+            }
+
+            // Preparar fechas con hora de inicio y fin
+            $fechaPrestamoCompleta = $fechaPrestamo . ' ' . $horaInicio . ':00';
+            $fechaDevolucionCompleta = $fechaPrestamo . ' ' . $horaFin . ':00';
+
+            // Crear el préstamo
+            $prestamo = [
+                'idmatricula' => $idmatricula,
+                'idusuario' => session()->get('id'), // Usuario que registra el préstamo
+                'idrecurso' => $idrecurso,
+                'fechaprestamo' => $fechaPrestamoCompleta,
+                'fechadevolucion' => $fechaDevolucionCompleta,
+                'fechahoravalidacion' => date('Y-m-d H:i:s') // Validado inmediatamente por admin
+            ];
+
+            $this->prestamoModel->insert($prestamo);
+            $idPrestamo = $this->prestamoModel->insertID();
+
+            // Actualizar stock del recurso
+            $db->table('recursos')
+                ->where('idrecurso', $idrecurso)
+                ->set('stock', 'stock - 1', false)
+                ->update();
+
+            // Si el stock llega a 0, cambiar estado a no disponible
+            $recursoActualizado = $db->table('recursos')
+                ->where('idrecurso', $idrecurso)
+                ->get()->getRow();
+
+            if ($recursoActualizado->stock <= 0) {
+                $db->table('recursos')
+                    ->where('idrecurso', $idrecurso)
+                    ->update(['estado' => 'no disponible']);
+            }
+
+            // Registrar en historial si existe el helper
+            if (function_exists('registrar_accion')) {
+                helper('historial');
+                registrar_accion("Creó préstamo #$idPrestamo del recurso: {$recurso->titulo}");
+            }
+
+            return $this->response->setJSON([
+                'success' => true,
+                'message' => 'Préstamo creado exitosamente',
+                'idprestamo' => $idPrestamo
+            ]);
+
+        } catch (\Exception $e) {
+            log_message('error', 'Error en PrestamoController::crearPrestamo(): ' . $e->getMessage());
+            log_message('error', 'Trace: ' . $e->getTraceAsString());
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Error al crear el préstamo: ' . $e->getMessage()
             ]);
         }
     }
