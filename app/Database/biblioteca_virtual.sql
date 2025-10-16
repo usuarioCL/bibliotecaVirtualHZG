@@ -137,11 +137,23 @@ CREATE TABLE prestamos (
     FOREIGN KEY (idrecurso) REFERENCES recursos(idrecurso)
 );
 
--- TABLA: Solicitudes de Prestamo
 CREATE TABLE solicitud (
-    idsolicitud INT AUTO_INCREMENT PRIMARY KEY,
-    validado BOOLEAN DEFAULT FALSE,
-    idprestamo INT NOT NULL,
+    idsolicitud INT AUTO_INCREMENT PRIMARY KEY,     -- ID único de la solicitud
+    validado BOOLEAN DEFAULT FALSE,                 -- Si está aprobada/rechazada
+    idprestamo INT NULL,                            -- Se asigna solo cuando se aprueba
+    idmatricula INT,                                -- Matrícula del solicitante
+    idusuario INT,                                  -- Usuario que solicita
+    idrecurso INT,                                  -- Recurso solicitado
+    fechaprestamo DATETIME,                         -- Fecha/hora inicio solicitada
+    fechadevolucion DATETIME,                       -- Fecha/hora fin solicitada
+    fecha_solicitud TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- Cuándo se creó la solicitud
+    motivo_rechazo TEXT NULL,                       -- Si se rechaza, el motivo
+    fecha_procesado TIMESTAMP NULL,                 -- Cuándo se procesó (aprobó/rechazó)
+    
+    -- Claves foráneas
+    FOREIGN KEY (idmatricula) REFERENCES matriculas(idmatricula),
+    FOREIGN KEY (idusuario) REFERENCES usuarios(idusuario),
+    FOREIGN KEY (idrecurso) REFERENCES recursos(idrecurso),
     FOREIGN KEY (idprestamo) REFERENCES prestamos(idprestamo)
 );
 -- TABLA:renovaciones

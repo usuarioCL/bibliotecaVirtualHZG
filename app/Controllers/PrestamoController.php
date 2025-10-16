@@ -269,25 +269,16 @@ class PrestamoController extends Controller
                 ]);
             }
             
-            // Crear registro de préstamo
-            $prestamo = [
+            // Crear solo la solicitud (sin préstamo activo aún)
+            $db = \Config\Database::connect();
+            $db->table('solicitud')->insert([
                 'idmatricula' => $idMatricula,
                 'idusuario' => $idUsuario,
                 'idrecurso' => $idRecurso,
                 'fechaprestamo' => $fechaHoraPrestamo,
-                'fechadevolucion' => $fechaHoraDevolucion
-            ];
-            
-            // Insertar el préstamo
-            $prestamoModel = new PrestamoModel();
-            $prestamoModel->insert($prestamo);
-            $idPrestamo = $prestamoModel->insertID();
-            
-            // Crear registro en tabla de solicitudes
-            $db = \Config\Database::connect();
-            $db->table('solicitud')->insert([
+                'fechadevolucion' => $fechaHoraDevolucion,
                 'validado' => false,
-                'idprestamo' => $idPrestamo
+                'idprestamo' => null  // Se asignará cuando se apruebe
             ]);
             
             // Registrar en historial de usuario si existe el helper
