@@ -233,6 +233,9 @@ $routes->post('/prestamos/detalleSolicitud', 'PrestamoController::detalleSolicit
 
 // Gestión de préstamos activos (Admin/Docente)
 $routes->post('/prestamos/cancelar', 'PrestamoController::cancelar');             // Cancelar préstamo activo
+$routes->post('/prestamos/procesar-devolucion', 'PrestamoController::procesarDevolucion'); // Procesar devolución
+$routes->post('/prestamos/renovar', 'PrestamoController::renovarPrestamo');       // Renovar préstamo
+$routes->post('/prestamos/detalle', 'PrestamoController::obtenerDetallePrestamo'); // Obtener detalles de préstamo
 
 // =====================================
 // RUTAS PARA MODALES DEL SISTEMA

@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use CodeIgniter\Controller;
 use App\Models\PrestamoModel;
+use DateTime;
 
 
 class PrestamoController extends Controller
@@ -56,7 +57,14 @@ class PrestamoController extends Controller
      */
     public function solicitudes()
     {
+        // Verificar autenticación antes de continuar
+        if (!session()->get('logged_in')) {
+            log_message('warning', 'Usuario no autenticado intentando acceder a solicitudes');
+            return redirect()->to(base_url('login'));
+        }
+
         try {
+            log_message('info', 'Accediendo a solicitudes pendientes - Usuario: ' . session()->get('nomuser'));
             $solicitudes = $this->prestamoModel->getSolicitudesPendientes();
             
             $estadisticas = [
@@ -149,24 +157,28 @@ class PrestamoController extends Controller
         
         // Obtener datos del formulario
         $idRecurso = $this->request->getPost('idRecurso');
-        $fechaInicio = $this->request->getPost('fechaInicio');
-        $fechaDevolucion = $this->request->getPost('fechaDevolucion');
-        $motivo = $this->request->getPost('motivo');
-        $otroMotivo = $this->request->getPost('otroMotivo');
-        $observaciones = $this->request->getPost('observaciones');
+        $fechaPrestamo = $this->request->getPost('fechaPrestamo');
+        $horaInicio = $this->request->getPost('horaInicio');
+        $horaFin = $this->request->getPost('horaFin');
         
         // Validar datos obligatorios
-        if (!$idRecurso || !$fechaInicio || !$fechaDevolucion || !$motivo) {
+        if (!$idRecurso || !$fechaPrestamo || !$horaInicio || !$horaFin) {
             return $this->response->setJSON([
                 'success' => false,
                 'message' => 'Todos los campos obligatorios deben ser completados'
             ]);
         }
         
-        // Si el motivo es "Otro", usar el motivo especificado
-        if ($motivo === 'Otro' && !empty($otroMotivo)) {
-            $motivo = $otroMotivo;
-        }
+        // Las validaciones se manejan en el frontend con validación inline
+        // Solo creamos los objetos DateTime para el procesamiento
+        $horaInicioObj = DateTime::createFromFormat('H:i', $horaInicio);
+        $horaFinObj = DateTime::createFromFormat('H:i', $horaFin);
+        
+        // Crear fecha y hora completa para el préstamo
+        $fechaHoraPrestamo = $fechaPrestamo . ' ' . $horaInicio . ':00';
+        
+        // La devolución será el mismo día a la hora de fin especificada
+        $fechaHoraDevolucion = $fechaPrestamo . ' ' . $horaFin . ':00';
         
         try {
             // Obtener datos del usuario
@@ -262,8 +274,8 @@ class PrestamoController extends Controller
                 'idmatricula' => $idMatricula,
                 'idusuario' => $idUsuario,
                 'idrecurso' => $idRecurso,
-                'fechaprestamo' => $fechaInicio . ' 00:00:00',
-                'fechadevolucion' => $fechaDevolucion . ' 23:59:59'
+                'fechaprestamo' => $fechaHoraPrestamo,
+                'fechadevolucion' => $fechaHoraDevolucion
             ];
             
             // Insertar el préstamo
@@ -277,29 +289,6 @@ class PrestamoController extends Controller
                 'validado' => false,
                 'idprestamo' => $idPrestamo
             ]);
-            
-            // Verificamos si la tabla prestamos tiene una columna de observaciones
-            // Si no existe, alteramos la consulta para adaptar
-            $db = \Config\Database::connect();
-            $tablesFields = $db->getFieldData('prestamos');
-            $hasObservacionesField = false;
-            
-            foreach ($tablesFields as $field) {
-                if ($field->name === 'observaciones') {
-                    $hasObservacionesField = true;
-                    break;
-                }
-            }
-            
-            if ($hasObservacionesField) {
-                // Si existe la columna observaciones, la actualizamos
-                $db->table('prestamos')
-                    ->where('idprestamo', $idPrestamo)
-                    ->update(['observaciones' => "Motivo: $motivo. " . ($observaciones ? "Observaciones: $observaciones" : "")]);
-            } else {
-                // Si no existe, guardamos la información en una tabla temporal o log
-                log_message('info', "Préstamo #$idPrestamo - Motivo: $motivo. Observaciones: $observaciones");
-            }
             
             // Registrar en historial de usuario si existe el helper
             if (function_exists('historial_helper')) {
@@ -394,148 +383,7 @@ class PrestamoController extends Controller
         }
     }
     
-    /**
-     * Datos de prueba para préstamos
-     */
-    protected function getDatosPruebaPrestamos()
-    {
-        return [
-            [
-                'idprestamo' => 1,
-                'codigo_prestamo' => 'PREST-2023-001',
-                'usuario' => 'Juan Pérez',
-                'documento' => '12345678',
-                'recurso' => 'Historia del Perú',
-                'codigo_recurso' => 'LIB-FIS-001',
-                'fecha_prestamo' => '2023-06-01',
-                'fecha_devolucion' => '2023-06-15',
-                'dias_restantes' => -30,
-                'estado' => 'Vencido'
-            ],
-            [
-                'idprestamo' => 2,
-                'codigo_prestamo' => 'PREST-2023-002',
-                'usuario' => 'María García',
-                'documento' => '87654321',
-                'recurso' => 'Matemáticas 5',
-                'codigo_recurso' => 'LIB-FIS-002',
-                'fecha_prestamo' => date('Y-m-d'),
-                'fecha_devolucion' => date('Y-m-d', strtotime('+7 days')),
-                'dias_restantes' => 7,
-                'estado' => 'Activo'
-            ]
-        ];
-    }
-
-    /**
-     * Datos de prueba para solicitudes
-     */
-    protected function getDatosPruebaSolicitudes()
-    {
-        return [
-            [
-                'idsolicitud' => 1,
-                'idprestamo' => 3,
-                'usuario' => 'Pedro López',
-                'documento' => '45678912',
-                'recurso' => 'Ciencias Naturales',
-                'codigo_recurso' => 'LIB-FIS-003',
-                'fecha_solicitud' => date('Y-m-d H:i:s'),
-                'estado' => 'Pendiente'
-            ],
-            [
-                'idsolicitud' => 2,
-                'idprestamo' => 4,
-                'usuario' => 'Ana Torres',
-                'documento' => '78912345',
-                'recurso' => 'Historia Universal',
-                'codigo_recurso' => 'LIB-FIS-004',
-                'fecha_solicitud' => date('Y-m-d H:i:s', strtotime('-1 day')),
-                'estado' => 'Pendiente'
-            ]
-        ];
-    }
     
-    /**
-     * Datos de prueba para devoluciones
-     */
-    protected function getDatosPruebaDevoluciones()
-    {
-        return [
-            [
-                'idprestamo' => 5,
-                'codigo_prestamo' => 'PREST-2023-005',
-                'usuario' => 'Lucía Mendoza',
-                'documento' => '32165498',
-                'recurso' => 'Comunicación 3',
-                'codigo_recurso' => 'LIB-FIS-005',
-                'fecha_prestamo' => date('Y-m-d', strtotime('-14 days')),
-                'fecha_devolucion' => date('Y-m-d'),
-                'estado' => 'Devuelto',
-                'retraso' => 'No',
-                'multa' => 'No aplica'
-            ],
-            [
-                'idprestamo' => 6,
-                'codigo_prestamo' => 'PREST-2023-006',
-                'usuario' => 'Carlos Ruiz',
-                'documento' => '65498732',
-                'recurso' => 'Arte y Cultura',
-                'codigo_recurso' => 'LIB-FIS-006',
-                'fecha_prestamo' => date('Y-m-d', strtotime('-30 days')),
-                'fecha_devolucion' => date('Y-m-d'),
-                'estado' => 'Devuelto con retraso',
-                'retraso' => 'Sí (10 días)',
-                'multa' => 'S/. 10.00'
-            ]
-        ];
-    }
-    
-    /**
-     * Datos de prueba para historial
-     */
-    protected function getDatosPruebaHistorial()
-    {
-        return [
-            [
-                'idprestamo' => 7,
-                'codigo_prestamo' => 'PREST-2023-007',
-                'usuario' => 'Diana Castro',
-                'documento' => '78945612',
-                'recurso' => 'Física Moderna',
-                'codigo_recurso' => 'LIB-FIS-007',
-                'fecha_prestamo' => '2023-05-10',
-                'fecha_devolucion' => '2023-05-24',
-                'fecha_retorno' => '2023-05-23',
-                'estado' => 'Devuelto a tiempo'
-            ],
-            [
-                'idprestamo' => 8,
-                'codigo_prestamo' => 'PREST-2023-008',
-                'usuario' => 'Roberto Díaz',
-                'documento' => '15975346',
-                'recurso' => 'Química Básica',
-                'codigo_recurso' => 'LIB-FIS-008',
-                'fecha_prestamo' => '2023-04-05',
-                'fecha_devolucion' => '2023-04-19',
-                'fecha_retorno' => '2023-04-25',
-                'estado' => 'Devuelto con retraso'
-            ],
-            [
-                'idprestamo' => 9,
-                'codigo_prestamo' => 'PREST-2023-009',
-                'usuario' => 'Mónica Álvarez',
-                'documento' => '36925814',
-                'recurso' => 'Geografía Mundial',
-                'codigo_recurso' => 'LIB-FIS-009',
-                'fecha_prestamo' => '2023-03-15',
-                'fecha_devolucion' => '2023-03-29',
-                'fecha_retorno' => null,
-                'estado' => 'No devuelto (perdido)'
-            ]
-        ];
-    }
-
     /**
      * Aprobar una solicitud de préstamo
      */
@@ -818,6 +666,72 @@ class PrestamoController extends Controller
     }
 
     /**
+     * Procesar devolución de un préstamo
+     */
+    public function procesarDevolucion()
+    {
+        // Verificar si es una solicitud AJAX
+        if (!$this->request->isAJAX()) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Solicitud no válida'
+            ]);
+        }
+
+        // Verificar si el usuario está autenticado y es admin/docente
+        if (!session()->get('logged_in')) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'No tienes permisos para realizar esta acción'
+            ]);
+        }
+
+        $nivelAcceso = session()->get('nivelacceso');
+        if (!in_array($nivelAcceso, ['admin', 'docente'])) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'No tienes permisos para procesar devoluciones'
+            ]);
+        }
+
+        // Obtener datos del formulario
+        $idprestamo = $this->request->getPost('idprestamo');
+        $observaciones = $this->request->getPost('observaciones') ?? '';
+        
+        if (!$idprestamo) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'ID de préstamo requerido'
+            ]);
+        }
+
+        try {
+            $resultado = $this->prestamoModel->procesarDevolucion($idprestamo, $observaciones);
+            
+            // Registrar acción en historial si existe el helper
+            if ($resultado['success'] && function_exists('registrar_accion')) {
+                helper('historial');
+                registrar_accion(
+                    'Devolución de Préstamo',
+                    session()->get('nomuser'),
+                    null,
+                    session()->get('nivelacceso'),
+                    "Préstamo #{$idprestamo} devuelto. Observaciones: {$observaciones}"
+                );
+            }
+            
+            return $this->response->setJSON($resultado);
+            
+        } catch (\Exception $e) {
+            log_message('error', 'Error en PrestamoController::procesarDevolucion(): ' . $e->getMessage());
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Error interno del servidor'
+            ]);
+        }
+    }
+
+    /**
      * Cancelar un préstamo activo
      */
     public function cancelar()
@@ -881,6 +795,157 @@ class PrestamoController extends Controller
             return $this->response->setJSON([
                 'success' => false,
                 'message' => 'Error interno del servidor'
+            ]);
+        }
+    }
+
+    /**
+     * Renovar un préstamo activo
+     */
+    public function renovarPrestamo()
+    {
+        // Verificar si es una solicitud AJAX
+        if (!$this->request->isAJAX()) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Solicitud no válida'
+            ]);
+        }
+
+        // Verificar si el usuario está autenticado y es admin/docente
+        if (!session()->get('logged_in')) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'No tienes permisos para realizar esta acción'
+            ]);
+        }
+
+        $nivelAcceso = session()->get('nivelacceso');
+        if (!in_array($nivelAcceso, ['admin', 'docente'])) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'No tienes permisos para renovar préstamos'
+            ]);
+        }
+
+        // Obtener datos del formulario
+        $idprestamo = $this->request->getPost('idprestamo');
+        $motivo = $this->request->getPost('motivo') ?? '';
+        $nuevaFechaDevolucion = $this->request->getPost('nueva_fecha_devolucion');
+        
+        if (!$idprestamo) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'ID de préstamo requerido'
+            ]);
+        }
+
+        // Validar nueva fecha de devolución
+        if (!$nuevaFechaDevolucion) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Nueva fecha de devolución requerida'
+            ]);
+        }
+
+        // Validar que la fecha sea válida y posterior a hoy
+        try {
+            $fechaDevolucion = new \DateTime($nuevaFechaDevolucion);
+            $hoy = new \DateTime();
+            
+            if ($fechaDevolucion <= $hoy) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'La fecha de devolución debe ser posterior a hoy'
+                ]);
+            }
+        } catch (\Exception $e) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Fecha de devolución inválida'
+            ]);
+        }
+
+        try {
+            $resultado = $this->prestamoModel->renovarPrestamoConFecha($idprestamo, $nuevaFechaDevolucion, $motivo);
+            
+            // Registrar acción en historial si existe el helper
+            if ($resultado['success'] && function_exists('registrar_accion')) {
+                helper('historial');
+                registrar_accion(
+                    'Renovación de Préstamo',
+                    session()->get('nomuser'),
+                    null,
+                    session()->get('nivelacceso'),
+                    "Préstamo #{$idprestamo} renovado hasta {$nuevaFechaDevolucion}. Motivo: {$motivo}"
+                );
+            }
+            
+            return $this->response->setJSON($resultado);
+            
+        } catch (\Exception $e) {
+            log_message('error', 'Error en PrestamoController::renovarPrestamo(): ' . $e->getMessage());
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Error interno del servidor'
+            ]);
+        }
+    }
+
+    /**
+     * Obtener detalles completos de un préstamo activo
+     */
+    public function obtenerDetallePrestamo()
+    {
+        // Verificar si es una solicitud AJAX
+        if (!$this->request->isAJAX()) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Solicitud no válida'
+            ]);
+        }
+
+        // Verificar si el usuario está autenticado
+        if (!session()->get('logged_in')) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'No tienes permisos para realizar esta acción'
+            ]);
+        }
+
+        // Obtener ID del préstamo
+        $idprestamo = $this->request->getPost('idprestamo') ?? $this->request->getGet('idprestamo');
+        
+        if (!$idprestamo || !is_numeric($idprestamo)) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'ID de préstamo requerido y debe ser numérico'
+            ]);
+        }
+
+        try {
+            $detalle = $this->prestamoModel->obtenerDetallePrestamo($idprestamo);
+            
+            if (!$detalle) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Préstamo no encontrado o ya ha sido devuelto'
+                ]);
+            }
+
+            log_message('info', 'Detalles del préstamo obtenidos correctamente');
+            
+            return $this->response->setJSON([
+                'success' => true,
+                'data' => $detalle
+            ]);
+            
+        } catch (\Exception $e) {
+            log_message('error', 'Error en PrestamoController::obtenerDetallePrestamo(): ' . $e->getMessage());
+            log_message('error', 'Trace: ' . $e->getTraceAsString());
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Error interno del servidor: ' . $e->getMessage()
             ]);
         }
     }

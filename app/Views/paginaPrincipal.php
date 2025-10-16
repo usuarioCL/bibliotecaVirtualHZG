@@ -1212,7 +1212,14 @@ function solicitarPrestamo(idRecurso) {
                     html: html,
                     width: '600px',
                     showConfirmButton: false,
-                    showCloseButton: true
+                    showCloseButton: true,
+                    didOpen: () => {
+                        // Validar el formulario inmediatamente después de abrir
+                        setTimeout(() => {
+                            console.log('Formulario abierto, iniciando validación...');
+                            validarFormularioPrestamo(false);
+                        }, 200);
+                    }
                 });
             })
             .catch(error => {
@@ -1225,24 +1232,17 @@ function solicitarPrestamo(idRecurso) {
             });
     }, 100); // Esperar 300ms para que el modal termine de cerrarse
 }
-</script>
-<script>
-// Función para enviar la solicitud (definida globalmente)
+// // Función para enviar la solicitud (definida globalmente)
 function enviarSolicitudPrestamo() {
     const form = document.getElementById('formSolicitudPrestamo');
     
-    // Validar el formulario antes de enviar
-    if (!form.checkValidity()) {
-        form.classList.add('was-validated');
+    // Solo usar nuestra validación personalizada (no la nativa del HTML5)
+    if (!validarFormularioPrestamo(true)) {
         return;
     }
-        const formData = new FormData(form);
-        // Si el motivo es "Otro", reemplazamos el valor del motivo con el texto proporcionado
-        if (document.getElementById('motivo').value === 'Otro') {
-            formData.set('motivo', document.getElementById('otroMotivo').value);
-        }
+    
+    const formData = new FormData(form);
         
-
         
         // Mostrar indicador de carga
         Swal.fire({
@@ -1297,28 +1297,187 @@ function enviarSolicitudPrestamo() {
         });
 }
 
-// Validación del formulario
-document.addEventListener('DOMContentLoaded', function() {
-    // Mostrar el campo "otro motivo" cuando se selecciona "Otro"
-    document.getElementById('motivo').addEventListener('change', function() {
-        const otroMotivoContainer = document.getElementById('otroMotivoContainer');
-        otroMotivoContainer.style.display = this.value === 'Otro' ? 'block' : 'none';
-        // Solo requerido si está visible
-        const otroMotivo = document.getElementById('otroMotivo');
-        otroMotivo.required = this.value === 'Otro';
-    });
+// ===== FUNCIÓN DE VALIDACIÓN UNIFICADA =====
+function validarFormularioPrestamo(esValidacionFinal = false) {
+    const fechaPrestamo = document.getElementById('fechaPrestamo')?.value;
+    const horaInicio = document.getElementById('horaInicio')?.value;
+    const horaFin = document.getElementById('horaFin')?.value;
+    let hasErrors = false;
+    
+    // Limpiar errores anteriores
+    if (esValidacionFinal) {
+        const form = document.getElementById('formSolicitudPrestamo');
+        form?.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+        form?.querySelectorAll('.invalid-feedback').forEach(el => el.style.display = 'none');
+    }
+    
+    // Función auxiliar para mostrar error
+    const mostrarError = (inputId, mensaje) => {
+        const input = document.getElementById(inputId);
+        const feedback = input?.nextElementSibling;
+        if (input && feedback) {
+            input.classList.add('is-invalid');
+            feedback.textContent = mensaje;
+            feedback.style.display = 'block';
+            hasErrors = true;
+        }
+    };
+    
+    // Validar campos requeridos
+    if (!fechaPrestamo) mostrarError('fechaPrestamo', 'La fecha es obligatoria.');
+    if (!horaInicio) mostrarError('horaInicio', 'La hora de inicio es obligatoria.');
+    if (!horaFin) mostrarError('horaFin', 'La hora de fin es obligatoria.');
+    
+    // Validar día laboral
+    if (fechaPrestamo) {
+        const fechaPartes = fechaPrestamo.split('-');
+        const fechaSeleccionada = new Date(fechaPartes[0], fechaPartes[1] - 1, fechaPartes[2]);
+        const dia = fechaSeleccionada.getDay();
+        
+        if (dia === 0 || dia === 6) {
+            mostrarError('fechaPrestamo', 'Solo se pueden solicitar préstamos de lunes a viernes.');
+            
+            // Auto-corrección
+            if (!esValidacionFinal) {
+                setTimeout(() => {
+                    const hoy = new Date();
+                    const diaHoy = hoy.getDay();
+                    if (diaHoy === 0 || diaHoy === 6) {
+                        const diasHastaLunes = diaHoy === 0 ? 1 : (8 - diaHoy);
+                        hoy.setDate(hoy.getDate() + diasHastaLunes);
+                    }
+                    
+                    const fechaInput = document.getElementById('fechaPrestamo');
+                    const feedback = fechaInput?.nextElementSibling;
+                    fechaInput.value = hoy.toISOString().split('T')[0];
+                    fechaInput.classList.remove('is-invalid');
+                    if (feedback) feedback.style.display = 'none';
+                }, 2000);
+            }
+        }
+    }
+    
+    // Función auxiliar para limpiar error
+    const limpiarError = (inputId) => {
+        const input = document.getElementById(inputId);
+        const feedback = input?.nextElementSibling;
+        if (input && feedback) {
+            input.classList.remove('is-invalid');
+            feedback.style.display = 'none';
+        }
+    };
+    
+    // Validar horarios
+    if (horaInicio && horaFin) {
+        const inicioMinutos = horaInicio.split(':').reduce((h, m) => h * 60 + parseInt(m), 0);
+        const finMinutos = horaFin.split(':').reduce((h, m) => h * 60 + parseInt(m), 0);
+        const HORA_MIN = 8 * 60;
+        const HORA_MAX = 13 * 60;
+        
+        // Validar hora de inicio
+        if (inicioMinutos < HORA_MIN || inicioMinutos >= HORA_MAX) {
+            mostrarError('horaInicio', 'La hora de inicio debe estar entre 8:00 AM y 12:59 PM.');
+        } else {
+            limpiarError('horaInicio');
+        }
+        
+        // Validar hora de fin
+        if (finMinutos <= HORA_MIN || finMinutos > HORA_MAX) {
+            mostrarError('horaFin', 'La hora de fin debe estar entre 8:01 AM y 1:00 PM.');
+        } else if (finMinutos > inicioMinutos) {
+            limpiarError('horaFin');
+        }
+        
+        // Validar secuencia de horarios
+        if (finMinutos <= inicioMinutos) {
+            mostrarError('horaFin', 'La hora de fin debe ser posterior a la hora de inicio.');
+            
+            // Auto-corrección
+            if (!esValidacionFinal) {
+                setTimeout(() => {
+                    const nuevaHora = Math.min(inicioMinutos + 60, HORA_MAX);
+                    const horas = Math.floor(nuevaHora / 60).toString().padStart(2, '0');
+                    const minutos = (nuevaHora % 60).toString().padStart(2, '0');
+                    
+                    const horaFinInput = document.getElementById('horaFin');
+                    const feedback = horaFinInput?.nextElementSibling;
+                    horaFinInput.value = `${horas}:${minutos}`;
+                    horaFinInput.classList.remove('is-invalid');
+                    if (feedback) feedback.style.display = 'none';
+                    actualizarDuracion();
+                }, 2000);
+            }
+        }
+    }
+    
+    return !hasErrors;
+}
 
-    // Validar que fecha devolución sea posterior a fecha inicio
-    document.getElementById('fechaInicio').addEventListener('change', function() {
-        const fechaDevolucion = document.getElementById('fechaDevolucion');
-        const fechaInicioValue = new Date(this.value);
-        // Sumamos un día para la fecha mínima de devolución
-        fechaInicioValue.setDate(fechaInicioValue.getDate() + 1);
-        fechaDevolucion.min = fechaInicioValue.toISOString().split('T')[0];
-        // Si la fecha actual es menor que la mínima, actualizar
-        if (fechaDevolucion.value < fechaDevolucion.min) {
-            fechaDevolucion.value = fechaDevolucion.min;
+// Validación del formulario de préstamo
+document.addEventListener('DOMContentLoaded', function() {
+    // Función para calcular duración entre horas
+    function calcularDuracion(horaInicio, horaFin) {
+        if (!horaInicio || !horaFin) return '0 minutos';
+        
+        const inicioMinutos = horaInicio.split(':').reduce((h, m) => h * 60 + parseInt(m), 0);
+        const finMinutos = horaFin.split(':').reduce((h, m) => h * 60 + parseInt(m), 0);
+        const diferencia = finMinutos - inicioMinutos;
+        
+        if (diferencia <= 0) return '0 minutos';
+        
+        const horas = Math.floor(diferencia / 60);
+        const minutos = diferencia % 60;
+        
+        if (horas === 0) return `${minutos} minutos`;
+        if (minutos === 0) return `${horas} hora${horas > 1 ? 's' : ''}`;
+        return `${horas} hora${horas > 1 ? 's' : ''} y ${minutos} minutos`;
+    }
+    
+    // Función para actualizar la duración mostrada
+    function actualizarDuracion() {
+        const duracionElement = document.getElementById('duracionPrestamo');
+        const horaInicio = document.getElementById('horaInicio')?.value;
+        const horaFin = document.getElementById('horaFin')?.value;
+        
+        if (duracionElement) {
+            duracionElement.textContent = calcularDuracion(horaInicio, horaFin);
+        }
+    }
+    
+    // Validar en tiempo real
+    document.addEventListener('change', function(e) {
+        if (e.target && ['fechaPrestamo', 'horaInicio', 'horaFin'].includes(e.target.id)) {
+            e.target.setCustomValidity('');
+            validarFormularioPrestamo(false);
+            
+            if (e.target.id === 'horaInicio' || e.target.id === 'horaFin') {
+                actualizarDuracion();
+            }
         }
     });
+    
+    // Prevenir validación HTML5 nativa
+    document.addEventListener('invalid', function(e) {
+        if (e.target.closest('#formSolicitudPrestamo')) {
+            e.preventDefault();
+            return false;
+        }
+    }, true);
+    
+    // Remover atributos de validación HTML5
+    setTimeout(() => {
+        const form = document.getElementById('formSolicitudPrestamo');
+        if (form) {
+            form.querySelectorAll('input[required], input[min], input[max]').forEach(input => {
+                input.removeAttribute('required');
+                input.removeAttribute('min');
+                input.removeAttribute('max');
+                input.setCustomValidity('');
+            });
+        }
+    }, 500);
+    
+    // Inicializar duración
+    setTimeout(actualizarDuracion, 100);
 });
 </script>

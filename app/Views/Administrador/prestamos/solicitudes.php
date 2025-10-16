@@ -105,7 +105,7 @@
                         <tr class="text-uppercase small fw-semibold text-muted">
                             <th class="border-0 px-3 py-3">Usuario</th>
                             <th class="border-0 px-3 py-3">Recurso Solicitado</th>
-                            <th class="border-0 px-3 py-3">Fecha Solicitud</th>
+                            <th class="border-0 px-3 py-3">Fecha y Horarios</th>
                             <th class="border-0 text-center px-3 py-3">Prioridad</th>
                             <th class="border-0 text-center px-3 py-3">Disponibilidad</th>
                             <th class="border-0 text-center px-3 py-3">Acciones</th>
@@ -140,9 +140,13 @@
                                                 <i class="ti ti-calendar-event me-1"></i>
                                                 <?= date('d/m/Y', strtotime($solicitud['fecha_solicitud'])) ?>
                                             </p>
-                                            <p class="mb-0 small text-muted">
+                                            <p class="mb-1 small text-muted">
                                                 <i class="ti ti-clock me-1"></i>
-                                                <?= date('H:i', strtotime($solicitud['fecha_solicitud'])) ?>
+                                                Inicio: <?= date('H:i', strtotime($solicitud['fecha_solicitud'])) ?>
+                                            </p>
+                                            <p class="mb-0 small text-muted">
+                                                <i class="ti ti-clock-off me-1"></i>
+                                                Fin: <?= date('H:i', strtotime($solicitud['fecha_devolucion'])) ?>
                                             </p>
                                         </div>
                                     </td>
@@ -271,7 +275,8 @@
                             timer: 2000,
                             showConfirmButton: false
                         }).then(() => {
-                            location.reload();
+                            // Recargar solo el contenido de solicitudes sin perder el contexto del panel
+                            recargarContenidoSolicitudes();
                         });
                     } else {
                         Swal.fire({
@@ -345,7 +350,8 @@
                             timer: 2000,
                             showConfirmButton: false
                         }).then(() => {
-                            location.reload();
+                            // Recargar solo el contenido de solicitudes sin perder el contexto del panel
+                            recargarContenidoSolicitudes();
                         });
                     } else {
                         Swal.fire({
@@ -424,6 +430,7 @@
         // Formatear fechas
         const fechaSolicitud = new Date(detalle.fecha_solicitud);
         const fechaDevolucionEsperada = new Date(detalle.fecha_devolucion_esperada);
+        const fechaDevolucion = detalle.fecha_devolucion ? new Date(detalle.fecha_devolucion) : null;
         
         // Determinar el color de la prioridad
         let prioridadClass = 'bg-info';
@@ -484,7 +491,9 @@
                                             <div class="col-md-6">
                                                 ${detalle.grado && detalle.seccion ? `<p><strong>Grado:</strong> <span>${detalle.grado}° "${detalle.seccion}" - ${detalle.nivel_estudiante}</span></p>` : ''}
                                                 ${detalle.aniolectivo ? `<p><strong>Año Lectivo:</strong> <span>${detalle.aniolectivo}</span></p>` : ''}
-                                                <p><strong>Fecha Solicitud:</strong> <span>${fechaSolicitud.toLocaleDateString('es-ES')} ${fechaSolicitud.toLocaleTimeString('es-ES')}</span></p>
+                                                <p><strong>Fecha Solicitud:</strong> <span>${fechaSolicitud.toLocaleDateString('es-ES')}</span></p>
+                                                <p><strong>Hora Inicio:</strong> <span>${fechaSolicitud.toLocaleTimeString('es-ES', {hour: '2-digit', minute: '2-digit'})}</span></p>
+                                                ${fechaDevolucion ? `<p><strong>Hora Fin:</strong> <span>${fechaDevolucion.toLocaleTimeString('es-ES', {hour: '2-digit', minute: '2-digit'})}</span></p>` : ''}
                                                 <p><strong>Tiempo Esperando:</strong> <span>${detalle.dias_desde_solicitud} día(s)</span></p>
                                             </div>
                                         </div>
@@ -533,24 +542,31 @@
                                     <i class="ti ti-clock-hour-3 me-2"></i>Detalles de la Solicitud
                                 </h6>
                                 <div class="row">
-                                    <div class="col-md-4">
+                                    <div class="col-md-3">
                                         <div class="text-center p-3 bg-primary bg-opacity-10 rounded">
                                             <h4 class="mb-1 text-primary">${fechaSolicitud.toLocaleDateString('es-ES')}</h4>
                                             <small class="text-muted">Fecha de Solicitud</small>
                                         </div>
                                     </div>
-                                    <div class="col-md-4">
-                                        <div class="text-center p-3 bg-info bg-opacity-10 rounded">
-                                            <h4 class="mb-1 text-info">${fechaDevolucionEsperada.toLocaleDateString('es-ES')}</h4>
-                                            <small class="text-muted">Devolución Esperada</small>
+                                    <div class="col-md-3">
+                                        <div class="text-center p-3 bg-success bg-opacity-10 rounded">
+                                            <h4 class="mb-1 text-success">${fechaSolicitud.toLocaleTimeString('es-ES', {hour: '2-digit', minute: '2-digit'})}</h4>
+                                            <small class="text-muted">Hora de Inicio</small>
                                         </div>
                                     </div>
-                                    <div class="col-md-4">
+                                    <div class="col-md-3">
+                                        <div class="text-center p-3 bg-info bg-opacity-10 rounded">
+                                            <h4 class="mb-1 text-info">${fechaDevolucion ? fechaDevolucion.toLocaleTimeString('es-ES', {hour: '2-digit', minute: '2-digit'}) : 'No especificada'}</h4>
+                                            <small class="text-muted">Hora de Fin</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
                                         <div class="text-center p-3 bg-warning bg-opacity-10 rounded">
                                             <h4 class="mb-1 text-warning">${detalle.dias_desde_solicitud}</h4>
                                             <small class="text-muted">Días Esperando</small>
                                         </div>
                                     </div>
+
                                 </div>
 
                                 <hr>
@@ -722,7 +738,8 @@
                             icon: resultados.rechazadas > 0 ? 'warning' : 'success',
                             confirmButtonText: 'Entendido'
                         }).then(() => {
-                            location.reload();
+                            // Recargar solo el contenido de solicitudes sin perder el contexto del panel
+                            recargarContenidoSolicitudes();
                         });
                     } else {
                         Swal.fire({
@@ -742,5 +759,66 @@
                 });
             }
         });
+    }
+
+    // Función para recargar solo el contenido de solicitudes manteniendo el contexto del panel
+    function recargarContenidoSolicitudes() {
+        // Verificar si estamos dentro del panel de administración (existe #contenedor-principal)
+        const contenedorPrincipal = document.getElementById('contenedor-principal');
+        
+        if (contenedorPrincipal) {
+            // Estamos en el panel de administración, usar AJAX para recargar
+            console.log('Recargando solicitudes via AJAX en panel de administración');
+            
+            // Mostrar indicador de carga
+            contenedorPrincipal.innerHTML = `
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                    <p class="mt-2 text-muted">Actualizando solicitudes...</p>
+                </div>
+            `;
+            
+            // Cargar el contenido de solicitudes via AJAX
+            fetch('<?= base_url('solicitudes') ?>', {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Error en la respuesta del servidor');
+                }
+                return response.text();
+            })
+            .then(data => {
+                contenedorPrincipal.innerHTML = data;
+                
+                // Disparar evento para indicar que el contenido se ha cargado
+                const event = new CustomEvent('content-loaded');
+                document.dispatchEvent(event);
+                
+                console.log('Solicitudes recargadas exitosamente');
+            })
+            .catch(error => {
+                console.error('Error al recargar solicitudes:', error);
+                contenedorPrincipal.innerHTML = `
+                    <div class="text-danger text-center py-5">
+                        <i class="ti ti-alert-circle" style="font-size: 3rem;"></i>
+                        <h5 class="mt-3">Error al cargar solicitudes</h5>
+                        <p>Hubo un problema al actualizar la información.</p>
+                        <button class="btn btn-primary" onclick="recargarContenidoSolicitudes()">
+                            <i class="ti ti-refresh me-2"></i>Reintentar
+                        </button>
+                    </div>
+                `;
+            });
+        } else {
+            // No estamos en el panel de administración, usar recarga normal
+            console.log('Recargando página completa - fuera del panel de administración');
+            location.reload();
+        }
     }
 </script>

@@ -21,9 +21,6 @@
                     <p class="text-muted mb-0 mt-1">Gestiona todos los préstamos activos del sistema bibliotecario</p>
                 </div>
                 <div class="d-flex gap-2 flex-wrap">
-                    <button type="button" class="btn btn-outline-secondary btn-sm">
-                        <i class="ti ti-filter"></i> Filtrar
-                    </button>
                     <button type="button" class="btn btn-primary btn-sm">
                         <i class="ti ti-plus"></i> Nuevo Préstamo
                     </button>
@@ -99,14 +96,7 @@
                     </h5>
                     <p class="text-muted small mb-0 mt-1">Gestiona todos los préstamos activos del sistema</p>
                 </div>
-                <div class="d-flex gap-2">
-                    <button class="btn btn-outline-secondary btn-sm" type="button">
-                        <i class="ti ti-download me-1"></i>Exportar
-                    </button>
-                    <button class="btn btn-outline-secondary btn-sm" type="button" onclick="location.reload()">
-                        <i class="ti ti-refresh me-1"></i>Actualizar
-                    </button>
-                </div>
+
             </div>
         </div>
         <div class="card-body p-3">
@@ -277,28 +267,344 @@
     // Función para ver detalles del préstamo
     function verDetallePrestamo(prestamoId) {
         console.log('Ver detalles del préstamo:', prestamoId);
-        // TODO: Implementar modal de detalles
-        Swal.fire({
-            title: 'Detalles del Préstamo',
-            text: 'Funcionalidad en desarrollo',
-            icon: 'info'
+        
+        // Mostrar modal con loading
+        const modal = new bootstrap.Modal(document.getElementById('modalDetallePrestamo'));
+        
+        // Mostrar loading y ocultar contenido
+        document.getElementById('loading-detalle-prestamo').style.display = 'block';
+        document.getElementById('contenido-detalle-prestamo').style.display = 'none';
+        
+        // Mostrar modal
+        modal.show();
+
+        // Enviar solicitud AJAX
+        fetch('<?= base_url('prestamos/detalle') ?>', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: 'idprestamo=' + encodeURIComponent(prestamoId)
+        })
+        .then(response => {
+            console.log('Response status:', response.status);
+            if (!response.ok) {
+                throw new Error('Error HTTP: ' + response.status);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Response data:', data);
+            if (data.success) {
+                const detalle = data.data;
+                
+                // Verificar que tenemos datos válidos
+                if (!detalle) {
+                    throw new Error('No se recibieron datos del préstamo');
+                }
+                
+                // Llenar información del estado
+                const alertEstado = document.getElementById('alert-estado');
+                alertEstado.className = `alert alert-${detalle.color_estado} d-flex align-items-center`;
+                document.getElementById('icono-estado').className = `ti ${detalle.icono_estado} me-2`;
+                document.getElementById('detalle-estado-prestamo').textContent = detalle.estado_prestamo;
+                document.getElementById('detalle-tiempo-restante').textContent = 
+                    detalle.dias_restantes >= 0 ? `${detalle.dias_restantes} días restantes` : `${Math.abs(detalle.dias_restantes)} días de retraso`;
+
+                // Llenar información del recurso
+                document.getElementById('detalle-titulo').textContent = detalle.recurso_titulo || '-';
+                
+                let autoresText = '';
+                if (detalle.autores && detalle.autores.length > 0) {
+                    autoresText = detalle.autores.map(autor => autor.autor_completo || 'Autor desconocido').join(', ');
+                } else {
+                    autoresText = 'No especificado';
+                }
+                document.getElementById('detalle-autores').innerHTML = autoresText;
+                
+                document.getElementById('detalle-editorial').textContent = detalle.editorial || 'No especificada';
+                document.getElementById('detalle-isbn').textContent = detalle.isbn || 'No disponible';
+                document.getElementById('detalle-anio').textContent = detalle.anio_publicacion || 'No especificado';
+                
+                const categoriaText = detalle.categoria || 'Sin categoría';
+                const subcategoriaText = detalle.subcategoria ? ` / ${detalle.subcategoria}` : '';
+                document.getElementById('detalle-categoria').textContent = categoriaText + subcategoriaText;
+                
+                const tipoRecursoElement = document.getElementById('detalle-tipo-recurso');
+                tipoRecursoElement.textContent = detalle.tipo_recurso || '-';
+                tipoRecursoElement.className = 'badge bg-secondary';
+
+                // Manejar portada
+                const portadaImg = document.getElementById('detalle-portada');
+                const portadaPlaceholder = document.getElementById('detalle-portada-placeholder');
+                if (detalle.portada) {
+                    portadaImg.src = detalle.portada;
+                    portadaImg.style.display = 'block';
+                    portadaPlaceholder.style.display = 'none';
+                } else {
+                    portadaImg.style.display = 'none';
+                    portadaPlaceholder.style.display = 'flex';
+                }
+
+                // Llenar información del usuario
+                document.getElementById('detalle-usuario-nombre').textContent = detalle.usuario_completo || '-';
+                document.getElementById('detalle-documento').textContent = `${detalle.tipo_documento || ''} ${detalle.documento || ''}`.trim() || '-';
+                document.getElementById('detalle-telefono').textContent = detalle.telefono || 'No registrado';
+                document.getElementById('detalle-email').textContent = detalle.email || 'No registrado';
+                document.getElementById('detalle-nombre-usuario').textContent = detalle.nombre_usuario || 'N/A';
+                
+                const nivelElement = document.getElementById('detalle-nivel-acceso');
+                nivelElement.textContent = detalle.nivel_acceso || 'N/A';
+                let nivelClass = 'badge ';
+                if (detalle.nivel_acceso === 'admin') {
+                    nivelClass += 'bg-danger';
+                } else if (detalle.nivel_acceso === 'docente') {
+                    nivelClass += 'bg-warning';
+                } else {
+                    nivelClass += 'bg-success';
+                }
+                nivelElement.className = nivelClass;
+
+                // Mostrar/ocultar información adicional del usuario
+                const matriculaContainer = document.getElementById('detalle-matricula-container');
+                const gradoContainer = document.getElementById('detalle-grado-container');
+                
+                if (detalle.idmatricula) {
+                    document.getElementById('detalle-matricula').textContent = detalle.idmatricula;
+                    matriculaContainer.style.display = 'block';
+                } else {
+                    matriculaContainer.style.display = 'none';
+                }
+                
+                if (detalle.grado && detalle.seccion) {
+                    document.getElementById('detalle-grado').textContent = `${detalle.grado} - ${detalle.seccion}`;
+                    gradoContainer.style.display = 'block';
+                } else {
+                    gradoContainer.style.display = 'none';
+                }
+
+                // Llenar información del préstamo
+                document.getElementById('detalle-codigo-prestamo').textContent = detalle.idprestamo || '-';
+                document.getElementById('detalle-fecha-prestamo').textContent = detalle.fecha_prestamo_formatted || '-';
+                document.getElementById('detalle-fecha-vencimiento').textContent = detalle.fecha_vencimiento_formatted || '-';
+                
+                const fechaAprobacionContainer = document.getElementById('detalle-fecha-aprobacion-container');
+                if (detalle.fecha_aprobacion_formatted) {
+                    document.getElementById('detalle-fecha-aprobacion').textContent = detalle.fecha_aprobacion_formatted;
+                    fechaAprobacionContainer.style.display = 'block';
+                } else {
+                    fechaAprobacionContainer.style.display = 'none';
+                }
+                
+                document.getElementById('detalle-dias-transcurridos').textContent = detalle.dias_transcurridos || 0;
+                
+                const diasRestantesElement = document.getElementById('detalle-dias-restantes');
+                const diasRestantes = detalle.dias_restantes || 0;
+                diasRestantesElement.textContent = `${Math.abs(diasRestantes)} días`;
+                diasRestantesElement.className = `badge bg-${diasRestantes >= 0 ? 'success' : 'danger'}`;
+                
+                const totalRenovacionesElement = document.getElementById('detalle-total-renovaciones');
+                totalRenovacionesElement.textContent = detalle.total_renovaciones || 0;
+
+                // Manejar historial de renovaciones
+                const renovacionesSection = document.getElementById('detalle-renovaciones-section');
+                const cantidadRenovaciones = document.getElementById('detalle-cantidad-renovaciones');
+                const renovacionesBody = document.getElementById('detalle-renovaciones-body');
+                
+                if (detalle.renovaciones && detalle.renovaciones.length > 0) {
+                    cantidadRenovaciones.textContent = detalle.renovaciones.length;
+                    
+                    // Limpiar tabla
+                    renovacionesBody.innerHTML = '';
+                    
+                    // Llenar tabla de renovaciones
+                    detalle.renovaciones.forEach(ren => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td><small>${ren.fecha_renovacion_formatted}</small></td>
+                            <td><small>${ren.nueva_fecha_devolucion_formatted}</small></td>
+                            <td><span class="badge bg-info">${ren.dias_extension} días</span></td>
+                            <td><small>${ren.motivo || 'Sin motivo especificado'}</small></td>
+                        `;
+                        renovacionesBody.appendChild(row);
+                    });
+                    
+                    renovacionesSection.style.display = 'block';
+                } else {
+                    renovacionesSection.style.display = 'none';
+                }
+
+                // Configurar botones del footer según el estado del préstamo
+                const btnRenovar = document.getElementById('btn-renovar-prestamo');
+                const btnDevolucion = document.getElementById('btn-procesar-devolucion');
+                
+                if (detalle.estado_prestamo === 'Activo' || detalle.estado_prestamo === 'Vencido') {
+                    btnRenovar.style.display = 'inline-block';
+                    btnDevolucion.style.display = 'inline-block';
+                    
+                    // Configurar eventos de los botones
+                    btnRenovar.onclick = () => {
+                        modal.hide();
+                        renovarPrestamo(prestamoId);
+                    };
+                    btnDevolucion.onclick = () => {
+                        modal.hide();
+                        procesarDevolucion(prestamoId);
+                    };
+                } else {
+                    btnRenovar.style.display = 'none';
+                    btnDevolucion.style.display = 'none';
+                }
+
+                // Ocultar loading y mostrar contenido
+                document.getElementById('loading-detalle-prestamo').style.display = 'none';
+                document.getElementById('contenido-detalle-prestamo').style.display = 'block';
+                
+            } else {
+                // Ocultar loading
+                document.getElementById('loading-detalle-prestamo').style.display = 'none';
+                modal.hide();
+                
+                Swal.fire({
+                    title: 'Error',
+                    text: data.message || 'No se pudieron obtener los detalles del préstamo',
+                    icon: 'error',
+                    confirmButtonText: 'Entendido'
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            
+            // Ocultar loading
+            document.getElementById('loading-detalle-prestamo').style.display = 'none';
+            modal.hide();
+            
+            Swal.fire({
+                title: 'Error de Conexión',
+                text: 'Ha ocurrido un error al obtener los detalles del préstamo',
+                icon: 'error',
+                confirmButtonText: 'Entendido'
+            });
         });
     }
 
     // Función para renovar préstamo
     function renovarPrestamo(prestamoId) {
         console.log('Renovar préstamo:', prestamoId);
-        // TODO: Implementar renovación
+        
         Swal.fire({
             title: '¿Renovar Préstamo?',
-            text: '¿Estás seguro de que deseas renovar este préstamo?',
+            html: `
+                <p class="mb-3">Selecciona la nueva fecha de devolución y proporciona un motivo:</p>
+                <div class="mb-3">
+                    <label for="nueva_fecha_devolucion" class="form-label fw-bold">Nueva fecha de devolución:</label>
+                    <input type="date" 
+                           id="nueva_fecha_devolucion" 
+                           class="form-control" 
+                           min="${new Date().toISOString().split('T')[0]}"
+                           value="${new Date(Date.now() + 14*24*60*60*1000).toISOString().split('T')[0]}">
+                    <small class="text-muted">La fecha debe ser posterior a hoy</small>
+                </div>
+                <div class="mb-3">
+                    <label for="motivo_renovacion" class="form-label fw-bold">Motivo (opcional):</label>
+                    <textarea id="motivo_renovacion" class="form-control" placeholder="Escribe el motivo de la renovación..." rows="3"></textarea>
+                </div>
+                <div class="alert alert-info">
+                    <i class="ti ti-info-circle me-2"></i>
+                    <small>Los préstamos pueden renovarse las veces que sea necesario.</small>
+                </div>
+            `,
             icon: 'question',
             showCancelButton: true,
-            confirmButtonText: 'Sí, renovar',
-            cancelButtonText: 'Cancelar'
+            confirmButtonText: 'Sí, renovar préstamo',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#ffc107',
+            width: '500px',
+            preConfirm: () => {
+                const nuevaFechaDevolucion = document.getElementById('nueva_fecha_devolucion').value;
+                const motivo = document.getElementById('motivo_renovacion').value;
+                
+                if (!nuevaFechaDevolucion) {
+                    Swal.showValidationMessage('Debes seleccionar una fecha de devolución');
+                    return false;
+                }
+                
+                // Validar que la fecha sea posterior a hoy
+                const hoy = new Date();
+                const fechaSeleccionada = new Date(nuevaFechaDevolucion);
+                
+                if (fechaSeleccionada <= hoy) {
+                    Swal.showValidationMessage('La fecha de devolución debe ser posterior a hoy');
+                    return false;
+                }
+                
+                return {
+                    nueva_fecha_devolucion: nuevaFechaDevolucion,
+                    motivo: motivo
+                };
+            }
         }).then((result) => {
             if (result.isConfirmed) {
-                Swal.fire('Renovado', 'El préstamo ha sido renovado exitosamente', 'success');
+                // Mostrar loading
+                Swal.fire({
+                    title: 'Procesando...',
+                    text: 'Renovando préstamo',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
+                // Enviar solicitud AJAX
+                fetch('<?= base_url('prestamos/renovar') ?>', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: 'idprestamo=' + encodeURIComponent(prestamoId) + 
+                          '&nueva_fecha_devolucion=' + encodeURIComponent(result.value.nueva_fecha_devolucion) +
+                          '&motivo=' + encodeURIComponent(result.value.motivo)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        Swal.fire({
+                            title: 'Préstamo Renovado',
+                            html: `
+                                <div class="text-start">
+                                    <p class="mb-2"><strong>✅ ${data.message}</strong></p>
+                                    <hr>
+                                    <p class="mb-1"><i class="ti ti-calendar-event me-2"></i><strong>Nueva fecha de devolución:</strong> ${data.nueva_fecha_devolucion}</p>
+                                    <p class="mb-1"><i class="ti ti-refresh me-2"></i><strong>Total de renovaciones:</strong> ${data.renovaciones_totales}</p>
+                                    <p class="mb-0"><i class="ti ti-calendar-plus me-2"></i><strong>Extensión:</strong> ${data.dias_extension} días adicionales</p>
+                                </div>
+                            `,
+                            icon: 'success',
+                            confirmButtonText: 'Entendido',
+                            timer: 5000
+                        }).then(() => {
+                            location.reload();
+                        });
+                    } else {
+                        Swal.fire({
+                            title: 'Error al Renovar',
+                            text: data.message || 'No se pudo renovar el préstamo',
+                            icon: 'error',
+                            confirmButtonText: 'Entendido'
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    Swal.fire({
+                        title: 'Error',
+                        text: 'Ha ocurrido un error de conexión',
+                        icon: 'error'
+                    });
+                });
             }
         });
     }
@@ -306,11 +612,82 @@
     // Función para procesar devolución
     function procesarDevolucion(prestamoId) {
         console.log('Procesar devolución:', prestamoId);
-        // TODO: Implementar procesamiento de devolución
+        
         Swal.fire({
-            title: 'Procesar Devolución',
-            text: 'Funcionalidad en desarrollo',
-            icon: 'info'
+            title: '¿Procesar Devolución?',
+            input: 'textarea',
+            inputLabel: 'Observaciones (opcional)',
+            inputPlaceholder: 'Escribe cualquier observación sobre el estado del recurso devuelto...',
+            inputAttributes: {
+                'aria-label': 'Observaciones de devolución'
+            },
+            text: 'Confirma que el recurso ha sido devuelto correctamente.',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, procesar devolución',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#28a745'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Mostrar loading
+                Swal.fire({
+                    title: 'Procesando...',
+                    text: 'Registrando devolución',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
+                // Enviar solicitud AJAX
+                fetch('<?= base_url('prestamos/procesar-devolucion') ?>', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: 'idprestamo=' + encodeURIComponent(prestamoId) + 
+                          '&observaciones=' + encodeURIComponent(result.value || '')
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        let icon = 'success';
+                        let title = 'Devolución Procesada';
+                        
+                        // Si hubo retraso, mostrar advertencia
+                        if (data.con_retraso) {
+                            icon = 'warning';
+                            title = 'Devolución con Retraso';
+                        }
+                        
+                        Swal.fire({
+                            title: title,
+                            text: data.message,
+                            icon: icon,
+                            timer: 3000,
+                            showConfirmButton: true,
+                            confirmButtonText: 'Entendido'
+                        }).then(() => {
+                            location.reload();
+                        });
+                    } else {
+                        Swal.fire({
+                            title: 'Error',
+                            text: data.message || 'No se pudo procesar la devolución',
+                            icon: 'error'
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    Swal.fire({
+                        title: 'Error',
+                        text: 'Ha ocurrido un error de conexión',
+                        icon: 'error'
+                    });
+                });
+            }
         });
     }
 
@@ -398,3 +775,6 @@
         });
     });
 </script>
+
+<!-- Incluir modal de detalles del préstamo -->
+<?= $this->include('Administrador/modals/detalleprestamo') ?>

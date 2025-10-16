@@ -1,77 +1,131 @@
 <!-- Formulario de solicitud de préstamo -->
-<form id="formSolicitudPrestamo" class="needs-validation" novalidate>
+<form id="formSolicitudPrestamo" novalidate>
     <input type="hidden" name="idRecurso" value="<?= $idRecurso ?>">
     <input type="hidden" name="idUsuario" value="<?= session()->get('id') ?>">
     
-    <div class="mb-3">
-        <label for="fechaSolicitud" class="form-label">Fecha de solicitud:</label>
-        <input type="text" class="form-control" id="fechaSolicitud" value="<?= date('d/m/Y') ?>" readonly>
+    <!-- Información del recurso -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <label for="recursoTitulo" class="form-label fw-bold">Recurso solicitado:</label>
+            <input type="text" class="form-control form-control-lg" id="recursoTitulo" 
+                   value="<?= esc($recurso['titulo']) ?>" readonly>
+        </div>
     </div>
     
-    <div class="mb-3">
-        <label for="recursoTitulo" class="form-label">Recurso solicitado:</label>
-        <input type="text" class="form-control" id="recursoTitulo" value="<?= esc($recurso['titulo']) ?>" readonly>
-    </div>
-    
+    <!-- Fecha y horarios -->
     <div class="row">
-        <div class="col-md-6 mb-3">
-            <label for="fechaInicio" class="form-label">Fecha de préstamo:</label>
-            <input type="date" class="form-control" id="fechaInicio" name="fechaInicio" 
-                   value="<?= date('Y-m-d') ?>" min="<?= date('Y-m-d') ?>" required>
+        <div class="col-lg-4 col-md-6 mb-3">
+            <label for="fechaPrestamo" class="form-label fw-semibold">
+                <i class="fas fa-calendar-alt text-primary me-1"></i>Fecha de uso:
+            </label>
+            <input type="date" class="form-control" id="fechaPrestamo" name="fechaPrestamo" 
+                   value="<?= date('Y-m-d') ?>">
             <div class="invalid-feedback">
-                Por favor seleccione una fecha válida.
+                Seleccione una fecha válida (no puede ser anterior a hoy).
             </div>
         </div>
         
-        <div class="col-md-6 mb-3">
-            <label for="fechaDevolucion" class="form-label">Fecha de devolución:</label>
-            <input type="date" class="form-control" id="fechaDevolucion" name="fechaDevolucion"
-                   value="<?= date('Y-m-d', strtotime('+7 days')) ?>" 
-                   min="<?= date('Y-m-d', strtotime('+1 day')) ?>" required>
+        <div class="col-lg-4 col-md-6 mb-3">
+            <label for="horaInicio" class="form-label fw-semibold">
+                <i class="fas fa-clock text-success me-1"></i>Hora de inicio:
+            </label>
+            <input type="time" class="form-control" id="horaInicio" name="horaInicio" 
+                   min="08:00" max="12:59" value="08:00" required>
             <div class="invalid-feedback">
-                La fecha debe ser posterior a la fecha de préstamo.
+                La hora debe estar entre 8:00 AM y 12:59 PM.
+            </div>
+        </div>
+        
+        <div class="col-lg-4 col-md-12 mb-3">
+            <label for="horaFin" class="form-label fw-semibold">
+                <i class="fas fa-clock text-danger me-1"></i>Hora de fin:
+            </label>
+            <input type="time" class="form-control" id="horaFin" name="horaFin" 
+                   min="08:01" max="13:00" value="09:00" required>
+            <div class="invalid-feedback">
+                La hora debe estar entre 8:01 AM y 1:00 PM.
             </div>
         </div>
     </div>
     
-    <div class="mb-3">
-        <label for="motivo" class="form-label">Motivo del préstamo:</label>
-        <select class="form-select" id="motivo" name="motivo" required>
-            <option value="" selected disabled>Seleccione un motivo</option>
-            <option value="Estudio">Estudio</option>
-            <option value="Investigación">Investigación</option>
-            <option value="Lectura recreativa">Lectura recreativa</option>
-            <option value="Proyecto escolar">Proyecto escolar</option>
-            <option value="Otro">Otro</option>
-        </select>
-        <div class="invalid-feedback">
-            Por favor seleccione un motivo.
+    <!-- Resumen de la solicitud -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="card bg-light border-0">
+                <div class="card-body py-3">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h6 class="card-title mb-1 text-primary">
+                                <i class="fas fa-clock me-2"></i>Resumen del préstamo
+                            </h6>
+                            <p class="card-text mb-0">
+                                <strong>Duración:</strong> <span id="duracionPrestamo" class="text-success fw-bold">1 hora</span>
+                            </p>
+                        </div>
+                        <div class="col-md-4 text-md-end">
+                            <small class="text-muted">
+                                <i class="fas fa-school me-1"></i>Horario escolar<br>
+                                <strong>8:00 AM - 1:00 PM</strong>
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
     
-    <div class="mb-3" id="otroMotivoContainer" style="display:none;">
-        <label for="otroMotivo" class="form-label">Especifique el motivo:</label>
-        <input type="text" class="form-control" id="otroMotivo" name="otroMotivo">
-    </div>
-    
-    <div class="mb-3">
-        <label for="observaciones" class="form-label">Observaciones (opcional):</label>
-        <textarea class="form-control" id="observaciones" name="observaciones" rows="2"></textarea>
-    </div>
-    
-    <div class="form-check mb-3">
-        <input class="form-check-input" type="checkbox" id="aceptaTerminos" name="aceptaTerminos" required>
-        <label class="form-check-label" for="aceptaTerminos">
-            Acepto los términos y condiciones para el préstamo de recursos
-        </label>
-        <div class="invalid-feedback">
-            Debe aceptar los términos y condiciones.
+    <!-- Información importante -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="alert alert-info border-0 shadow-sm" role="alert">
+                <div class="d-flex align-items-start">
+
+                    <div class="flex-grow-1">
+                        <h6 class="alert-heading fw-bold mb-2">Condiciones del préstamo:</h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <ul class="list-unstyled mb-0">
+                                    <li class="mb-1">
+                                        <i class="fas fa-building text-primary me-2"></i>
+                                        Solo dentro de la institución educativa
+                                    </li>
+                                    <li class="mb-1">
+                                        <i class="fas fa-calendar-week text-success me-2"></i>
+                                        Lunes a Viernes únicamente
+                                    </li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <ul class="list-unstyled mb-0">
+                                    <li class="mb-1">
+                                        <i class="fas fa-clock text-warning me-2"></i>
+                                        Horario: 8:00 AM - 1:00 PM
+                                    </li>
+                                    <li class="mb-1">
+                                        <i class="fas fa-graduation-cap text-info me-2"></i>
+                                        Durante horas de clase
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
     
-    <div class="d-flex justify-content-between">
-        <button type="button" class="btn btn-secondary" onclick="Swal.close()">Cancelar</button>
-        <button type="button" class="btn btn-success" onclick="enviarSolicitudPrestamo()">Enviar solicitud</button>
+    <!-- Botones de acción -->
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex flex-column flex-sm-row gap-2 justify-content-between">
+                <button type="button" class="btn btn-outline-secondary btn-lg px-4" onclick="Swal.close()">
+                    <i class="fas fa-times me-2"></i>Cancelar
+                </button>
+                <button type="button" class="btn btn-success btn-lg px-4" onclick="enviarSolicitudPrestamo()">
+                    <i class="fas fa-paper-plane me-2"></i>Enviar solicitud
+                </button>
+            </div>
+        </div>
     </div>
 </form>
 
