@@ -5,597 +5,438 @@ namespace App\Controllers;
 use App\Models\SancionModel;
 use App\Models\TiposancionModel;
 use App\Models\personaModel;
-use Exception;
+use App\Models\usuarioModel;
 
 class SancionController extends BaseController
 {
     protected $sancionModel;
     protected $tiposancionModel;
     protected $personaModel;
+    protected $usuarioModel;
 
     public function __construct()
     {
         $this->sancionModel = new SancionModel();
         $this->tiposancionModel = new TiposancionModel();
         $this->personaModel = new personaModel();
+        $this->usuarioModel = new usuarioModel();
     }
 
     /**
-     * Mostrar lista de sanciones
+     * Vista principal de sanciones activas
      */
-    public function index()
+    public function activas()
     {
-        $sanciones = $this->sancionModel->getSancionesCompletas();
-        
-        $datos = [
-            'sanciones' => $sanciones
-        ];
+        try {
+            $filtros = [
+                'tipo_sancion' => $this->request->getGet('tipo_sancion') ?? '',
+                'nivel' => $this->request->getGet('nivel') ?? '',
+                'buscar' => $this->request->getGet('buscar') ?? ''
+            ];
 
-        if ($this->request->isAJAX()) {
-            return $this->response->setJSON([
-                'success' => true,
-                'sanciones' => $sanciones
-            ]);
+            // Obtener datos usando los métodos del modelo
+            $sanciones = $this->sancionModel->obtenerSancionesActivas($filtros);
+            $tipos_sancion = $this->tiposancionModel->obtenerTiposActivos();
+
+            // Calcular estadísticas usando el método del modelo
+            $estadisticas = $this->sancionModel->obtenerEstadisticas();
+
+            $data = [
+                'sanciones' => $sanciones,
+                'tipos_sancion' => $tipos_sancion,
+                'estadisticas' => $estadisticas,
+                'filtros' => $filtros
+            ];
+
+            // Si es una petición AJAX, retornar solo el contenido parcial
+            if ($this->request->isAJAX()) {
+                return view('Administrador/sanciones/partials/activas', $data);
+            }
+
+            // Si no es AJAX, retornar la vista completa (para casos especiales)
+            $data['title'] = 'Sanciones Activas';
+            return view('Administrador/sanciones/activas', $data);
+
+        } catch (\Exception $e) {
+            log_message('error', 'Error en SancionController::activas: ' . $e->getMessage());
+            
+            $errorData = [
+                'sanciones' => [],
+                'tipos_sancion' => [],
+                'estadisticas' => ['total' => 0, 'activas' => 0, 'cumplidas' => 0, 'canceladas' => 0],
+                'filtros' => [],
+                'error' => 'Error al cargar los datos: ' . $e->getMessage()
+            ];
+
+            if ($this->request->isAJAX()) {
+                return view('Administrador/sanciones/partials/activas', $errorData);
+            }
+
+            $errorData['title'] = 'Sanciones Activas';
+            return view('Administrador/sanciones/activas', $errorData);
         }
-
-        // Para peticiones no-AJAX redirigimos a la vista principal de sanciones activas
-        return redirect()->to(base_url('sanciones'));
     }
 
     /**
-     * Mostrar formulario para crear nueva sanción
+     * Vista de historial de sanciones
+     */
+    public function historial()
+    {
+        try {
+            $filtros = [
+                'estado' => $this->request->getGet('estado') ?? '',
+                'fecha_desde' => $this->request->getGet('fecha_desde') ?? '',
+                'fecha_hasta' => $this->request->getGet('fecha_hasta') ?? '',
+                'buscar' => $this->request->getGet('buscar') ?? ''
+            ];
+
+            // Obtener datos usando los métodos del modelo
+            $sanciones = $this->sancionModel->obtenerHistorialSanciones($filtros);
+
+            // Calcular estadísticas usando el método del modelo
+            $estadisticas = $this->sancionModel->obtenerEstadisticas();
+
+            $data = [
+                'sanciones' => $sanciones,
+                'estadisticas' => $estadisticas,
+                'filtros' => $filtros
+            ];
+
+            // Si es una petición AJAX, retornar solo el contenido parcial
+            if ($this->request->isAJAX()) {
+                return view('Administrador/sanciones/partials/historial', $data);
+            }
+
+            // Si no es AJAX, retornar la vista completa (para casos especiales)
+            $data['title'] = 'Historial de Sanciones';
+            return view('Administrador/sanciones/historial', $data);
+
+        } catch (\Exception $e) {
+            log_message('error', 'Error en SancionController::historial: ' . $e->getMessage());
+            
+            $errorData = [
+                'sanciones' => [],
+                'estadisticas' => ['total' => 0, 'activas' => 0, 'cumplidas' => 0, 'canceladas' => 0],
+                'filtros' => [],
+                'error' => 'Error al cargar los datos: ' . $e->getMessage()
+            ];
+
+            if ($this->request->isAJAX()) {
+                return view('Administrador/sanciones/partials/historial', $errorData);
+            }
+
+            $errorData['title'] = 'Historial de Sanciones';
+            return view('Administrador/sanciones/historial', $errorData);
+        }
+    }
+
+    /**
+     * Crear nueva sanción
      */
     public function crear()
     {
-        $datos = [
-            'tiposSancion' => $this->tiposancionModel->getTiposSancionOrdenados(),
-            'personas' => $this->personaModel->orderBy('apellidos', 'ASC')->findAll()
-        ];
-
-        if ($this->request->isAJAX()) {
-            return view('Administrador/sanciones/crear', $datos);
-        }
-
-        $datos['navbar'] = view('layouts/navbar');
-        $datos['header'] = view('layouts/header');
-        $datos['footer'] = view('layouts/footer');
-
-        return view('Administrador/sanciones/crear', $datos);
-    }
-
-    /**
-     * Guardar nueva sanción
-     */
-    public function guardar()
-    {
-        $datos = [
-            'idtiposancion' => $this->request->getPost('idtiposancion'),
-            'idpersona' => $this->request->getPost('idpersona'),
-            'detallesancion' => $this->request->getPost('detallesancion')
-        ];
-
-        if (!$this->sancionModel->save($datos)) {
-            $errores = $this->sancionModel->errors();
-            
-            if ($this->request->isAJAX()) {
-                return $this->response->setJSON([
-                    'success' => false,
-                    'errors' => $errores
-                ]);
-            }
-
-            session()->setFlashdata('errores', $errores);
-            return redirect()->back()->withInput();
-        }
-
-        if ($this->request->isAJAX()) {
+        // Debug: verificar método de petición
+        log_message('debug', 'SancionController::crear - Método: ' . $this->request->getMethod());
+        log_message('debug', 'SancionController::crear - Es AJAX: ' . ($this->request->isAJAX() ? 'Sí' : 'No'));
+        
+        // Solo permitir peticiones POST
+        if ($this->request->getMethod() !== 'post') {
+            log_message('error', 'SancionController::crear - Método no permitido: ' . $this->request->getMethod());
             return $this->response->setJSON([
-                'success' => true,
-                'message' => 'Sanción registrada exitosamente'
+                'success' => false,
+                'message' => 'Método no permitido: ' . $this->request->getMethod()
             ]);
         }
 
-        session()->setFlashdata('success', 'Sanción registrada exitosamente');
-        return redirect()->to(base_url('sanciones'));
-    }
+        try {
+            $data = [
+                'idtiposancion' => $this->request->getPost('idtiposancion'),
+                'idpersona' => $this->request->getPost('idpersona'),
+                'detallesancion' => $this->request->getPost('detallesancion'),
+                'fecha_sancion' => $this->request->getPost('fecha_sancion') ?: date('Y-m-d'),
+                'fecha_vencimiento' => $this->request->getPost('fecha_vencimiento') ?: null,
+                'estado_sancion' => 'activa',
+                'usuario_registra' => session('idusuario') ?: 1, // Fallback si no hay sesión
+                'observaciones' => $this->request->getPost('observaciones') ?: null
+            ];
 
-    /**
-     * Mostrar formulario para editar sanción
-     */
-    public function editar($idsancion)
-    {
-        $sancion = $this->sancionModel->find($idsancion);
-        
-        if (!$sancion) {
-            if ($this->request->isAJAX()) {
+            // Validar datos requeridos
+            if (empty($data['idtiposancion']) || empty($data['idpersona']) || empty($data['detallesancion'])) {
                 return $this->response->setJSON([
                     'success' => false,
-                    'message' => 'Sanción no encontrada'
-                ]);
-            }
-            
-            session()->setFlashdata('error', 'Sanción no encontrada');
-            return redirect()->to(base_url('sanciones'));
-        }
-
-        $datos = [
-            'sancion' => $sancion,
-            'tiposSancion' => $this->tiposancionModel->getTiposSancionOrdenados(),
-            'personas' => $this->personaModel->orderBy('apellidos', 'ASC')->findAll()
-        ];
-
-        if ($this->request->isAJAX()) {
-            return view('Administrador/sanciones/editar', $datos);
-        }
-
-        $datos['navbar'] = view('layouts/navbar');
-        $datos['header'] = view('layouts/header');
-        $datos['footer'] = view('layouts/footer');
-
-        return view('Administrador/sanciones/editar', $datos);
-    }
-
-    /**
-     * Actualizar sanción
-     */
-    public function actualizar($idsancion)
-    {
-        $sancion = $this->sancionModel->find($idsancion);
-        
-        if (!$sancion) {
-            if ($this->request->isAJAX()) {
-                return $this->response->setJSON([
-                    'success' => false,
-                    'message' => 'Sanción no encontrada'
-                ]);
-            }
-            
-            session()->setFlashdata('error', 'Sanción no encontrada');
-            return redirect()->to(base_url('sanciones'));
-        }
-
-        $datos = [
-            'idtiposancion' => $this->request->getPost('idtiposancion'),
-            'idpersona' => $this->request->getPost('idpersona'),
-            'detallesancion' => $this->request->getPost('detallesancion')
-        ];
-
-        if (!$this->sancionModel->update($idsancion, $datos)) {
-            $errores = $this->sancionModel->errors();
-            
-            if ($this->request->isAJAX()) {
-                return $this->response->setJSON([
-                    'success' => false,
-                    'errors' => $errores
+                    'message' => 'Los campos tipo de sanción, persona y detalles son obligatorios'
                 ]);
             }
 
-            session()->setFlashdata('errores', $errores);
-            return redirect()->back()->withInput();
-        }
+            // Verificar que la persona existe
+            $persona = $this->personaModel->find($data['idpersona']);
+            if (!$persona) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'La persona seleccionada no existe'
+                ]);
+            }
 
-        if ($this->request->isAJAX()) {
+            // Verificar que el tipo de sanción existe
+            $tipoSancion = $this->tiposancionModel->find($data['idtiposancion']);
+            if (!$tipoSancion) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'El tipo de sanción seleccionado no existe'
+                ]);
+            }
+
+            if ($this->sancionModel->insert($data)) {
+                return $this->response->setJSON([
+                    'success' => true,
+                    'message' => 'Sanción registrada exitosamente'
+                ]);
+            } else {
+                $errors = $this->sancionModel->errors();
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Error al registrar la sanción: ' . implode(', ', $errors)
+                ]);
+            }
+        } catch (\Exception $e) {
+            log_message('error', 'Error en SancionController::crear: ' . $e->getMessage());
             return $this->response->setJSON([
-                'success' => true,
-                'message' => 'Sanción actualizada exitosamente'
+                'success' => false,
+                'message' => 'Error interno del servidor: ' . $e->getMessage()
             ]);
         }
-
-        session()->setFlashdata('success', 'Sanción actualizada exitosamente');
-        return redirect()->to(base_url('sanciones'));
     }
 
     /**
-     * Eliminar sanción
+     * Guardar nueva sanción (método alternativo)
      */
-    public function eliminar($idsancion)
+    public function guardarSancion()
     {
-        $sancion = $this->sancionModel->find($idsancion);
+        // Debug: verificar método de petición
+        log_message('debug', 'SancionController::guardarSancion - Método: ' . $this->request->getMethod());
+        log_message('debug', 'SancionController::guardarSancion - Es AJAX: ' . ($this->request->isAJAX() ? 'Sí' : 'No'));
         
-        if (!$sancion) {
-            if ($this->request->isAJAX()) {
+        try {
+            $data = [
+                'idtiposancion' => $this->request->getPost('idtiposancion'),
+                'idpersona' => $this->request->getPost('idpersona'),
+                'detallesancion' => $this->request->getPost('detallesancion'),
+                'fecha_sancion' => $this->request->getPost('fecha_sancion') ?: date('Y-m-d'),
+                'fecha_vencimiento' => $this->request->getPost('fecha_vencimiento') ?: null,
+                'estado_sancion' => 'activa',
+                'usuario_registra' => session('idusuario') ?: 1,
+                'observaciones' => $this->request->getPost('observaciones') ?: null
+            ];
+
+            log_message('debug', 'SancionController::guardarSancion - Datos recibidos: ' . json_encode($data));
+
+            // Validar datos requeridos
+            if (empty($data['idtiposancion']) || empty($data['idpersona']) || empty($data['detallesancion'])) {
                 return $this->response->setJSON([
                     'success' => false,
-                    'message' => 'Sanción no encontrada'
+                    'message' => 'Los campos tipo de sanción, persona y detalles son obligatorios'
                 ]);
             }
-            
-            session()->setFlashdata('error', 'Sanción no encontrada');
-            return redirect()->to(base_url('sanciones'));
-        }
 
-        if (!$this->sancionModel->delete($idsancion)) {
-            if ($this->request->isAJAX()) {
+            // Verificar que la persona existe
+            $persona = $this->personaModel->find($data['idpersona']);
+            if (!$persona) {
                 return $this->response->setJSON([
                     'success' => false,
-                    'message' => 'Error al eliminar la sanción'
+                    'message' => 'La persona seleccionada no existe'
                 ]);
             }
-            
-            session()->setFlashdata('error', 'Error al eliminar la sanción');
-            return redirect()->to(base_url('sanciones'));
-        }
 
-        if ($this->request->isAJAX()) {
+            // Verificar que el tipo de sanción existe
+            $tipoSancion = $this->tiposancionModel->find($data['idtiposancion']);
+            if (!$tipoSancion) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'El tipo de sanción seleccionado no existe'
+                ]);
+            }
+
+            if ($this->sancionModel->insert($data)) {
+                log_message('info', 'Sanción creada exitosamente: ' . json_encode($data));
+                return $this->response->setJSON([
+                    'success' => true,
+                    'message' => 'Sanción registrada exitosamente'
+                ]);
+            } else {
+                $errors = $this->sancionModel->errors();
+                log_message('error', 'Error al crear sanción: ' . implode(', ', $errors));
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Error al registrar la sanción: ' . implode(', ', $errors)
+                ]);
+            }
+        } catch (\Exception $e) {
+            log_message('error', 'Error en SancionController::guardarSancion: ' . $e->getMessage());
             return $this->response->setJSON([
-                'success' => true,
-                'message' => 'Sanción eliminada exitosamente'
+                'success' => false,
+                'message' => 'Error interno del servidor: ' . $e->getMessage()
             ]);
         }
-
-        session()->setFlashdata('success', 'Sanción eliminada exitosamente');
-        return redirect()->to(base_url('sanciones'));
     }
 
     /**
      * Ver detalles de una sanción
      */
-    public function ver($idsancion)
+    public function ver($id)
     {
-        $sancion = $this->sancionModel->getSancionCompleta($idsancion);
+        $sancion = $this->sancionModel->obtenerDetallesCompletos($id);
         
         if (!$sancion) {
-            if ($this->request->isAJAX()) {
-                return $this->response->setJSON([
-                    'success' => false,
-                    'message' => 'Sanción no encontrada'
-                ]);
-            }
-            
-            session()->setFlashdata('error', 'Sanción no encontrada');
-            return redirect()->to(base_url('sanciones'));
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Sanción no encontrada'
+            ]);
         }
 
-        $datos = [
+        return $this->response->setJSON([
+            'success' => true,
             'sancion' => $sancion
-        ];
-
-        if ($this->request->isAJAX()) {
-            return view('Administrador/sanciones/ver', $datos);
-        }
-
-        $datos['navbar'] = view('layouts/navbar');
-        $datos['header'] = view('layouts/header');
-        $datos['footer'] = view('layouts/footer');
-
-        return view('Administrador/sanciones/ver', $datos);
+        ]);
     }
 
     /**
-     * Buscar sanciones
+     * Editar sanción
      */
-    public function buscar()
+    public function editar($id)
     {
-        $criterio = $this->request->getGet('q') ?? '';
-        $sanciones = $this->sancionModel->buscarSanciones($criterio);
+        if ($this->request->getMethod() === 'post') {
+            $data = [
+                'idtiposancion' => $this->request->getPost('idtiposancion'),
+                'detallesancion' => $this->request->getPost('detallesancion'),
+                'fecha_sancion' => $this->request->getPost('fecha_sancion'),
+                'fecha_vencimiento' => $this->request->getPost('fecha_vencimiento'),
+                'estado_sancion' => $this->request->getPost('estado_sancion'),
+                'observaciones' => $this->request->getPost('observaciones')
+            ];
+
+            if ($this->sancionModel->update($id, $data)) {
+                return $this->response->setJSON([
+                    'success' => true,
+                    'message' => 'Sanción actualizada exitosamente'
+                ]);
+            } else {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Error al actualizar la sanción: ' . implode(', ', $this->sancionModel->errors())
+                ]);
+            }
+        }
+
+        $data = [
+            'sancion' => $this->sancionModel->obtenerDetallesCompletos($id),
+            'tipos_sancion' => $this->tiposancionModel->obtenerTiposActivos()
+        ];
+
+        return view('Administrador/sanciones/editar', $data);
+    }
+
+    /**
+     * Eliminar sanción
+     */
+    public function eliminar($id)
+    {
+        if ($this->sancionModel->delete($id)) {
+            return $this->response->setJSON([
+                'success' => true,
+                'message' => 'Sanción eliminada exitosamente'
+            ]);
+        } else {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Error al eliminar la sanción'
+            ]);
+        }
+    }
+
+    /**
+     * Cambiar estado de sanción
+     */
+    public function cambiarEstado()
+    {
+        $id = $this->request->getPost('id');
+        $nuevoEstado = $this->request->getPost('estado');
+        $observaciones = $this->request->getPost('observaciones');
+
+        if ($this->sancionModel->cambiarEstado($id, $nuevoEstado, $observaciones)) {
+            return $this->response->setJSON([
+                'success' => true,
+                'message' => 'Estado de sanción actualizado exitosamente'
+            ]);
+        } else {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Error al actualizar el estado de la sanción'
+            ]);
+        }
+    }
+
+    /**
+     * Buscar personas para autocompletado
+     */
+    public function buscarPersonas()
+    {
+        $query = $this->request->getGet('q');
         
-        if ($this->request->isAJAX()) {
-            return $this->response->setJSON([
-                'success' => true,
-                'data' => $sanciones
-            ]);
+        $personas = $this->personaModel->select('idpersona, nombres, apellidos, numerodoc, tipodoc')
+            ->groupStart()
+                ->like('nombres', $query)
+                ->orLike('apellidos', $query)
+                ->orLike('numerodoc', $query)
+            ->groupEnd()
+            ->limit(10)
+            ->findAll();
+
+        $resultado = [];
+        foreach ($personas as $persona) {
+            $resultado[] = [
+                'id' => $persona['idpersona'],
+                'text' => $persona['nombres'] . ' ' . $persona['apellidos'],
+                'documento' => $persona['tipodoc'] . ': ' . $persona['numerodoc']
+            ];
         }
 
-        $datos = [
-            'sanciones' => $sanciones,
-            'criterio' => $criterio,
-            'navbar' => view('layouts/navbar'),
-            'header' => view('layouts/header'),
-            'footer' => view('layouts/footer')
-        ];
-
-        return view('Administrador/sanciones/index', $datos);
+        return $this->response->setJSON($resultado);
     }
 
     /**
-     * Gestión de tipos de sanción
-     */
-    public function tiposSancion()
-    {
-        $tipos = $this->tiposancionModel->getTiposSancionOrdenados();
-        
-        $datos = [
-            'tipos' => $tipos
-        ];
-
-        if ($this->request->isAJAX()) {
-            return $this->response->setJSON([
-                'success' => true,
-                'tipos' => $tipos
-            ]);
-        }
-
-        $datos['navbar'] = view('layouts/navbar');
-        $datos['header'] = view('layouts/header');
-        $datos['footer'] = view('layouts/footer');
-
-        return view('Administrador/sanciones/tipos', $datos);
-    }
-
-
-    /**
-     * Crear tipo de sanción (usado por AJAX)
-     */
-    public function crearTipo()
-    {
-        $datos = [
-            'tiposancion' => $this->request->getPost('tiposancion')
-        ];
-
-        if (!$this->tiposancionModel->save($datos)) {
-            $errores = $this->tiposancionModel->errors();
-            if ($this->request->isAJAX()) {
-                return $this->response->setJSON([
-                    'success' => false,
-                    'errors' => $errores
-                ]);
-            }
-            session()->setFlashdata('errores', $errores);
-            return redirect()->back()->withInput();
-        }
-
-        if ($this->request->isAJAX()) {
-            return $this->response->setJSON([
-                'success' => true,
-                'message' => 'Tipo de sanción creado exitosamente'
-            ]);
-        }
-
-        session()->setFlashdata('success', 'Tipo de sanción creado exitosamente');
-        return redirect()->to(base_url('sanciones/tipos'));
-    }
-
-    /**
-     * Eliminar tipo de sanción
-     */
-    public function eliminarTipo($idtiposancion)
-    {
-        // Verificar si está en uso
-        if ($this->tiposancionModel->estaEnUso($idtiposancion)) {
-            if ($this->request->isAJAX()) {
-                return $this->response->setJSON([
-                    'success' => false,
-                    'message' => 'No se puede eliminar este tipo de sanción porque está siendo utilizado'
-                ]);
-            }
-            
-            session()->setFlashdata('error', 'No se puede eliminar este tipo de sanción porque está siendo utilizado');
-            return redirect()->to(base_url('sanciones/tipos'));
-        }
-
-        if (!$this->tiposancionModel->delete($idtiposancion)) {
-            if ($this->request->isAJAX()) {
-                return $this->response->setJSON([
-                    'success' => false,
-                    'message' => 'Error al eliminar el tipo de sanción'
-                ]);
-            }
-            
-            session()->setFlashdata('error', 'Error al eliminar el tipo de sanción');
-            return redirect()->to(base_url('sanciones/tipos'));
-        }
-
-        if ($this->request->isAJAX()) {
-            return $this->response->setJSON([
-                'success' => true,
-                'message' => 'Tipo de sanción eliminado exitosamente'
-            ]);
-        }
-
-        session()->setFlashdata('success', 'Tipo de sanción eliminado exitosamente');
-        return redirect()->to(base_url('sanciones/tipos'));
-    }
-
-    /**
-     * Mostrar vista de sanciones activas
-     */
-    public function activas()
-    {
-        try {
-            // Usar método existente del modelo
-            $sancionesCompletas = $this->sancionModel->getSancionesCompletas();
-            
-            // Estadísticas básicas con datos existentes
-            $totalSanciones = count($sancionesCompletas);
-            $estadisticas = [
-                'total_sanciones' => $totalSanciones,
-                'sanciones_graves' => 0, // Se calculará cuando se implemente la lógica completa
-                'sanciones_leves' => $totalSanciones,
-                'estudiantes_sancionados' => $totalSanciones
-            ];
-
-            $data = [
-                'title' => 'Sanciones Activas - Sistema Biblioteca',
-                'breadcrumb' => [
-                    'Inicio' => base_url('admin'),
-                    'Control y Sanciones' => '#',
-                    'Sanciones Activas' => ''
-                ],
-                'sanciones' => $sancionesCompletas,
-                'estadisticas' => $estadisticas,
-                'tipos_sancion' => $this->tiposancionModel->findAll()
-            ];
-
-            return view('Administrador/sanciones/activas', $data);
-            
-        } catch (Exception $e) {
-            log_message('error', 'Error en SancionController::activas: ' . $e->getMessage());
-            
-            // Vista de error básica
-            $data = [
-                'title' => 'Error - Sanciones Activas',
-                'error' => 'Error al cargar las sanciones. Por favor, inténtalo de nuevo.',
-                'sanciones' => [],
-                'estadisticas' => [
-                    'total_sanciones' => 0,
-                    'sanciones_graves' => 0, 
-                    'sanciones_leves' => 0,
-                    'estudiantes_sancionados' => 0
-                ],
-                'tipos_sancion' => []
-            ];
-            
-            return view('Administrador/sanciones/activas', $data);
-        }
-    }
-
-    /**
-     * Mostrar vista del historial de sanciones
-     */
-    public function historial()
-    {
-        try {
-            // Usar método existente del modelo
-            $historialCompleto = $this->sancionModel->getSancionesCompletas();
-            
-            // Estadísticas básicas con datos existentes
-            $totalRegistros = count($historialCompleto);
-            $estadisticas = [
-                'total_registros' => $totalRegistros,
-                'sanciones_activas' => $totalRegistros, // Temporalmente todas se consideran activas
-                'sanciones_levantadas' => 0,
-                'sanciones_vencidas' => 0,
-                'estudiantes_historial' => $totalRegistros,
-                'promedio_mensual' => round($totalRegistros / 12, 1)
-            ];
-
-            // Actividad reciente simulada
-            $actividadReciente = [
-                [
-                    'tipo' => 'nueva',
-                    'titulo' => 'Nueva sanción registrada',
-                    'descripcion' => 'Se registró una nueva sanción disciplinaria',
-                    'tiempo' => 'Hace 2 horas'
-                ],
-                [
-                    'tipo' => 'levantada',
-                    'titulo' => 'Sanción levantada',
-                    'descripcion' => 'Se levantó una sanción previamente aplicada',
-                    'tiempo' => 'Ayer a las 14:30'
-                ]
-            ];
-
-            $data = [
-                'title' => 'Historial de Sanciones - Sistema Biblioteca',
-                'breadcrumb' => [
-                    'Inicio' => base_url('admin'),
-                    'Control y Sanciones' => '#',
-                    'Historial de Sanciones' => ''
-                ],
-                'historial' => $historialCompleto,
-                'estadisticas' => $estadisticas,
-                'actividad_reciente' => $actividadReciente,
-                'tipos_sancion' => $this->tiposancionModel->findAll()
-            ];
-
-            return view('Administrador/sanciones/historial', $data);
-            
-        } catch (Exception $e) {
-            log_message('error', 'Error en SancionController::historial: ' . $e->getMessage());
-            
-            // Vista de error básica
-            $data = [
-                'title' => 'Error - Historial de Sanciones',
-                'error' => 'Error al cargar el historial. Por favor, inténtalo de nuevo.',
-                'historial' => [],
-                'estadisticas' => [
-                    'total_registros' => 0,
-                    'sanciones_activas' => 0,
-                    'sanciones_levantadas' => 0,
-                    'sanciones_vencidas' => 0,
-                    'estudiantes_historial' => 0,
-                    'promedio_mensual' => 0
-                ],
-                'actividad_reciente' => [],
-                'tipos_sancion' => []
-            ];
-            
-            return view('Administrador/sanciones/historial', $data);
-        }
-    }
-
-    /**
-     * Obtener estadísticas de sanciones
+     * Obtener estadísticas para dashboard
      */
     public function estadisticas()
     {
-        try {
-            $sanciones = $this->sancionModel->getSancionesCompletas();
-            $totalSanciones = count($sanciones);
-            
-            $estadisticas = [
-                'total_sanciones' => $totalSanciones,
-                'sanciones_activas' => $totalSanciones, // Temporalmente todas se consideran activas
-                'sanciones_levantadas' => 0,
-                'estudiantes_afectados' => $totalSanciones
-            ];
+        $estadisticas = $this->sancionModel->obtenerEstadisticas();
+        $proximasVencer = $this->sancionModel->obtenerSancionesProximasAVencer();
 
-            if ($this->request->isAJAX()) {
-                return $this->response->setJSON([
-                    'success' => true,
-                    'estadisticas' => $estadisticas
-                ]);
-            }
-
-            return $estadisticas;
-        } catch (Exception $e) {
-            log_message('error', 'Error en SancionController::estadisticas: ' . $e->getMessage());
-            
-            if ($this->request->isAJAX()) {
-                return $this->response->setJSON([
-                    'success' => false,
-                    'message' => 'Error al cargar las estadísticas'
-                ]);
-            }
-            
-            return [];
-        }
+        return $this->response->setJSON([
+            'success' => true,
+            'estadisticas' => $estadisticas,
+            'proximas_vencer' => $proximasVencer
+        ]);
     }
 
     /**
-     * Levantar sanción
+     * Exportar sanciones a Excel
      */
-    public function levantar($idsancion)
+    public function exportarExcel()
     {
-        try {
-            $sancion = $this->sancionModel->find($idsancion);
-            
-            if (!$sancion) {
-                if ($this->request->isAJAX()) {
-                    return $this->response->setJSON([
-                        'success' => false,
-                        'message' => 'Sanción no encontrada'
-                    ]);
-                }
-                
-                session()->setFlashdata('error', 'Sanción no encontrada');
-                return redirect()->to(base_url('sanciones'));
-            }
+        $filtros = [
+            'tipo_sancion' => $this->request->getGet('tipo_sancion'),
+            'nivel' => $this->request->getGet('nivel'),
+            'buscar' => $this->request->getGet('buscar')
+        ];
 
-            // Aquí se implementaría la lógica para levantar la sanción
-            // Por ejemplo, actualizar un campo de estado o fecha de levantamiento
-            
-            if ($this->request->isAJAX()) {
-                return $this->response->setJSON([
-                    'success' => true,
-                    'message' => 'Sanción levantada exitosamente'
-                ]);
-            }
+        $sanciones = $this->sancionModel->obtenerSancionesActivas($filtros);
 
-            session()->setFlashdata('success', 'Sanción levantada exitosamente');
-            return redirect()->to(base_url('sanciones'));
-        } catch (Exception $e) {
-            log_message('error', 'Error en SancionController::levantar: ' . $e->getMessage());
-            
-            if ($this->request->isAJAX()) {
-                return $this->response->setJSON([
-                    'success' => false,
-                    'message' => 'Error al levantar la sanción'
-                ]);
-            }
-            
-            session()->setFlashdata('error', 'Error al levantar la sanción');
-            return redirect()->to(base_url('sanciones'));
-        }
+        // Aquí implementarías la lógica de exportación a Excel
+        // Por ahora retornamos un JSON con los datos
+        return $this->response->setJSON([
+            'success' => true,
+            'data' => $sanciones,
+            'message' => 'Datos preparados para exportación'
+        ]);
     }
 }

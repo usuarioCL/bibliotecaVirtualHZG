@@ -125,16 +125,9 @@ class MatriculaController extends BaseController
             WHERE p.idmatricula = ?
         ", [$idmatricula])->getRow()->count ?? 0;
 
-        $sancionesActivas = $this->db->query("
-            SELECT COUNT(*) as count
-            FROM sanciones s
-            WHERE s.idmatricula = ? AND s.activa = 1
-        ", [$idmatricula])->getRow()->count ?? 0;
-
         return [
             'prestamos_activos' => $prestamosActivos,
-            'total_prestamos' => $totalPrestamos,
-            'sanciones_activas' => $sancionesActivas
+            'total_prestamos' => $totalPrestamos
         ];
     }
 

@@ -90,16 +90,11 @@ $routes->get('/admin/register', 'AdminController::register');
 
 //Vistas de administrador
 $routes->get('Administrador/vistas/UsuariosRoles', 'AdminController::VistaUsuariosRoles');
-$routes->get('Administrador/vistas/AlumnosSancionados', 'AdminController::VistaAlumnosSancionados');
 
 // Rutas para Reportes y Estadísticas
 $routes->get('Administrador/vistas/PrestamosAlumnos', 'ReporteController::prestamosUsuarios');
 $routes->get('Administrador/vistas/RecursosPopulares', 'ReporteController::recursosPopulares');
 $routes->get('reportes/inventario', 'ReporteController::inventario');
-
-// Rutas principales para Sanciones (vistas de administrador)
-$routes->get('sanciones', 'SancionController::activas');
-$routes->get('sanciones/historial', 'SancionController::historial');
 
 // Importación de datos
 $routes->get('admin/importar-datos', 'AdminController::importarDatos');
@@ -205,25 +200,19 @@ $routes->delete('/ejemplares-fisicos/eliminar/(:num)', 'EjemplarFisicoController
 $routes->post('/ejemplares-fisicos/restaurar/(:num)', 'EjemplarFisicoController::restaurar/$1');
 $routes->get('/ejemplares-fisicos/estadisticas/(:num)', 'EjemplarFisicoController::estadisticas/$1');
 
-// Sanciones - Gestión CRUD (rutas con prefijo para evitar conflictos)
-$routes->get('/sanciones', 'SancionController::activas');  // Ruta principal para AJAX
-$routes->get('/sanciones/lista', 'SancionController::index');
-$routes->get('/sanciones/crear', 'SancionController::crear');
-$routes->post('/sanciones/guardar', 'SancionController::guardar');
-$routes->get('/sanciones/editar/(:num)', 'SancionController::editar/$1');
-$routes->post('/sanciones/actualizar/(:num)', 'SancionController::actualizar/$1');
-$routes->post('/sanciones/eliminar/(:num)', 'SancionController::eliminar/$1');
+// Sistema de Sanciones
+$routes->get('/sanciones', 'SancionController::activas');
+$routes->get('/sanciones/historial', 'SancionController::historial');
+$routes->match(['get', 'post'], '/sanciones/crear', 'SancionController::crear');
+$routes->post('/sanciones/guardar', 'SancionController::guardarSancion');
 $routes->get('/sanciones/ver/(:num)', 'SancionController::ver/$1');
-$routes->get('/sanciones/buscar', 'SancionController::buscar');
-
-// Tipos de sanción
-$routes->get('/sanciones/tipos', 'SancionController::tiposSancion');
-$routes->post('/sanciones/crear-tipo', 'SancionController::crearTipo');
-$routes->post('/sanciones/eliminar-tipo/(:num)', 'SancionController::eliminarTipo/$1');
-
-// Nuevas rutas para AJAX
+$routes->get('/sanciones/editar/(:num)', 'SancionController::editar/$1');
+$routes->post('/sanciones/editar/(:num)', 'SancionController::editar/$1');
+$routes->post('/sanciones/eliminar/(:num)', 'SancionController::eliminar/$1');
+$routes->post('/sanciones/cambiar-estado', 'SancionController::cambiarEstado');
+$routes->get('/sanciones/buscar-personas', 'SancionController::buscarPersonas');
 $routes->get('/sanciones/estadisticas', 'SancionController::estadisticas');
-$routes->post('/sanciones/levantar/(:num)', 'SancionController::levantar/$1');
+$routes->get('/sanciones/exportar-excel', 'SancionController::exportarExcel');
 
 // Sistema de Préstamos
 $routes->get('/prestamos', 'PrestamoController::index');                      // Préstamos Activos

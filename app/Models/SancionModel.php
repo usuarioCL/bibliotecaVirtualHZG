@@ -8,29 +8,28 @@ class SancionModel extends Model
 {
     protected $table = 'sanciones';
     protected $primaryKey = 'idsancion';
-    protected $useAutoIncrement = true;
-    protected $returnType = 'array';
-    protected $useSoftDeletes = false;
-    protected $protectFields = true;
     protected $allowedFields = [
         'idtiposancion',
-        'idpersona', 
-        'detallesancion'
+        'idpersona',
+        'detallesancion',
+        'fecha_sancion',
+        'fecha_vencimiento',
+        'estado_sancion',
+        'usuario_registra',
+        'observaciones'
     ];
 
-    // Dates
-    protected $useTimestamps = false;
-    protected $dateFormat = 'datetime';
-    protected $createdField = 'created_at';
-    protected $updatedField = 'updated_at';
-    protected $deletedField = 'deleted_at';
-
-    // Validation
     protected $validationRules = [
         'idtiposancion' => 'required|integer',
         'idpersona' => 'required|integer',
-        'detallesancion' => 'permit_empty|max_length[200]'
+        'detallesancion' => 'required|max_length[200]',
+        'fecha_sancion' => 'required|valid_date',
+        'fecha_vencimiento' => 'permit_empty|valid_date',
+        'estado_sancion' => 'required|in_list[activa,cumplida,cancelada]',
+        'usuario_registra' => 'permit_empty|integer',
+        'observaciones' => 'permit_empty'
     ];
+
     protected $validationMessages = [
         'idtiposancion' => [
             'required' => 'El tipo de sanción es obligatorio',
@@ -41,124 +40,208 @@ class SancionModel extends Model
             'integer' => 'La persona debe ser un número válido'
         ],
         'detallesancion' => [
-            'max_length' => 'El detalle no puede exceder 200 caracteres'
+            'required' => 'Los detalles de la sanción son obligatorios',
+            'max_length' => 'Los detalles no pueden exceder 200 caracteres'
+        ],
+        'fecha_sancion' => [
+            'required' => 'La fecha de sanción es obligatoria',
+            'valid_date' => 'La fecha de sanción debe ser válida'
+        ],
+        'fecha_vencimiento' => [
+            'valid_date' => 'La fecha de vencimiento debe ser válida'
+        ],
+        'estado_sancion' => [
+            'required' => 'El estado de la sanción es obligatorio',
+            'in_list' => 'El estado debe ser: activa, cumplida o cancelada'
         ]
     ];
-    protected $skipValidation = false;
-    protected $cleanValidationRules = true;
-
-    // Callbacks
-    protected $allowCallbacks = true;
-    protected $beforeInsert = [];
-    protected $afterInsert = [];
-    protected $beforeUpdate = [];
-    protected $afterUpdate = [];
-    protected $beforeFind = [];
-    protected $afterFind = [];
-    protected $beforeDelete = [];
-    protected $afterDelete = [];
 
     /**
-     * Obtener sanciones con información completa (persona y tipo de sanción)
+     * Obtener sanciones activas con información completa
      */
-    public function getSancionesCompletas()
+    public function obtenerSancionesActivas($filtros = [])
     {
-        // Leer directamente de la vista SQL creada en MySQL
-        $db = \Config\Database::connect();
-        return $db->table('vista_sanciones_activas')
-                  ->orderBy('idsancion', 'DESC')
-                  ->get()
-                  ->getResultArray();
+        $builder = $this->select('
+            sanciones.*,
+            ts.tiposancion,
+            ts.descripcion as tipo_descripcion,
+            CONCAT(p.nombres, " ", p.apellidos) as nombre_completo,
+            p.nombres,
+            p.apellidos,
+            p.numerodoc,
+            p.tipodoc,
+            p.telefono,
+            p.email,
+            u.nomuser as usuario_registra_nombre,
+            g.grado,
+            g.seccion,
+            g.nivel
+        ')
+        ->join('tiposancion ts', 'ts.idtiposancion = sanciones.idtiposancion')
+        ->join('personas p', 'p.idpersona = sanciones.idpersona')
+        ->join('matriculas m', 'm.idpersona = p.idpersona', 'left')
+        ->join('grupos g', 'g.idgrupo = m.idgrupo', 'left')
+        ->join('usuarios u', 'u.idusuario = sanciones.usuario_registra', 'left')
+        ->where('sanciones.estado_sancion', 'activa');
+
+        // Aplicar filtros
+        if (!empty($filtros['tipo_sancion'])) {
+            $builder->where('sanciones.idtiposancion', $filtros['tipo_sancion']);
+        }
+
+        if (!empty($filtros['nivel'])) {
+            $builder->where('g.nivel', $filtros['nivel']);
+        }
+
+        if (!empty($filtros['buscar'])) {
+            $builder->groupStart()
+                ->like('p.nombres', $filtros['buscar'])
+                ->orLike('p.apellidos', $filtros['buscar'])
+                ->orLike('p.numerodoc', $filtros['buscar'])
+                ->orLike('sanciones.detallesancion', $filtros['buscar'])
+            ->groupEnd();
+        }
+
+        return $builder->orderBy('sanciones.fecha_sancion', 'DESC')->findAll();
     }
 
     /**
-     * Obtener una sanción específica con información completa
+     * Obtener historial de sanciones
      */
-    public function getSancionCompleta($idsancion)
+    public function obtenerHistorialSanciones($filtros = [])
     {
-        $db = \Config\Database::connect();
-        return $db->table('vista_sanciones_activas')
-                  ->where('idsancion', $idsancion)
-                  ->get()
-                  ->getRowArray();
+        $builder = $this->select('
+            sanciones.*,
+            ts.tiposancion,
+            ts.descripcion as tipo_descripcion,
+            CONCAT(p.nombres, " ", p.apellidos) as nombre_completo,
+            p.nombres,
+            p.apellidos,
+            p.numerodoc,
+            p.tipodoc,
+            p.telefono,
+            p.email,
+            u.nomuser as usuario_registra_nombre,
+            g.grado,
+            g.seccion,
+            g.nivel
+        ')
+        ->join('tiposancion ts', 'ts.idtiposancion = sanciones.idtiposancion')
+        ->join('personas p', 'p.idpersona = sanciones.idpersona')
+        ->join('matriculas m', 'm.idpersona = p.idpersona', 'left')
+        ->join('grupos g', 'g.idgrupo = m.idgrupo', 'left')
+        ->join('usuarios u', 'u.idusuario = sanciones.usuario_registra', 'left');
+
+        // Aplicar filtros
+        if (!empty($filtros['estado'])) {
+            $builder->where('sanciones.estado_sancion', $filtros['estado']);
+        }
+
+        if (!empty($filtros['fecha_desde'])) {
+            $builder->where('sanciones.fecha_sancion >=', $filtros['fecha_desde']);
+        }
+
+        if (!empty($filtros['fecha_hasta'])) {
+            $builder->where('sanciones.fecha_sancion <=', $filtros['fecha_hasta']);
+        }
+
+        if (!empty($filtros['buscar'])) {
+            $builder->groupStart()
+                ->like('p.nombres', $filtros['buscar'])
+                ->orLike('p.apellidos', $filtros['buscar'])
+                ->orLike('p.numerodoc', $filtros['buscar'])
+                ->orLike('sanciones.detallesancion', $filtros['buscar'])
+            ->groupEnd();
+        }
+
+        return $builder->orderBy('sanciones.fecha_sancion', 'DESC')->findAll();
     }
 
     /**
      * Obtener estadísticas de sanciones
      */
-    public function getEstadisticasSanciones()
+    public function obtenerEstadisticas()
     {
-        $db = \Config\Database::connect();
-        
-        // Total de sanciones
-        $total = $db->table('vista_sanciones_activas')->countAllResults();
-        
-        // Suspensiones (tipos 3 y 4)
-        $suspensiones = $db->table('vista_sanciones_activas')
-                          ->whereIn('idtiposancion', [3, 4])
-                          ->countAllResults();
-        
-        // Amonestaciones (tipos 1 y 2)
-        $amonestaciones = $db->table('vista_sanciones_activas')
-                           ->whereIn('idtiposancion', [1, 2])
-                           ->countAllResults();
-        
-        // Estudiantes únicos afectados
-        $estudiantesAfectados = $db->table('vista_sanciones_activas')
-                                 ->select('idpersona')
-                                 ->distinct()
-                                 ->countAllResults();
-        
+        $total = $this->countAllResults();
+        $activas = $this->where('estado_sancion', 'activa')->countAllResults(false);
+        $cumplidas = $this->where('estado_sancion', 'cumplida')->countAllResults(false);
+        $canceladas = $this->where('estado_sancion', 'cancelada')->countAllResults(false);
+
+        // Sanciones por tipo
+        $porTipo = $this->select('ts.tiposancion, COUNT(*) as total')
+            ->join('tiposancion ts', 'ts.idtiposancion = sanciones.idtiposancion')
+            ->groupBy('sanciones.idtiposancion')
+            ->findAll();
+
         return [
             'total' => $total,
-            'suspensiones' => $suspensiones,
-            'amonestaciones' => $amonestaciones,
-            'estudiantes_afectados' => $estudiantesAfectados
+            'activas' => $activas,
+            'cumplidas' => $cumplidas,
+            'canceladas' => $canceladas,
+            'por_tipo' => $porTipo
         ];
     }
 
     /**
-     * Obtener sanciones por persona
+     * Obtener sanciones próximas a vencer
      */
-    public function getSancionesPorPersona($idpersona)
+    public function obtenerSancionesProximasAVencer($dias = 7)
     {
         return $this->select('
-                sanciones.*,
-                tiposancion.tiposancion
-            ')
-            ->join('tiposancion', 'tiposancion.idtiposancion = sanciones.idtiposancion')
-            ->where('sanciones.idpersona', $idpersona)
-            ->orderBy('sanciones.idsancion', 'DESC')
-            ->findAll();
+            sanciones.*,
+            ts.tiposancion,
+            CONCAT(p.nombres, " ", p.apellidos) as nombre_completo,
+            p.numerodoc,
+            DATEDIFF(sanciones.fecha_vencimiento, CURDATE()) as dias_restantes
+        ')
+        ->join('tiposancion ts', 'ts.idtiposancion = sanciones.idtiposancion')
+        ->join('personas p', 'p.idpersona = sanciones.idpersona')
+        ->where('sanciones.estado_sancion', 'activa')
+        ->where('sanciones.fecha_vencimiento IS NOT NULL')
+        ->where('sanciones.fecha_vencimiento <=', date('Y-m-d', strtotime("+{$dias} days")))
+        ->orderBy('sanciones.fecha_vencimiento', 'ASC')
+        ->findAll();
     }
 
     /**
-     * Buscar sanciones por criterios
+     * Cambiar estado de una sanción
      */
-    public function buscarSanciones($criterio = '')
+    public function cambiarEstado($id, $nuevoEstado, $observaciones = null)
     {
-        if (empty($criterio)) {
-            return $this->getSancionesCompletas();
+        $data = ['estado_sancion' => $nuevoEstado];
+        
+        if ($observaciones) {
+            $data['observaciones'] = $observaciones;
         }
 
+        return $this->update($id, $data);
+    }
+
+    /**
+     * Obtener detalles completos de una sanción
+     */
+    public function obtenerDetallesCompletos($id)
+    {
         return $this->select('
-                sanciones.idsancion,
-                sanciones.detallesancion,
-                personas.apellidos,
-                personas.nombres,
-                personas.numerodoc,
-                tiposancion.tiposancion
-            ')
-            ->join('personas', 'personas.idpersona = sanciones.idpersona')
-            ->join('tiposancion', 'tiposancion.idtiposancion = sanciones.idtiposancion')
-            ->groupStart()
-                ->like('personas.apellidos', $criterio)
-                ->orLike('personas.nombres', $criterio)
-                ->orLike('personas.numerodoc', $criterio)
-                ->orLike('tiposancion.tiposancion', $criterio)
-                ->orLike('sanciones.detallesancion', $criterio)
-            ->groupEnd()
-            ->orderBy('sanciones.idsancion', 'DESC')
-            ->findAll();
+            sanciones.*,
+            ts.tiposancion,
+            ts.descripcion as tipo_descripcion,
+            CONCAT(p.nombres, " ", p.apellidos) as nombre_completo,
+            p.numerodoc,
+            p.email,
+            p.telefono,
+            u.nomuser as usuario_registra_nombre,
+            g.grado,
+            g.seccion,
+            g.nivel,
+            g.aniolectivo
+        ')
+        ->join('tiposancion ts', 'ts.idtiposancion = sanciones.idtiposancion')
+        ->join('personas p', 'p.idpersona = sanciones.idpersona')
+        ->join('matriculas m', 'm.idpersona = p.idpersona', 'left')
+        ->join('grupos g', 'g.idgrupo = m.idgrupo', 'left')
+        ->join('usuarios u', 'u.idusuario = sanciones.usuario_registra', 'left')
+        ->where('sanciones.idsancion', $id)
+        ->first();
     }
 }

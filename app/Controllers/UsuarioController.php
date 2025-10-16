@@ -756,18 +756,7 @@ class UsuarioController extends Controller
 
             log_message('info', "Eliminación de registros relacionados completada para usuario {$id}");
 
-            // 5. Eliminar sanciones de la persona
-            try {
-                if ($db->tableExists('sanciones')) {
-                    $sancionesEliminadas = $db->table('sanciones')->where('idpersona', $idpersona)->delete();
-                    log_message('info', "Sanciones eliminadas para persona {$idpersona}: {$sancionesEliminadas}");
-                }
-            } catch (\Exception $e) {
-                log_message('error', "Error al eliminar sanciones: " . $e->getMessage());
-                throw new \Exception("Error al eliminar sanciones de la persona: " . $e->getMessage());
-            }
-
-            // 6. Eliminar el usuario
+            // 5. Eliminar el usuario
             log_message('info', "Intentando eliminar usuario: ID {$id}");
             if (!$this->usuarioModel->delete($id)) {
                 $errors = $this->usuarioModel->errors();

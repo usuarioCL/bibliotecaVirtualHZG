@@ -90,18 +90,19 @@ INSERT INTO solicitud (validado, idprestamo) VALUES
 
 
 -- Tipo sanciones
-INSERT INTO tiposancion (tiposancion) VALUES
-('Retraso'),
-('Pérdida'),
-('Mal uso'),
-('Incumplimiento de normas');
+INSERT INTO tiposancion (tiposancion, descripcion) VALUES
+('Retraso', 'Retraso en la devolución de materiales'),
+('Pérdida', 'Pérdida de material bibliográfico'),
+('Mal uso', 'Daño o mal uso del material'),
+('Incumplimiento de normas', 'Violación de las normas de la biblioteca'),
+('Comportamiento inadecuado', 'Conducta inapropiada en la biblioteca');
 
 -- Sanciones
-INSERT INTO sanciones (idtiposancion, idpersona, detallesancion) VALUES
-(1, 1, 'Retraso de 3 días'),
-(2, 2, 'Libro perdido'),
-(3, 3, 'Páginas dañadas'),
-(4, 4, 'Incumplió reglamento');
+INSERT INTO sanciones (idtiposancion, idpersona, detallesancion, fecha_sancion, fecha_vencimiento, estado_sancion, usuario_registra, observaciones) VALUES
+(1, 1, 'Retraso de 3 días', '2025-01-15', '2025-02-15', 'activa', 1, 'Sanción aplicada por retraso en devolución'),
+(2, 2, 'Libro perdido', '2025-01-20', NULL, 'activa', 1, 'Material no devuelto en fecha límite'),
+(3, 3, 'Páginas dañadas', '2025-01-25', '2025-02-25', 'cumplida', 1, 'Sanción cumplida - material reparado'),
+(4, 4, 'Incumplió reglamento', '2025-02-01', '2025-03-01', 'activa', 1, 'Violación de normas de la biblioteca');
 
 -- Ubicaciones 
 INSERT INTO ubicaciones (ubicacion, idrecurso) VALUES

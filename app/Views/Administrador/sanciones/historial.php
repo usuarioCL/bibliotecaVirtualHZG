@@ -1,500 +1,364 @@
-<?php
-/**
- * Vista: Historial de Sanciones
- * Descripción: Muestra el historial completo de sanciones (activas y levantadas)
- * Ubicación: app/Views/Administrador/sanciones/historial.php
- */
-?>
-
-<div class="container-fluid py-4">
-    <!-- Header de la sección -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h1 class="h3 mb-0 text-gray-800">
-                <i class="ti ti-clock-record me-2 text-info"></i>
-                Historial de Sanciones
-            </h1>
-            <p class="text-muted small mb-0">Registro completo de todas las sanciones disciplinarias</p>
-        </div>
-        <div class="d-flex gap-2">
-            <button type="button" class="btn btn-outline-primary" onclick="generarReporte()">
-                <i class="ti ti-report me-1"></i>
-                Generar Reporte
-            </button>
-            <a href="<?= base_url('sanciones') ?>" class="btn btn-danger">
-                <i class="ti ti-shield-x me-1"></i>
-                Sanciones Activas
-            </a>
-        </div>
-    </div>
-
-    <!-- Filtros avanzados -->
-    <div class="card shadow-sm mb-4">
-        <div class="card-header bg-light">
-            <h6 class="mb-0">
-                <i class="ti ti-filter me-1"></i>
-                Filtros de Búsqueda
-            </h6>
-        </div>
-        <div class="card-body">
-            <div class="row g-3">
-                <div class="col-md-2">
-                    <label for="filtroEstado" class="form-label">Estado</label>
-                    <select id="filtroEstado" class="form-select">
-                        <option value="">Todos</option>
-                        <option value="activa">Activa</option>
-                        <option value="levantada">Levantada</option>
-                        <option value="vencida">Vencida</option>
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <label for="filtroTipoHist" class="form-label">Tipo</label>
-                    <select id="filtroTipoHist" class="form-select">
-                        <option value="">Todos</option>
-                        <option value="1">Amonestación Verbal</option>
-                        <option value="2">Amonestación Escrita</option>
-                        <option value="3">Suspensión de Préstamos</option>
-                        <option value="4">Suspensión Temporal</option>
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <label for="filtroNivelHist" class="form-label">Nivel</label>
-                    <select id="filtroNivelHist" class="form-select">
-                        <option value="">Todos</option>
-                        <option value="Inicial">Inicial</option>
-                        <option value="Primaria">Primaria</option>
-                        <option value="Secundaria">Secundaria</option>
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <label for="fechaDesde" class="form-label">Desde</label>
-                    <input type="date" id="fechaDesde" class="form-control">
-                </div>
-                <div class="col-md-2">
-                    <label for="fechaHasta" class="form-label">Hasta</label>
-                    <input type="date" id="fechaHasta" class="form-control">
-                </div>
-                <div class="col-md-2 d-flex align-items-end">
-                    <button type="button" class="btn btn-primary w-100" onclick="buscarHistorial()">
-                        <i class="ti ti-search me-1"></i>
-                        Buscar
-                    </button>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><?= $title ?? 'Historial de Sanciones' ?> - Biblioteca Virtual HZG</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+    <style>
+        .sanction-card {
+            transition: all 0.3s ease;
+            border-left: 4px solid #dc3545;
+        }
+        .sanction-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .sanction-status {
+            font-size: 0.8rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.375rem;
+        }
+        .status-activa {
+            background-color: #dc3545;
+            color: white;
+        }
+        .status-cumplida {
+            background-color: #198754;
+            color: white;
+        }
+        .status-cancelada {
+            background-color: #6c757d;
+            color: white;
+        }
+        .filter-section {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .stats-card {
+            background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <div class="container-fluid">
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h1 class="h3 mb-1 text-dark">
+                            <i class="ri-history-line text-primary me-2"></i>
+                            Historial de Sanciones
+                        </h1>
+                        <p class="text-muted mb-0">Registro completo de todas las sanciones disciplinarias</p>
+                    </div>
+                    <a href="<?= base_url('sanciones') ?>" class="btn btn-outline-primary">
+                        <i class="ri-arrow-left-line me-1"></i>
+                        Volver a Activas
+                    </a>
                 </div>
             </div>
-            <div class="row mt-3">
-                <div class="col-md-6">
-                    <label for="buscarEstudianteHist" class="form-label">Buscar Estudiante</label>
-                    <input type="text" id="buscarEstudianteHist" class="form-control" 
-                           placeholder="Nombre, apellido o documento...">
+        </div>
+
+        <!-- Estadísticas -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="stats-card text-center">
+                    <h3 class="text-primary mb-1"><?= $estadisticas['total'] ?? 0 ?></h3>
+                    <small class="text-muted">Total Sanciones</small>
                 </div>
-                <div class="col-md-4">
-                    <label for="buscarPalabras" class="form-label">Palabras en Detalle</label>
-                    <input type="text" id="buscarPalabras" class="form-control" 
-                           placeholder="Buscar en descripción de sanciones...">
+            </div>
+            <div class="col-md-3">
+                <div class="stats-card text-center">
+                    <h3 class="text-danger mb-1"><?= $estadisticas['activas'] ?? 0 ?></h3>
+                    <small class="text-muted">Activas</small>
                 </div>
-                <div class="col-md-2 d-flex align-items-end">
-                    <button type="button" class="btn btn-secondary w-100" onclick="limpiarFiltros()">
-                        <i class="ti ti-refresh me-1"></i>
+            </div>
+            <div class="col-md-3">
+                <div class="stats-card text-center">
+                    <h3 class="text-success mb-1"><?= $estadisticas['cumplidas'] ?? 0 ?></h3>
+                    <small class="text-muted">Cumplidas</small>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stats-card text-center">
+                    <h3 class="text-secondary mb-1"><?= $estadisticas['canceladas'] ?? 0 ?></h3>
+                    <small class="text-muted">Canceladas</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filtros -->
+        <div class="filter-section">
+            <form method="GET" class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">Estado</label>
+                    <select name="estado" class="form-select">
+                        <option value="">Todos los estados</option>
+                        <option value="activa" <?= (($filtros['estado'] ?? '') == 'activa') ? 'selected' : '' ?>>Activa</option>
+                        <option value="cumplida" <?= (($filtros['estado'] ?? '') == 'cumplida') ? 'selected' : '' ?>>Cumplida</option>
+                        <option value="cancelada" <?= (($filtros['estado'] ?? '') == 'cancelada') ? 'selected' : '' ?>>Cancelada</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Fecha Desde</label>
+                    <input type="date" name="fecha_desde" class="form-control" 
+                           value="<?= $filtros['fecha_desde'] ?? '' ?>">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Fecha Hasta</label>
+                    <input type="date" name="fecha_hasta" class="form-control" 
+                           value="<?= $filtros['fecha_hasta'] ?? '' ?>">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Buscar</label>
+                    <input type="text" name="buscar" class="form-control" 
+                           placeholder="Nombre, apellido o DNI..." 
+                           value="<?= $filtros['buscar'] ?? '' ?>">
+                </div>
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="ri-search-line me-1"></i>
+                        Filtrar
+                    </button>
+                    <a href="<?= base_url('sanciones/historial') ?>" class="btn btn-outline-secondary ms-2">
+                        <i class="ri-refresh-line me-1"></i>
                         Limpiar
-                    </button>
+                    </a>
                 </div>
-            </div>
+            </form>
         </div>
-    </div>
 
-    <!-- Resumen estadístico -->
-    <div class="row mb-4">
-        <div class="col-md-2">
-            <div class="card bg-gradient-primary text-white">
-                <div class="card-body text-center">
-                    <h4 class="mb-1" id="totalHistorial">48</h4>
-                    <p class="mb-0 small">Total Registros</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-2">
-            <div class="card bg-gradient-danger text-white">
-                <div class="card-body text-center">
-                    <h4 class="mb-1" id="sancionesActivasHist">12</h4>
-                    <p class="mb-0 small">Activas</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-2">
-            <div class="card bg-gradient-success text-white">
-                <div class="card-body text-center">
-                    <h4 class="mb-1" id="sancionesLevantadas">28</h4>
-                    <p class="mb-0 small">Levantadas</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-2">
-            <div class="card bg-gradient-warning text-white">
-                <div class="card-body text-center">
-                    <h4 class="mb-1" id="sancionesVencidas">8</h4>
-                    <p class="mb-0 small">Vencidas</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-2">
-            <div class="card bg-gradient-info text-white">
-                <div class="card-body text-center">
-                    <h4 class="mb-1" id="estudiantesHistorial">35</h4>
-                    <p class="mb-0 small">Estudiantes</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-2">
-            <div class="card bg-gradient-secondary text-white">
-                <div class="card-body text-center">
-                    <h4 class="mb-1" id="promedioMensual">4.2</h4>
-                    <p class="mb-0 small">Promedio/Mes</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Timeline de sanciones recientes -->
-    <div class="card shadow-sm mb-4">
-        <div class="card-header bg-light">
-            <h6 class="mb-0">
-                <i class="ti ti-timeline me-1"></i>
-                Actividad Reciente (Últimos 7 días)
-            </h6>
-        </div>
-        <div class="card-body">
-            <div class="timeline">
-                <div class="timeline-item">
-                    <div class="timeline-marker bg-danger"></div>
-                    <div class="timeline-content">
-                        <h6 class="timeline-title mb-1">Nueva sanción registrada</h6>
-                        <p class="timeline-text mb-1">María García - Suspensión de préstamos</p>
-                        <small class="text-muted">Hace 2 horas</small>
+        <!-- Lista de Sanciones -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">Historial Completo</h5>
+                        <div>
+                            <button class="btn btn-success btn-sm me-2" onclick="exportarExcel()">
+                                <i class="ri-file-excel-line me-1"></i>
+                                Excel
+                            </button>
+                            <button class="btn btn-danger btn-sm" onclick="exportarPDF()">
+                                <i class="ri-file-pdf-line me-1"></i>
+                                PDF
+                            </button>
+                        </div>
                     </div>
-                </div>
-                <div class="timeline-item">
-                    <div class="timeline-marker bg-success"></div>
-                    <div class="timeline-content">
-                        <h6 class="timeline-title mb-1">Sanción levantada</h6>
-                        <p class="timeline-text mb-1">Carlos Rodríguez - Amonestación escrita</p>
-                        <small class="text-muted">Ayer a las 14:30</small>
-                    </div>
-                </div>
-                <div class="timeline-item">
-                    <div class="timeline-marker bg-warning"></div>
-                    <div class="timeline-content">
-                        <h6 class="timeline-title mb-1">Sanción modificada</h6>
-                        <p class="timeline-text mb-1">Ana Morales - Actualizado detalle de sanción</p>
-                        <small class="text-muted">Hace 2 días</small>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Tabla del historial -->
-    <div class="card shadow-sm">
-        <div class="card-header bg-light">
-            <div class="d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">Historial Completo de Sanciones</h5>
-                <div class="d-flex gap-2">
-                    <div class="dropdown">
-                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" 
-                                data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="ti ti-download me-1"></i>
-                            Exportar
-                        </button>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="#" onclick="exportarHistorialExcel()">
-                                <i class="ti ti-file-export me-2"></i>Excel Completo</a></li>
-                            <li><a class="dropdown-item" href="#" onclick="exportarHistorialPDF()">
-                                <i class="ti ti-file-type-pdf me-2"></i>PDF Detallado</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="#" onclick="exportarResumen()">
-                                <i class="ti ti-chart-bar me-2"></i>Resumen Estadístico</a></li>
-                        </ul>
+                    <div class="card-body p-0">
+                        <?php if (empty($sanciones)): ?>
+                            <div class="text-center py-5">
+                                <i class="ri-history-line text-muted" style="font-size: 3rem;"></i>
+                                <h5 class="text-muted mt-3">No hay sanciones registradas</h5>
+                                <p class="text-muted">No se encontraron sanciones con los filtros aplicados.</p>
+                            </div>
+                        <?php else: ?>
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>#</th>
+                                            <th>Estudiante</th>
+                                            <th>Documento</th>
+                                            <th>Tipo de Sanción</th>
+                                            <th>Detalle</th>
+                                            <th>Fecha Sanción</th>
+                                            <th>Fecha Vencimiento</th>
+                                            <th>Estado</th>
+                                            <th>Registrado por</th>
+                                            <th>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php foreach ($sanciones as $index => $sancion): ?>
+                                            <tr>
+                                                <td><?= $index + 1 ?></td>
+                                                <td>
+                                                    <div class="fw-semibold"><?= $sancion['nombre_completo'] ?></div>
+                                                </td>
+                                                <td><?= $sancion['numerodoc'] ?></td>
+                                                <td>
+                                                    <span class="badge bg-secondary"><?= $sancion['tiposancion'] ?></span>
+                                                </td>
+                                                <td>
+                                                    <div class="text-truncate" style="max-width: 200px;" 
+                                                         title="<?= $sancion['detallesancion'] ?>">
+                                                        <?= $sancion['detallesancion'] ?>
+                                                    </div>
+                                                </td>
+                                                <td><?= date('d/m/Y', strtotime($sancion['fecha_sancion'])) ?></td>
+                                                <td>
+                                                    <?php if ($sancion['fecha_vencimiento']): ?>
+                                                        <?= date('d/m/Y', strtotime($sancion['fecha_vencimiento'])) ?>
+                                                    <?php else: ?>
+                                                        <span class="text-muted">Sin vencimiento</span>
+                                                    <?php endif; ?>
+                                                </td>
+                                                <td>
+                                                    <span class="sanction-status status-<?= $sancion['estado_sancion'] ?>">
+                                                        <?= ucfirst($sancion['estado_sancion']) ?>
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <?= $sancion['usuario_registra_nombre'] ?? 'Sistema' ?>
+                                                </td>
+                                                <td>
+                                                    <div class="btn-group btn-group-sm">
+                                                        <button class="btn btn-outline-info" 
+                                                                onclick="verDetalles(<?= $sancion['idsancion'] ?>)"
+                                                                title="Ver detalles">
+                                                            <i class="ri-eye-line"></i>
+                                                        </button>
+                                                        <?php if ($sancion['estado_sancion'] == 'activa'): ?>
+                                                            <button class="btn btn-outline-warning" 
+                                                                    onclick="editarSancion(<?= $sancion['idsancion'] ?>)"
+                                                                    title="Editar">
+                                                                <i class="ri-edit-line"></i>
+                                                            </button>
+                                                            <button class="btn btn-outline-success" 
+                                                                    onclick="cambiarEstado(<?= $sancion['idsancion'] ?>, 'cumplida')"
+                                                                    title="Marcar como cumplida">
+                                                                <i class="ri-check-line"></i>
+                                                            </button>
+                                                        <?php endif; ?>
+                                                        <button class="btn btn-outline-danger" 
+                                                                onclick="eliminarSancion(<?= $sancion['idsancion'] ?>)"
+                                                                title="Eliminar">
+                                                            <i class="ri-delete-bin-line"></i>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        <?php endforeach; ?>
+                                    </tbody>
+                                </table>
+                            </div>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover mb-0" id="tablaHistorial">
-                    <thead class="table-dark">
-                        <tr>
-                            <th class="text-center">#</th>
-                            <th>Estudiante</th>
-                            <th>Nivel/Grado</th>
-                            <th>Tipo de Sanción</th>
-                            <th>Detalle</th>
-                            <th class="text-center">Fecha Sanción</th>
-                            <th class="text-center">Fecha Levantada</th>
-                            <th class="text-center">Duración</th>
-                            <th class="text-center">Estado</th>
-                            <th class="text-center">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody id="cuerpoTablaHistorial">
-                        <!-- Datos de ejemplo -->
-                        <tr>
-                            <td class="text-center">1</td>
-                            <td>
-                                <div class="d-flex align-items-center">
-                                    <div class="avatar-sm bg-success text-white rounded-circle d-flex align-items-center justify-content-center me-2">
-                                        <span class="small fw-bold">MG</span>
-                                    </div>
-                                    <div>
-                                        <div class="fw-medium">María García López</div>
-                                        <small class="text-muted">4° Secundaria B</small>
-                                    </div>
-                                </div>
-                            </td>
-                            <td>
-                                <span class="badge bg-secondary">Secundaria</span>
-                            </td>
-                            <td>
-                                <span class="badge bg-info text-dark">Amonestación Escrita</span>
-                            </td>
-                            <td>
-                                <span class="text-truncate d-inline-block" style="max-width: 250px;" 
-                                      title="Entrega tardía reiterada de material bibliográfico">
-                                    Entrega tardía reiterada...
-                                </span>
-                            </td>
-                            <td class="text-center">10/03/2024</td>
-                            <td class="text-center">20/03/2024</td>
-                            <td class="text-center">
-                                <span class="badge bg-light text-dark">10 días</span>
-                            </td>
-                            <td class="text-center">
-                                <span class="badge bg-success">Levantada</span>
-                            </td>
-                            <td class="text-center">
-                                <div class="btn-group btn-group-sm" role="group">
-                                    <button type="button" class="btn btn-outline-info" 
-                                            onclick="verHistorialDetalle(1)" title="Ver historial completo">
-                                        <i class="ti ti-history"></i>
-                                    </button>
-                                    <button type="button" class="btn btn-outline-primary" 
-                                            onclick="verDetalleCompleto(1)" title="Ver detalles">
-                                        <i class="ti ti-eye"></i>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="text-center">2</td>
-                            <td>
-                                <div class="d-flex align-items-center">
-                                    <div class="avatar-sm bg-danger text-white rounded-circle d-flex align-items-center justify-content-center me-2">
-                                        <span class="small fw-bold">JP</span>
-                                    </div>
-                                    <div>
-                                        <div class="fw-medium">Juan Pérez Santos</div>
-                                        <small class="text-muted">5° Secundaria A</small>
-                                    </div>
-                                </div>
-                            </td>
-                            <td>
-                                <span class="badge bg-secondary">Secundaria</span>
-                            </td>
-                            <td>
-                                <span class="badge bg-warning text-dark">Suspensión de Préstamos</span>
-                            </td>
-                            <td>
-                                <span class="text-truncate d-inline-block" style="max-width: 250px;" 
-                                      title="Daño intencional a material bibliográfico">
-                                    Daño intencional a material...
-                                </span>
-                            </td>
-                            <td class="text-center">15/03/2024</td>
-                            <td class="text-center">-</td>
-                            <td class="text-center">
-                                <span class="badge bg-warning text-dark">19 días</span>
-                            </td>
-                            <td class="text-center">
-                                <span class="badge bg-danger">Activa</span>
-                            </td>
-                            <td class="text-center">
-                                <div class="btn-group btn-group-sm" role="group">
-                                    <button type="button" class="btn btn-outline-info" 
-                                            onclick="verHistorialDetalle(2)" title="Ver historial completo">
-                                        <i class="ti ti-history"></i>
-                                    </button>
-                                    <button type="button" class="btn btn-outline-primary" 
-                                            onclick="verDetalleCompleto(2)" title="Ver detalles">
-                                        <i class="ti ti-eye"></i>
-                                    </button>
-                                    <button type="button" class="btn btn-outline-success" 
-                                            onclick="levantarSancionHistorial(2)" title="Levantar sanción">
-                                        <i class="ti ti-check"></i>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                        <!-- Más filas... -->
-                    </tbody>
-                </table>
-            </div>
-        </div>
-        <div class="card-footer bg-light">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <small class="text-muted">Mostrando 1-20 de 48 registros</small>
-                </div>
-                <nav aria-label="Navegación del historial">
-                    <ul class="pagination pagination-sm mb-0">
-                        <li class="page-item disabled">
-                            <a class="page-link" href="#" tabindex="-1">Anterior</a>
-                        </li>
-                        <li class="page-item active"><a class="page-link" href="#">1</a></li>
-                        <li class="page-item"><a class="page-link" href="#">2</a></li>
-                        <li class="page-item"><a class="page-link" href="#">3</a></li>
-                        <li class="page-item">
-                            <a class="page-link" href="#">Siguiente</a>
-                        </li>
-                    </ul>
-                </nav>
-            </div>
-        </div>
     </div>
-</div>
 
-<!-- Modal Historial Detalle -->
-<div class="modal fade" id="modalHistorialDetalle" tabindex="-1" aria-labelledby="modalHistorialDetalleLabel" aria-hidden="true">
-    <div class="modal-dialog modal-xl">
-        <div class="modal-content">
-            <div class="modal-header bg-info text-white">
-                <h5 class="modal-title" id="modalHistorialDetalleLabel">
-                    <i class="ti ti-history me-2"></i>
-                    Historial Completo del Estudiante
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body" id="contenidoHistorialDetalle">
-                <!-- Contenido cargado dinámicamente -->
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                <button type="button" class="btn btn-primary" onclick="imprimirHistorial()">
-                    <i class="ti ti-printer me-1"></i>
-                    Imprimir
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        // Ver detalles de sanción
+        function verDetalles(id) {
+            fetch(`<?= base_url('sanciones/ver') ?>/${id}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const sancion = data.sancion;
+                        Swal.fire({
+                            title: 'Detalles de la Sanción',
+                            html: `
+                                <div class="text-start">
+                                    <p><strong>Estudiante:</strong> ${sancion.nombre_completo}</p>
+                                    <p><strong>Documento:</strong> ${sancion.numerodoc}</p>
+                                    <p><strong>Tipo:</strong> ${sancion.tiposancion}</p>
+                                    <p><strong>Detalle:</strong> ${sancion.detallesancion}</p>
+                                    <p><strong>Fecha:</strong> ${new Date(sancion.fecha_sancion).toLocaleDateString()}</p>
+                                    <p><strong>Estado:</strong> ${sancion.estado_sancion}</p>
+                                    ${sancion.observaciones ? `<p><strong>Observaciones:</strong> ${sancion.observaciones}</p>` : ''}
+                                </div>
+                            `,
+                            confirmButtonColor: '#dc3545'
+                        });
+                    } else {
+                        Swal.fire('Error', data.message, 'error');
+                    }
+                });
+        }
 
-<style>
-/* Estilos para el timeline */
-.timeline {
-    position: relative;
-    padding-left: 30px;
-}
+        // Editar sanción
+        function editarSancion(id) {
+            Swal.fire('Info', 'Función de edición en desarrollo', 'info');
+        }
 
-.timeline::before {
-    content: '';
-    position: absolute;
-    left: 15px;
-    top: 0;
-    bottom: 0;
-    width: 2px;
-    background: #e9ecef;
-}
+        // Cambiar estado de sanción
+        function cambiarEstado(id, estado) {
+            const estadoTexto = estado === 'cumplida' ? 'cumplida' : 'cancelada';
+            
+            Swal.fire({
+                title: `¿Marcar como ${estadoTexto}?`,
+                text: 'Esta acción cambiará el estado de la sanción',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#198754',
+                cancelButtonColor: '#dc3545',
+                confirmButtonText: 'Sí, cambiar estado'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    fetch('<?= base_url('sanciones/cambiar-estado') ?>', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                        },
+                        body: `id=${id}&estado=${estado}`
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            Swal.fire('Éxito', data.message, 'success').then(() => {
+                                location.reload();
+                            });
+                        } else {
+                            Swal.fire('Error', data.message, 'error');
+                        }
+                    });
+                }
+            });
+        }
 
-.timeline-item {
-    position: relative;
-    margin-bottom: 20px;
-}
+        // Eliminar sanción
+        function eliminarSancion(id) {
+            Swal.fire({
+                title: '¿Eliminar sanción?',
+                text: 'Esta acción no se puede deshacer',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Sí, eliminar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    fetch(`<?= base_url('sanciones/eliminar') ?>/${id}`, {
+                        method: 'POST'
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            Swal.fire('Éxito', data.message, 'success').then(() => {
+                                location.reload();
+                            });
+                        } else {
+                            Swal.fire('Error', data.message, 'error');
+                        }
+                    });
+                }
+            });
+        }
 
-.timeline-marker {
-    position: absolute;
-    left: -22px;
-    top: 5px;
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    border: 2px solid #fff;
-    box-shadow: 0 0 0 2px #e9ecef;
-}
+        // Exportar Excel
+        function exportarExcel() {
+            Swal.fire('Info', 'Función de exportación en desarrollo', 'info');
+        }
 
-.timeline-content {
-    background: #f8f9fa;
-    padding: 15px;
-    border-radius: 8px;
-    border: 1px solid #e9ecef;
-}
-
-.timeline-title {
-    color: #495057;
-    font-size: 14px;
-}
-
-.timeline-text {
-    color: #6c757d;
-    font-size: 13px;
-}
-</style>
-
-<script>
-// Funciones JavaScript para la gestión del historial
-function buscarHistorial() {
-    console.log('Buscando en historial...');
-    // Implementar lógica de búsqueda
-}
-
-function limpiarFiltros() {
-    document.getElementById('filtroEstado').value = '';
-    document.getElementById('filtroTipoHist').value = '';
-    document.getElementById('filtroNivelHist').value = '';
-    document.getElementById('fechaDesde').value = '';
-    document.getElementById('fechaHasta').value = '';
-    document.getElementById('buscarEstudianteHist').value = '';
-    document.getElementById('buscarPalabras').value = '';
-    buscarHistorial();
-}
-
-function exportarHistorialExcel() {
-    console.log('Exportando historial completo a Excel...');
-}
-
-function exportarHistorialPDF() {
-    console.log('Exportando historial completo a PDF...');
-}
-
-function exportarResumen() {
-    console.log('Exportando resumen estadístico...');
-}
-
-function verHistorialDetalle(idEstudiante) {
-    $('#modalHistorialDetalle').modal('show');
-    // Cargar historial completo del estudiante
-}
-
-function verDetalleCompleto(id) {
-    console.log('Ver detalle completo de sanción:', id);
-}
-
-function levantarSancionHistorial(id) {
-    if (confirm('¿Está seguro de que desea levantar esta sanción?')) {
-        console.log('Levantando sanción desde historial:', id);
-    }
-}
-
-function generarReporte() {
-    console.log('Generando reporte de sanciones...');
-}
-
-function imprimirHistorial() {
-    window.print();
-}
-
-// Inicializar fechas por defecto (último mes)
-document.addEventListener('DOMContentLoaded', function() {
-    const today = new Date();
-    const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, today.getDate());
-    
-    document.getElementById('fechaDesde').valueAsDate = lastMonth;
-    document.getElementById('fechaHasta').valueAsDate = today;
-});
-</script>
+        // Exportar PDF
+        function exportarPDF() {
+            Swal.fire('Info', 'Función de exportación en desarrollo', 'info');
+        }
+    </script>
+</body>
+</html>

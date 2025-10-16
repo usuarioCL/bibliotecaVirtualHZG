@@ -332,16 +332,10 @@ function verDetalleEstudiante(idmatricula) {
                                         <small class="text-muted">Préstamos Activos</small>
                                     </div>
                                 </div>
-                                <div class="col-md-4">
+                                <div class="col-md-6">
                                     <div class="bg-success bg-opacity-10 rounded p-3">
                                         <h4 class="text-success mb-1">${data.estadisticas.total_prestamos || 0}</h4>
                                         <small class="text-muted">Total Préstamos</small>
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="bg-warning bg-opacity-10 rounded p-3">
-                                        <h4 class="text-warning mb-1">${data.estadisticas.sanciones_activas || 0}</h4>
-                                        <small class="text-muted">Sanciones</small>
                                     </div>
                                 </div>
                             </div>

@@ -1,835 +1,450 @@
-<?php
-/**
- * Vista: Sanciones Activas
- * Descripción: Muestra todas las sanciones activas del sistema
- * Ubicación: app/Views/Administrador/sanciones/activas.php
- */
-?>
-
-<div class="container-fluid py-4">
-    <!-- Header de la sección -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h1 class="h3 mb-0 text-gray-800">
-                <i class="ti ti-shield-x me-2 text-danger"></i>
-                Sanciones Activas
-            </h1>
-            <p class="text-muted small mb-0">Gestión de sanciones disciplinarias vigentes</p>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><?= $title ?? 'Sanciones Activas' ?> - Biblioteca Virtual HZG</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+    <style>
+        .sanction-card {
+            transition: all 0.3s ease;
+            border-left: 4px solid #dc3545;
+        }
+        .sanction-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .sanction-status {
+            font-size: 0.8rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.375rem;
+        }
+        .status-activa {
+            background-color: #dc3545;
+            color: white;
+        }
+        .status-cumplida {
+            background-color: #198754;
+            color: white;
+        }
+        .status-cancelada {
+            background-color: #6c757d;
+            color: white;
+        }
+        .filter-section {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .stats-card {
+            background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <div class="container-fluid">
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h1 class="h3 mb-1 text-dark">
+                            <i class="ri-shield-cross-line text-danger me-2"></i>
+                            Sanciones Activas
+                        </h1>
+                        <p class="text-muted mb-0">Gestión de sanciones disciplinarias vigentes</p>
+                    </div>
+                    <button class="btn btn-danger" onclick="mostrarModalNuevaSancion()">
+                        <i class="ri-add-line me-1"></i>
+                        Nueva Sanción
+                    </button>
+                </div>
+            </div>
         </div>
-        <div>
-            <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalNuevaSancion">
-                <i class="ti ti-plus me-1"></i>
-                Nueva Sanción
-            </button>
-        </div>
-    </div>
 
-    <!-- Filtros y búsqueda -->
-    <div class="card shadow-sm mb-4">
-        <div class="card-body">
-            <div class="row g-3">
+        <!-- Estadísticas -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="stats-card text-center">
+                    <h3 class="text-danger mb-1"><?= $estadisticas['total'] ?? 0 ?></h3>
+                    <small class="text-muted">Total Sanciones</small>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stats-card text-center">
+                    <h3 class="text-danger mb-1"><?= $estadisticas['activas'] ?? 0 ?></h3>
+                    <small class="text-muted">Suspensiones</small>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stats-card text-center">
+                    <h3 class="text-warning mb-1"><?= $estadisticas['cumplidas'] ?? 0 ?></h3>
+                    <small class="text-muted">Amonestaciones</small>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stats-card text-center">
+                    <h3 class="text-info mb-1"><?= count($sanciones) ?></h3>
+                    <small class="text-muted">Estudiantes Afectados</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filtros -->
+        <div class="filter-section">
+            <form method="GET" class="row g-3">
                 <div class="col-md-3">
-                    <label for="filtroTipo" class="form-label">Tipo de Sanción</label>
-                    <select id="filtroTipo" class="form-select">
+                    <label class="form-label">Tipo de Sanción</label>
+                    <select name="tipo_sancion" class="form-select">
                         <option value="">Todos los tipos</option>
-                        <option value="1">Amonestación Verbal</option>
-                        <option value="2">Amonestación Escrita</option>
-                        <option value="3">Suspensión de Préstamos</option>
-                        <option value="4">Suspensión Temporal</option>
+                        <?php foreach ($tipos_sancion as $tipo): ?>
+                            <option value="<?= $tipo['idtiposancion'] ?>" 
+                                    <?= (($filtros['tipo_sancion'] ?? '') == $tipo['idtiposancion']) ? 'selected' : '' ?>>
+                                <?= $tipo['tiposancion'] ?>
+                            </option>
+                        <?php endforeach; ?>
                     </select>
                 </div>
                 <div class="col-md-3">
-                    <label for="filtroNivel" class="form-label">Nivel Educativo</label>
-                    <select id="filtroNivel" class="form-select">
+                    <label class="form-label">Nivel Educativo</label>
+                    <select name="nivel" class="form-select">
                         <option value="">Todos los niveles</option>
-                        <option value="Inicial">Inicial</option>
-                        <option value="Primaria">Primaria</option>
-                        <option value="Secundaria">Secundaria</option>
+                        <option value="Inicial" <?= (($filtros['nivel'] ?? '') == 'Inicial') ? 'selected' : '' ?>>Inicial</option>
+                        <option value="Primaria" <?= (($filtros['nivel'] ?? '') == 'Primaria') ? 'selected' : '' ?>>Primaria</option>
+                        <option value="Secundaria" <?= (($filtros['nivel'] ?? '') == 'Secundaria') ? 'selected' : '' ?>>Secundaria</option>
                     </select>
                 </div>
                 <div class="col-md-4">
-                    <label for="buscarEstudiante" class="form-label">Buscar Estudiante</label>
-                    <input type="text" id="buscarEstudiante" class="form-control" 
-                           placeholder="Nombre, apellido o DNI...">
+                    <label class="form-label">Buscar Estudiante</label>
+                    <input type="text" name="buscar" class="form-control" 
+                           placeholder="Nombre, apellido o DNI..." 
+                           value="<?= $filtros['buscar'] ?? '' ?>">
                 </div>
-                <div class="col-md-2 d-flex align-items-end">
-                    <button type="button" class="btn btn-primary w-100" onclick="aplicarFiltros()">
-                        <i class="ti ti-search me-1"></i>
+                <div class="col-md-2">
+                    <label class="form-label">&nbsp;</label>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="ri-search-line me-1"></i>
                         Filtrar
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Estadísticas rápidas -->
-    <div class="row mb-4">
-        <div class="col-md-3">
-            <div class="card bg-danger text-white">
-                <div class="card-body">
-                    <div class="d-flex align-items-center">
-                        <div>
-                            <h4 class="mb-0" id="totalSanciones"><?= $estadisticas['total'] ?? 0 ?></h4>
-                            <p class="mb-0 small">Total Sanciones</p>
-                        </div>
-                        <div class="ms-auto">
-                            <i class="ti ti-alert-triangle fs-1"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card bg-warning text-white">
-                <div class="card-body">
-                    <div class="d-flex align-items-center">
-                        <div>
-                            <h4 class="mb-0" id="sancionesGraves"><?= $estadisticas['suspensiones'] ?? 0 ?></h4>
-                            <p class="mb-0 small">Suspensiones</p>
-                        </div>
-                        <div class="ms-auto">
-                            <i class="ti ti-shield-off fs-1"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card bg-info text-white">
-                <div class="card-body">
-                    <div class="d-flex align-items-center">
-                        <div>
-                            <h4 class="mb-0" id="sancionesLeves"><?= $estadisticas['amonestaciones'] ?? 0 ?></h4>
-                            <p class="mb-0 small">Amonestaciones</p>
-                        </div>
-                        <div class="ms-auto">
-                            <i class="ti ti-message-exclamation fs-1"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card bg-success text-white">
-                <div class="card-body">
-                    <div class="d-flex align-items-center">
-                        <div>
-                            <h4 class="mb-0" id="estudiantesSancionados"><?= $estadisticas['estudiantes_afectados'] ?? 0 ?></h4>
-                            <p class="mb-0 small">Estudiantes Afectados</p>
-                        </div>
-                        <div class="ms-auto">
-                            <i class="ti ti-users fs-1"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Tabla de sanciones -->
-    <div class="card shadow-sm">
-        <div class="card-header bg-light">
-            <div class="d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">Lista de Sanciones Activas</h5>
-                <div class="d-flex gap-2">
-                    <button class="btn btn-sm btn-outline-success" onclick="exportarExcel()">
-                        <i class="ti ti-file-export me-1"></i>
-                        Excel
-                    </button>
-                    <button class="btn btn-sm btn-outline-danger" onclick="exportarPDF()">
-                        <i class="ti ti-file-type-pdf me-1"></i>
-                        PDF
-                    </button>
-                </div>
-            </div>
-        </div>
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover mb-0" id="tablaSanciones">
-                    <thead class="table-dark">
-                        <tr>
-                            <th class="text-center">#</th>
-                            <th>Estudiante</th>
-                            <th>Documento</th>
-                            <th>Nivel/Grado</th>
-                            <th>Tipo de Sanción</th>
-                            <th>Detalle</th>
-                            <th class="text-center">Fecha Sanción</th>
-                            <th class="text-center">Estado</th>
-                            <th class="text-center">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody id="cuerpoTablaSanciones">
-                        <?php if (!empty($sanciones)): ?>
-                            <?php foreach ($sanciones as $index => $sancion): ?>
-                                <tr>
-                                    <td class="text-center"><?= $index + 1 ?></td>
-                                    <td>
-                                        <div class="d-flex align-items-center">
-                                            <div class="avatar-sm bg-danger text-white rounded-circle d-flex align-items-center justify-content-center me-2">
-                                                <span class="small fw-bold"><?= strtoupper(substr($sancion['nombres'], 0, 1) . substr($sancion['apellidos'], 0, 1)) ?></span>
-                                            </div>
-                                            <div>
-                                                <div class="fw-medium"><?= esc($sancion['apellidos'] . ' ' . $sancion['nombres']) ?></div>
-                                                <small class="text-muted"><?= esc($sancion['email'] ?? 'No disponible') ?></small>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td><?= esc($sancion['numerodoc']) ?></td>
-                                    <td>
-                                        <span class="badge bg-primary"><?= esc($sancion['nivel'] . '° ' . $sancion['grado'] . ' ' . $sancion['seccion']) ?></span>
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-warning text-dark"><?= esc($sancion['tiposancion']) ?></span>
-                                    </td>
-                                    <td>
-                                        <span class="text-truncate d-inline-block" style="max-width: 200px;" 
-                                              title="<?= esc($sancion['detallesancion']) ?>">
-                                            <?= esc(substr($sancion['detallesancion'], 0, 30) . '...') ?>
-                                        </span>
-                                    </td>
-                                    <td class="text-center"><?= esc($sancion['fecha_sancion']) ?></td>
-                                    <td class="text-center">
-                                        <span class="badge bg-danger"><?= esc($sancion['estado']) ?></span>
-                                    </td>
-                                    <td class="text-center">
-                                        <div class="btn-group btn-group-sm" role="group">
-                                            <button type="button" class="btn btn-outline-primary" 
-                                                    onclick="verDetalle(<?= $sancion['idsancion'] ?>)" title="Ver detalles">
-                                                <i class="ti ti-eye"></i>
-                                            </button>
-                                            <button type="button" class="btn btn-outline-warning" 
-                                                    onclick="editarSancion(<?= $sancion['idsancion'] ?>)" title="Editar sanción">
-                                                <i class="ti ti-edit"></i>
-                                            </button>
-                                            <button type="button" class="btn btn-outline-success" 
-                                                    onclick="levantarSancion(<?= $sancion['idsancion'] ?>)" title="Levantar sanción">
-                                                <i class="ti ti-check"></i>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
-                        <?php else: ?>
-                            <tr>
-                                <td colspan="9" class="text-center py-4">
-                                    <div class="text-muted">
-                                        <i class="ti ti-shield-check fs-1 d-block mb-2"></i>
-                                        <p class="mb-0">No hay sanciones activas</p>
-                                    </div>
-                                </td>
-                            </tr>
-                        <?php endif; ?>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-        <div class="card-footer bg-light">
-            <!-- Paginación -->
-            <nav aria-label="Navegación de sanciones">
-                <ul class="pagination pagination-sm justify-content-center mb-0">
-                    <li class="page-item disabled">
-                        <a class="page-link" href="#" tabindex="-1">Anterior</a>
-                    </li>
-                    <li class="page-item active"><a class="page-link" href="#">1</a></li>
-                    <li class="page-item"><a class="page-link" href="#">2</a></li>
-                    <li class="page-item"><a class="page-link" href="#">3</a></li>
-                    <li class="page-item">
-                        <a class="page-link" href="#">Siguiente</a>
-                    </li>
-                </ul>
-            </nav>
-        </div>
-    </div>
-</div>
-
-<!-- Modal Nueva Sanción -->
-<div class="modal fade" id="modalNuevaSancion" tabindex="-1" aria-labelledby="modalNuevaSancionLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header bg-danger text-white">
-                <h5 class="modal-title" id="modalNuevaSancionLabel">
-                    <i class="ti ti-shield-x me-2"></i>
-                    Nueva Sanción Disciplinaria
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <form id="formNuevaSancion">
-                <div class="modal-body">
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <label for="tipoSancion" class="form-label">Tipo de Sanción <span class="text-danger">*</span></label>
-                            <select id="tipoSancion" name="idtiposancion" class="form-select" required>
-                                <option value="">Seleccionar tipo...</option>
-                                <?php if (isset($tipos_sancion) && is_array($tipos_sancion)) : ?>
-                                    <?php foreach ($tipos_sancion as $tipo) : ?>
-                                        <option value="<?= esc($tipo['idtiposancion']) ?>"><?= esc($tipo['tiposancion']) ?></option>
-                                    <?php endforeach; ?>
-                                <?php endif; ?>
-                            </select>
-                        </div>
-                        <div class="col-md-6">
-                            <label for="estudiante" class="form-label">Estudiante <span class="text-danger">*</span></label>
-                            <select id="estudiante" name="idpersona" class="form-select" required>
-                                <option value="">Buscar estudiante...</option>
-                                <?php if (isset($sanciones) && is_array($sanciones)) : ?>
-                                    <?php 
-                                    $personas = [];
-                                    foreach ($sanciones as $s) {
-                                        $personas[$s['idpersona'] ?? ''] = ($s['apellidos'] ?? '').' '.($s['nombres'] ?? '');
-                                    }
-                                    foreach ($personas as $id => $nombre) :
-                                        if ($id) : ?>
-                                            <option value="<?= esc($id) ?>"><?= esc($nombre) ?></option>
-                                        <?php endif; endforeach; ?>
-                                <?php endif; ?>
-                            </select>
-                        </div>
-                        <div class="col-12">
-                            <label for="detalleSancion" class="form-label">Detalle de la Sanción</label>
-                            <textarea id="detalleSancion" name="detallesancion" class="form-control" rows="4" 
-                                      placeholder="Describe los motivos y detalles de la sanción..."></textarea>
-                        </div>
-                        <div class="col-md-6">
-                            <label for="fechaSancion" class="form-label">Fecha de Sanción</label>
-                            <input type="date" id="fechaSancion" class="form-control" required>
-                        </div>
-                        <div class="col-md-6">
-                            <label for="fechaVencimiento" class="form-label">Fecha de Vencimiento (Opcional)</label>
-                            <input type="date" id="fechaVencimiento" class="form-control">
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                        <i class="ti ti-x me-1"></i>
-                        Cancelar
-                    </button>
-                    <button type="submit" class="btn btn-danger">
-                        <i class="ti ti-device-floppy me-1"></i>
-                        Registrar Sanción
                     </button>
                 </div>
             </form>
         </div>
-    </div>
-</div>
 
-<!-- Modal Ver Detalle -->
-<div class="modal fade" id="modalDetalleSancion" tabindex="-1" aria-labelledby="modalDetalleSancionLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header bg-info text-white">
-                <h5 class="modal-title" id="modalDetalleSancionLabel">
-                    <i class="ti ti-info-circle me-2"></i>
-                    Detalle de la Sanción
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body" id="contenidoDetalleSancion">
-                <!-- Contenido cargado dinámicamente -->
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- SweetAlert2 -->
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
-<script>
-// Variables globales
-let sancionesData = [];
-let tiposSancionData = [];
-let personasData = [];
-
-// Inicializar la página
-document.addEventListener('DOMContentLoaded', function() {
-    cargarTiposSancion();
-    cargarPersonas();
-    cargarSanciones();
-    cargarEstadisticas();
-    
-    // Event listeners
-    const formNueva = document.getElementById('formNuevaSancion');
-    if (formNueva) formNueva.addEventListener('submit', guardarSancion);
-    
-    // Inicializar fecha actual en el formulario
-    if (document.getElementById('fechaSancion')) {
-        document.getElementById('fechaSancion').valueAsDate = new Date();
-    }
-});
-
-// Cargar tipos de sanción
-async function cargarTiposSancion() {
-    try {
-        const response = await fetch('<?= base_url('sanciones/tipos') ?>', {
-            method: 'GET',
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        });
-        
-        if (response.ok) {
-            const data = await response.json();
-            tiposSancionData = data.tipos || [];
-            actualizarSelectTipos();
-        }
-    } catch (error) {
-        console.error('Error al cargar tipos de sanción:', error);
-        Swal.fire('Error', 'No se pudieron cargar los tipos de sanción', 'error');
-    }
-}
-
-// Cargar personas (estudiantes)
-async function cargarPersonas() {
-    try {
-        const response = await fetch('<?= base_url('usuarios/estudiantes') ?>', {
-            method: 'GET',
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        });
-        
-        if (response.ok) {
-            const data = await response.json();
-            personasData = data.estudiantes || [];
-            actualizarSelectPersonas();
-        }
-    } catch (error) {
-        console.error('Error al cargar estudiantes:', error);
-        Swal.fire('Error', 'No se pudieron cargar los estudiantes', 'error');
-    }
-}
-
-// Cargar sanciones
-async function cargarSanciones() {
-    try {
-        const response = await fetch('<?= base_url('sanciones/lista') ?>', {
-            method: 'GET',
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        });
-        
-        if (response.ok) {
-            const data = await response.json();
-            sancionesData = data.sanciones || [];
-            mostrarSanciones();
-        }
-    } catch (error) {
-        console.error('Error al cargar sanciones:', error);
-        Swal.fire('Error', 'No se pudieron cargar las sanciones', 'error');
-    }
-}
-
-// Cargar estadísticas
-async function cargarEstadisticas() {
-    try {
-        const response = await fetch('<?= base_url('sanciones/estadisticas') ?>', {
-            method: 'GET',
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        });
-        
-        if (response.ok) {
-            const data = await response.json();
-            mostrarEstadisticas(data.estadisticas);
-        }
-    } catch (error) {
-        console.error('Error al cargar estadísticas:', error);
-    }
-}
-
-// Mostrar estadísticas
-function mostrarEstadisticas(estadisticas) {
-    document.getElementById('totalSanciones').textContent = estadisticas.total_sanciones || 0;
-    document.getElementById('sancionesGraves').textContent = estadisticas.sanciones_activas || 0;
-    document.getElementById('sancionesLeves').textContent = estadisticas.sanciones_levantadas || 0;
-    document.getElementById('estudiantesSancionados').textContent = estadisticas.estudiantes_afectados || 0;
-}
-
-// Mostrar sanciones en la tabla
-function mostrarSanciones() {
-    const tbody = document.getElementById('cuerpoTablaSanciones');
-    let html = '';
-    
-    if (sancionesData.length === 0) {
-        html = `
-            <tr>
-                <td colspan="9" class="text-center py-4">
-                    <div class="text-muted">
-                        <i class="ti ti-inbox fs-1 d-block mb-2"></i>
-                        No hay sanciones registradas
-                    </div>
-                </td>
-            </tr>
-        `;
-    } else {
-        sancionesData.forEach((sancion, index) => {
-            const tipoSancion = tiposSancionData.find(t => t.idtiposancion == sancion.idtiposancion);
-            const persona = personasData.find(p => p.idpersona == sancion.idpersona);
-            
-            html += `
-                <tr>
-                    <td class="text-center">${index + 1}</td>
-                    <td>
-                        <div class="d-flex align-items-center">
-                            <div class="avatar-sm bg-danger text-white rounded-circle d-flex align-items-center justify-content-center me-2">
-                                <span class="small fw-bold">${(persona?.nombres?.charAt(0) || '')}${(persona?.apellidos?.charAt(0) || '')}</span>
-                            </div>
-                            <div>
-                                <div class="fw-medium">${persona?.apellidos || ''} ${persona?.nombres || ''}</div>
-                                <small class="text-muted">${persona?.email || ''}</small>
-                            </div>
-                        </div>
-                    </td>
-                    <td>${persona?.numerodoc || ''}</td>
-                    <td>
-                        <span class="badge bg-primary">${sancion.nivel ? `${sancion.grado}° ${sancion.nivel} ${sancion.seccion || ''}` : '—'}</span>
-                    </td>
-                    <td>
-                        <span class="badge bg-warning text-dark">${tipoSancion?.tiposancion || 'N/A'}</span>
-                    </td>
-                    <td>
-                        <span class="text-truncate d-inline-block" style="max-width: 200px;" 
-                              title="${sancion.detallesancion || 'Sin detalle'}">
-                            ${sancion.detallesancion || 'Sin detalle'}
-                        </span>
-                    </td>
-                    <td class="text-center">${formatearFecha(sancion.created_at)}</td>
-                    <td class="text-center">
-                        <span class="badge bg-danger">Activa</span>
-                    </td>
-                    <td class="text-center">
-                        <div class="btn-group btn-group-sm" role="group">
-                            <button type="button" class="btn btn-outline-primary" 
-                                    onclick="verDetalle(${sancion.idsancion})" title="Ver detalles">
-                                <i class="ti ti-eye"></i>
-                            </button>
-                            <button type="button" class="btn btn-outline-warning" 
-                                    onclick="editarSancion(${sancion.idsancion})" title="Editar sanción">
-                                <i class="ti ti-edit"></i>
-                            </button>
-                            <button type="button" class="btn btn-outline-success" 
-                                    onclick="levantarSancion(${sancion.idsancion})" title="Levantar sanción">
-                                <i class="ti ti-check"></i>
-                            </button>
-                            <button type="button" class="btn btn-outline-danger" 
-                                    onclick="eliminarSancion(${sancion.idsancion})" title="Eliminar sanción">
-                                <i class="ti ti-trash"></i>
-                            </button>
-                        </div>
-                    </td>
-                </tr>
-            `;
-        });
-    }
-    
-    tbody.innerHTML = html;
-}
-
-// Actualizar select de tipos de sanción
-function actualizarSelectTipos() {
-    const select = document.getElementById('tipoSancion');
-    if (select) {
-        const currentValue = select.value;
-        select.innerHTML = '<option value="">Seleccionar tipo...</option>';
-        tiposSancionData.forEach(tipo => {
-            select.innerHTML += `<option value="${tipo.idtiposancion}">${tipo.tiposancion}</option>`;
-        });
-        select.value = currentValue;
-    }
-}
-
-// Actualizar select de personas
-function actualizarSelectPersonas() {
-    const select = document.getElementById('estudiante');
-    if (select) {
-        const currentValue = select.value;
-        select.innerHTML = '<option value="">Buscar estudiante...</option>';
-        personasData.forEach(persona => {
-            select.innerHTML += `<option value="${persona.idpersona}">${persona.apellidos} ${persona.nombres} - ${persona.numerodoc}</option>`;
-        });
-        select.value = currentValue;
-    }
-}
-
-// Guardar nueva sanción
-async function guardarSancion(e) {
-    e.preventDefault();
-    
-    const formData = new FormData(e.target);
-    
-    try {
-        const response = await fetch('<?= base_url('sanciones/guardar') ?>', {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRF-TOKEN': getCookie('csrf_cookie_name')
-            }
-        });
-        
-        const data = await response.json();
-        
-        if (data.success) {
-            Swal.fire({
-                title: '¡Éxito!',
-                text: data.message,
-                icon: 'success',
-                confirmButtonText: 'Aceptar'
-            });
-            ocultarModal('modalNuevaSancion');
-            cargarSanciones();
-            cargarEstadisticas();
-        } else {
-            Swal.fire('Error', 'Por favor, corrige los errores indicados', 'error');
-        }
-    } catch (error) {
-        console.error('Error:', error);
-        Swal.fire('Error', 'Ocurrió un error al guardar la sanción', 'error');
-    }
-}
-
-// Ver detalle de sanción
-async function verDetalle(id) {
-    try {
-        const response = await fetch(`<?= base_url('sanciones/ver/') ?>${id}`, {
-            method: 'GET',
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        });
-        
-        if (response.ok) {
-            const html = await response.text();
-            document.getElementById('contenidoDetalleSancion').innerHTML = html;
-            mostrarModal('modalDetalleSancion');
-        } else {
-            Swal.fire('Error', 'No se pudo cargar el detalle', 'error');
-        }
-    } catch (error) {
-        console.error('Error:', error);
-        Swal.fire('Error', 'Ocurrió un error al cargar los detalles', 'error');
-    }
-}
-
-// Mostrar detalle de sanción
-function mostrarDetalleSancion(sancion) {
-    const tipoSancion = tiposSancionData.find(t => t.idtiposancion == sancion.idtiposancion);
-    const persona = personasData.find(p => p.idpersona == sancion.idpersona);
-    
-    const html = `
+        <!-- Lista de Sanciones -->
         <div class="row">
-            <div class="col-md-6">
-                <h6 class="text-primary">Información del Estudiante</h6>
-                <p><strong>Nombre:</strong> ${persona?.apellidos || ''} ${persona?.nombres || ''}</p>
-                <p><strong>Documento:</strong> ${persona?.numerodoc || ''}</p>
-                <p><strong>Email:</strong> ${persona?.email || 'No disponible'}</p>
-            </div>
-            <div class="col-md-6">
-                <h6 class="text-primary">Información de la Sanción</h6>
-                <p><strong>Tipo:</strong> ${tipoSancion?.tiposancion || 'N/A'}</p>
-                <p><strong>Fecha:</strong> ${formatearFecha(sancion.created_at)}</p>
-                <p><strong>Estado:</strong> <span class="badge bg-danger">Activa</span></p>
-            </div>
-        </div>
-        <div class="row mt-3">
             <div class="col-12">
-                <h6 class="text-primary">Detalle de la Sanción</h6>
-                <div class="alert alert-light">
-                    ${sancion.detallesancion || 'Sin detalle disponible'}
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">Sanciones Activas</h5>
+                        <div>
+                            <button class="btn btn-success btn-sm me-2" onclick="exportarExcel()">
+                                <i class="ri-file-excel-line me-1"></i>
+                                Excel
+                            </button>
+                            <button class="btn btn-danger btn-sm" onclick="exportarPDF()">
+                                <i class="ri-file-pdf-line me-1"></i>
+                                PDF
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <?php if (empty($sanciones)): ?>
+                            <div class="text-center py-5">
+                                <i class="ri-shield-check-line text-muted" style="font-size: 3rem;"></i>
+                                <h5 class="text-muted mt-3">No hay sanciones activas</h5>
+                                <p class="text-muted">Todas las sanciones han sido cumplidas o canceladas.</p>
+                            </div>
+                        <?php else: ?>
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>#</th>
+                                            <th>Estudiante</th>
+                                            <th>Documento</th>
+                                            <th>Nivel/Grado</th>
+                                            <th>Tipo de Sanción</th>
+                                            <th>Detalle</th>
+                                            <th>Fecha Sanción</th>
+                                            <th>Estado</th>
+                                            <th>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php foreach ($sanciones as $index => $sancion): ?>
+                                            <tr>
+                                                <td><?= $index + 1 ?></td>
+                                                <td>
+                                                    <div class="fw-semibold"><?= $sancion['nombre_completo'] ?></div>
+                                                </td>
+                                                <td><?= $sancion['numerodoc'] ?></td>
+                                                <td>
+                                                    <?php if ($sancion['grado'] && $sancion['seccion']): ?>
+                                                        <?= $sancion['grado'] ?>° <?= $sancion['nivel'] ?> <?= $sancion['seccion'] ?>
+                                                    <?php else: ?>
+                                                        <span class="text-muted">Sin matrícula</span>
+                                                    <?php endif; ?>
+                                                </td>
+                                                <td>
+                                                    <span class="badge bg-secondary"><?= $sancion['tiposancion'] ?></span>
+                                                </td>
+                                                <td>
+                                                    <div class="text-truncate" style="max-width: 200px;" 
+                                                         title="<?= $sancion['detallesancion'] ?>">
+                                                        <?= $sancion['detallesancion'] ?>
+                                                    </div>
+                                                </td>
+                                                <td><?= date('d/m/Y', strtotime($sancion['fecha_sancion'])) ?></td>
+                                                <td>
+                                                    <span class="sanction-status status-<?= $sancion['estado_sancion'] ?>">
+                                                        <?= ucfirst($sancion['estado_sancion']) ?>
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <div class="btn-group btn-group-sm">
+                                                        <button class="btn btn-outline-info" 
+                                                                onclick="verDetalles(<?= $sancion['idsancion'] ?>)"
+                                                                title="Ver detalles">
+                                                            <i class="ri-eye-line"></i>
+                                                        </button>
+                                                        <button class="btn btn-outline-warning" 
+                                                                onclick="editarSancion(<?= $sancion['idsancion'] ?>)"
+                                                                title="Editar">
+                                                            <i class="ri-edit-line"></i>
+                                                        </button>
+                                                        <button class="btn btn-outline-success" 
+                                                                onclick="cambiarEstado(<?= $sancion['idsancion'] ?>, 'cumplida')"
+                                                                title="Marcar como cumplida">
+                                                            <i class="ri-check-line"></i>
+                                                        </button>
+                                                        <button class="btn btn-outline-danger" 
+                                                                onclick="eliminarSancion(<?= $sancion['idsancion'] ?>)"
+                                                                title="Eliminar">
+                                                            <i class="ri-delete-bin-line"></i>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        <?php endforeach; ?>
+                                    </tbody>
+                                </table>
+                            </div>
+                        <?php endif; ?>
+                    </div>
                 </div>
             </div>
         </div>
-    `;
-    
-    document.getElementById('contenidoDetalleSancion').innerHTML = html;
-}
+    </div>
 
-// Editar sanción
-async function editarSancion(id) {
-    Swal.fire('Info', 'Función de edición en desarrollo', 'info');
-}
+    <!-- Modal Nueva Sanción -->
+    <div class="modal fade" id="modalNuevaSancion" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title">
+                        <i class="ri-shield-cross-line me-2"></i>
+                        Nueva Sanción Disciplinaria
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="formNuevaSancion">
+                    <div class="modal-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Tipo de Sanción <span class="text-danger">*</span></label>
+                                <select name="idtiposancion" class="form-select" required>
+                                    <option value="">Seleccionar tipo...</option>
+                                    <?php foreach ($tipos_sancion as $tipo): ?>
+                                        <option value="<?= $tipo['idtiposancion'] ?>"><?= $tipo['tiposancion'] ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Estudiante <span class="text-danger">*</span></label>
+                                <select name="idpersona" class="form-select" required>
+                                    <option value="">Buscar estudiante...</option>
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Detalle de la Sanción</label>
+                                <textarea name="detallesancion" class="form-control" rows="3" 
+                                          placeholder="Describe los motivos y detalles de la sanción..." required></textarea>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Fecha de Sanción <span class="text-danger">*</span></label>
+                                <input type="date" name="fecha_sancion" class="form-control" 
+                                       value="<?= date('Y-m-d') ?>" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Fecha de Vencimiento (Opcional)</label>
+                                <input type="date" name="fecha_vencimiento" class="form-control">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Observaciones</label>
+                                <textarea name="observaciones" class="form-control" rows="2" 
+                                          placeholder="Observaciones adicionales..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="ri-close-line me-1"></i>
+                            Cancelar
+                        </button>
+                        <button type="submit" class="btn btn-danger">
+                            <i class="ri-save-line me-1"></i>
+                            Registrar Sanción
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 
-// Levantar sanción
-async function levantarSancion(id) {
-    const result = await Swal.fire({
-        title: '¿Está seguro?',
-        text: '¿Desea levantar esta sanción? Esta acción no se puede deshacer.',
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#28a745',
-        cancelButtonColor: '#d33',
-        confirmButtonText: 'Sí, levantar',
-        cancelButtonText: 'Cancelar'
-    });
-    
-    if (result.isConfirmed) {
-        try {
-            const response = await fetch(`<?= base_url('sanciones/levantar/') ?>${id}`, {
-                method: 'POST',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRF-TOKEN': getCookie('csrf_cookie_name')
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        // Mostrar modal nueva sanción
+        function mostrarModalNuevaSancion() {
+            const modal = new bootstrap.Modal(document.getElementById('modalNuevaSancion'));
+            modal.show();
+        }
+
+        // Ver detalles de sanción
+        function verDetalles(id) {
+            fetch(`<?= base_url('sanciones/ver') ?>/${id}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const sancion = data.sancion;
+                        Swal.fire({
+                            title: 'Detalles de la Sanción',
+                            html: `
+                                <div class="text-start">
+                                    <p><strong>Estudiante:</strong> ${sancion.nombre_completo}</p>
+                                    <p><strong>Documento:</strong> ${sancion.numerodoc}</p>
+                                    <p><strong>Tipo:</strong> ${sancion.tiposancion}</p>
+                                    <p><strong>Detalle:</strong> ${sancion.detallesancion}</p>
+                                    <p><strong>Fecha:</strong> ${new Date(sancion.fecha_sancion).toLocaleDateString()}</p>
+                                    <p><strong>Estado:</strong> ${sancion.estado_sancion}</p>
+                                    ${sancion.observaciones ? `<p><strong>Observaciones:</strong> ${sancion.observaciones}</p>` : ''}
+                                </div>
+                            `,
+                            confirmButtonColor: '#dc3545'
+                        });
+                    } else {
+                        Swal.fire('Error', data.message, 'error');
+                    }
+                });
+        }
+
+        // Editar sanción
+        function editarSancion(id) {
+            Swal.fire('Info', 'Función de edición en desarrollo', 'info');
+        }
+
+        // Cambiar estado de sanción
+        function cambiarEstado(id, estado) {
+            const estadoTexto = estado === 'cumplida' ? 'cumplida' : 'cancelada';
+            
+            Swal.fire({
+                title: `¿Marcar como ${estadoTexto}?`,
+                text: 'Esta acción cambiará el estado de la sanción',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#198754',
+                cancelButtonColor: '#dc3545',
+                confirmButtonText: 'Sí, cambiar estado'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    fetch('<?= base_url('sanciones/cambiar-estado') ?>', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                        },
+                        body: `id=${id}&estado=${estado}`
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            Swal.fire('Éxito', data.message, 'success').then(() => {
+                                location.reload();
+                            });
+                        } else {
+                            Swal.fire('Error', data.message, 'error');
+                        }
+                    });
                 }
             });
-            
-            const data = await response.json();
-            
-            if (data.success) {
-                Swal.fire({
-                    title: '¡Éxito!',
-                    text: data.message,
-                    icon: 'success',
-                    confirmButtonText: 'Aceptar'
-                });
-                cargarSanciones();
-                cargarEstadisticas();
-            } else {
-                Swal.fire('Error', data.message, 'error');
-            }
-        } catch (error) {
-            console.error('Error:', error);
-            Swal.fire('Error', 'Ocurrió un error al levantar la sanción', 'error');
         }
-    }
-}
 
-// Eliminar sanción
-async function eliminarSancion(id) {
-    const result = await Swal.fire({
-        title: '¿Está seguro?',
-        text: '¿Desea eliminar esta sanción? Esta acción no se puede deshacer.',
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#d33',
-        cancelButtonColor: '#3085d6',
-        confirmButtonText: 'Sí, eliminar',
-        cancelButtonText: 'Cancelar'
-    });
-    
-    if (result.isConfirmed) {
-        try {
-            const response = await fetch(`<?= base_url('sanciones/eliminar/') ?>${id}`, {
-                method: 'POST',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRF-TOKEN': getCookie('csrf_cookie_name')
+        // Eliminar sanción
+        function eliminarSancion(id) {
+            Swal.fire({
+                title: '¿Eliminar sanción?',
+                text: 'Esta acción no se puede deshacer',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Sí, eliminar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    fetch(`<?= base_url('sanciones/eliminar') ?>/${id}`, {
+                        method: 'POST'
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            Swal.fire('Éxito', data.message, 'success').then(() => {
+                                location.reload();
+                            });
+                        } else {
+                            Swal.fire('Error', data.message, 'error');
+                        }
+                    });
                 }
             });
-            
-            const data = await response.json();
-            
-            if (data.success) {
-                Swal.fire({
-                    title: '¡Éxito!',
-                    text: data.message,
-                    icon: 'success',
-                    confirmButtonText: 'Aceptar'
-                });
-                cargarSanciones();
-                cargarEstadisticas();
-            } else {
-                Swal.fire('Error', data.message, 'error');
-            }
-        } catch (error) {
-            console.error('Error:', error);
-            Swal.fire('Error', 'Ocurrió un error al eliminar la sanción', 'error');
         }
-    }
-}
 
-// Funciones existentes actualizadas
-function aplicarFiltros() {
-    // Implementar filtrado de la tabla
-    console.log('Aplicando filtros...');
-    cargarSanciones(); // Recargar datos con filtros
-}
+        // Exportar Excel
+        function exportarExcel() {
+            Swal.fire('Info', 'Función de exportación en desarrollo', 'info');
+        }
 
-function exportarExcel() {
-    Swal.fire('Info', 'Función de exportación a Excel en desarrollo', 'info');
-}
+        // Exportar PDF
+        function exportarPDF() {
+            Swal.fire('Info', 'Función de exportación en desarrollo', 'info');
+        }
 
-function exportarPDF() {
-    Swal.fire('Info', 'Función de exportación a PDF en desarrollo', 'info');
-}
-
-// Funciones auxiliares
-function formatearFecha(fecha) {
-    if (!fecha) return 'N/A';
-    const date = new Date(fecha);
-    return date.toLocaleDateString('es-ES');
-}
-
-function getCookie(name) {
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop().split(';').shift();
-    return '';
-}
-
-function mostrarModal(id) {
-    const el = document.getElementById(id);
-    if (!el) return;
-    if (window.bootstrap) {
-        const modal = new bootstrap.Modal(el);
-        modal.show();
-    } else if (window.$) {
-        $(`#${id}`).modal('show');
-    } else {
-        el.classList.add('show');
-        el.style.display = 'block';
-    }
-}
-
-function ocultarModal(id) {
-    const el = document.getElementById(id);
-    if (!el) return;
-    if (window.bootstrap) {
-        const modal = bootstrap.Modal.getInstance(el) || new bootstrap.Modal(el);
-        modal.hide();
-    } else if (window.$) {
-        $(`#${id}`).modal('hide');
-    } else {
-        el.classList.remove('show');
-        el.style.display = 'none';
-    }
-}
-
-// Función para debuggear desde consola con try-catch
-window.debugSanciones = async function() {
-    try {
-        console.log('=== Probando endpoints de sanciones ===');
-        
-        // Probar endpoint de lista
-        const responseLista = await fetch('/sanciones/lista');
-        console.log('Status lista:', responseLista.status);
-        const dataLista = await responseLista.json();
-        console.log('Datos lista:', dataLista);
-        
-        // Probar endpoint de estadísticas
-        const responseStats = await fetch('/sanciones/estadisticas');
-        console.log('Status estadísticas:', responseStats.status);
-        const dataStats = await responseStats.json();
-        console.log('Datos estadísticas:', dataStats);
-        
-        // Probar endpoint de estudiantes
-        const responseEstudiantes = await fetch('/usuarios/estudiantes');
-        console.log('Status estudiantes:', responseEstudiantes.status);
-        const dataEstudiantes = await responseEstudiantes.json();
-        console.log('Datos estudiantes:', dataEstudiantes);
-        
-        return { estadisticas: dataStats, sanciones: dataLista, estudiantes: dataEstudiantes };
-    } catch (error) {
-        console.error('Error capturado:', error);
-        console.error('Tipo de error:', error.name);
-        console.error('Mensaje:', error.message);
-        return null;
-    }
-};
-</script>
+        // Formulario nueva sanción
+        document.getElementById('formNuevaSancion').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            
+            fetch('<?= base_url('sanciones/crear') ?>', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire('Éxito', data.message, 'success').then(() => {
+                        location.reload();
+                    });
+                } else {
+                    Swal.fire('Error', data.message, 'error');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

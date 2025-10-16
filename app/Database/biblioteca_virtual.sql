@@ -165,7 +165,11 @@ CREATE TABLE IF NOT EXISTS renovaciones_prestamo (
 -- TABLAS: Sanciones y Tipos
 CREATE TABLE tiposancion (
     idtiposancion INT AUTO_INCREMENT PRIMARY KEY,
-    tiposancion VARCHAR(80) NOT NULL
+    tiposancion VARCHAR(80) NOT NULL,
+    descripcion TEXT NULL,
+    activo BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
 CREATE TABLE sanciones (
@@ -173,8 +177,22 @@ CREATE TABLE sanciones (
     idtiposancion INT NOT NULL,
     idpersona INT NOT NULL,
     detallesancion VARCHAR(200),
+    fecha_sancion DATE NOT NULL DEFAULT (CURRENT_DATE),
+    fecha_vencimiento DATE NULL,
+    estado_sancion ENUM('activa', 'cumplida', 'cancelada') DEFAULT 'activa',
+    usuario_registra INT NULL,
+    fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    observaciones TEXT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
     FOREIGN KEY (idtiposancion) REFERENCES tiposancion(idtiposancion),
-    FOREIGN KEY (idpersona) REFERENCES personas(idpersona)
+    FOREIGN KEY (idpersona) REFERENCES personas(idpersona),
+    FOREIGN KEY (usuario_registra) REFERENCES usuarios(idusuario),
+    
+    INDEX idx_estado_sancion (estado_sancion),
+    INDEX idx_fecha_sancion (fecha_sancion),
+    INDEX idx_fecha_vencimiento (fecha_vencimiento)
 );
 
 

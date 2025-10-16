@@ -84,17 +84,6 @@ class AdminController extends BaseController
         return view('Administrador/vistas/ReaccionesUsuarios', $data);
     }
 
-    public function VistaAlumnosSancionados()
-    {
-        $query = $this->db->query("
-            SELECT s.detallesancion, ts.tiposancion, per.nombres, per.apellidos
-            FROM sanciones s
-            INNER JOIN tiposancion ts ON s.idtiposancion = ts.idtiposancion
-            INNER JOIN personas per ON s.idpersona = per.idpersona
-        ");
-        $data['sancionados'] = $query->getResult();
-        return view('Administrador/vistas/AlumnosSancionados', $data);
-    }
 
     // Vista para importar datos
     public function importarDatos()
