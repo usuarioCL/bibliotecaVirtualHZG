@@ -63,32 +63,12 @@ class SancionModel extends Model
      */
     public function getSancionesCompletas()
     {
-        // Subconsulta para obtener la última matrícula de la persona y su grupo
-        $subQuery = "SELECT m.idpersona, g.nivel, g.grado, g.seccion
-                      FROM matriculas m
-                      INNER JOIN grupos g ON g.idgrupo = m.idgrupo
-                      WHERE m.idpersona = sanciones.idpersona AND m.estadomatricula = 1
-                      ORDER BY m.fechamatricula DESC
-                      LIMIT 1";
-
-        return $this->select('
-                sanciones.idsancion,
-                sanciones.detallesancion,
-                personas.idpersona,
-                personas.apellidos,
-                personas.nombres,
-                personas.numerodoc,
-                tiposancion.idtiposancion,
-                tiposancion.tiposancion,
-                mat.nivel as nivel,
-                mat.grado as grado,
-                mat.seccion as seccion
-            ')
-            ->join('personas', 'personas.idpersona = sanciones.idpersona')
-            ->join('tiposancion', 'tiposancion.idtiposancion = sanciones.idtiposancion')
-            ->join("($subQuery) mat", 'mat.idpersona = sanciones.idpersona', 'left', false)
-            ->orderBy('sanciones.idsancion', 'DESC')
-            ->findAll();
+        // Leer directamente de la vista SQL creada en MySQL
+        $db = \Config\Database::connect();
+        return $db->table('vista_sanciones_activas')
+                  ->orderBy('idsancion', 'DESC')
+                  ->get()
+                  ->getResultArray();
     }
 
     /**
@@ -96,18 +76,45 @@ class SancionModel extends Model
      */
     public function getSancionCompleta($idsancion)
     {
-        return $this->select('
-                sanciones.*,
-                personas.apellidos,
-                personas.nombres,
-                personas.numerodoc,
-                personas.email,
-                tiposancion.tiposancion
-            ')
-            ->join('personas', 'personas.idpersona = sanciones.idpersona')
-            ->join('tiposancion', 'tiposancion.idtiposancion = sanciones.idtiposancion')
-            ->where('sanciones.idsancion', $idsancion)
-            ->first();
+        $db = \Config\Database::connect();
+        return $db->table('vista_sanciones_activas')
+                  ->where('idsancion', $idsancion)
+                  ->get()
+                  ->getRowArray();
+    }
+
+    /**
+     * Obtener estadísticas de sanciones
+     */
+    public function getEstadisticasSanciones()
+    {
+        $db = \Config\Database::connect();
+        
+        // Total de sanciones
+        $total = $db->table('vista_sanciones_activas')->countAllResults();
+        
+        // Suspensiones (tipos 3 y 4)
+        $suspensiones = $db->table('vista_sanciones_activas')
+                          ->whereIn('idtiposancion', [3, 4])
+                          ->countAllResults();
+        
+        // Amonestaciones (tipos 1 y 2)
+        $amonestaciones = $db->table('vista_sanciones_activas')
+                           ->whereIn('idtiposancion', [1, 2])
+                           ->countAllResults();
+        
+        // Estudiantes únicos afectados
+        $estudiantesAfectados = $db->table('vista_sanciones_activas')
+                                 ->select('idpersona')
+                                 ->distinct()
+                                 ->countAllResults();
+        
+        return [
+            'total' => $total,
+            'suspensiones' => $suspensiones,
+            'amonestaciones' => $amonestaciones,
+            'estudiantes_afectados' => $estudiantesAfectados
+        ];
     }
 
     /**
