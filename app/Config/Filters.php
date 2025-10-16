@@ -121,7 +121,17 @@ class Filters extends BaseFilters
                 'docentes',
                 'docentes/*',
                 'recursos',
-                'recursos/*',
+                'recursos/crear',
+                'recursos/crear-modal',
+                'recursos/pdf',
+                'recursos/guardar',
+                'recursos/editar/*',
+                'recursos/modal-editar/*',
+                'recursos/actualizar/*',
+                'recursos/eliminar/*',
+                'recursos/actualizarRutasImagenes',
+                'recursos/debugImagenes',
+                'recursos/testPDF/*',
                 'autores',
                 'autores/*',
                 'editoriales',
@@ -137,6 +147,13 @@ class Filters extends BaseFilters
                 'historial-usuarios/*',
                 'ejemplares-fisicos/*',
                 'reportes/*'
+            ]
+        ],
+        'auth' => [
+            'before' => [
+                'recursos/buscarRecursos',
+                'recursos/filtrosBusqueda',
+                'recursos/buscar-disponibles-ajax'
             ]
         ]
     ];
