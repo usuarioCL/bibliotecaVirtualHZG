@@ -37,6 +37,9 @@ class SancionController extends BaseController
             // Obtener datos usando los métodos del modelo
             $sanciones = $this->sancionModel->obtenerSancionesActivas($filtros);
             $tipos_sancion = $this->tiposancionModel->obtenerTiposActivos();
+            
+            // Obtener niveles educativos únicos
+            $niveles_educativos = $this->obtenerNivelesEducativos();
 
             // Calcular estadísticas usando el método del modelo
             $estadisticas = $this->sancionModel->obtenerEstadisticas();
@@ -44,6 +47,7 @@ class SancionController extends BaseController
             $data = [
                 'sanciones' => $sanciones,
                 'tipos_sancion' => $tipos_sancion,
+                'niveles_educativos' => $niveles_educativos,
                 'estadisticas' => $estadisticas,
                 'filtros' => $filtros
             ];
@@ -458,6 +462,128 @@ class SancionController extends BaseController
                 'success' => false,
                 'message' => 'Error al obtener las sanciones de la persona'
             ]);
+        }
+    }
+
+    /**
+     * Levantar sanción antes de tiempo
+     */
+    public function levantarSancion()
+    {
+        try {
+            $idsancion = $this->request->getPost('idsancion');
+            $motivoLevantamiento = $this->request->getPost('motivo_levantamiento');
+            $usuarioLevanta = session('idusuario') ?: 1;
+
+            // Validar datos
+            if (empty($idsancion) || empty($motivoLevantamiento)) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'El ID de sanción y el motivo son obligatorios'
+                ]);
+            }
+
+            // Verificar que la sanción existe y puede ser levantada
+            if (!$this->sancionModel->puedeLevantarSancion($idsancion)) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Esta sanción no puede ser levantada o no existe'
+                ]);
+            }
+
+            // Obtener detalles de la sanción antes del levantamiento
+            $sancion = $this->sancionModel->obtenerDetallesCompletos($idsancion);
+            
+            // Levantar la sanción
+            if ($this->sancionModel->levantarSancion($idsancion, $motivoLevantamiento, $usuarioLevanta)) {
+                log_message('info', "Sanción {$idsancion} levantada por usuario {$usuarioLevanta}. Motivo: {$motivoLevantamiento}");
+                
+                return $this->response->setJSON([
+                    'success' => true,
+                    'message' => 'Sanción levantada exitosamente',
+                    'sancion' => [
+                        'persona' => $sancion['nombre_completo'],
+                        'tipo' => $sancion['tiposancion'],
+                        'fecha_levantamiento' => date('Y-m-d H:i:s')
+                    ]
+                ]);
+            } else {
+                $errors = $this->sancionModel->errors();
+                log_message('error', 'Error al levantar sanción: ' . implode(', ', $errors));
+                
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Error al levantar la sanción: ' . implode(', ', $errors)
+                ]);
+            }
+        } catch (\Exception $e) {
+            log_message('error', 'Error en levantarSancion: ' . $e->getMessage());
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Error interno del servidor: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Obtener detalles de una sanción para levantamiento
+     */
+    public function obtenerDetallesParaLevantamiento($id)
+    {
+        try {
+            $sancion = $this->sancionModel->obtenerDetallesCompletos($id);
+            
+            if (!$sancion) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Sanción no encontrada'
+                ]);
+            }
+
+            if ($sancion['estado_sancion'] !== 'activa') {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Esta sanción no está activa y no puede ser levantada'
+                ]);
+            }
+
+            return $this->response->setJSON([
+                'success' => true,
+                'sancion' => $sancion
+            ]);
+        } catch (\Exception $e) {
+            log_message('error', 'Error al obtener detalles para levantamiento: ' . $e->getMessage());
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Error al obtener los detalles de la sanción'
+            ]);
+        }
+    }
+
+    /**
+     * Obtener niveles educativos únicos
+     */
+    private function obtenerNivelesEducativos()
+    {
+        try {
+            $db = \Config\Database::connect();
+            $query = $db->query("
+                SELECT DISTINCT g.nivel 
+                FROM grupos g 
+                JOIN matriculas m ON g.idgrupo = m.idgrupo 
+                JOIN personas p ON m.idpersona = p.idpersona 
+                JOIN sanciones s ON s.idpersona = p.idpersona 
+                WHERE s.estado_sancion = 'activa' 
+                AND g.nivel IS NOT NULL 
+                AND g.nivel != '' 
+                ORDER BY g.nivel
+            ");
+            
+            $niveles = $query->getResultArray();
+            return array_column($niveles, 'nivel');
+        } catch (\Exception $e) {
+            log_message('error', 'Error al obtener niveles educativos: ' . $e->getMessage());
+            return ['Primaria', 'Secundaria', 'Superior']; // Valores por defecto
         }
     }
 }

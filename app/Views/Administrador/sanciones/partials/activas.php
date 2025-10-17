@@ -78,6 +78,38 @@
 
 <!-- Filtros -->
 <div class="filter-section">
+    <?php 
+    $filtrosActivos = !empty($filtros['tipo_sancion']) || !empty($filtros['nivel']) || !empty($filtros['buscar']);
+    ?>
+    <?php if ($filtrosActivos): ?>
+        <div class="alert alert-info mb-3" style="border-radius: 15px; border: none; background: linear-gradient(135deg, #dbeafe, #bfdbfe);">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <i class="ti ti-filter me-2"></i>
+                    <strong>Filtros activos:</strong>
+                    <?php if (!empty($filtros['tipo_sancion'])): ?>
+                        <span class="badge-professional badge-info-professional me-1">
+                            <?= $tipos_sancion[array_search($filtros['tipo_sancion'], array_column($tipos_sancion, 'idtiposancion'))]['tiposancion'] ?? 'Tipo' ?>
+                        </span>
+                    <?php endif; ?>
+                    <?php if (!empty($filtros['nivel'])): ?>
+                        <span class="badge-professional badge-info-professional me-1">
+                            <?= ucfirst($filtros['nivel']) ?>
+                        </span>
+                    <?php endif; ?>
+                    <?php if (!empty($filtros['buscar'])): ?>
+                        <span class="badge-professional badge-info-professional me-1">
+                            "<?= htmlspecialchars($filtros['buscar']) ?>"
+                        </span>
+                    <?php endif; ?>
+                </div>
+                <button type="button" onclick="limpiarFiltros()" class="btn btn-sm btn-outline-secondary">
+                    <i class="ti ti-x me-1"></i>Limpiar filtros
+                </button>
+            </div>
+        </div>
+    <?php endif; ?>
+    
     <form method="GET" id="filtros-form">
         <div class="row g-3">
             <div class="col-md-3">
@@ -96,9 +128,18 @@
                 <label class="form-label">Nivel Educativo</label>
                 <select name="nivel" class="form-select">
                     <option value="">Todos los niveles</option>
-                    <option value="Inicial" <?= (($filtros['nivel'] ?? '') == 'Inicial') ? 'selected' : '' ?>>Inicial</option>
-                    <option value="Primaria" <?= (($filtros['nivel'] ?? '') == 'Primaria') ? 'selected' : '' ?>>Primaria</option>
-                    <option value="Secundaria" <?= (($filtros['nivel'] ?? '') == 'Secundaria') ? 'selected' : '' ?>>Secundaria</option>
+                    <?php if (isset($niveles_educativos) && !empty($niveles_educativos)): ?>
+                        <?php foreach ($niveles_educativos as $nivel): ?>
+                            <option value="<?= $nivel ?>" 
+                                    <?= (($filtros['nivel'] ?? '') == $nivel) ? 'selected' : '' ?>>
+                                <?= ucfirst($nivel) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <option value="Inicial" <?= (($filtros['nivel'] ?? '') == 'Inicial') ? 'selected' : '' ?>>Inicial</option>
+                        <option value="Primaria" <?= (($filtros['nivel'] ?? '') == 'Primaria') ? 'selected' : '' ?>>Primaria</option>
+                        <option value="Secundaria" <?= (($filtros['nivel'] ?? '') == 'Secundaria') ? 'selected' : '' ?>>Secundaria</option>
+                    <?php endif; ?>
                 </select>
             </div>
             <div class="col-md-4">
@@ -109,9 +150,12 @@
             </div>
             <div class="col-md-2">
                 <label class="form-label">&nbsp;</label>
-                <div class="d-grid">
-                    <button type="submit" class="btn btn-primary-professional btn-professional">
+                <div class="d-grid gap-2">
+                    <button type="button" onclick="aplicarFiltros()" class="btn btn-primary-professional btn-professional">
                         <i class="ti ti-search me-1"></i>Filtrar
+                    </button>
+                    <button type="button" onclick="limpiarFiltros()" class="btn btn-secondary btn-professional">
+                        <i class="ti ti-x me-1"></i>Limpiar
                     </button>
                 </div>
             </div>
@@ -209,8 +253,8 @@
                                             <i class="ti ti-edit"></i>
                                         </button>
                                         <button class="btn-action complete" 
-                                                onclick="cambiarEstado(<?= $sancion['idsancion'] ?>, 'cumplida')"
-                                                title="Marcar como cumplida">
+                                                onclick="abrirModalLevantamiento(<?= $sancion['idsancion'] ?>)"
+                                                title="Levantar sanción">
                                             <i class="ti ti-check"></i>
                                         </button>
                                     </div>
@@ -222,6 +266,28 @@
                 </div>
             </div>
         <?php endif; ?>
+    </div>
+</div>
+
+<!-- Modal Levantamiento de Sanción -->
+<div class="modal fade" id="modalLevantamiento" tabindex="-1" aria-labelledby="modalLevantamientoLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content" style="border-radius: 20px; border: none; box-shadow: var(--shadow-xl);">
+            <div class="modal-header" style="background: linear-gradient(135deg, var(--success-color), #047857); color: white; border-radius: 20px 20px 0 0;">
+                <h5 class="modal-title" id="modalLevantamientoLabel">
+                    <i class="ti ti-check-circle me-2"></i>Levantar Sanción
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" style="padding: 2rem;">
+                <div id="levantamiento-content">
+                    <div class="text-center py-4">
+                        <div class="spinner-professional"></div>
+                        <p class="mt-2">Cargando detalles de la sanción...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -598,6 +664,310 @@ function verDetallesPersona(idpersona) {
         `;
     });
 }
+
+// Función para abrir modal de levantamiento
+function abrirModalLevantamiento(idsancion) {
+    const modal = new bootstrap.Modal(document.getElementById('modalLevantamiento'));
+    modal.show();
+    
+    // Mostrar loading
+    document.getElementById('levantamiento-content').innerHTML = `
+        <div class="text-center py-4">
+            <div class="spinner-professional"></div>
+            <p class="mt-2">Cargando detalles de la sanción...</p>
+        </div>
+    `;
+    
+    // Obtener detalles de la sanción
+    fetch(`<?= base_url('sanciones/detalles-levantamiento') ?>/${idsancion}`, {
+        method: 'GET',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const sancion = data.sancion;
+            const fechaActual = new Date().toLocaleDateString('es-ES');
+            
+            document.getElementById('levantamiento-content').innerHTML = `
+                <div class="row mb-4">
+                    <div class="col-md-12">
+                        <div class="alert alert-info" style="border-radius: 15px; border: none;">
+                            <h6 class="mb-2"><i class="ti ti-info-circle me-2"></i>Información de la Sanción</h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p class="mb-1"><strong>Persona:</strong> ${sancion.nombre_completo}</p>
+                                    <p class="mb-1"><strong>Tipo:</strong> ${sancion.tiposancion}</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p class="mb-1"><strong>Fecha Sanción:</strong> ${sancion.fecha_sancion}</p>
+                                    <p class="mb-1"><strong>Vencimiento:</strong> ${sancion.fecha_vencimiento || 'Sin fecha'}</p>
+                                </div>
+                            </div>
+                            <p class="mb-0"><strong>Detalles:</strong> ${sancion.detallesancion}</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <form id="formLevantamiento">
+                    <input type="hidden" name="idsancion" value="${idsancion}">
+                    
+                    <div class="mb-4">
+                        <label for="motivo_levantamiento" class="form-label">
+                            <i class="ti ti-edit me-2"></i>Motivo del Levantamiento
+                        </label>
+                        <textarea class="form-control" 
+                                  id="motivo_levantamiento" 
+                                  name="motivo_levantamiento" 
+                                  rows="4" 
+                                  placeholder="Describe el motivo por el cual se levanta esta sanción antes de tiempo..."
+                                  style="border-radius: 15px; border: 2px solid var(--border-color);"
+                                  required></textarea>
+                        <div class="form-text">Este motivo quedará registrado en el historial de la sanción.</div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <div class="alert alert-warning" style="border-radius: 15px; border: none;">
+                            <h6 class="mb-2"><i class="ti ti-alert-triangle me-2"></i>Confirmación</h6>
+                            <p class="mb-0">Al levantar esta sanción, se marcará como <strong>"cumplida"</strong> y la fecha de vencimiento se establecerá como <strong>${fechaActual}</strong>.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-end gap-2">
+                        <button type="button" class="btn btn-secondary btn-professional" data-bs-dismiss="modal">
+                            <i class="ti ti-x me-1"></i>Cancelar
+                        </button>
+                        <button type="submit" class="btn btn-success-professional btn-professional">
+                            <i class="ti ti-check me-1"></i>Levantar Sanción
+                        </button>
+                    </div>
+                </form>
+            `;
+            
+            // Agregar evento al formulario
+            document.getElementById('formLevantamiento').addEventListener('submit', function(e) {
+                e.preventDefault();
+                levantarSancion(idsancion);
+            });
+        } else {
+            document.getElementById('levantamiento-content').innerHTML = `
+                <div class="text-center py-4">
+                    <i class="ti ti-alert-circle text-danger" style="font-size: 3rem;"></i>
+                    <h5 class="text-danger mt-3">Error</h5>
+                    <p class="text-muted">${data.message}</p>
+                    <button type="button" class="btn btn-secondary btn-professional" data-bs-dismiss="modal">
+                        <i class="ti ti-x me-1"></i>Cerrar
+                    </button>
+                </div>
+            `;
+        }
+    })
+    .catch(error => {
+        console.error('Error al cargar detalles:', error);
+        document.getElementById('levantamiento-content').innerHTML = `
+            <div class="text-center py-4">
+                <i class="ti ti-alert-circle text-danger" style="font-size: 3rem;"></i>
+                <h5 class="text-danger mt-3">Error al cargar detalles</h5>
+                <p class="text-muted">No se pudieron cargar los detalles de la sanción.</p>
+                <button type="button" class="btn btn-secondary btn-professional" data-bs-dismiss="modal">
+                    <i class="ti ti-x me-1"></i>Cerrar
+                </button>
+            </div>
+        `;
+    });
+}
+
+// Función para levantar la sanción
+function levantarSancion(idsancion) {
+    const form = document.getElementById('formLevantamiento');
+    const formData = new FormData(form);
+    
+    const motivoLevantamiento = formData.get('motivo_levantamiento');
+    
+    if (!motivoLevantamiento.trim()) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Motivo requerido',
+            text: 'Por favor, describe el motivo del levantamiento de la sanción.',
+            confirmButtonColor: '#d97706'
+        });
+        return;
+    }
+    
+    Swal.fire({
+        title: '¿Confirmar levantamiento?',
+        text: 'Esta acción marcará la sanción como cumplida y no se puede deshacer.',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#059669',
+        cancelButtonColor: '#dc2626',
+        confirmButtonText: 'Sí, levantar',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Mostrar loading
+            Swal.fire({
+                title: 'Procesando...',
+                text: 'Levantando la sanción',
+                allowOutsideClick: false,
+                showConfirmButton: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+            
+            // Enviar petición
+            fetch('<?= base_url('sanciones/levantar') ?>', {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: new URLSearchParams(formData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                Swal.close();
+                
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: '¡Sanción levantada!',
+                        text: data.message,
+                        confirmButtonColor: '#059669'
+                    }).then(() => {
+                        // Cerrar modal
+                        const modal = bootstrap.Modal.getInstance(document.getElementById('modalLevantamiento'));
+                        modal.hide();
+                        
+                        // Recargar contenido
+                        recargarContenidoSanciones();
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: data.message,
+                        confirmButtonColor: '#dc2626'
+                    });
+                }
+            })
+            .catch(error => {
+                Swal.close();
+                console.error('Error:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Error al comunicarse con el servidor',
+                    confirmButtonColor: '#dc2626'
+                });
+            });
+        }
+    });
+}
+
+// Función para aplicar filtros dinámicamente
+function aplicarFiltros() {
+    const form = document.getElementById('filtros-form');
+    const formData = new FormData(form);
+    
+    // Construir URL con parámetros
+    const params = new URLSearchParams();
+    for (let [key, value] of formData.entries()) {
+        if (value.trim() !== '') {
+            params.append(key, value);
+        }
+    }
+    
+    const url = `<?= base_url('sanciones') ?>?${params.toString()}`;
+    
+    // Mostrar loading
+    const contenedorPrincipal = document.querySelector('#contenedor-principal') || 
+                                document.querySelector('.body-wrapper-inner') ||
+                                document.querySelector('#main-wrapper');
+    
+    if (contenedorPrincipal) {
+        contenedorPrincipal.innerHTML = '<div class="text-center py-5"><div class="spinner-professional"></div><p class="mt-2">Aplicando filtros...</p></div>';
+        
+        // Recargar contenido con filtros
+        fetch(url, {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.text())
+        .then(html => {
+            contenedorPrincipal.innerHTML = html;
+        })
+        .catch(error => {
+            console.error('Error al aplicar filtros:', error);
+            contenedorPrincipal.innerHTML = '<div class="alert alert-danger">Error al aplicar filtros. <a href="javascript:location.reload()">Recargar página</a></div>';
+        });
+    }
+}
+
+// Función para limpiar filtros
+function limpiarFiltros() {
+    const form = document.getElementById('filtros-form');
+    form.reset();
+    
+    // Recargar sin filtros
+    const url = `<?= base_url('sanciones') ?>`;
+    
+    const contenedorPrincipal = document.querySelector('#contenedor-principal') || 
+                                document.querySelector('.body-wrapper-inner') ||
+                                document.querySelector('#main-wrapper');
+    
+    if (contenedorPrincipal) {
+        contenedorPrincipal.innerHTML = '<div class="text-center py-5"><div class="spinner-professional"></div><p class="mt-2">Limpiando filtros...</p></div>';
+        
+        fetch(url, {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.text())
+        .then(html => {
+            contenedorPrincipal.innerHTML = html;
+        })
+        .catch(error => {
+            console.error('Error al limpiar filtros:', error);
+            contenedorPrincipal.innerHTML = '<div class="alert alert-danger">Error al limpiar filtros. <a href="javascript:location.reload()">Recargar página</a></div>';
+        });
+    }
+}
+
+// Eventos para filtros automáticos
+document.addEventListener('DOMContentLoaded', function() {
+    // Aplicar filtros automáticamente cuando cambien los selects
+    const selects = document.querySelectorAll('select[name="tipo_sancion"], select[name="nivel"]');
+    selects.forEach(select => {
+        select.addEventListener('change', function() {
+            // Pequeño delay para mejor UX
+            setTimeout(() => {
+                aplicarFiltros();
+            }, 300);
+        });
+    });
+    
+    // Aplicar filtros cuando se escriba en el campo de búsqueda (con debounce)
+    let searchTimeout;
+    const searchInput = document.querySelector('input[name="buscar"]');
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                if (this.value.length >= 2 || this.value.length === 0) {
+                    aplicarFiltros();
+                }
+            }, 500);
+        });
+    }
+});
 
 // Búsqueda de personas
 document.querySelector('input[name="persona_buscar"]').addEventListener('input', function(e) {

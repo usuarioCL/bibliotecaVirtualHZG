@@ -219,6 +219,36 @@ class SancionModel extends Model
     }
 
     /**
+     * Levantar sanción antes de tiempo
+     */
+    public function levantarSancion($id, $motivoLevantamiento, $usuarioLevanta = null)
+    {
+        $data = [
+            'estado_sancion' => 'cumplida',
+            'observaciones' => $motivoLevantamiento,
+            'fecha_vencimiento' => date('Y-m-d'), // Fecha actual como fecha de cumplimiento
+            'updated_at' => date('Y-m-d H:i:s')
+        ];
+
+        return $this->update($id, $data);
+    }
+
+    /**
+     * Verificar si una sanción puede ser levantada
+     */
+    public function puedeLevantarSancion($id)
+    {
+        $sancion = $this->find($id);
+        
+        if (!$sancion) {
+            return false;
+        }
+
+        // Solo se pueden levantar sanciones activas
+        return $sancion['estado_sancion'] === 'activa';
+    }
+
+    /**
      * Obtener detalles completos de una sanción
      */
     public function obtenerDetallesCompletos($id)
