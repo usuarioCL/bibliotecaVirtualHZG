@@ -182,11 +182,21 @@
                                                     title="Ver Detalles">
                                                 <i class="ti ti-eye"></i>
                                             </button>
-                                            <button type="button" class="btn btn-sm btn-outline-secondary" 
-                                                    onclick="imprimirRecibo(<?= $registro['id'] ?>)"
-                                                    title="Imprimir Recibo">
-                                                <i class="ti ti-printer"></i>
+
+                                            <?php 
+                                            $horasTotal = $registro['horas_retraso_total'] ?? 0;
+                                            $diasRetraso = $registro['dias_retraso'] ?? 0;
+                                            $tieneRetraso = ($horasTotal > 0 || $diasRetraso > 0);
+                                            ?>
+                                            
+                                            <?php if ($tieneRetraso): ?>
+                                            <button type="button" class="btn btn-sm btn-outline-warning" 
+                                                    onclick="generarSancion(<?= $registro['id'] ?>, '<?= esc($registro['usuario']) ?>', <?= $horasTotal ?>)"
+                                                    title="Generar Sanción por Retraso">
+                                                <i class="ti ti-alert-triangle"></i>
                                             </button>
+                                            <?php endif; ?>
+
                                             <button type="button" class="btn btn-sm btn-outline-danger" 
                                                     onclick="confirmarEliminacion(<?= $registro['id'] ?>)"
                                                     title="Eliminar">
@@ -659,9 +669,7 @@
                             </div>
                         </div>
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-outline-primary" onclick="imprimirRecibo(${idPrestamo})">
-                                <i class="ti ti-printer me-2"></i>Imprimir Recibo
-                            </button>
+
                             <button type="button" class="btn btn-outline-info" onclick="generarReporte(${idPrestamo})">
                                 <i class="ti ti-file-download me-2"></i>Generar Reporte
                             </button>
@@ -697,19 +705,6 @@
             }, 300);
         }
     }
-
-    // Función para imprimir recibo
-    function imprimirRecibo(registroId) {
-        console.log('Imprimir recibo:', registroId);
-        Swal.fire({
-            title: 'Generando Recibo',
-            text: 'Funcionalidad en desarrollo - Se generará un PDF con el recibo de devolución',
-            icon: 'info',
-            timer: 2000,
-            showConfirmButton: false
-        });
-    }
-
     // Función para confirmar eliminación
     function confirmarEliminacion(registroId) {
         Swal.fire({
@@ -755,6 +750,142 @@
             text: 'Funcionalidad en desarrollo',
             icon: 'info'
         });
+    }
+
+    // Función para generar sanción por retraso
+    function generarSancion(prestamoId, nombreUsuario, horasRetraso) {
+        console.log('Generar sanción para préstamo:', prestamoId, 'Usuario:', nombreUsuario, 'Horas:', horasRetraso);
+        
+        // Determinar el tipo y monto de sanción basado en las horas de retraso
+        let tipoSancion = '';
+        let montoSancion = 0;
+        let descripcionSancion = '';
+        
+        if (horasRetraso <= 24) {
+            tipoSancion = 'Leve';
+            montoSancion = horasRetraso * 2500; // $2,500 por hora
+            descripcionSancion = `Retraso de ${horasRetraso} hora${horasRetraso !== 1 ? 's' : ''} en devolución`;
+        } else {
+            const dias = Math.floor(horasRetraso / 24);
+            tipoSancion = dias <= 3 ? 'Moderada' : 'Grave';
+            montoSancion = dias * 5000; // $5,000 por día
+            descripcionSancion = `Retraso de ${dias} día${dias !== 1 ? 's' : ''} en devolución`;
+        }
+        
+        Swal.fire({
+            title: '⚠️ Generar Sanción',
+            html: `
+                <div class="text-start">
+                    <p><strong>Usuario:</strong> ${nombreUsuario}</p>
+                    <p><strong>Préstamo ID:</strong> PREST-${String(prestamoId).padStart(6, '0')}</p>
+                    <p><strong>Retraso:</strong> ${horasRetraso < 24 ? horasRetraso + ' horas' : Math.floor(horasRetraso/24) + ' días'}</p>
+                    <hr>
+                    <div class="alert alert-warning">
+                        <p class="mb-2"><strong>Tipo de Sanción:</strong> <span class="badge bg-warning">${tipoSancion}</span></p>
+                        <p class="mb-2"><strong>Monto:</strong> <span class="text-danger fw-bold">$${montoSancion.toLocaleString()}</span></p>
+                        <p class="mb-0"><strong>Descripción:</strong> ${descripcionSancion}</p>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <label for="observacionesSancion" class="form-label"><strong>Observaciones adicionales:</strong></label>
+                    <textarea id="observacionesSancion" class="form-control" rows="3" 
+                              placeholder="Ingrese observaciones adicionales sobre esta sanción..."></textarea>
+                </div>
+            `,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Generar Sanción',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#6c757d',
+            width: '500px',
+            preConfirm: () => {
+                const observaciones = document.getElementById('observacionesSancion').value;
+                return {
+                    prestamoId: prestamoId,
+                    tipoSancion: tipoSancion,
+                    monto: montoSancion,
+                    descripcion: descripcionSancion,
+                    observaciones: observaciones.trim()
+                };
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                procesarSancion(result.value);
+            }
+        });
+    }
+
+    // Función para procesar la sanción
+    function procesarSancion(datosancion) {
+        // Mostrar loading
+        Swal.fire({
+            title: 'Procesando Sanción...',
+            text: 'Registrando la sanción en el sistema',
+            allowOutsideClick: false,
+            showConfirmButton: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+
+        // Simular procesamiento (aquí iría la llamada AJAX al servidor)
+        setTimeout(() => {
+            Swal.fire({
+                title: '✅ Sanción Registrada',
+                html: `
+                    <div class="text-start">
+                        <p>La sanción ha sido registrada exitosamente:</p>
+                        <hr>
+                        <p><strong>Tipo:</strong> ${datosancion.tipoSancion}</p>
+                        <p><strong>Monto:</strong> $${datosancion.monto.toLocaleString()}</p>
+                        <p><strong>Descripción:</strong> ${datosancion.descripcion}</p>
+                        ${datosancion.observaciones ? `<p><strong>Observaciones:</strong> ${datosancion.observaciones}</p>` : ''}
+                    </div>
+                `,
+                icon: 'success',
+                confirmButtonText: 'Entendido'
+            }).then(() => {
+                // Opcional: Recargar la página para mostrar cambios
+                // location.reload();
+            });
+        }, 2000);
+
+        // TODO: Implementar llamada AJAX real al controlador
+        /*
+        fetch('<?= base_url('sanciones/crear') ?>', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify(datosancion)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                Swal.fire({
+                    title: '✅ Sanción Registrada',
+                    text: data.message,
+                    icon: 'success'
+                });
+            } else {
+                Swal.fire({
+                    title: 'Error',
+                    text: data.message || 'No se pudo registrar la sanción',
+                    icon: 'error'
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            Swal.fire({
+                title: 'Error de Conexión',
+                text: 'No se pudo conectar con el servidor',
+                icon: 'error'
+            });
+        });
+        */
     }
 
     // Función de diagnóstico para verificar conectividad
