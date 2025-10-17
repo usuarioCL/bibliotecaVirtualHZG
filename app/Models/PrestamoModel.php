@@ -356,20 +356,20 @@ class PrestamoModel extends Model
                     p.fechadevolucion as fecha_vencimiento,
                     CASE 
                         WHEN p.fechahoraretorno IS NULL THEN 'Activo'
-                        WHEN p.fechahoraretorno <= p.fechadevolucion THEN 'Devuelto'
+                        WHEN p.fechahoraretorno <= COALESCE(p.fechadevolucion, DATE_ADD(p.fechaprestamo, INTERVAL 14 DAY)) THEN 'Devuelto'
                         ELSE 'Devuelto con retraso'
                     END as estado_final,
                     DATEDIFF(COALESCE(DATE(p.fechahoraretorno), CURDATE()), DATE(p.fechaprestamo)) as dias_prestamo,
                     CASE 
                         WHEN p.fechahoraretorno IS NULL THEN 0
-                        WHEN p.fechahoraretorno <= p.fechadevolucion THEN 0
-                        ELSE CEIL(TIMESTAMPDIFF(HOUR, p.fechadevolucion, p.fechahoraretorno) / 24.0)
+                        WHEN p.fechahoraretorno <= COALESCE(p.fechadevolucion, DATE_ADD(p.fechaprestamo, INTERVAL 14 DAY)) THEN 0
+                        ELSE FLOOR(TIMESTAMPDIFF(HOUR, COALESCE(p.fechadevolucion, DATE_ADD(p.fechaprestamo, INTERVAL 14 DAY)), p.fechahoraretorno) / 24)
                     END as dias_retraso,
                     CASE 
                         WHEN p.fechahoraretorno IS NULL THEN 0
-                        WHEN p.fechahoraretorno <= p.fechadevolucion THEN 0
-                        ELSE TIMESTAMPDIFF(HOUR, p.fechadevolucion, p.fechahoraretorno)
-                    END as horas_retraso,
+                        WHEN p.fechahoraretorno <= COALESCE(p.fechadevolucion, DATE_ADD(p.fechaprestamo, INTERVAL 14 DAY)) THEN 0
+                        ELSE TIMESTAMPDIFF(HOUR, COALESCE(p.fechadevolucion, DATE_ADD(p.fechaprestamo, INTERVAL 14 DAY)), p.fechahoraretorno)
+                    END as horas_retraso_total,
                     0 as renovaciones,
                     'Bueno' as estado_ejemplar
                 FROM prestamos p
@@ -1624,34 +1624,177 @@ class PrestamoModel extends Model
     {
         $db = \Config\Database::connect();
         
-        $sql = "SELECT 
-                    p.idprestamo,
-                    CONCAT('PREST-', LPAD(p.idprestamo, 6, '0')) as codigo_prestamo,
-                    CONCAT(per.nombres, ' ', per.apellidos) as usuario,
-                    per.numerodoc as documento,
-                    per.telefono,
-                    per.email,
-                    r.titulo as recurso,
-                    r.isbn,
-                    p.fechaprestamo,
-                    p.fechadevolucion as fecha_limite,
-                    p.fechahoraretorno as fecha_devolucion_real,
-                    DATEDIFF(p.fechahoraretorno, p.fechadevolucion) as dias_retraso,
-                    CASE 
-                        WHEN DATEDIFF(p.fechahoraretorno, p.fechadevolucion) > 0 
-                        THEN DATEDIFF(p.fechahoraretorno, p.fechadevolucion) * 2500 
-                        ELSE 0 
-                    END as multa,
-                    GROUP_CONCAT(DISTINCT s.detallesancion SEPARATOR '; ') as sanciones
-                FROM prestamos p
-                JOIN matriculas m ON m.idmatricula = p.idmatricula
-                JOIN personas per ON per.idpersona = m.idpersona
-                JOIN recursos r ON r.idrecurso = p.idrecurso
-                LEFT JOIN sanciones s ON s.idpersona = per.idpersona
-                WHERE p.idprestamo = ?
-                GROUP BY p.idprestamo";
-        
-        $query = $db->query($sql, [$idprestamo]);
-        return $query->getRowArray();
+        try {
+            // Consulta básica con solo las tablas y campos esenciales
+            $sql = "SELECT 
+                        p.idprestamo as id,
+                        p.idprestamo,
+                        p.idrecurso,
+                        per.idpersona,
+                        CONCAT('PREST-', LPAD(p.idprestamo, 6, '0')) as codigo_prestamo,
+                        CONCAT(per.nombres, ' ', per.apellidos) as usuario,
+                        per.numerodoc as documento,
+                        per.telefono,
+                        per.email,
+                        r.titulo as recurso,
+                        r.isbn,
+                        r.anio as anio_publicacion,
+                        p.fechaprestamo,
+                        p.fechadevolucion as fecha_limite,
+                        p.fechahoraretorno as fecha_devolucion_real,
+                        DATEDIFF(p.fechahoraretorno, COALESCE(p.fechadevolucion, DATE_ADD(p.fechaprestamo, INTERVAL 14 DAY))) as dias_retraso,
+                        TIMESTAMPDIFF(HOUR, COALESCE(p.fechadevolucion, DATE_ADD(p.fechaprestamo, INTERVAL 14 DAY)), p.fechahoraretorno) as horas_retraso_total,
+                        DATEDIFF(p.fechahoraretorno, p.fechaprestamo) as dias_prestamo,
+                        CASE 
+                            WHEN DATEDIFF(p.fechahoraretorno, COALESCE(p.fechadevolucion, DATE_ADD(p.fechaprestamo, INTERVAL 14 DAY))) > 0 
+                            THEN DATEDIFF(p.fechahoraretorno, COALESCE(p.fechadevolucion, DATE_ADD(p.fechaprestamo, INTERVAL 14 DAY))) * 2500 
+                            ELSE 0 
+                        END as multa
+                    FROM prestamos p
+                    JOIN matriculas m ON m.idmatricula = p.idmatricula
+                    JOIN personas per ON per.idpersona = m.idpersona
+                    JOIN recursos r ON r.idrecurso = p.idrecurso
+                    WHERE p.idprestamo = ?";
+            
+            $query = $db->query($sql, [$idprestamo]);
+            $result = $query->getRowArray();
+            
+            if (!$result) {
+                return null;
+            }
+            
+            // Intentar obtener autores de forma segura
+            try {
+                $sqlAutores = "SELECT GROUP_CONCAT(DISTINCT CONCAT(a.nomautor, ' ', a.apeautor) SEPARATOR ', ') as autor
+                              FROM detautores da 
+                              JOIN autores a ON a.idautor = da.idautor 
+                              WHERE da.idrecurso = ?";
+                $queryAutores = $db->query($sqlAutores, [$result['idrecurso']]);
+                $autoresInfo = $queryAutores->getRowArray();
+                if ($autoresInfo && $autoresInfo['autor']) {
+                    $result['autor'] = $autoresInfo['autor'];
+                }
+            } catch (\Exception $e) {
+                log_message('debug', 'No se pudo obtener información de autores: ' . $e->getMessage());
+            }
+            
+            // Intentar obtener sanciones de forma segura
+            try {
+                // Obtener sanciones recientes de la persona (últimos 6 meses)
+                $sqlSanciones = "SELECT 
+                                    GROUP_CONCAT(DISTINCT CONCAT(ts.tiposancion, ': ', s.detallesancion) SEPARATOR '; ') as sanciones,
+                                    COUNT(*) as total_sanciones
+                                FROM sanciones s 
+                                LEFT JOIN tiposancion ts ON ts.idtiposancion = s.idtiposancion
+                                WHERE s.idpersona = ? 
+                                AND (s.fecha_sancion IS NULL OR s.fecha_sancion >= DATE_SUB(NOW(), INTERVAL 6 MONTH))
+                                ORDER BY s.idsancion DESC";
+                $querySanciones = $db->query($sqlSanciones, [$result['idpersona']]);
+                $sancionesInfo = $querySanciones->getRowArray();
+                if ($sancionesInfo && $sancionesInfo['sanciones']) {
+                    $result['sanciones'] = $sancionesInfo['sanciones'];
+                    $result['total_sanciones'] = $sancionesInfo['total_sanciones'];
+                }
+            } catch (\Exception $e) {
+                log_message('debug', 'No se pudo obtener información de sanciones: ' . $e->getMessage());
+                // Fallback a consulta simple si falla la compleja
+                try {
+                    $sqlSancionesSimple = "SELECT GROUP_CONCAT(DISTINCT s.detallesancion SEPARATOR '; ') as sanciones
+                                          FROM sanciones s WHERE s.idpersona = ? LIMIT 5";
+                    $querySancionesSimple = $db->query($sqlSancionesSimple, [$result['idpersona']]);
+                    $sancionesSimple = $querySancionesSimple->getRowArray();
+                    if ($sancionesSimple && $sancionesSimple['sanciones']) {
+                        $result['sanciones'] = $sancionesSimple['sanciones'];
+                    }
+                } catch (\Exception $e2) {
+                    log_message('debug', 'No se pudieron obtener sanciones: ' . $e2->getMessage());
+                }
+            }
+            
+            // Intentar obtener observaciones del historial de devolución
+            try {
+                $sqlHistorial = "SELECT 
+                                    detalles as observaciones_devolucion,
+                                    fecha_accion as fecha_registro_devolucion
+                                 FROM historial_usuarios 
+                                 WHERE (accion LIKE '%Devolución%' OR accion LIKE '%devolucion%')
+                                 AND detalles LIKE ?
+                                 ORDER BY fecha_accion DESC
+                                 LIMIT 1";
+                $queryHistorial = $db->query($sqlHistorial, ["%Préstamo #{$idprestamo}%"]);
+                $historialInfo = $queryHistorial->getRowArray();
+                
+                if ($historialInfo && $historialInfo['observaciones_devolucion']) {
+                    // Extraer las observaciones del texto de detalles
+                    $detalles = $historialInfo['observaciones_devolucion'];
+                    if (preg_match('/Observaciones:\s*(.+)$/', $detalles, $matches)) {
+                        $result['observaciones_devolucion'] = trim($matches[1]);
+                        $result['fecha_observaciones_devolucion'] = $historialInfo['fecha_registro_devolucion'];
+                    }
+                }
+            } catch (\Exception $e) {
+                log_message('debug', 'No se pudo obtener información del historial de devolución: ' . $e->getMessage());
+            }
+
+            // Intentar obtener información del ejemplar físico si existe
+            try {
+                $sqlEjemplar = "SELECT 
+                                    ef.codigo_ejemplar,
+                                    ef.estado_ejemplar,
+                                    ef.ubicacion,
+                                    ef.observaciones as observaciones_ejemplar
+                                FROM ejemplares_fisicos ef
+                                WHERE ef.idrecurso = ?
+                                LIMIT 1";
+                $queryEjemplar = $db->query($sqlEjemplar, [$result['idrecurso']]);
+                $ejemplar = $queryEjemplar->getRowArray();
+                
+                if ($ejemplar) {
+                    $result = array_merge($result, $ejemplar);
+                    // Crear observaciones generales combinando diferentes fuentes
+                    $observaciones = [];
+                    if (!empty($ejemplar['observaciones_ejemplar'])) {
+                        $observaciones[] = "Ejemplar: " . $ejemplar['observaciones_ejemplar'];
+                    }
+                    if (!empty($result['observaciones_devolucion'])) {
+                        $observaciones[] = "Devolución: " . $result['observaciones_devolucion'];
+                    }
+                    if ($result['dias_retraso'] > 0) {
+                        $observaciones[] = "Devolución con retraso de " . $result['dias_retraso'] . " día(s)";
+                    }
+                    if (!empty($observaciones)) {
+                        $result['observaciones'] = implode(' | ', $observaciones);
+                    }
+                }
+            } catch (\Exception $e) {
+                log_message('debug', 'No se pudo obtener información del ejemplar físico: ' . $e->getMessage());
+            }
+            
+            // Intentar obtener información de categorías y editoriales si existen
+            try {
+                $sqlExtra = "SELECT 
+                                c.categoria,
+                                ed.editorial
+                             FROM recursos r
+                             LEFT JOIN subcategorias sc ON sc.idsubcategoria = r.idsubcategoria
+                             LEFT JOIN categorias c ON c.idcategoria = sc.idcategoria
+                             LEFT JOIN editoriales ed ON ed.ideditorial = r.ideditorial
+                             WHERE r.idrecurso = ?";
+                $queryExtra = $db->query($sqlExtra, [$result['idrecurso']]);
+                $extra = $queryExtra->getRowArray();
+                
+                if ($extra) {
+                    $result = array_merge($result, $extra);
+                }
+            } catch (\Exception $e) {
+                log_message('debug', 'No se pudo obtener información adicional: ' . $e->getMessage());
+            }
+            
+            return $result;
+            
+        } catch (\Exception $e) {
+            log_message('error', 'Error en getDetalleDevolucion: ' . $e->getMessage());
+            throw $e;
+        }
     }
 }

@@ -21,9 +21,6 @@
                     <p class="text-muted mb-0 mt-1">Consulta el historial completo de todos los préstamos del sistema</p>
                 </div>
                 <div class="d-flex gap-2 flex-wrap">
-                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="mostrarFiltrosAvanzados()">
-                        <i class="ti ti-filter-search"></i> Filtros Avanzados
-                    </button>
                     <button type="button" class="btn btn-success btn-sm">
                         <i class="ti ti-file-excel"></i> Exportar Excel
                     </button>
@@ -31,8 +28,7 @@
             </div>
         </div>
     </div>
-
-    <!-- Filtros rápidos -->
+        <!-- Filtros rápidos -->
     <div class="row mb-4">
         <div class="col-12">
             <div class="card shadow-sm">
@@ -72,63 +68,6 @@
             </div>
         </div>
     </div>
-
-    <!-- Estadísticas rápidas -->
-    <div class="row mb-4">
-        <div class="col-lg-3 col-md-6 mb-3">
-            <div class="card stats-card primary h-100 shadow-sm">
-                <div class="card-body text-center">
-                    <div class="d-flex align-items-center justify-content-center mb-2">
-                        <div class="rounded-circle bg-primary bg-opacity-10 p-3">
-                            <i class="ti ti-database text-primary" style="font-size: 2.5rem;"></i>
-                        </div>
-                    </div>
-                    <h3 class="fw-bold text-primary mb-1"><?= isset($estadisticas['total_registros']) ? number_format($estadisticas['total_registros']) : 0 ?></h3>
-                    <p class="text-muted mb-0 small">Total Registros</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-lg-3 col-md-6 mb-3">
-            <div class="card stats-card info h-100 shadow-sm">
-                <div class="card-body text-center">
-                    <div class="d-flex align-items-center justify-content-center mb-2">
-                        <div class="rounded-circle bg-info bg-opacity-10 p-3">
-                            <i class="ti ti-calendar-month text-info" style="font-size: 2.5rem;"></i>
-                        </div>
-                    </div>
-                    <h3 class="fw-bold text-info mb-1"><?= isset($estadisticas['este_mes']) ? number_format($estadisticas['este_mes']) : 0 ?></h3>
-                    <p class="text-muted mb-0 small">Este Mes</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-lg-3 col-md-6 mb-3">
-            <div class="card stats-card warning h-100 shadow-sm">
-                <div class="card-body text-center">
-                    <div class="d-flex align-items-center justify-content-center mb-2">
-                        <div class="rounded-circle bg-warning bg-opacity-10 p-3">
-                            <i class="ti ti-trending-up text-warning" style="font-size: 2.5rem;"></i>
-                        </div>
-                    </div>
-                    <h3 class="fw-bold text-warning mb-1"><?= isset($estadisticas['promedio_mensual']) ? number_format($estadisticas['promedio_mensual']) : 0 ?></h3>
-                    <p class="text-muted mb-0 small">Promedio Mensual</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-lg-3 col-md-6 mb-3">
-            <div class="card stats-card success h-100 shadow-sm">
-                <div class="card-body text-center">
-                    <div class="d-flex align-items-center justify-content-center mb-2">
-                        <div class="rounded-circle bg-success bg-opacity-10 p-3">
-                            <i class="ti ti-percentage text-success" style="font-size: 2.5rem;"></i>
-                        </div>
-                    </div>
-                    <h3 class="fw-bold text-success mb-1"><?= isset($estadisticas['tasa_devolucion']) ? $estadisticas['tasa_devolucion'] : 0 ?>%</h3>
-                    <p class="text-muted mb-0 small">Tasa de Devolución</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- Tabla de historial con diseño mejorado -->
     <div class="card shadow-sm">
         <div class="card-header bg-white py-3">
@@ -139,14 +78,6 @@
                         Historial de Préstamos
                     </h5>
                     <p class="text-muted small mb-0 mt-1">Registro completo de todos los préstamos procesados</p>
-                </div>
-                <div class="d-flex gap-2">
-                    <button class="btn btn-outline-secondary btn-sm" type="button">
-                        <i class="ti ti-download me-1"></i>Exportar PDF
-                    </button>
-                    <button class="btn btn-outline-secondary btn-sm" type="button" onclick="location.reload()">
-                        <i class="ti ti-refresh me-1"></i>Actualizar
-                    </button>
                 </div>
             </div>
         </div>
@@ -161,7 +92,6 @@
                             <th class="border-0 px-3 py-3">Fechas</th>
                             <th class="border-0 text-center px-3 py-3">Estado</th>
                             <th class="border-0 px-3 py-3">Observaciones</th>
-                            <th class="border-0 text-center px-3 py-3">Duración</th>
                             <th class="border-0 text-center px-3 py-3">Acciones</th>
                         </tr>
                     </thead>
@@ -207,24 +137,30 @@
                                         </div>
                                     </td>
                                     <td class="px-3 py-3 text-center">
-                                        <?php if ($registro['dias_retraso'] == 0): ?>
+                                        <?php 
+                                            $horasTotal = $registro['horas_retraso_total'] ?? 0;
+                                            $diasRetraso = $registro['dias_retraso'] ?? 0;
+                                            $horasRestantes = $horasTotal % 24;
+                                        ?>
+                                        
+                                        <?php if ($horasTotal <= 0): ?>
                                             <span class="badge bg-success-subtle text-success">
                                                 <i class="ti ti-check-circle me-1"></i>A Tiempo
                                             </span>
-                                        <?php elseif ($registro['dias_retraso'] > 0): ?>
+                                        <?php elseif ($horasTotal > 0): ?>
                                             <span class="badge bg-danger-subtle text-danger">
                                                 <i class="ti ti-alert-circle me-1"></i>Con Retraso
                                             </span>
-                                            <?php if ($registro['horas_retraso'] < 24): ?>
-                                                <small class="d-block text-danger fw-semibold mt-1"><?= $registro['horas_retraso'] ?> hora(s)</small>
+                                            <?php if ($horasTotal < 24): ?>
+                                                <small class="d-block text-danger fw-semibold mt-1"><?= $horasTotal ?> hora<?= $horasTotal != 1 ? 's' : '' ?></small>
                                             <?php else: ?>
-                                                <small class="d-block text-danger fw-semibold mt-1"><?= $registro['dias_retraso'] ?> día(s)</small>
+                                                <small class="d-block text-danger fw-semibold mt-1"><?= $diasRetraso ?> día<?= $diasRetraso != 1 ? 's' : '' ?></small>
                                             <?php endif; ?>
                                         <?php else: ?>
                                             <span class="badge bg-info-subtle text-info">
                                                 <i class="ti ti-clock me-1"></i>Temprana
                                             </span>
-                                            <small class="d-block text-muted mt-1"><?= abs($registro['dias_retraso']) ?> día(s)</small>
+                                            <small class="d-block text-muted mt-1"><?= abs($diasRetraso) ?> día<?= abs($diasRetraso) != 1 ? 's' : '' ?></small>
                                         <?php endif; ?>
                                     </td>
                                     <td class="px-3 py-3">
@@ -238,11 +174,6 @@
                                                 <span class="text-muted fst-italic small">Sin observaciones</span>
                                             <?php endif; ?>
                                         </div>
-                                    </td>
-                                    <td class="px-3 py-3 text-center">
-                                        <span class="badge bg-info-subtle text-info">
-                                            <?= $registro['dias_prestamo'] ?> días
-                                        </span>
                                     </td>
                                     <td class="px-3 py-3 text-center">
                                         <div class="d-flex gap-2 justify-content-center">
@@ -267,7 +198,7 @@
                             <?php endforeach; ?>
                         <?php else: ?>
                             <tr>
-                                <td colspan="8" class="text-center py-5">
+                                <td colspan="7" class="text-center py-5">
                                     <div class="empty-state">
                                         <div class="empty-state-icon mb-3">
                                             <i class="ti ti-database-off" style="font-size: 3rem; color: #6c757d;"></i>
@@ -304,73 +235,6 @@
 </div>
 
 <script>
-    // Función para mostrar filtros avanzados
-    function mostrarFiltrosAvanzados() {
-        Swal.fire({
-            title: 'Filtros Avanzados',
-            html: `
-                <div class="text-start">
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <label class="form-label">Fecha desde:</label>
-                            <input type="date" class="form-control" id="fechaDesde">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Fecha hasta:</label>
-                            <input type="date" class="form-control" id="fechaHasta">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Usuario específico:</label>
-                            <input type="text" class="form-control" id="usuarioFiltro" placeholder="Nombre de usuario">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Tipo de recurso:</label>
-                            <select class="form-select" id="tipoRecurso">
-                                <option value="">Todos los tipos</option>
-                                <option value="libro">Libro</option>
-                                <option value="revista">Revista</option>
-                                <option value="tesis">Tesis</option>
-                                <option value="digital">Recurso Digital</option>
-                            </select>
-                        </div>
-                        <div class="col-12">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="soloMultas">
-                                <label class="form-check-label" for="soloMultas">
-                                    Solo registros con multas
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `,
-            showCancelButton: true,
-            confirmButtonText: 'Aplicar Filtros',
-            cancelButtonText: 'Cancelar',
-            width: 600,
-            preConfirm: () => {
-                // TODO: Implementar lógica de filtros avanzados
-                return {
-                    fechaDesde: document.getElementById('fechaDesde').value,
-                    fechaHasta: document.getElementById('fechaHasta').value,
-                    usuario: document.getElementById('usuarioFiltro').value,
-                    tipoRecurso: document.getElementById('tipoRecurso').value,
-                    soloMultas: document.getElementById('soloMultas').checked
-                };
-            }
-        }).then((result) => {
-            if (result.isConfirmed) {
-                Swal.fire({
-                    title: 'Filtros Aplicados',
-                    text: 'Los filtros avanzados han sido aplicados exitosamente',
-                    icon: 'success',
-                    timer: 1500,
-                    showConfirmButton: false
-                });
-            }
-        });
-    }
-
     // Función para aplicar filtros rápidos
     function aplicarFiltros() {
         const periodo = document.getElementById('periodoFiltro').value;
@@ -393,104 +257,445 @@
 
     // Función para ver detalles completos del historial
     function verDetalleHistorial(registroId) {
-        fetch('<?= base_url('prestamos/obtenerDetalleDevolucion') ?>', {
+        console.log('Ver detalles de préstamo:', registroId);
+        
+        // Validar el ID del préstamo
+        if (!registroId || registroId === undefined || registroId === null) {
+            Swal.fire({
+                title: 'Error',
+                text: 'ID de préstamo no válido',
+                icon: 'error'
+            });
+            return;
+        }
+        
+        // Mostrar loading
+        Swal.fire({
+            title: 'Cargando...',
+            text: 'Obteniendo detalles del préstamo',
+            allowOutsideClick: false,
+            showConfirmButton: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+
+        // Crear la URL de la solicitud
+        const url = '<?= base_url('prestamos/obtenerDetalleDevolucion') ?>';
+        const formData = new FormData();
+        formData.append('idprestamo', registroId);
+        
+        console.log('Enviando solicitud a:', url);
+        console.log('Con ID de préstamo:', registroId);
+
+        // Enviar solicitud AJAX para obtener detalles
+        fetch(url, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
                 'X-Requested-With': 'XMLHttpRequest'
             },
-            body: 'idprestamo=' + registroId
+            body: formData
         })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                const detalle = data.data;
-                Swal.fire({
-                    title: '<i class="ti ti-info-circle me-2"></i>Detalles del Préstamo',
-                    html: `
-                        <div class="text-start">
-                            <div class="row mb-3">
-                                <div class="col-6">
-                                    <strong>Código:</strong><br>
-                                    ${detalle.codigo_prestamo}
-                                </div>
-                                <div class="col-6">
-                                    <strong>Usuario:</strong><br>
-                                    ${detalle.usuario}
-                                </div>
-                            </div>
-                            <div class="row mb-3">
-                                <div class="col-6">
-                                    <strong>Documento:</strong><br>
-                                    ${detalle.documento}
-                                </div>
-                                <div class="col-6">
-                                    <strong>Teléfono:</strong><br>
-                                    ${detalle.telefono || 'N/A'}
-                                </div>
-                            </div>
-                            <hr>
-                            <div class="row mb-3">
-                                <div class="col-12">
-                                    <strong>Recurso:</strong><br>
-                                    ${detalle.recurso}
-                                </div>
-                            </div>
-                            <div class="row mb-3">
-                                <div class="col-6">
-                                    <strong>Fecha de préstamo:</strong><br>
-                                    ${new Date(detalle.fechaprestamo).toLocaleString('es-ES')}
-                                </div>
-                                <div class="col-6">
-                                    <strong>Fecha límite:</strong><br>
-                                    ${new Date(detalle.fecha_limite).toLocaleString('es-ES')}
-                                </div>
-                            </div>
-                            <div class="row mb-3">
-                                <div class="col-6">
-                                    <strong>Fecha de devolución:</strong><br>
-                                    ${new Date(detalle.fecha_devolucion_real).toLocaleString('es-ES')}
-                                </div>
-                                <div class="col-6">
-                                    <strong>Días de retraso:</strong><br>
-                                    <span class="${detalle.dias_retraso > 0 ? 'text-danger' : 'text-success'}">
-                                        ${detalle.dias_retraso > 0 ? detalle.dias_retraso + ' días' : 'A tiempo'}
-                                    </span>
-                                </div>
-                            </div>
-                            ${detalle.dias_retraso > 0 ? `
-                            <div class="alert alert-warning">
-                                <strong><i class="ti ti-alert-triangle me-2"></i>Retraso detectado</strong><br>
-                                Se generó una sanción por ${detalle.dias_retraso} día(s) de retraso en la devolución.
-                            </div>
-                            ` : ''}
-                            ${detalle.sanciones ? `
-                            <div class="alert alert-danger">
-                                <strong>Sanciones registradas:</strong><br>
-                                ${detalle.sanciones}
-                            </div>
-                            ` : ''}
-                        </div>
-                    `,
-                    width: 700,
-                    confirmButtonText: 'Cerrar'
+        .then(response => {
+            console.log('Respuesta recibida:', response);
+            console.log('Status:', response.status);
+            console.log('Status Text:', response.statusText);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`);
+            }
+            
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                console.warn('Respuesta no es JSON:', contentType);
+                return response.text().then(text => {
+                    console.log('Contenido de la respuesta:', text);
+                    throw new Error('La respuesta del servidor no es JSON válido');
                 });
+            }
+            
+            return response.json();
+        })
+        .then(data => {
+            console.log('Datos recibidos:', data);
+            console.log('Tipo de data:', typeof data);
+            console.log('data.success:', data?.success);
+            console.log('data.data:', data?.data);
+            
+            if (data && data.success) {
+                mostrarModalDetallesHistorial(data.data, registroId);
             } else {
+                const errorMsg = data?.message || 'No se pudieron cargar los detalles del préstamo';
+                console.error('Error en respuesta:', errorMsg);
+                console.error('Datos completos:', data);
                 Swal.fire({
-                    title: 'Error',
-                    text: data.message,
-                    icon: 'error'
+                    title: 'Error del Servidor',
+                    text: errorMsg,
+                    icon: 'error',
+                    footer: 'Revise la consola del navegador para más detalles'
                 });
             }
         })
         .catch(error => {
-            console.error('Error:', error);
+            console.error('Error completo:', error);
+            console.error('Stack trace:', error.stack);
+            
+            let errorMessage = 'Ha ocurrido un error de conexión';
+            
+            if (error.message.includes('HTTP error')) {
+                errorMessage = `Error del servidor: ${error.message}`;
+            } else if (error.message.includes('JSON')) {
+                errorMessage = 'Error en el formato de respuesta del servidor';
+            } else if (error.name === 'TypeError') {
+                errorMessage = 'Error de red o servidor no disponible';
+            }
+            
             Swal.fire({
-                title: 'Error',
-                text: 'Ocurrió un error al obtener los detalles',
-                icon: 'error'
+                title: 'Error de Conexión',
+                html: `
+                    <p>${errorMessage}</p>
+                    <hr>
+                    <small class="text-muted">
+                        <strong>Detalles técnicos:</strong><br>
+                        ${error.message}<br>
+                        <strong>ID Préstamo:</strong> ${registroId}<br>
+                        <strong>URL:</strong> ${url}
+                    </small>
+                `,
+                icon: 'error',
+                confirmButtonText: 'Entendido',
+                footer: 'Consulte con el administrador si el problema persiste'
             });
         });
+    }
+
+    // Función para mostrar el modal con los detalles del historial
+    function mostrarModalDetallesHistorial(detalle, registroId) {
+        // Validar que tenemos los datos necesarios
+        if (!detalle) {
+            console.error('No se recibieron datos del préstamo');
+            Swal.fire({
+                title: 'Error',
+                text: 'No se pudieron obtener los datos del préstamo',
+                icon: 'error'
+            });
+            return;
+        }
+
+        // Asegurar que tenemos un ID válido (usar el del detalle si existe, sino el parámetro)
+        const idPrestamo = detalle.id || detalle.idprestamo || registroId;
+        
+        console.log('Mostrando modal para préstamo ID:', idPrestamo);
+        console.log('Datos del préstamo:', detalle);
+
+        // Crear o actualizar el modal existente
+        let modalExistente = document.getElementById('modalDetalleHistorial');
+        if (modalExistente) {
+            modalExistente.remove();
+        }
+
+        // Formatear fechas con validación
+        const fechaPrestamo = detalle.fechaprestamo ? new Date(detalle.fechaprestamo) : new Date();
+        const fechaLimite = detalle.fecha_limite ? new Date(detalle.fecha_limite) : new Date();
+        const fechaDevolucionReal = detalle.fecha_devolucion_real ? new Date(detalle.fecha_devolucion_real) : new Date();
+        
+        // Usar datos calculados del servidor para consistencia
+        let diasRetraso = parseInt(detalle.dias_retraso) || 0;
+        let horasRetrasoTotal = parseInt(detalle.horas_retraso_total) || 0;
+        let mostrarHoras = false;
+        let horasRetraso = 0;
+        
+        // Determinar si mostrar horas o días basado en el cálculo del servidor
+        if (horasRetrasoTotal > 0 && horasRetrasoTotal < 24) {
+            mostrarHoras = true;
+            horasRetraso = horasRetrasoTotal;
+            diasRetraso = 0; // No mostrar días si son menos de 24 horas
+        } else if (horasRetrasoTotal >= 24) {
+            mostrarHoras = false;
+            diasRetraso = Math.floor(horasRetrasoTotal / 24);
+        }
+        
+        console.log('Datos de retraso del servidor:', {
+            fechaDevolucion: detalle.fecha_devolucion_real,
+            fechaLimite: detalle.fecha_limite,
+            horasRetrasoTotal: horasRetrasoTotal,
+            diasRetrasoOriginal: detalle.dias_retraso,
+            mostrarHoras: mostrarHoras,
+            horasRetraso: horasRetraso,
+            diasRetrasoFinal: diasRetraso
+        });
+        
+        // Determinar el estado del préstamo
+        let estadoBadge = '';
+        let estadoClass = '';
+        let estadoIcon = '';
+        
+        if (diasRetraso > 0 || horasRetraso > 0) {
+            estadoBadge = 'Con Retraso';
+            estadoClass = 'bg-danger';
+            estadoIcon = 'ti-alert-circle';
+        } else if (diasRetraso === 0 && horasRetraso === 0) {
+            estadoBadge = 'Devuelto a Tiempo';
+            estadoClass = 'bg-success';
+            estadoIcon = 'ti-check-circle';
+        } else {
+            estadoBadge = 'Devuelto Anticipadamente';
+            estadoClass = 'bg-info';
+            estadoIcon = 'ti-clock';
+        }
+        
+        // Crear el HTML del modal
+        const modalHtml = `
+            <!-- Modal para detalles del historial -->
+            <div class="modal fade" id="modalDetalleHistorial" tabindex="-1" style="z-index: 99999;">
+                <div class="modal-dialog modal-xl">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">
+                                <i class="ti ti-history me-2"></i>Detalles del Préstamo - ${detalle.codigo_prestamo}
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div id="contenido-detalle-historial">
+                                <!-- Información del Usuario -->
+                                <div class="row">
+                                    <div class="col-md-8">
+                                        <h6 class="text-primary mb-3">
+                                            <i class="ti ti-user me-2"></i>Información del Usuario
+                                        </h6>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <p><strong>Nombre Completo:</strong> <span>${detalle.usuario}</span></p>
+                                                <p><strong>Documento:</strong> <span>${detalle.documento}</span></p>
+                                                ${detalle.telefono ? `<p><strong>Teléfono:</strong> <span>${detalle.telefono}</span></p>` : ''}
+                                                ${detalle.email ? `<p><strong>Email:</strong> <span>${detalle.email}</span></p>` : ''}
+                                            </div>
+                                            <div class="col-md-6">
+                                                <p><strong>Código Préstamo:</strong> <span>${detalle.codigo_prestamo}</span></p>
+                                                <p><strong>ID Préstamo:</strong> <span>#${idPrestamo}</span></p>
+                                                <p><strong>Fecha de Registro:</strong> <span>${fechaPrestamo.toLocaleDateString('es-ES')}</span></p>
+                                                <p><strong>Hora de Inicio:</strong> <span>${fechaPrestamo.toLocaleTimeString('es-ES', {hour: '2-digit', minute: '2-digit'})}</span></p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4 text-center">
+                                        <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3" 
+                                             style="width: 100px; height: 100px; font-size: 2rem; font-weight: 600;">
+                                            ${(() => {
+                                                const partes = (detalle.usuario || '').split(' ');
+                                                const primera = partes[0] ? partes[0].charAt(0).toUpperCase() : 'U';
+                                                const segunda = partes[1] ? partes[1].charAt(0).toUpperCase() : '';
+                                                return primera + segunda;
+                                            })()}
+                                        </div>
+                                        <div class="mb-2">
+                                            <span class="badge ${estadoClass} fs-6 px-3 py-2">
+                                                <i class="ti ${estadoIcon} me-1"></i>${estadoBadge}
+                                            </span>
+                                        </div>
+                                        ${(diasRetraso > 0 || horasRetraso > 0) ? `
+                                        <div>
+                                            <span class="badge bg-warning fs-6 px-3 py-2">
+                                                <i class="ti ti-clock-exclamation me-1"></i>
+                                                ${mostrarHoras ? 
+                                                    `${horasRetraso} hora${horasRetraso !== 1 ? 's' : ''} de retraso` : 
+                                                    `${diasRetraso} día${diasRetraso !== 1 ? 's' : ''} de retraso`
+                                                }
+                                            </span>
+                                        </div>
+                                        ` : ''}
+                                    </div>
+                                </div>
+
+                                <hr>
+
+                                <!-- Información del Recurso -->
+                                <h6 class="text-primary mb-3">
+                                    <i class="ti ti-book me-2"></i>Recurso Prestado
+                                </h6>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <p><strong>Título:</strong> <span>${detalle.recurso}</span></p>
+                                        ${detalle.autor ? `<p><strong>Autor(es):</strong> <span>${detalle.autor}</span></p>` : ''}
+                                        ${detalle.codigo_ejemplar ? `<p><strong>Código:</strong> <span>${detalle.codigo_ejemplar}</span></p>` : ''}
+                                        ${detalle.editorial ? `<p><strong>Editorial:</strong> <span>${detalle.editorial}</span></p>` : ''}
+                                    </div>
+                                    <div class="col-md-6">
+                                        ${detalle.anio_publicacion ? `<p><strong>Año Publicación:</strong> <span>${detalle.anio_publicacion}</span></p>` : ''}
+                                        ${detalle.categoria ? `<p><strong>Categoría:</strong> <span>${detalle.categoria}</span></p>` : ''}
+                                        ${detalle.estado_ejemplar ? `<p><strong>Estado del Ejemplar:</strong> <span>${detalle.estado_ejemplar}</span></p>` : ''}
+                                        ${detalle.ubicacion ? `<p><strong>Ubicación:</strong> <span>${detalle.ubicacion}</span></p>` : ''}
+                                    </div>
+                                </div>
+
+                                <hr>
+
+                                <!-- Timeline del Préstamo -->
+                                <h6 class="text-primary mb-3">
+                                    <i class="ti ti-clock-hour-3 me-2"></i>Timeline del Préstamo
+                                </h6>
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <div class="text-center p-3 bg-primary bg-opacity-10 rounded">
+                                            <h5 class="mb-1 text-primary">${fechaPrestamo.toLocaleDateString('es-ES')}</h5>
+                                            <small class="text-muted">Fecha de Préstamo</small>
+                                            <p class="mb-0 mt-1 small">${fechaPrestamo.toLocaleTimeString('es-ES', {hour: '2-digit', minute: '2-digit'})}</p>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="text-center p-3 bg-warning bg-opacity-10 rounded">
+                                            <h5 class="mb-1 text-warning">${fechaLimite.toLocaleDateString('es-ES')}</h5>
+                                            <small class="text-muted">Fecha Límite</small>
+                                            <p class="mb-0 mt-1 small">${fechaLimite.toLocaleTimeString('es-ES', {hour: '2-digit', minute: '2-digit'})}</p>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="text-center p-3 ${diasRetraso > 0 ? 'bg-danger' : 'bg-success'} bg-opacity-10 rounded">
+                                            <h5 class="mb-1 ${diasRetraso > 0 ? 'text-danger' : 'text-success'}">${fechaDevolucionReal.toLocaleDateString('es-ES')}</h5>
+                                            <small class="text-muted">Fecha de Devolución</small>
+                                            <p class="mb-0 mt-1 small">${fechaDevolucionReal.toLocaleTimeString('es-ES', {hour: '2-digit', minute: '2-digit'})}</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row mt-3">
+                                    <div class="col-md-6">
+                                        <div class="text-center p-3 bg-info bg-opacity-10 rounded">
+                                            <h4 class="mb-1 text-info">${Math.abs(parseInt(detalle.dias_prestamo) || 0)}</h4>
+                                            <small class="text-muted">Días de Duración</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="text-center p-3 ${(diasRetraso > 0 || horasRetraso > 0) ? 'bg-danger' : (diasRetraso === 0 && horasRetraso === 0) ? 'bg-success' : 'bg-info'} bg-opacity-10 rounded">
+                                            <h4 class="mb-1 ${(diasRetraso > 0 || horasRetraso > 0) ? 'text-danger' : (diasRetraso === 0 && horasRetraso === 0) ? 'text-success' : 'text-info'}">
+                                                ${(diasRetraso === 0 && horasRetraso === 0) ? 'A Tiempo' : 
+                                                  mostrarHoras ? `+${horasRetraso}h` : 
+                                                  diasRetraso > 0 ? `+${diasRetraso}d` : diasRetraso}
+                                            </h4>
+                                            <small class="text-muted">
+                                                ${(diasRetraso === 0 && horasRetraso === 0) ? 'Estado' : 
+                                                  mostrarHoras ? 'Horas de Retraso' :
+                                                  diasRetraso > 0 ? 'Días de Retraso' : 'Días de Anticipación'}
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Observaciones y Sanciones -->
+                                ${(diasRetraso > 0 || horasRetraso > 0) || detalle.sanciones || detalle.observaciones || detalle.observaciones_devolucion ? `
+                                <hr>
+                                <h6 class="text-primary mb-3">
+                                    <i class="ti ti-alert-triangle me-2"></i>Observaciones y Sanciones
+                                </h6>
+                                ` : ''}
+                                
+                                ${(diasRetraso > 0 || horasRetraso > 0) ? `
+                                <div class="alert alert-warning">
+                                    <div class="d-flex align-items-center">
+                                        <i class="ti ti-alert-triangle me-3" style="font-size: 1.5rem;"></i>
+                                        <div>
+                                            <strong>Retraso Detectado</strong><br>
+                                            <small>Se registró un retraso de ${mostrarHoras ? 
+                                                `${horasRetraso} hora${horasRetraso !== 1 ? 's' : ''}` : 
+                                                `${diasRetraso} día${diasRetraso !== 1 ? 's' : ''}`
+                                            } en la devolución del recurso.</small>
+                                            ${detalle.multa && parseInt(detalle.multa) > 0 ? `<br><small class="text-danger"><strong>Multa aplicada:</strong> $${parseInt(detalle.multa).toLocaleString()}</small>` : ''}
+                                        </div>
+                                    </div>
+                                </div>
+                                ` : ''}
+                                
+                                ${detalle.sanciones && detalle.sanciones.trim() ? `
+                                <div class="alert alert-danger">
+                                    <div class="d-flex align-items-center">
+                                        <i class="ti ti-ban me-3" style="font-size: 1.5rem;"></i>
+                                        <div>
+                                            <strong>Sanciones del Usuario</strong>
+                                            ${detalle.total_sanciones ? ` (${detalle.total_sanciones} registrada(s))` : ''}<br>
+                                            <small>${detalle.sanciones}</small>
+                                            <br><small class="text-muted"><em>Se muestran las sanciones más recientes del usuario</em></small>
+                                        </div>
+                                    </div>
+                                </div>
+                                ` : ''}
+                                
+                                ${detalle.observaciones && detalle.observaciones.trim() ? `
+                                <div class="alert alert-info">
+                                    <div class="d-flex align-items-center">
+                                        <i class="ti ti-note me-3" style="font-size: 1.5rem;"></i>
+                                        <div>
+                                            <strong>Observaciones del Préstamo</strong><br>
+                                            <small>${detalle.observaciones}</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                ` : ''}
+                                
+                                ${detalle.observaciones_ejemplar && detalle.observaciones_ejemplar.trim() && detalle.observaciones_ejemplar !== detalle.observaciones ? `
+                                <div class="alert alert-secondary">
+                                    <div class="d-flex align-items-center">
+                                        <i class="ti ti-book me-3" style="font-size: 1.5rem;"></i>
+                                        <div>
+                                            <strong>Observaciones del Ejemplar</strong><br>
+                                            <small>${detalle.observaciones_ejemplar}</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                ` : ''}
+                                
+                                ${detalle.observaciones_devolucion && detalle.observaciones_devolucion.trim() ? `
+                                <div class="alert alert-info">
+                                    <div class="d-flex align-items-center">
+                                        <i class="ti ti-clipboard-check me-3" style="font-size: 1.5rem;"></i>
+                                        <div>
+                                            <strong>Observaciones de Devolución</strong><br>
+                                            <small>${detalle.observaciones_devolucion}</small>
+                                            ${detalle.fecha_observaciones_devolucion ? `<br><em class="text-muted">Registrado: ${new Date(detalle.fecha_observaciones_devolucion).toLocaleString('es-ES')}</em>` : ''}
+                                        </div>
+                                    </div>
+                                </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-outline-primary" onclick="imprimirRecibo(${idPrestamo})">
+                                <i class="ti ti-printer me-2"></i>Imprimir Recibo
+                            </button>
+                            <button type="button" class="btn btn-outline-info" onclick="generarReporte(${idPrestamo})">
+                                <i class="ti ti-file-download me-2"></i>Generar Reporte
+                            </button>
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Agregar el modal al DOM
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        
+        // Mostrar el modal
+        const modal = new bootstrap.Modal(document.getElementById('modalDetalleHistorial'));
+        modal.show();
+        
+        // Cerrar SweetAlert2
+        Swal.close();
+    }
+
+    // Función para cerrar el modal de detalles del historial
+    function cerrarModalDetalleHistorial() {
+        const modal = document.getElementById('modalDetalleHistorial');
+        if (modal) {
+            const bootstrapModal = bootstrap.Modal.getInstance(modal);
+            if (bootstrapModal) {
+                bootstrapModal.hide();
+            }
+            // Remover el modal del DOM después de un breve delay
+            setTimeout(() => {
+                modal.remove();
+            }, 300);
+        }
     }
 
     // Función para imprimir recibo
@@ -552,6 +757,71 @@
         });
     }
 
+    // Función de diagnóstico para verificar conectividad
+    function diagnosticarConexion() {
+        console.log('Iniciando diagnóstico de conexión...');
+        
+        // Verificar conectividad básica
+        fetch('<?= base_url() ?>', {
+            method: 'HEAD',
+            cache: 'no-cache'
+        })
+        .then(response => {
+            console.log('✅ Conectividad básica OK:', response.status);
+            
+            // Verificar endpoint específico
+            return fetch('<?= base_url('prestamos') ?>', {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+        })
+        .then(response => {
+            console.log('✅ Endpoint de préstamos OK:', response.status);
+            
+            Swal.fire({
+                title: 'Diagnóstico de Conexión',
+                text: 'La conexión al servidor está funcionando correctamente',
+                icon: 'success'
+            });
+        })
+        .catch(error => {
+            console.error('❌ Error en diagnóstico:', error);
+            
+            Swal.fire({
+                title: 'Problema de Conectividad',
+                html: `
+                    <p>Se detectaron problemas de conexión:</p>
+                    <ul class="text-start">
+                        <li>Verifique su conexión a internet</li>
+                        <li>Asegúrese de que el servidor esté funcionando</li>
+                        <li>Revise la configuración de red</li>
+                    </ul>
+                    <hr>
+                    <small class="text-muted">Error técnico: ${error.message}</small>
+                `,
+                icon: 'error'
+            });
+        });
+    }
+
+    // Función para recargar la página si hay problemas
+    function recargarPagina() {
+        Swal.fire({
+            title: '¿Recargar página?',
+            text: 'Esto puede solucionar problemas temporales de conexión',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, recargar',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                location.reload();
+            }
+        });
+    }
+
     // Aplicar filtros al presionar Enter en el campo de búsqueda
     document.addEventListener('DOMContentLoaded', function() {
         const busquedaInput = document.getElementById('busquedaRapida');
@@ -561,6 +831,13 @@
                     aplicarFiltros();
                 }
             });
+        }
+
+        // Añadir botones de diagnóstico si estamos en modo de desarrollo
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+            console.log('🔧 Modo de desarrollo detectado - funciones de diagnóstico disponibles');
+            console.log('💡 Use diagnosticarConexion() para verificar conectividad');
+            console.log('💡 Use recargarPagina() para recargar si hay problemas');
         }
     });
 </script>
