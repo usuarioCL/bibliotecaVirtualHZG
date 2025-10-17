@@ -211,6 +211,7 @@ $routes->post('/sanciones/editar/(:num)', 'SancionController::editar/$1');
 $routes->post('/sanciones/eliminar/(:num)', 'SancionController::eliminar/$1');
 $routes->post('/sanciones/cambiar-estado', 'SancionController::cambiarEstado');
 $routes->get('/sanciones/buscar-personas', 'SancionController::buscarPersonas');
+$routes->get('/sanciones/persona/(:num)', 'SancionController::obtenerSancionesPersona/$1');
 $routes->get('/sanciones/estadisticas', 'SancionController::estadisticas');
 $routes->get('/sanciones/exportar-excel', 'SancionController::exportarExcel');
 

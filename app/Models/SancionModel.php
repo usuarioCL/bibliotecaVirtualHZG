@@ -75,7 +75,8 @@ class SancionModel extends Model
             u.nomuser as usuario_registra_nombre,
             g.grado,
             g.seccion,
-            g.nivel
+            g.nivel,
+            (SELECT COUNT(*) FROM sanciones s2 WHERE s2.idpersona = sanciones.idpersona AND s2.estado_sancion = "activa") as total_sanciones_persona
         ')
         ->join('tiposancion ts', 'ts.idtiposancion = sanciones.idtiposancion')
         ->join('personas p', 'p.idpersona = sanciones.idpersona')
@@ -243,5 +244,36 @@ class SancionModel extends Model
         ->join('usuarios u', 'u.idusuario = sanciones.usuario_registra', 'left')
         ->where('sanciones.idsancion', $id)
         ->first();
+    }
+
+    /**
+     * Obtener todas las sanciones de una persona específica
+     */
+    public function obtenerSancionesPorPersona($idpersona)
+    {
+        return $this->select('
+            sanciones.*,
+            ts.tiposancion,
+            ts.descripcion as tipo_descripcion,
+            CONCAT(p.nombres, " ", p.apellidos) as nombre_completo,
+            p.nombres,
+            p.apellidos,
+            p.numerodoc,
+            p.tipodoc,
+            p.telefono,
+            p.email,
+            u.nomuser as usuario_registra_nombre,
+            g.grado,
+            g.seccion,
+            g.nivel
+        ')
+        ->join('tiposancion ts', 'ts.idtiposancion = sanciones.idtiposancion')
+        ->join('personas p', 'p.idpersona = sanciones.idpersona')
+        ->join('matriculas m', 'm.idpersona = p.idpersona', 'left')
+        ->join('grupos g', 'g.idgrupo = m.idgrupo', 'left')
+        ->join('usuarios u', 'u.idusuario = sanciones.usuario_registra', 'left')
+        ->where('sanciones.idpersona', $idpersona)
+        ->orderBy('sanciones.fecha_sancion', 'DESC')
+        ->findAll();
     }
 }

@@ -1,3 +1,6 @@
+<!-- CSS Profesional para Sanciones -->
+<link rel="stylesheet" href="<?= base_url('assets/css/sanciones-professional.css') ?>">
+
 <?php if (isset($error)): ?>
     <div class="alert alert-danger" role="alert">
         <i class="ti ti-alert-circle me-2"></i>

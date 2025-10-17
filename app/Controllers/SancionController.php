@@ -439,4 +439,25 @@ class SancionController extends BaseController
             'message' => 'Datos preparados para exportación'
         ]);
     }
+
+    /**
+     * Obtener todas las sanciones de una persona específica
+     */
+    public function obtenerSancionesPersona($idpersona)
+    {
+        try {
+            $sanciones = $this->sancionModel->obtenerSancionesPorPersona($idpersona);
+            
+            return $this->response->setJSON([
+                'success' => true,
+                'sanciones' => $sanciones
+            ]);
+        } catch (\Exception $e) {
+            log_message('error', 'Error al obtener sanciones de persona: ' . $e->getMessage());
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Error al obtener las sanciones de la persona'
+            ]);
+        }
+    }
 }
