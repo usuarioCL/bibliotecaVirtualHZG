@@ -233,8 +233,20 @@
                                 <?php endif; ?>
                                 
                                 <?php if (session()->get('logged_in')): ?>
-                                    <button class="btn btn-outline-primary" onclick="agregarFavorito(<?= $recurso['idrecurso'] ?>)">
-                                        <i class="fas fa-heart"></i> Agregar a Favoritos
+                                    <?php 
+                                    // Verificar si el recurso ya está en favoritos
+                                    $favoritoModel = new \App\Models\FavoritoModel();
+                                    $usuarioModel = new \App\Models\UsuarioModel();
+                                    $nomuser = session()->get('usuario');
+                                    $usuario = $usuarioModel->where('nomuser', $nomuser)->first();
+                                    $idusuario = $usuario ? $usuario['idusuario'] : null;
+                                    $esFavorito = $idusuario ? $favoritoModel->esFavorito($idusuario, $recurso['idrecurso']) : false;
+                                    ?>
+                                    <button class="btn <?= $esFavorito ? 'btn-danger' : 'btn-outline-primary' ?>" 
+                                            id="btnFavorito" 
+                                            onclick="toggleFavorito(<?= $recurso['idrecurso'] ?>)">
+                                        <i class="fas fa-heart<?= $esFavorito ? '' : '-o' ?>"></i> 
+                                        <?= $esFavorito ? 'Quitar de Favoritos' : 'Agregar a Favoritos' ?>
                                     </button>
                                 <?php else: ?>
                                     <button class="btn btn-outline-primary" onclick="mostrarAlertaLogin('agregar a favoritos')">
@@ -314,6 +326,100 @@ function solicitarPrestamo(idRecurso) {
                 });
             });
     }, 300); // Esperar 300ms para que el modal termine de cerrarse
+}
+
+// Función para alternar favorito (agregar/quitar)
+function toggleFavorito(idRecurso) {
+    const btnFavorito = document.getElementById('btnFavorito');
+    const originalText = btnFavorito.innerHTML;
+    
+    // Mostrar loading en el botón
+    btnFavorito.disabled = true;
+    btnFavorito.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
+    
+    fetch('<?= base_url('catalogo/toggle-favorito') ?>', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify({idrecurso: idRecurso})
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Actualizar el botón según el nuevo estado
+            const esFavorito = data.agregado;
+            
+            btnFavorito.className = esFavorito ? 'btn btn-danger' : 'btn btn-outline-primary';
+            btnFavorito.innerHTML = `<i class="fas fa-heart${esFavorito ? '' : '-o'}"></i> ${esFavorito ? 'Quitar de Favoritos' : 'Agregar a Favoritos'}`;
+            
+            // Mostrar mensaje de éxito
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: data.agregado ? 'Agregado a Favoritos' : 'Quitado de Favoritos',
+                    text: data.message,
+                    icon: 'success',
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+            } else {
+                alert(data.message);
+            }
+        } else {
+            // Restaurar botón en caso de error
+            btnFavorito.innerHTML = originalText;
+            
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: 'Error',
+                    text: data.message || 'Error al procesar la solicitud',
+                    icon: 'error'
+                });
+            } else {
+                alert('Error: ' + (data.message || 'Error desconocido'));
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        btnFavorito.innerHTML = originalText;
+        
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: 'Error',
+                text: 'Error de conexión',
+                icon: 'error'
+            });
+        } else {
+            alert('Error de conexión');
+        }
+    })
+    .finally(() => {
+        btnFavorito.disabled = false;
+    });
+}
+
+// Función para mostrar alerta de login
+function mostrarAlertaLogin(accion) {
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            title: 'Iniciar Sesión',
+            text: `Debes iniciar sesión para ${accion}.`,
+            icon: 'info',
+            showCancelButton: true,
+            confirmButtonText: 'Iniciar Sesión',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#007bff'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                window.location.href = '<?= base_url('login') ?>';
+            }
+        });
+    } else {
+        alert(`Debes iniciar sesión para ${accion}.`);
+        window.location.href = '<?= base_url('login') ?>';
+    }
 }
 
 

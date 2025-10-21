@@ -1142,26 +1142,62 @@ document.addEventListener('keydown', function(e) {
     }
 });
 
-// Función para agregar a favoritos
+// Función para agregar a favoritos (ahora usa toggleFavorito)
 function agregarFavorito(idRecurso) {
+    toggleFavorito(idRecurso);
+}
+
+// Función para alternar favorito (agregar/quitar)
+function toggleFavorito(idRecurso) {
+    fetch('<?= base_url('catalogo/toggle-favorito') ?>', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify({idrecurso: idRecurso})
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            Swal.fire({
+                title: data.agregado ? 'Agregado a Favoritos' : 'Quitado de Favoritos',
+                text: data.message,
+                icon: 'success',
+                timer: 2000,
+                showConfirmButton: false
+            });
+        } else {
+            Swal.fire({
+                title: 'Error',
+                text: data.message || 'Error al procesar la solicitud',
+                icon: 'error'
+            });
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        Swal.fire({
+            title: 'Error',
+            text: 'Error de conexión',
+            icon: 'error'
+        });
+    });
+}
+
+// Función para mostrar alerta de login
+function mostrarAlertaLogin(accion) {
     Swal.fire({
-        title: 'Agregar a Favoritos',
-        text: '¿Deseas agregar este recurso a tus favoritos?',
-        icon: 'question',
+        title: 'Iniciar Sesión',
+        text: `Debes iniciar sesión para ${accion}.`,
+        icon: 'info',
         showCancelButton: true,
-        confirmButtonText: 'Sí, agregar',
+        confirmButtonText: 'Iniciar Sesión',
         cancelButtonText: 'Cancelar',
-        confirmButtonColor: '#dc3545',
-        cancelButtonColor: '#6c757d'
+        confirmButtonColor: '#007bff'
     }).then((result) => {
         if (result.isConfirmed) {
-            // Aquí iría la lógica para agregar a favoritos
-            Swal.fire({
-                title: 'Agregado a Favoritos',
-                text: 'El recurso ha sido agregado a tus favoritos.',
-                icon: 'success',
-                confirmButtonText: 'Entendido'
-            });
+            window.location.href = '<?= base_url('login') ?>';
         }
     });
 }

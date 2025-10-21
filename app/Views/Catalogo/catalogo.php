@@ -1388,6 +1388,83 @@ function cargarDetallesLibro(idRecurso) {
         });
 }
 
+// Función para agregar a favoritos (ahora usa toggleFavorito)
+function agregarFavorito(idRecurso) {
+    toggleFavorito(idRecurso);
+}
+
+// Función para alternar favorito (agregar/quitar)
+function toggleFavorito(idRecurso) {
+    fetch('<?= base_url('catalogo/toggle-favorito') ?>', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify({idrecurso: idRecurso})
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: data.agregado ? 'Agregado a Favoritos' : 'Quitado de Favoritos',
+                    text: data.message,
+                    icon: 'success',
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+            } else {
+                alert(data.message);
+            }
+        } else {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: 'Error',
+                    text: data.message || 'Error al procesar la solicitud',
+                    icon: 'error'
+                });
+            } else {
+                alert('Error: ' + (data.message || 'Error desconocido'));
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: 'Error',
+                text: 'Error de conexión',
+                icon: 'error'
+            });
+        } else {
+            alert('Error de conexión');
+        }
+    });
+}
+
+// Función para mostrar alerta de login
+function mostrarAlertaLogin(accion) {
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            title: 'Iniciar Sesión',
+            text: `Debes iniciar sesión para ${accion}.`,
+            icon: 'info',
+            showCancelButton: true,
+            confirmButtonText: 'Iniciar Sesión',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#007bff'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                window.location.href = '<?= base_url('login') ?>';
+            }
+        });
+    } else {
+        alert(`Debes iniciar sesión para ${accion}.`);
+        window.location.href = '<?= base_url('login') ?>';
+    }
+}
+
 // Limpiar modal cuando se cierre
 document.getElementById('libroModal').addEventListener('hidden.bs.modal', function() {
     document.getElementById('libroModalBody').innerHTML = '';

@@ -27,7 +27,8 @@
         </div>
     </div>
 
-    <!-- Filtros y búsqueda -->
+    <!-- Filtros y búsqueda - Solo mostrar si hay favoritos -->
+    <?php if (!empty($favoritos)): ?>
     <div class="row mb-4">
         <div class="col-md-6">
             <div class="input-group">
@@ -56,7 +57,7 @@
         </div>
     </div>
 
-    <!-- Vista de grilla/lista -->
+    <!-- Vista de grilla/lista - Solo mostrar si hay favoritos -->
     <div class="row mb-3">
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center">
@@ -73,6 +74,7 @@
                 </div>
         </div>
     </div>
+    <?php endif; ?>
 
     <!-- Contenido de favoritos - Vista Grilla -->
     <div class="row" id="favoritosGrilla">
@@ -186,57 +188,52 @@
             </div>
         </div>
     </div>
-
-    <!-- Paginación -->
-    <nav aria-label="Paginación de favoritos" class="mt-4">
-        <ul class="pagination justify-content-center">
-            <li class="page-item disabled">
-                <a class="page-link" href="#" tabindex="-1">Anterior</a>
-            </li>
-            <li class="page-item active"><a class="page-link" href="#">1</a></li>
-            <li class="page-item"><a class="page-link" href="#">2</a></li>
-            <li class="page-item">
-                <a class="page-link" href="#">Siguiente</a>
-            </li>
-        </ul>
-    </nav>
 </div>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Funcionalidad de cambio de vista
+    // Funcionalidad de cambio de vista - Solo si existen los elementos
     const vistaGrilla = document.getElementById('vistaGrilla');
     const vistaLista = document.getElementById('vistaLista');
     const favoritosGrilla = document.getElementById('favoritosGrilla');
     const favoritosLista = document.getElementById('favoritosLista');
 
-    vistaGrilla.addEventListener('click', function() {
-        this.classList.add('active');
-        vistaLista.classList.remove('active');
-        favoritosGrilla.classList.remove('d-none');
-        favoritosLista.classList.add('d-none');
-        // Reaplicar filtros después del cambio de vista
-        filtrarFavoritos();
-    });
+    if (vistaGrilla && vistaLista && favoritosGrilla && favoritosLista) {
+        vistaGrilla.addEventListener('click', function() {
+            this.classList.add('active');
+            vistaLista.classList.remove('active');
+            favoritosGrilla.classList.remove('d-none');
+            favoritosLista.classList.add('d-none');
+            // Reaplicar filtros después del cambio de vista
+            filtrarFavoritos();
+        });
 
-    vistaLista.addEventListener('click', function() {
-        this.classList.add('active');
-        vistaGrilla.classList.remove('active');
-        favoritosLista.classList.remove('d-none');
-        favoritosGrilla.classList.add('d-none');
-        // Reaplicar filtros después del cambio de vista
-        filtrarFavoritos();
-    });
+        vistaLista.addEventListener('click', function() {
+            this.classList.add('active');
+            vistaGrilla.classList.remove('active');
+            favoritosLista.classList.remove('d-none');
+            favoritosGrilla.classList.add('d-none');
+            // Reaplicar filtros después del cambio de vista
+            filtrarFavoritos();
+        });
+    }
 
-    // Funcionalidad de búsqueda y filtros
+    // Funcionalidad de búsqueda y filtros - Solo si existen los elementos
     const buscarInput = document.getElementById('buscarFavoritos');
     const filtroCategoria = document.getElementById('filtroCategoria');
     const ordenarPor = document.getElementById('ordenarPor');
 
-    buscarInput.addEventListener('input', filtrarFavoritos);
-    filtroCategoria.addEventListener('change', filtrarFavoritos);
-    ordenarPor.addEventListener('change', filtrarFavoritos);
+    if (buscarInput && filtroCategoria && ordenarPor) {
+        buscarInput.addEventListener('input', filtrarFavoritos);
+        filtroCategoria.addEventListener('change', filtrarFavoritos);
+        ordenarPor.addEventListener('change', filtrarFavoritos);
+    }
     function filtrarFavoritos() {
+        // Verificar que los elementos existan antes de usarlos
+        if (!buscarInput || !filtroCategoria || !ordenarPor) {
+            return;
+        }
+        
         const busqueda = buscarInput.value.toLowerCase().trim();
         const categoriaSeleccionada = filtroCategoria.value.toLowerCase();
         const ordenSeleccionado = ordenarPor.value;
