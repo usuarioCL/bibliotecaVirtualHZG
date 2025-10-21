@@ -90,7 +90,9 @@ if (isset($favorito['estado'])) {
             <div class="card-footer bg-transparent border-0">
                 <div class="d-flex gap-2">
                     <button class="btn btn-outline-primary btn-sm flex-fill"
-                            onclick="verDetalles(<?= $favorito['idrecurso'] ?>)">
+                            data-bs-toggle="modal" 
+                            data-bs-target="#libroModal"
+                            onclick="cargarDetallesLibro(<?= $favorito['idrecurso'] ?>)">
                         <i class="fas fa-eye me-1"></i>Ver Detalles
                     </button>
                     <button class="btn btn-outline-danger btn-sm flex-fill"

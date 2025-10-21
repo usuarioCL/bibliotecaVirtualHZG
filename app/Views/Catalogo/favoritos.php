@@ -136,7 +136,9 @@
                                 <td>
                                     <div class="btn-group" role="group">
                                         <button class="btn btn-sm btn-outline-primary" 
-                                                onclick="verDetalles(<?= $favorito['idrecurso'] ?>)" 
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#libroModal"
+                                                onclick="cargarDetallesLibro(<?= $favorito['idrecurso'] ?>)" 
                                                 title="Ver detalles">
                                             <i class="fas fa-eye"></i>
                                         </button>
@@ -191,6 +193,37 @@
 </div>
 
 <script>
+// Función para cargar detalles del libro (debe estar fuera del DOMContentLoaded para ser accesible globalmente)
+function cargarDetallesLibro(idRecurso) {
+    const modalBody = document.getElementById('libroModalBody');
+    
+    // Mostrar loading
+    modalBody.innerHTML = `
+        <div class="text-center">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Cargando...</span>
+            </div>
+            <p class="mt-2">Cargando detalles del recurso...</p>
+        </div>
+    `;
+    
+    // Cargar detalles via AJAX
+    fetch(`<?= base_url('recurso/detalles/') ?>${idRecurso}`)
+        .then(response => response.text())
+        .then(html => {
+            modalBody.innerHTML = html;
+        })
+        .catch(error => {
+            console.error('Error al cargar detalles:', error);
+            modalBody.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Error al cargar los detalles del recurso.
+                </div>
+            `;
+        });
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     // Funcionalidad de cambio de vista - Solo si existen los elementos
     const vistaGrilla = document.getElementById('vistaGrilla');
@@ -450,6 +483,91 @@ document.addEventListener('DOMContentLoaded', function() {
 
 });
 
+// Funciones globales para favoritos (fuera del DOMContentLoaded para acceso global)
+// Función para agregar a favoritos (ahora usa toggleFavorito)
+function agregarFavorito(idRecurso) {
+    toggleFavorito(idRecurso);
+}
+
+// Función para alternar favorito (agregar/quitar)
+function toggleFavorito(idRecurso) {
+    fetch('<?= base_url('catalogo/toggle-favorito') ?>', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify({idrecurso: idRecurso})
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: data.agregado ? 'Agregado a Favoritos' : 'Quitado de Favoritos',
+                    text: data.message,
+                    icon: 'success',
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+            } else {
+                alert(data.message);
+            }
+            
+            // Si se quitó de favoritos, recargar la página para actualizar la lista
+            if (!data.agregado) {
+                setTimeout(() => {
+                    location.reload();
+                }, 1500);
+            }
+        } else {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: 'Error',
+                    text: data.message || 'Error al procesar la solicitud',
+                    icon: 'error'
+                });
+            } else {
+                alert('Error: ' + (data.message || 'Error desconocido'));
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: 'Error',
+                text: 'Error de conexión',
+                icon: 'error'
+            });
+        } else {
+            alert('Error de conexión');
+        }
+    });
+}
+
+// Función para mostrar alerta de login
+function mostrarAlertaLogin(accion) {
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            title: 'Iniciar Sesión',
+            text: `Debes iniciar sesión para ${accion}.`,
+            icon: 'info',
+            showCancelButton: true,
+            confirmButtonText: 'Iniciar Sesión',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#007bff'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                window.location.href = '<?= base_url('login') ?>';
+            }
+        });
+    } else {
+        alert(`Debes iniciar sesión para ${accion}.`);
+        window.location.href = '<?= base_url('login') ?>';
+    }
+}
+
 // Funciones globales para favoritos
 function quitarFavorito(idfavorito, idrecurso) {
     if (confirm('¿Estás seguro de que quieres quitar este libro de favoritos?')) {
@@ -475,40 +593,6 @@ function quitarFavorito(idfavorito, idrecurso) {
             alert('Error de conexión');
         });
     }
-}
-
-function verDetalles(idrecurso) {
-    const modalBody = document.getElementById('libroModalBody');
-    
-    // Mostrar loading
-    modalBody.innerHTML = `
-        <div class="text-center">
-            <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">Cargando...</span>
-            </div>
-            <p class="mt-2">Cargando detalles del recurso...</p>
-        </div>
-    `;
-    
-    // Mostrar el modal
-    const modal = new bootstrap.Modal(document.getElementById('libroModal'));
-    modal.show();
-    
-    // Cargar detalles via AJAX
-    fetch(`<?= base_url('recursos/detalles/') ?>${idrecurso}`)
-        .then(response => response.text())
-        .then(html => {
-            modalBody.innerHTML = html;
-        })
-        .catch(error => {
-            console.error('Error al cargar detalles:', error);
-            modalBody.innerHTML = `
-                <div class="alert alert-danger">
-                    <i class="fas fa-exclamation-triangle me-2"></i>
-                    Error al cargar los detalles del recurso.
-                </div>
-            `;
-        });
 }
 
 function solicitarPrestamo(idrecurso) {
