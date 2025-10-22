@@ -1,6 +1,28 @@
 <!-- CSS Profesional para Sanciones -->
 <link rel="stylesheet" href="<?= base_url('assets/css/sanciones-professional.css') ?>">
 
+<style>
+    /* Estilos de estado - Forzar colores */
+    .sanction-status.status-cancelada,
+    .status-cancelada {
+        background-color: #ffc107 !important;
+        color: #000 !important;
+        font-weight: 600 !important;
+    }
+    .sanction-status.status-cumplida,
+    .status-cumplida {
+        background-color: #198754 !important;
+        color: white !important;
+        font-weight: 600 !important;
+    }
+    .sanction-status.status-activa,
+    .status-activa {
+        background-color: #dc3545 !important;
+        color: white !important;
+        font-weight: 600 !important;
+    }
+</style>
+
 <?php if (isset($error)): ?>
     <div class="alert alert-danger" role="alert">
         <i class="ti ti-alert-circle me-2"></i>
@@ -52,7 +74,7 @@
     <div class="col-md-3">
         <div class="stats-card">
             <div class="d-flex align-items-center">
-                <div class="stats-icon bg-secondary text-white">
+                <div class="stats-icon bg-warning text-dark">
                     <i class="ti ti-x"></i>
                 </div>
                 <div class="ms-3">
@@ -66,15 +88,15 @@
 
 <!-- Filtros -->
 <div class="filter-section">
-    <form method="GET" id="filtros-form">
+    <form method="GET" action="<?= base_url('sanciones/historial') ?>" id="filtros-form">
         <div class="row g-3">
             <div class="col-md-3">
                 <label class="form-label">Estado</label>
                 <select name="estado" class="form-select">
                     <option value="">Todos los estados</option>
-                    <option value="activa" <?= (($filtros['estado'] ?? '') == 'activa') ? 'selected' : '' ?>>Activa</option>
                     <option value="cumplida" <?= (($filtros['estado'] ?? '') == 'cumplida') ? 'selected' : '' ?>>Cumplida</option>
                     <option value="cancelada" <?= (($filtros['estado'] ?? '') == 'cancelada') ? 'selected' : '' ?>>Cancelada</option>
+                    <option value="suspendida" <?= (($filtros['estado'] ?? '') == 'suspendida') ? 'selected' : '' ?>>Suspendida</option>
                 </select>
             </div>
             <div class="col-md-3">
@@ -99,9 +121,9 @@
                 <button type="submit" class="btn btn-primary">
                     <i class="ti ti-search me-1"></i>Filtrar
                 </button>
-                <button type="button" class="btn btn-outline-secondary ms-2" onclick="limpiarFiltros()">
+                <a href="<?= base_url('sanciones/historial') ?>" class="btn btn-outline-secondary ms-2">
                     <i class="ti ti-refresh me-1"></i>Limpiar
-                </button>
+                </a>
             </div>
         </div>
     </form>
@@ -198,21 +220,14 @@
 </div>
 
 <script>
-function limpiarFiltros() {
-    document.querySelectorAll('#filtros-form input, #filtros-form select').forEach(element => {
-        if (element.type === 'text' || element.type === 'date') {
-            element.value = '';
-        } else if (element.tagName === 'SELECT') {
-            element.selectedIndex = 0;
-        }
-    });
-}
-
 function verSancion(id) {
+    // Aquí iría la lógica para ver detalles de la sanción
     console.log('Ver sanción:', id);
+    // Por ejemplo: window.location.href = '<?= base_url('sanciones/ver/') ?>' + id;
 }
 
 function cambiarEstado(id, estado) {
+    // Aquí iría la lógica para cambiar el estado
     console.log('Cambiar estado:', id, estado);
 }
 </script>

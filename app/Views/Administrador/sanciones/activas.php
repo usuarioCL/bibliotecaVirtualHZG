@@ -30,8 +30,8 @@
             color: white;
         }
         .status-cancelada {
-            background-color: #6c757d;
-            color: white;
+            background-color: #ffc107 !important;
+            color: #000 !important;
         }
         .filter-section {
             background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);

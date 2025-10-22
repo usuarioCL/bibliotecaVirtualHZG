@@ -13,9 +13,14 @@ class SancionModel extends Model
         'idpersona',
         'detallesancion',
         'fecha_sancion',
+        'fecha_inicio',
         'fecha_vencimiento',
         'estado_sancion',
+        'duracion_dias',
         'usuario_registra',
+        'usuario_levanta',
+        'fecha_levantamiento',
+        'motivo_levantamiento',
         'observaciones'
     ];
 
@@ -23,10 +28,13 @@ class SancionModel extends Model
         'idtiposancion' => 'required|integer',
         'idpersona' => 'required|integer',
         'detallesancion' => 'required|max_length[200]',
-        'fecha_sancion' => 'required|valid_date',
+        'fecha_sancion' => 'permit_empty|valid_date',
+        'fecha_inicio' => 'permit_empty|valid_date',
         'fecha_vencimiento' => 'permit_empty|valid_date',
-        'estado_sancion' => 'required|in_list[activa,cumplida,cancelada]',
+        'estado_sancion' => 'permit_empty|in_list[activa,cumplida,cancelada,suspendida]',
+        'duracion_dias' => 'permit_empty|integer',
         'usuario_registra' => 'permit_empty|integer',
+        'usuario_levanta' => 'permit_empty|integer',
         'observaciones' => 'permit_empty'
     ];
 
@@ -44,15 +52,16 @@ class SancionModel extends Model
             'max_length' => 'Los detalles no pueden exceder 200 caracteres'
         ],
         'fecha_sancion' => [
-            'required' => 'La fecha de sanción es obligatoria',
             'valid_date' => 'La fecha de sanción debe ser válida'
+        ],
+        'fecha_inicio' => [
+            'valid_date' => 'La fecha de inicio debe ser válida'
         ],
         'fecha_vencimiento' => [
             'valid_date' => 'La fecha de vencimiento debe ser válida'
         ],
         'estado_sancion' => [
-            'required' => 'El estado de la sanción es obligatorio',
-            'in_list' => 'El estado debe ser: activa, cumplida o cancelada'
+            'in_list' => 'El estado debe ser: activa, cumplida, cancelada o suspendida'
         ]
     ];
 
@@ -64,7 +73,6 @@ class SancionModel extends Model
         $builder = $this->select('
             sanciones.*,
             ts.tiposancion,
-            ts.descripcion as tipo_descripcion,
             CONCAT(p.nombres, " ", p.apellidos) as nombre_completo,
             p.nombres,
             p.apellidos,
@@ -107,14 +115,13 @@ class SancionModel extends Model
     }
 
     /**
-     * Obtener historial de sanciones
+     * Obtener historial de sanciones (excluye las activas)
      */
     public function obtenerHistorialSanciones($filtros = [])
     {
         $builder = $this->select('
             sanciones.*,
             ts.tiposancion,
-            ts.descripcion as tipo_descripcion,
             CONCAT(p.nombres, " ", p.apellidos) as nombre_completo,
             p.nombres,
             p.apellidos,
@@ -123,6 +130,7 @@ class SancionModel extends Model
             p.telefono,
             p.email,
             u.nomuser as usuario_registra_nombre,
+            ul.nomuser as usuario_levanta_nombre,
             g.grado,
             g.seccion,
             g.nivel
@@ -131,7 +139,9 @@ class SancionModel extends Model
         ->join('personas p', 'p.idpersona = sanciones.idpersona')
         ->join('matriculas m', 'm.idpersona = p.idpersona', 'left')
         ->join('grupos g', 'g.idgrupo = m.idgrupo', 'left')
-        ->join('usuarios u', 'u.idusuario = sanciones.usuario_registra', 'left');
+        ->join('usuarios u', 'u.idusuario = sanciones.usuario_registra', 'left')
+        ->join('usuarios ul', 'ul.idusuario = sanciones.usuario_levanta', 'left')
+        ->whereIn('sanciones.estado_sancion', ['cumplida', 'cancelada', 'suspendida']);
 
         // Aplicar filtros
         if (!empty($filtros['estado'])) {
@@ -224,9 +234,10 @@ class SancionModel extends Model
     public function levantarSancion($id, $motivoLevantamiento, $usuarioLevanta = null)
     {
         $data = [
-            'estado_sancion' => 'cumplida',
-            'observaciones' => $motivoLevantamiento,
-            'fecha_vencimiento' => date('Y-m-d'), // Fecha actual como fecha de cumplimiento
+            'estado_sancion' => 'cancelada',
+            'fecha_levantamiento' => date('Y-m-d H:i:s'),
+            'motivo_levantamiento' => $motivoLevantamiento,
+            'usuario_levanta' => $usuarioLevanta,
             'updated_at' => date('Y-m-d H:i:s')
         ];
 
@@ -256,12 +267,12 @@ class SancionModel extends Model
         return $this->select('
             sanciones.*,
             ts.tiposancion,
-            ts.descripcion as tipo_descripcion,
             CONCAT(p.nombres, " ", p.apellidos) as nombre_completo,
             p.numerodoc,
             p.email,
             p.telefono,
             u.nomuser as usuario_registra_nombre,
+            ul.nomuser as usuario_levanta_nombre,
             g.grado,
             g.seccion,
             g.nivel,
@@ -272,6 +283,7 @@ class SancionModel extends Model
         ->join('matriculas m', 'm.idpersona = p.idpersona', 'left')
         ->join('grupos g', 'g.idgrupo = m.idgrupo', 'left')
         ->join('usuarios u', 'u.idusuario = sanciones.usuario_registra', 'left')
+        ->join('usuarios ul', 'ul.idusuario = sanciones.usuario_levanta', 'left')
         ->where('sanciones.idsancion', $id)
         ->first();
     }
@@ -284,7 +296,6 @@ class SancionModel extends Model
         return $this->select('
             sanciones.*,
             ts.tiposancion,
-            ts.descripcion as tipo_descripcion,
             CONCAT(p.nombres, " ", p.apellidos) as nombre_completo,
             p.nombres,
             p.apellidos,

@@ -153,14 +153,28 @@ class SancionController extends BaseController
         }
 
         try {
+            $fechaSancion = $this->request->getPost('fecha_sancion') ?: date('Y-m-d');
+            $fechaInicio = $this->request->getPost('fecha_inicio') ?: $fechaSancion;
+            $fechaVencimiento = $this->request->getPost('fecha_vencimiento') ?: null;
+            
+            // Calcular duración en días si hay fecha de vencimiento
+            $duracionDias = null;
+            if ($fechaVencimiento) {
+                $inicio = new \DateTime($fechaInicio);
+                $fin = new \DateTime($fechaVencimiento);
+                $duracionDias = $inicio->diff($fin)->days;
+            }
+            
             $data = [
                 'idtiposancion' => $this->request->getPost('idtiposancion'),
                 'idpersona' => $this->request->getPost('idpersona'),
                 'detallesancion' => $this->request->getPost('detallesancion'),
-                'fecha_sancion' => $this->request->getPost('fecha_sancion') ?: date('Y-m-d'),
-                'fecha_vencimiento' => $this->request->getPost('fecha_vencimiento') ?: null,
+                'fecha_sancion' => $fechaSancion,
+                'fecha_inicio' => $fechaInicio,
+                'fecha_vencimiento' => $fechaVencimiento,
+                'duracion_dias' => $duracionDias,
                 'estado_sancion' => 'activa',
-                'usuario_registra' => session('idusuario') ?: 1, // Fallback si no hay sesión
+                'usuario_registra' => session('idusuario') ?: 1,
                 'observaciones' => $this->request->getPost('observaciones') ?: null
             ];
 
@@ -221,12 +235,26 @@ class SancionController extends BaseController
         log_message('debug', 'SancionController::guardarSancion - Es AJAX: ' . ($this->request->isAJAX() ? 'Sí' : 'No'));
         
         try {
+            $fechaSancion = $this->request->getPost('fecha_sancion') ?: date('Y-m-d');
+            $fechaInicio = $this->request->getPost('fecha_inicio') ?: $fechaSancion;
+            $fechaVencimiento = $this->request->getPost('fecha_vencimiento') ?: null;
+            
+            // Calcular duración en días si hay fecha de vencimiento
+            $duracionDias = null;
+            if ($fechaVencimiento) {
+                $inicio = new \DateTime($fechaInicio);
+                $fin = new \DateTime($fechaVencimiento);
+                $duracionDias = $inicio->diff($fin)->days;
+            }
+            
             $data = [
                 'idtiposancion' => $this->request->getPost('idtiposancion'),
                 'idpersona' => $this->request->getPost('idpersona'),
                 'detallesancion' => $this->request->getPost('detallesancion'),
-                'fecha_sancion' => $this->request->getPost('fecha_sancion') ?: date('Y-m-d'),
-                'fecha_vencimiento' => $this->request->getPost('fecha_vencimiento') ?: null,
+                'fecha_sancion' => $fechaSancion,
+                'fecha_inicio' => $fechaInicio,
+                'fecha_vencimiento' => $fechaVencimiento,
+                'duracion_dias' => $duracionDias,
                 'estado_sancion' => 'activa',
                 'usuario_registra' => session('idusuario') ?: 1,
                 'observaciones' => $this->request->getPost('observaciones') ?: null
@@ -313,7 +341,9 @@ class SancionController extends BaseController
                 'idtiposancion' => $this->request->getPost('idtiposancion'),
                 'detallesancion' => $this->request->getPost('detallesancion'),
                 'fecha_sancion' => $this->request->getPost('fecha_sancion'),
+                'fecha_inicio' => $this->request->getPost('fecha_inicio'),
                 'fecha_vencimiento' => $this->request->getPost('fecha_vencimiento'),
+                'duracion_dias' => $this->request->getPost('duracion_dias'),
                 'estado_sancion' => $this->request->getPost('estado_sancion'),
                 'observaciones' => $this->request->getPost('observaciones')
             ];
@@ -583,7 +613,7 @@ class SancionController extends BaseController
             return array_column($niveles, 'nivel');
         } catch (\Exception $e) {
             log_message('error', 'Error al obtener niveles educativos: ' . $e->getMessage());
-            return ['Primaria', 'Secundaria', 'Superior']; // Valores por defecto
+            return ['Inicial', 'Primaria', 'Secundaria']; // Valores por defecto
         }
     }
 }

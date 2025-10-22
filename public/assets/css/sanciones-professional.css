@@ -320,7 +320,7 @@
 }
 
 .status-cancelada {
-    background: linear-gradient(135deg, var(--secondary-color), #6b7280);
+    background: linear-gradient(135deg, #ffc107, #f59e0b);
     color: white;
     box-shadow: var(--shadow-sm);
 }

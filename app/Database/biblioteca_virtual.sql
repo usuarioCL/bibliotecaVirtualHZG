@@ -177,11 +177,7 @@ CREATE TABLE IF NOT EXISTS renovaciones_prestamo (
 -- TABLAS: Sanciones y Tipos
 CREATE TABLE tiposancion (
     idtiposancion INT AUTO_INCREMENT PRIMARY KEY,
-    tiposancion VARCHAR(80) NOT NULL,
-    descripcion TEXT NULL,
-    activo BOOLEAN DEFAULT TRUE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    tiposancion VARCHAR(80) NOT NULL
 );
 
 CREATE TABLE sanciones (
@@ -190,21 +186,27 @@ CREATE TABLE sanciones (
     idpersona INT NOT NULL,
     detallesancion VARCHAR(200),
     fecha_sancion DATE NOT NULL DEFAULT (CURRENT_DATE),
+    fecha_inicio DATE NULL,
     fecha_vencimiento DATE NULL,
-    estado_sancion ENUM('activa', 'cumplida', 'cancelada') DEFAULT 'activa',
+    estado_sancion ENUM('activa', 'cumplida', 'cancelada', 'suspendida') NOT NULL DEFAULT 'activa',
+    duracion_dias INT NULL,
     usuario_registra INT NULL,
-    fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    usuario_levanta INT NULL,
+    fecha_levantamiento DATETIME NULL,
+    motivo_levantamiento TEXT NULL,
     observaciones TEXT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     
     FOREIGN KEY (idtiposancion) REFERENCES tiposancion(idtiposancion),
     FOREIGN KEY (idpersona) REFERENCES personas(idpersona),
-    FOREIGN KEY (usuario_registra) REFERENCES usuarios(idusuario),
+    FOREIGN KEY (usuario_registra) REFERENCES usuarios(idusuario) ON DELETE SET NULL ON UPDATE CASCADE,
+    FOREIGN KEY (usuario_levanta) REFERENCES usuarios(idusuario) ON DELETE SET NULL ON UPDATE CASCADE,
     
-    INDEX idx_estado_sancion (estado_sancion),
-    INDEX idx_fecha_sancion (fecha_sancion),
-    INDEX idx_fecha_vencimiento (fecha_vencimiento)
+    INDEX idx_sanciones_estado (estado_sancion),
+    INDEX idx_sanciones_fecha_sancion (fecha_sancion),
+    INDEX idx_sanciones_fecha_vencimiento (fecha_vencimiento),
+    INDEX idx_sanciones_persona_estado (idpersona, estado_sancion)
 );
 
 

@@ -9,15 +9,11 @@ class TiposancionModel extends Model
     protected $table = 'tiposancion';
     protected $primaryKey = 'idtiposancion';
     protected $allowedFields = [
-        'tiposancion',
-        'descripcion',
-        'activo'
+        'tiposancion'
     ];
 
     protected $validationRules = [
-        'tiposancion' => 'required|max_length[80]|is_unique[tiposancion.tiposancion,idtiposancion,{id}]',
-        'descripcion' => 'permit_empty',
-        'activo' => 'permit_empty|in_list[0,1]'
+        'tiposancion' => 'required|max_length[80]|is_unique[tiposancion.tiposancion,idtiposancion,{id}]'
     ];
 
     protected $validationMessages = [
@@ -25,20 +21,15 @@ class TiposancionModel extends Model
             'required' => 'El nombre del tipo de sanción es obligatorio',
             'max_length' => 'El nombre no puede exceder 80 caracteres',
             'is_unique' => 'Ya existe un tipo de sanción con ese nombre'
-        ],
-        'activo' => [
-            'in_list' => 'El estado debe ser activo o inactivo'
         ]
     ];
 
     /**
-     * Obtener tipos de sanción activos
+     * Obtener todos los tipos de sanción
      */
     public function obtenerTiposActivos()
     {
-        return $this->where('activo', true)
-                   ->orderBy('tiposancion', 'ASC')
-                   ->findAll();
+        return $this->orderBy('tiposancion', 'ASC')->findAll();
     }
 
     /**
@@ -58,10 +49,10 @@ class TiposancionModel extends Model
     }
 
     /**
-     * Cambiar estado de un tipo de sanción
+     * Cambiar estado de un tipo de sanción (deshabilitado - sin columna activo)
      */
     public function cambiarEstado($id, $activo)
     {
-        return $this->update($id, ['activo' => $activo]);
+        return false;
     }
 }

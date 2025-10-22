@@ -2,6 +2,26 @@
 <link rel="stylesheet" href="<?= base_url('assets/css/sanciones-professional.css') ?>">
 
 <style>
+/* Estilos de estado - Forzar colores */
+.sanction-status.status-cancelada,
+.status-cancelada {
+    background-color: #ffc107 !important;
+    color: #000 !important;
+    font-weight: 600 !important;
+}
+.sanction-status.status-cumplida,
+.status-cumplida {
+    background-color: #198754 !important;
+    color: white !important;
+    font-weight: 600 !important;
+}
+.sanction-status.status-activa,
+.status-activa {
+    background-color: #dc3545 !important;
+    color: white !important;
+    font-weight: 600 !important;
+}
+
 .cursor-pointer {
     cursor: pointer;
 }
