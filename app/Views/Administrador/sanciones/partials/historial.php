@@ -116,14 +116,14 @@
                        value="<?= $filtros['buscar'] ?? '' ?>">
             </div>
         </div>
-        <div class="row mt-3">
+        <div class="row mt-5 pt-2">
             <div class="col-12">
                 <button type="submit" class="btn btn-primary">
                     <i class="ti ti-search me-1"></i>Filtrar
                 </button>
-                <a href="<?= base_url('sanciones/historial') ?>" class="btn btn-outline-secondary ms-2">
+                <button type="button" class="btn btn-outline-secondary ms-3" id="btn-limpiar-filtros">
                     <i class="ti ti-refresh me-1"></i>Limpiar
-                </a>
+                </button>
             </div>
         </div>
     </form>
@@ -220,6 +220,53 @@
 </div>
 
 <script>
+// Interceptar el envío del formulario de filtros
+$(document).ready(function() {
+    // Manejar envío del formulario
+    $('#filtros-form').on('submit', function(e) {
+        e.preventDefault(); // Prevenir el envío normal del formulario
+        
+        // Obtener la URL con los parámetros del formulario
+        const formData = $(this).serialize();
+        const url = '<?= base_url('sanciones/historial') ?>?' + formData;
+        
+        // Mostrar indicador de carga
+        $('#contenedor-principal').html('<div class="text-center py-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Cargando...</span></div></div>');
+        
+        // Hacer la petición AJAX
+        $.ajax({
+            url: url,
+            type: 'GET',
+            success: function(data) {
+                $('#contenedor-principal').html(data);
+            },
+            error: function() {
+                $('#contenedor-principal').html('<div class="alert alert-danger">Error al cargar los datos. Por favor, intenta nuevamente.</div>');
+            }
+        });
+    });
+    
+    // Manejar botón limpiar filtros
+    $('#btn-limpiar-filtros').on('click', function(e) {
+        e.preventDefault();
+        
+        // Mostrar indicador de carga
+        $('#contenedor-principal').html('<div class="text-center py-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Cargando...</span></div></div>');
+        
+        // Cargar la vista sin filtros
+        $.ajax({
+            url: '<?= base_url('sanciones/historial') ?>',
+            type: 'GET',
+            success: function(data) {
+                $('#contenedor-principal').html(data);
+            },
+            error: function() {
+                $('#contenedor-principal').html('<div class="alert alert-danger">Error al cargar los datos. Por favor, intenta nuevamente.</div>');
+            }
+        });
+    });
+});
+
 function verSancion(id) {
     // Aquí iría la lógica para ver detalles de la sanción
     console.log('Ver sanción:', id);

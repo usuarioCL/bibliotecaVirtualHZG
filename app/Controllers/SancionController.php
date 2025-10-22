@@ -52,14 +52,9 @@ class SancionController extends BaseController
                 'filtros' => $filtros
             ];
 
-            // Si es una petición AJAX, retornar solo el contenido parcial
-            if ($this->request->isAJAX()) {
-                return view('Administrador/sanciones/partials/activas', $data);
-            }
-
-            // Si no es AJAX, retornar la vista completa (para casos especiales)
-            $data['title'] = 'Sanciones Activas';
-            return view('Administrador/sanciones/activas', $data);
+            // SIEMPRE retornar la vista parcial (para AJAX)
+            // El contenido debe cargarse dentro del panel de administrador
+            return view('Administrador/sanciones/partials/activas', $data);
 
         } catch (\Exception $e) {
             log_message('error', 'Error en SancionController::activas: ' . $e->getMessage());
@@ -72,12 +67,7 @@ class SancionController extends BaseController
                 'error' => 'Error al cargar los datos: ' . $e->getMessage()
             ];
 
-            if ($this->request->isAJAX()) {
-                return view('Administrador/sanciones/partials/activas', $errorData);
-            }
-
-            $errorData['title'] = 'Sanciones Activas';
-            return view('Administrador/sanciones/activas', $errorData);
+            return view('Administrador/sanciones/partials/activas', $errorData);
         }
     }
 
@@ -106,14 +96,9 @@ class SancionController extends BaseController
                 'filtros' => $filtros
             ];
 
-            // Si es una petición AJAX, retornar solo el contenido parcial
-            if ($this->request->isAJAX()) {
-                return view('Administrador/sanciones/partials/historial', $data);
-            }
-
-            // Si no es AJAX, retornar la vista completa (para casos especiales)
-            $data['title'] = 'Historial de Sanciones';
-            return view('Administrador/sanciones/historial', $data);
+            // SIEMPRE retornar la vista parcial (para AJAX)
+            // El contenido debe cargarse dentro del panel de administrador
+            return view('Administrador/sanciones/partials/historial', $data);
 
         } catch (\Exception $e) {
             log_message('error', 'Error en SancionController::historial: ' . $e->getMessage());
@@ -125,12 +110,7 @@ class SancionController extends BaseController
                 'error' => 'Error al cargar los datos: ' . $e->getMessage()
             ];
 
-            if ($this->request->isAJAX()) {
-                return view('Administrador/sanciones/partials/historial', $errorData);
-            }
-
-            $errorData['title'] = 'Historial de Sanciones';
-            return view('Administrador/sanciones/historial', $errorData);
+            return view('Administrador/sanciones/partials/historial', $errorData);
         }
     }
 
