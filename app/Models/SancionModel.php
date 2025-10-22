@@ -90,7 +90,8 @@ class SancionModel extends Model
                 MAX(s.fecha_sancion) as fecha_sancion_reciente,
                 MIN(s.fecha_vencimiento) as fecha_vencimiento_proxima,
                 GROUP_CONCAT(DISTINCT ts.tiposancion ORDER BY ts.tiposancion SEPARATOR ', ') as tipos_sanciones,
-                MAX(s.idsancion) as idsancion_reciente
+                MAX(s.idsancion) as idsancion_reciente,
+                MAX(s.updated_at) as ultima_actualizacion
             FROM sanciones s
             INNER JOIN personas p ON p.idpersona = s.idpersona
             LEFT JOIN matriculas m ON m.idpersona = p.idpersona

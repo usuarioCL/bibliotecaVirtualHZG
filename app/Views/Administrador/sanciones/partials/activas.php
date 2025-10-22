@@ -1,6 +1,68 @@
 <!-- CSS Profesional para Sanciones -->
 <link rel="stylesheet" href="<?= base_url('assets/css/sanciones-professional.css') ?>">
 
+<?php
+/**
+ * Función helper para formatear tiempo relativo
+ * Formatea la diferencia entre una fecha y hoy de forma legible
+ */
+function formatearTiempoRelativo($fecha) {
+    if (empty($fecha)) {
+        return '<span class="badge" style="background: #6c757d; color: white; padding: 0.5rem 0.75rem; border-radius: 8px;">Sin fecha</span>';
+    }
+    
+    $ahora = new DateTime();
+    $fechaComparar = new DateTime($fecha);
+    $diferencia = $ahora->diff($fechaComparar);
+    
+    // Si es hoy
+    if ($diferencia->days == 0) {
+        return '<span class="badge" style="background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 0.5rem 0.75rem; border-radius: 8px; font-weight: 600;">
+                    <i class="ti ti-clock"></i> HOY
+                </span>';
+    }
+    
+    // Si fue ayer
+    if ($diferencia->days == 1) {
+        return '<span class="badge" style="background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; padding: 0.5rem 0.75rem; border-radius: 8px; font-weight: 600;">
+                    <i class="ti ti-calendar"></i> AYER
+                </span>';
+    }
+    
+    // Hace X días (2-6 días)
+    if ($diferencia->days >= 2 && $diferencia->days <= 6) {
+        return '<span class="badge" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: white; padding: 0.5rem 0.75rem; border-radius: 8px; font-weight: 600;">
+                    <i class="ti ti-calendar-time"></i> Hace ' . $diferencia->days . ' días
+                </span>';
+    }
+    
+    // Hace X semanas (7-29 días)
+    if ($diferencia->days >= 7 && $diferencia->days <= 29) {
+        $semanas = floor($diferencia->days / 7);
+        $texto = $semanas == 1 ? '1 semana' : $semanas . ' semanas';
+        return '<span class="badge" style="background: linear-gradient(135deg, #f59e0b, #d97706); color: white; padding: 0.5rem 0.75rem; border-radius: 8px; font-weight: 600;">
+                    <i class="ti ti-calendar-event"></i> Hace ' . $texto . '
+                </span>';
+    }
+    
+    // Hace X meses (30-364 días)
+    if ($diferencia->days >= 30 && $diferencia->days < 365) {
+        $meses = floor($diferencia->days / 30);
+        $texto = $meses == 1 ? '1 mes' : $meses . ' meses';
+        return '<span class="badge" style="background: linear-gradient(135deg, #ef4444, #dc2626); color: white; padding: 0.5rem 0.75rem; border-radius: 8px; font-weight: 600;">
+                    <i class="ti ti-calendar-stats"></i> Hace ' . $texto . '
+                </span>';
+    }
+    
+    // Hace más de un año
+    $años = floor($diferencia->days / 365);
+    $texto = $años == 1 ? '1 año' : $años . ' años';
+    return '<span class="badge" style="background: linear-gradient(135deg, #64748b, #475569); color: white; padding: 0.5rem 0.75rem; border-radius: 8px; font-weight: 600;">
+                <i class="ti ti-calendar-off"></i> Hace ' . $texto . '
+            </span>';
+}
+?>
+
 <style>
 /* Estilos de estado - Forzar colores */
 .sanction-status.status-cancelada,
@@ -207,7 +269,7 @@
                     <thead>
                             <tr>
                                 <th>Persona</th>
-                                <th>Tipos de Sanción</th>
+                                <th>Última Acción</th>
                                 <th>Fecha Más Reciente</th>
                                 <th>Vencimiento Próximo</th>
                                 <th>Estado</th>
@@ -230,17 +292,8 @@
                                         </div>
                                     </div>
                                 </td>
-                                <td>
-                                    <div style="max-width: 200px;">
-                                        <?php 
-                                        $tipos = explode(', ', $sancion['tipos_sanciones'] ?? 'N/A');
-                                        foreach ($tipos as $tipo): 
-                                        ?>
-                                            <span class="badge-professional badge-info-professional mb-1" style="display: inline-block;">
-                                                <?= $tipo ?>
-                                            </span>
-                                        <?php endforeach; ?>
-                                    </div>
+                                <td class="text-center">
+                                    <?= formatearTiempoRelativo($sancion['ultima_actualizacion'] ?? $sancion['fecha_sancion_reciente']) ?>
                                 </td>
                                 <td><?= $sancion['fecha_sancion_reciente'] ?? 'N/A' ?></td>
                                 <td><?= $sancion['fecha_vencimiento_proxima'] ?? 'Sin fecha' ?></td>
