@@ -456,11 +456,15 @@ class SancionController extends BaseController
 
     /**
      * Obtener todas las sanciones de una persona específica
+     * Puede filtrar por estado usando el parámetro GET 'estado'
      */
     public function obtenerSancionesPersona($idpersona)
     {
         try {
-            $sanciones = $this->sancionModel->obtenerSancionesPorPersona($idpersona);
+            // Obtener el estado desde los parámetros GET (opcional)
+            $estado = $this->request->getGet('estado') ?? null;
+            
+            $sanciones = $this->sancionModel->obtenerSancionesPorPersona($idpersona, $estado);
             
             return $this->response->setJSON([
                 'success' => true,
@@ -528,6 +532,74 @@ class SancionController extends BaseController
             }
         } catch (\Exception $e) {
             log_message('error', 'Error en levantarSancion: ' . $e->getMessage());
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Error interno del servidor: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Levantar TODAS las sanciones activas de una persona
+     */
+    public function levantarTodas()
+    {
+        try {
+            $json = $this->request->getJSON();
+            $idpersona = $json->idpersona ?? null;
+            $motivoLevantamiento = $json->motivo_levantamiento ?? null;
+            $usuarioLevanta = session('idusuario') ?: 1;
+
+            // Validar datos
+            if (empty($idpersona) || empty($motivoLevantamiento)) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'El ID de persona y el motivo son obligatorios'
+                ]);
+            }
+
+            // Obtener todas las sanciones activas de la persona
+            $sancionesActivas = $this->sancionModel->obtenerSancionesPorPersona($idpersona, 'activa');
+            
+            if (empty($sancionesActivas)) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'No se encontraron sanciones activas para esta persona'
+                ]);
+            }
+
+            $totalLevantadas = 0;
+            $errores = [];
+
+            // Levantar cada sanción
+            foreach ($sancionesActivas as $sancion) {
+                if ($this->sancionModel->levantarSancion($sancion['idsancion'], $motivoLevantamiento, $usuarioLevanta)) {
+                    $totalLevantadas++;
+                    log_message('info', "Sanción {$sancion['idsancion']} levantada masivamente por usuario {$usuarioLevanta}");
+                } else {
+                    $errores[] = "Error al levantar sanción ID {$sancion['idsancion']}";
+                }
+            }
+
+            // Verificar resultados
+            if ($totalLevantadas > 0) {
+                return $this->response->setJSON([
+                    'success' => true,
+                    'message' => "Se levantaron exitosamente {$totalLevantadas} sanción(es)",
+                    'total_levantadas' => $totalLevantadas,
+                    'total_intentadas' => count($sancionesActivas),
+                    'errores' => $errores
+                ]);
+            } else {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'No se pudo levantar ninguna sanción',
+                    'errores' => $errores
+                ]);
+            }
+
+        } catch (\Exception $e) {
+            log_message('error', 'Error en levantarTodas: ' . $e->getMessage());
             return $this->response->setJSON([
                 'success' => false,
                 'message' => 'Error interno del servidor: ' . $e->getMessage()

@@ -207,12 +207,11 @@
                     <thead>
                             <tr>
                                 <th>Persona</th>
-                                <th>Tipo</th>
-                                <th>Detalles</th>
-                                <th>Fecha Sanción</th>
-                                <th>Vencimiento</th>
+                                <th>Tipos de Sanción</th>
+                                <th>Fecha Más Reciente</th>
+                                <th>Vencimiento Próximo</th>
                                 <th>Estado</th>
-                                <th>Cantidad</th>
+                                <th>Total Sanciones</th>
                                 <th>Detalles</th>
                                 <th>Acciones</th>
                             </tr>
@@ -232,22 +231,28 @@
                                     </div>
                                 </td>
                                 <td>
-                                    <span class="badge-professional badge-info-professional">
-                                        <?= $sancion['tiposancion'] ?? 'N/A' ?>
-                                    </span>
+                                    <div style="max-width: 200px;">
+                                        <?php 
+                                        $tipos = explode(', ', $sancion['tipos_sanciones'] ?? 'N/A');
+                                        foreach ($tipos as $tipo): 
+                                        ?>
+                                            <span class="badge-professional badge-info-professional mb-1" style="display: inline-block;">
+                                                <?= $tipo ?>
+                                            </span>
+                                        <?php endforeach; ?>
+                                    </div>
                                 </td>
-                                <td><?= $sancion['detallesancion'] ?? 'N/A' ?></td>
-                                <td><?= $sancion['fecha_sancion'] ?? 'N/A' ?></td>
-                                <td><?= $sancion['fecha_vencimiento'] ?? 'Sin fecha' ?></td>
+                                <td><?= $sancion['fecha_sancion_reciente'] ?? 'N/A' ?></td>
+                                <td><?= $sancion['fecha_vencimiento_proxima'] ?? 'Sin fecha' ?></td>
                                 <td>
-                                    <span class="sanction-status status-<?= $sancion['estado_sancion'] ?? 'activa' ?>">
-                                        <?= ucfirst($sancion['estado_sancion'] ?? 'activa') ?>
+                                    <span class="sanction-status status-activa">
+                                        Activa
                                     </span>
                                 </td>
                                 <td>
                                     <div class="text-center">
-                                        <span class="badge-professional badge-info-professional" style="font-size: 0.875rem; padding: 0.5rem 0.75rem;">
-                                            <?= $sancion['total_sanciones_persona'] ?? 1 ?>
+                                        <span class="badge-professional badge-danger-professional" style="font-size: 1rem; padding: 0.5rem 0.75rem; font-weight: bold;">
+                                            <?= $sancion['total_sanciones_persona'] ?? 0 ?>
                                         </span>
                                     </div>
                                 </td>
@@ -263,18 +268,13 @@
                                 <td>
                                     <div class="btn-group-professional">
                                         <button class="btn-action view" 
-                                                onclick="verSancion(<?= $sancion['idsancion'] ?>)"
-                                                title="Ver detalles">
+                                                onclick="verDetallesPersona(<?= $sancion['idpersona'] ?>)"
+                                                title="Ver detalles individuales">
                                             <i class="ti ti-eye"></i>
                                         </button>
-                                        <button class="btn-action edit" 
-                                                onclick="editarSancion(<?= $sancion['idsancion'] ?>)"
-                                                title="Editar">
-                                            <i class="ti ti-edit"></i>
-                                        </button>
                                         <button class="btn-action complete" 
-                                                onclick="abrirModalLevantamiento(<?= $sancion['idsancion'] ?>)"
-                                                title="Levantar sanción">
+                                                onclick="levantarTodasSanciones(<?= $sancion['idpersona'] ?>, '<?= addslashes($sancion['nombre_completo']) ?>', <?= $sancion['total_sanciones_persona'] ?>)"
+                                                title="Levantar todas las sanciones (<?= $sancion['total_sanciones_persona'] ?>)">
                                             <i class="ti ti-check"></i>
                                         </button>
                                     </div>
@@ -313,7 +313,7 @@
 
 <!-- Modal Detalles de Persona -->
 <div class="modal fade" id="modalDetallesPersona" tabindex="-1" aria-labelledby="modalDetallesPersonaLabel" aria-hidden="true">
-    <div class="modal-dialog modal-xl">
+    <div class="modal-dialog modal-xl" style="max-width: 1400px; margin: 1.75rem 3rem 1.75rem auto;">
         <div class="modal-content" style="border-radius: 20px; border: none; box-shadow: var(--shadow-xl);">
             <div class="modal-header" style="background: linear-gradient(135deg, var(--primary-color), #1e40af); color: white; border-radius: 20px 20px 0 0;">
                 <h5 class="modal-title" id="modalDetallesPersonaLabel">
@@ -321,7 +321,7 @@
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body" style="padding: 2rem;">
+            <div class="modal-body" style="padding: 1.5rem; max-height: 70vh; overflow-y: auto;">
                 <div id="detalles-persona-content">
                     <div class="text-center py-4">
                         <div class="spinner-professional"></div>
@@ -587,8 +587,8 @@ function verDetallesPersona(idpersona) {
         </div>
     `;
     
-    // Obtener datos de la persona
-    fetch(`<?= base_url('sanciones/persona') ?>/${idpersona}`, {
+    // Obtener datos de la persona (solo sanciones activas)
+    fetch(`<?= base_url('sanciones/persona') ?>/${idpersona}?estado=activa`, {
         method: 'GET',
         headers: {
             'X-Requested-With': 'XMLHttpRequest'
@@ -599,22 +599,52 @@ function verDetallesPersona(idpersona) {
         if (data.success && data.sanciones.length > 0) {
             const persona = data.sanciones[0];
             let html = `
-                <div class="row mb-4">
+                <div class="row mb-3">
                     <div class="col-md-12">
-                        <div class="card" style="border: none; box-shadow: var(--shadow-sm); border-radius: 15px;">
-                            <div class="card-body">
-                                <h5 class="card-title mb-3">
-                                    <i class="ti ti-user me-2"></i>${persona.nombre_completo}
-                                </h5>
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <p class="mb-2"><strong>Documento:</strong> ${persona.tipodoc}: ${persona.numerodoc}</p>
-                                        <p class="mb-2"><strong>Email:</strong> ${persona.email || 'No disponible'}</p>
+                        <div class="card" style="border: none; box-shadow: var(--shadow-md); border-radius: 12px; border-left: 4px solid #dc3545;">
+                            <div class="card-body" style="padding: 1.25rem;">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h5 class="mb-0"><i class="ti ti-user-circle me-2" style="color: #dc3545;"></i>${persona.nombre_completo}</h5>
+                                    <span class="badge bg-danger" style="font-size: 0.9rem; padding: 0.5rem 0.75rem;">${data.sanciones.length} sanción${data.sanciones.length !== 1 ? 'es' : ''} activa${data.sanciones.length !== 1 ? 's' : ''}</span>
+                                </div>
+                                <div class="row g-3" style="font-size: 0.85rem;">
+                                    <div class="col-md-4">
+                                        <div class="d-flex align-items-center">
+                                            <i class="ti ti-id me-2 text-primary"></i>
+                                            <div>
+                                                <small class="text-muted d-block">Documento</small>
+                                                <strong>${persona.tipodoc}: ${persona.numerodoc}</strong>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div class="col-md-6">
-                                        <p class="mb-2"><strong>Teléfono:</strong> ${persona.telefono || 'No disponible'}</p>
-                                        <p class="mb-2"><strong>Total Sanciones:</strong> <span class="badge-professional badge-info-professional">${data.sanciones.length}</span></p>
+                                    <div class="col-md-4">
+                                        <div class="d-flex align-items-center">
+                                            <i class="ti ti-mail me-2 text-primary"></i>
+                                            <div>
+                                                <small class="text-muted d-block">Email</small>
+                                                <strong>${persona.email || 'No disponible'}</strong>
+                                            </div>
+                                        </div>
                                     </div>
+                                    <div class="col-md-4">
+                                        <div class="d-flex align-items-center">
+                                            <i class="ti ti-phone me-2 text-primary"></i>
+                                            <div>
+                                                <small class="text-muted d-block">Teléfono</small>
+                                                <strong>${persona.telefono || 'No disponible'}</strong>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    ${persona.grado || persona.nivel ? `
+                                    <div class="col-md-12">
+                                        <div class="alert alert-info mb-0" style="padding: 0.5rem 1rem; background: #e3f2fd; border: none; border-radius: 8px;">
+                                            <i class="ti ti-school me-2"></i>
+                                            <strong>Nivel Educativo:</strong> ${persona.nivel ? persona.nivel.toUpperCase() : ''} 
+                                            ${persona.grado ? '- Grado: ' + persona.grado : ''} 
+                                            ${persona.seccion ? 'Sección: ' + persona.seccion : ''}
+                                        </div>
+                                    </div>
+                                    ` : ''}
                                 </div>
                             </div>
                         </div>
@@ -622,17 +652,17 @@ function verDetallesPersona(idpersona) {
                 </div>
                 <div class="row">
                     <div class="col-md-12">
-                        <h6 class="mb-3"><i class="ti ti-list me-2"></i>Historial de Sanciones</h6>
+                        <h6 class="mb-3"><i class="ti ti-shield-x me-2"></i>Detalles de las sanciones (${data.sanciones.length})</h6>
                         <div class="table-responsive">
-                            <table class="table table-hover" style="border-radius: 15px; overflow: hidden; box-shadow: var(--shadow-sm);">
+                            <table class="table table-hover table-bordered" style="border-radius: 15px; overflow: hidden; box-shadow: var(--shadow-sm); font-size: 0.85rem; table-layout: fixed; width: 100%;">
                                 <thead style="background: linear-gradient(135deg, var(--secondary-color), #6b7280); color: white;">
                                     <tr>
-                                        <th>Tipo</th>
-                                        <th>Detalles</th>
-                                        <th>Fecha Sanción</th>
-                                        <th>Vencimiento</th>
-                                        <th>Estado</th>
-                                        <th>Registrado por</th>
+                                        <th style="width: 20%;">Tipo</th>
+                                        <th style="width: 28%;">Detalles</th>
+                                        <th style="width: 12%;">Fecha Sanción</th>
+                                        <th style="width: 12%;">Vencimiento</th>
+                                        <th style="width: 10%;">Estado</th>
+                                        <th style="width: 18%; text-align: center;">Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -642,14 +672,29 @@ function verDetallesPersona(idpersona) {
                 const estadoClass = sancion.estado_sancion === 'activa' ? 'status-activa' : 
                                   sancion.estado_sancion === 'cumplida' ? 'status-cumplida' : 'status-cancelada';
                 
+                const accionesHtml = sancion.estado_sancion === 'activa' ? `
+                    <button class="btn btn-sm btn-warning" onclick="abrirModalLevantamiento(${sancion.idsancion})" title="Levantar sanción">
+                        <i class="ti ti-check"></i>
+                    </button>
+                    <button class="btn btn-sm btn-danger" onclick="eliminarSancion(${sancion.idsancion})" title="Eliminar">
+                        <i class="ti ti-trash"></i>
+                    </button>
+                ` : `
+                    <span class="text-muted">-</span>
+                `;
+                
                 html += `
                     <tr>
-                        <td><span class="badge-professional badge-info-professional">${sancion.tiposancion}</span></td>
-                        <td>${sancion.detallesancion}</td>
-                        <td>${sancion.fecha_sancion}</td>
-                        <td>${sancion.fecha_vencimiento || 'Sin fecha'}</td>
-                        <td><span class="sanction-status ${estadoClass}">${sancion.estado_sancion}</span></td>
-                        <td>${sancion.usuario_registra_nombre || 'Sistema'}</td>
+                        <td style="vertical-align: middle; padding: 0.5rem;">
+                            <span class="badge-professional badge-info-professional" style="font-size: 0.75rem; white-space: normal; display: inline-block; max-width: 100%; line-height: 1.3;">
+                                ${sancion.tiposancion}
+                            </span>
+                        </td>
+                        <td style="vertical-align: middle; word-wrap: break-word; padding: 0.5rem; overflow: hidden;">${sancion.detallesancion}</td>
+                        <td style="vertical-align: middle; white-space: nowrap; padding: 0.5rem;">${sancion.fecha_sancion}</td>
+                        <td style="vertical-align: middle; white-space: nowrap; padding: 0.5rem;">${sancion.fecha_vencimiento || 'Sin fecha'}</td>
+                        <td style="vertical-align: middle; padding: 0.5rem;"><span class="sanction-status ${estadoClass}" style="font-size: 0.75rem; padding: 0.25rem 0.5rem;">${sancion.estado_sancion.toUpperCase()}</span></td>
+                        <td style="vertical-align: middle; text-align: center; padding: 0.5rem;">${accionesHtml}</td>
                     </tr>
                 `;
             });
@@ -666,9 +711,9 @@ function verDetallesPersona(idpersona) {
         } else {
             document.getElementById('detalles-persona-content').innerHTML = `
                 <div class="text-center py-4">
-                    <i class="ti ti-alert-circle text-muted" style="font-size: 3rem;"></i>
-                    <h5 class="text-muted mt-3">No se encontraron sanciones</h5>
-                    <p class="text-muted">Esta persona no tiene sanciones registradas.</p>
+                    <i class="ti ti-shield-check text-success" style="font-size: 3rem;"></i>
+                    <h5 class="text-success mt-3">Sin Sanciones Activas</h5>
+                    <p class="text-muted">Esta persona no tiene sanciones activas en este momento.</p>
                 </div>
             `;
         }
@@ -687,27 +732,35 @@ function verDetallesPersona(idpersona) {
 
 // Función para abrir modal de levantamiento
 function abrirModalLevantamiento(idsancion) {
-    const modal = new bootstrap.Modal(document.getElementById('modalLevantamiento'));
-    modal.show();
+    // Cerrar el modal de detalles de persona si está abierto
+    const modalDetallesPersona = bootstrap.Modal.getInstance(document.getElementById('modalDetallesPersona'));
+    if (modalDetallesPersona) {
+        modalDetallesPersona.hide();
+    }
     
-    // Mostrar loading
-    document.getElementById('levantamiento-content').innerHTML = `
-        <div class="text-center py-4">
-            <div class="spinner-professional"></div>
-            <p class="mt-2">Cargando detalles de la sanción...</p>
-        </div>
-    `;
-    
-    // Obtener detalles de la sanción
-    fetch(`<?= base_url('sanciones/detalles-levantamiento') ?>/${idsancion}`, {
-        method: 'GET',
-        headers: {
-            'X-Requested-With': 'XMLHttpRequest'
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
+    // Esperar un momento para que se cierre el modal anterior
+    setTimeout(() => {
+        const modal = new bootstrap.Modal(document.getElementById('modalLevantamiento'));
+        modal.show();
+        
+        // Mostrar loading
+        document.getElementById('levantamiento-content').innerHTML = `
+            <div class="text-center py-4">
+                <div class="spinner-professional"></div>
+                <p class="mt-2">Cargando detalles de la sanción...</p>
+            </div>
+        `;
+        
+        // Obtener detalles de la sanción
+        fetch(`<?= base_url('sanciones/detalles-levantamiento') ?>/${idsancion}`, {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
             const sancion = data.sancion;
             const fechaActual = new Date().toLocaleDateString('es-ES');
             
@@ -784,18 +837,139 @@ function abrirModalLevantamiento(idsancion) {
             `;
         }
     })
-    .catch(error => {
-        console.error('Error al cargar detalles:', error);
-        document.getElementById('levantamiento-content').innerHTML = `
-            <div class="text-center py-4">
-                <i class="ti ti-alert-circle text-danger" style="font-size: 3rem;"></i>
-                <h5 class="text-danger mt-3">Error al cargar detalles</h5>
-                <p class="text-muted">No se pudieron cargar los detalles de la sanción.</p>
-                <button type="button" class="btn btn-secondary btn-professional" data-bs-dismiss="modal">
-                    <i class="ti ti-x me-1"></i>Cerrar
-                </button>
+        .catch(error => {
+            console.error('Error al cargar detalles:', error);
+            document.getElementById('levantamiento-content').innerHTML = `
+                <div class="text-center py-4">
+                    <i class="ti ti-alert-circle text-danger" style="font-size: 3rem;"></i>
+                    <h5 class="text-danger mt-3">Error al cargar detalles</h5>
+                    <p class="text-muted">No se pudieron cargar los detalles de la sanción.</p>
+                    <button type="button" class="btn btn-secondary btn-professional" data-bs-dismiss="modal">
+                        <i class="ti ti-x me-1"></i>Cerrar
+                    </button>
+                </div>
+            `;
+        });
+    }, 300);
+}
+
+// Función para levantar TODAS las sanciones de una persona
+function levantarTodasSanciones(idpersona, nombreCompleto, totalSanciones) {
+    Swal.fire({
+        title: '⚠️ Levantar Todas las Sanciones',
+        html: `
+            <div class="text-start">
+                <p><strong>Persona:</strong> ${nombreCompleto}</p>
+                <p><strong>Total de sanciones activas:</strong> <span class="badge bg-danger">${totalSanciones}</span></p>
+                <hr>
+                <p class="text-muted">Esta acción levantará TODAS las sanciones activas de esta persona.</p>
+                <label for="motivo-todas" class="form-label mt-3">
+                    <i class="ti ti-edit me-2"></i><strong>Motivo del levantamiento:</strong>
+                </label>
+                <textarea id="motivo-todas" class="form-control" rows="4" 
+                          placeholder="Describe el motivo por el cual se levantan todas las sanciones..."
+                          style="border-radius: 10px; border: 2px solid #e5e7eb;"></textarea>
             </div>
-        `;
+        `,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: `<i class="ti ti-check me-1"></i>Sí, levantar todas (${totalSanciones})`,
+        cancelButtonText: '<i class="ti ti-x me-1"></i>Cancelar',
+        confirmButtonColor: '#059669',
+        cancelButtonColor: '#6b7280',
+        width: '600px',
+        preConfirm: () => {
+            const motivo = document.getElementById('motivo-todas').value;
+            if (!motivo.trim()) {
+                Swal.showValidationMessage('Por favor, describe el motivo del levantamiento');
+                return false;
+            }
+            return motivo;
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            const motivo = result.value;
+            
+            // Mostrar loading
+            Swal.fire({
+                title: 'Levantando sanciones...',
+                html: 'Por favor espera mientras se procesan todas las sanciones.',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+            
+            // Hacer petición al servidor
+            fetch('<?= base_url('sanciones/levantar-todas') ?>', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({
+                    idpersona: idpersona,
+                    motivo_levantamiento: motivo
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: '¡Sanciones levantadas!',
+                        html: `
+                            <p>Se han levantado exitosamente <strong>${data.total_levantadas || totalSanciones}</strong> sanción(es).</p>
+                            <p class="text-muted">Las sanciones han sido marcadas como canceladas.</p>
+                        `,
+                        confirmButtonColor: '#059669',
+                        confirmButtonText: 'Entendido'
+                    }).then(() => {
+                        // Recargar solo el contenido de sanciones activas sin salir de la vista
+                        const contenedorPrincipal = document.querySelector('#contenedor-principal') || 
+                                                    document.querySelector('.body-wrapper-inner') ||
+                                                    document.querySelector('#main-wrapper');
+                        
+                        if (contenedorPrincipal) {
+                            contenedorPrincipal.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Cargando...</span></div></div>';
+                            
+                            fetch('<?= base_url('sanciones') ?>', {
+                                method: 'GET',
+                                headers: {
+                                    'X-Requested-With': 'XMLHttpRequest'
+                                }
+                            })
+                            .then(response => response.text())
+                            .then(html => {
+                                contenedorPrincipal.innerHTML = html;
+                            })
+                            .catch(error => {
+                                console.error('Error al recargar:', error);
+                                location.reload(); // Fallback si falla la recarga AJAX
+                            });
+                        } else {
+                            location.reload(); // Fallback si no encuentra el contenedor
+                        }
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: data.message || 'No se pudieron levantar las sanciones',
+                        confirmButtonColor: '#dc2626'
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error de conexión',
+                    text: 'No se pudo conectar con el servidor',
+                    confirmButtonColor: '#dc2626'
+                });
+            });
+        }
     });
 }
 

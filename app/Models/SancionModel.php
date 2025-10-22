@@ -66,52 +66,70 @@ class SancionModel extends Model
     ];
 
     /**
-     * Obtener sanciones activas con información completa
+     * Obtener sanciones activas agrupadas por persona
      */
     public function obtenerSancionesActivas($filtros = [])
     {
-        $builder = $this->select('
-            sanciones.*,
-            ts.tiposancion,
-            CONCAT(p.nombres, " ", p.apellidos) as nombre_completo,
-            p.nombres,
-            p.apellidos,
-            p.numerodoc,
-            p.tipodoc,
-            p.telefono,
-            p.email,
-            u.nomuser as usuario_registra_nombre,
-            g.grado,
-            g.seccion,
-            g.nivel,
-            (SELECT COUNT(*) FROM sanciones s2 WHERE s2.idpersona = sanciones.idpersona AND s2.estado_sancion = "activa") as total_sanciones_persona
-        ')
-        ->join('tiposancion ts', 'ts.idtiposancion = sanciones.idtiposancion')
-        ->join('personas p', 'p.idpersona = sanciones.idpersona')
-        ->join('matriculas m', 'm.idpersona = p.idpersona', 'left')
-        ->join('grupos g', 'g.idgrupo = m.idgrupo', 'left')
-        ->join('usuarios u', 'u.idusuario = sanciones.usuario_registra', 'left')
-        ->where('sanciones.estado_sancion', 'activa');
-
+        $db = \Config\Database::connect();
+        
+        // Construir la consulta base
+        $sql = "
+            SELECT 
+                p.idpersona,
+                CONCAT(p.nombres, ' ', p.apellidos) as nombre_completo,
+                p.nombres,
+                p.apellidos,
+                p.numerodoc,
+                p.tipodoc,
+                p.telefono,
+                p.email,
+                g.grado,
+                g.seccion,
+                g.nivel,
+                COUNT(s.idsancion) as total_sanciones_persona,
+                MAX(s.fecha_sancion) as fecha_sancion_reciente,
+                MIN(s.fecha_vencimiento) as fecha_vencimiento_proxima,
+                GROUP_CONCAT(DISTINCT ts.tiposancion ORDER BY ts.tiposancion SEPARATOR ', ') as tipos_sanciones,
+                MAX(s.idsancion) as idsancion_reciente
+            FROM sanciones s
+            INNER JOIN personas p ON p.idpersona = s.idpersona
+            LEFT JOIN matriculas m ON m.idpersona = p.idpersona
+            LEFT JOIN grupos g ON g.idgrupo = m.idgrupo
+            LEFT JOIN tiposancion ts ON ts.idtiposancion = s.idtiposancion
+            WHERE s.estado_sancion = 'activa'
+        ";
+        
         // Aplicar filtros
+        $whereConditions = [];
+        $params = [];
+        
         if (!empty($filtros['tipo_sancion'])) {
-            $builder->where('sanciones.idtiposancion', $filtros['tipo_sancion']);
+            $whereConditions[] = "s.idtiposancion = ?";
+            $params[] = $filtros['tipo_sancion'];
         }
-
+        
         if (!empty($filtros['nivel'])) {
-            $builder->where('g.nivel', $filtros['nivel']);
+            $whereConditions[] = "g.nivel = ?";
+            $params[] = $filtros['nivel'];
         }
-
+        
         if (!empty($filtros['buscar'])) {
-            $builder->groupStart()
-                ->like('p.nombres', $filtros['buscar'])
-                ->orLike('p.apellidos', $filtros['buscar'])
-                ->orLike('p.numerodoc', $filtros['buscar'])
-                ->orLike('sanciones.detallesancion', $filtros['buscar'])
-            ->groupEnd();
+            $whereConditions[] = "(p.nombres LIKE ? OR p.apellidos LIKE ? OR p.numerodoc LIKE ?)";
+            $buscar = '%' . $filtros['buscar'] . '%';
+            $params[] = $buscar;
+            $params[] = $buscar;
+            $params[] = $buscar;
         }
-
-        return $builder->orderBy('sanciones.fecha_sancion', 'DESC')->findAll();
+        
+        if (!empty($whereConditions)) {
+            $sql .= " AND " . implode(" AND ", $whereConditions);
+        }
+        
+        $sql .= " GROUP BY p.idpersona, p.nombres, p.apellidos, p.numerodoc, p.tipodoc, p.telefono, p.email, g.grado, g.seccion, g.nivel";
+        $sql .= " ORDER BY fecha_sancion_reciente DESC";
+        
+        $query = $db->query($sql, $params);
+        return $query->getResultArray();
     }
 
     /**
@@ -165,7 +183,10 @@ class SancionModel extends Model
             ->groupEnd();
         }
 
-        return $builder->orderBy('sanciones.fecha_sancion', 'DESC')->findAll();
+        // Ordenar por la última acción: primero por fecha de levantamiento, luego por actualización, finalmente por creación
+        return $builder
+            ->orderBy('sanciones.updated_at', 'DESC')
+            ->findAll();
     }
 
     /**
@@ -268,7 +289,10 @@ class SancionModel extends Model
             sanciones.*,
             ts.tiposancion,
             CONCAT(p.nombres, " ", p.apellidos) as nombre_completo,
+            p.nombres,
+            p.apellidos,
             p.numerodoc,
+            p.tipodoc,
             p.email,
             p.telefono,
             u.nomuser as usuario_registra_nombre,
@@ -290,10 +314,12 @@ class SancionModel extends Model
 
     /**
      * Obtener todas las sanciones de una persona específica
+     * @param int $idpersona ID de la persona
+     * @param string|null $estado Filtrar por estado (activa, cumplida, cancelada, suspendida) o null para todas
      */
-    public function obtenerSancionesPorPersona($idpersona)
+    public function obtenerSancionesPorPersona($idpersona, $estado = null)
     {
-        return $this->select('
+        $builder = $this->select('
             sanciones.*,
             ts.tiposancion,
             CONCAT(p.nombres, " ", p.apellidos) as nombre_completo,
@@ -304,6 +330,7 @@ class SancionModel extends Model
             p.telefono,
             p.email,
             u.nomuser as usuario_registra_nombre,
+            ul.nomuser as usuario_levanta_nombre,
             g.grado,
             g.seccion,
             g.nivel
@@ -313,8 +340,14 @@ class SancionModel extends Model
         ->join('matriculas m', 'm.idpersona = p.idpersona', 'left')
         ->join('grupos g', 'g.idgrupo = m.idgrupo', 'left')
         ->join('usuarios u', 'u.idusuario = sanciones.usuario_registra', 'left')
-        ->where('sanciones.idpersona', $idpersona)
-        ->orderBy('sanciones.fecha_sancion', 'DESC')
-        ->findAll();
+        ->join('usuarios ul', 'ul.idusuario = sanciones.usuario_levanta', 'left')
+        ->where('sanciones.idpersona', $idpersona);
+        
+        // Filtrar por estado si se especifica
+        if ($estado !== null) {
+            $builder->where('sanciones.estado_sancion', $estado);
+        }
+        
+        return $builder->orderBy('sanciones.fecha_sancion', 'DESC')->findAll();
     }
 }
