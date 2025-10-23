@@ -24,20 +24,17 @@ function compartirRecurso(idRecurso) {
     const baseUrl = window.location.origin + window.location.pathname;
     const urlRecurso = `${baseUrl}?ver_recurso=${idRecurso}`;
     
-    // Mensaje personalizado para WhatsApp con emojis
-    const mensaje = `📚 *Biblioteca Virtual HZG*
-
-¡Mira este recurso que encontré! 📖
-
-📌 *${tituloRecurso}*
-
-👉 Ver detalles aquí:
-${urlRecurso}
-
-¡Espero que te sea útil! 🎓`;
+    // Codificar el título del recurso para URL
+    const tituloLimpio = tituloRecurso.trim();
     
-    // Codificar mensaje para URL
-    const mensajeCodificado = encodeURIComponent(mensaje);
+    // Mensaje personalizado para WhatsApp (juvenil y alegre)
+    // Codificar solo el texto, NO la URL para que sea clickeable
+    const parte1 = encodeURIComponent('¡Mira este libro que encontré!\n\n*' + tituloLimpio + '*\n\nVer detalles aquí:\n');
+    const parte2 = urlRecurso; // URL SIN codificar para que sea clickeable
+    const parte3 = encodeURIComponent('\n\n¡No te lo pierdas, está genial!');
+    
+    // Construir mensaje final
+    const mensajeCodificado = parte1 + parte2 + parte3;
     
     // URL de WhatsApp
     const urlWhatsApp = `https://wa.me/?text=${mensajeCodificado}`;
@@ -48,8 +45,9 @@ ${urlRecurso}
     // Log para debugging
     console.log('📤 Compartiendo recurso:', {
         id: idRecurso,
-        titulo: tituloRecurso,
-        url: urlRecurso
+        titulo: tituloLimpio,
+        url: urlRecurso,
+        whatsappUrl: urlWhatsApp.substring(0, 150) + '...'
     });
 }
 
