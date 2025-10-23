@@ -1968,11 +1968,14 @@ class PrestamoController extends Controller
                 // Usar transacción para eliminar todo relacionado
                 $db->transStart();
                 
-                // 1. Desvincular referencias en la tabla solicitud (poner idprestamo en NULL)
-                //    Esto mantiene la solicitud pero elimina la referencia al préstamo
+                // 1. Marcar solicitudes vinculadas como "préstamo eliminado del historial"
+                //    Esto las distingue de las solicitudes realmente rechazadas
                 $db->table('solicitud')
                     ->where('idprestamo', $id)
-                    ->update(['idprestamo' => null]);
+                    ->update([
+                        'idprestamo' => null,
+                        'motivo_rechazo' => 'PRESTAMO_ELIMINADO_HISTORIAL: El préstamo asociado fue eliminado del historial por un administrador.'
+                    ]);
                 
                 // 2. Desvincular sanciones del préstamo (poner idprestamo en NULL)
                 //    Las sanciones se mantienen en el historial del usuario
@@ -2083,9 +2086,12 @@ class PrestamoController extends Controller
             log_message('info', "Iniciando eliminación completa del historial - Admin: " . session()->get('nomuser'));
             log_message('info', "Registros a eliminar - Préstamos: {$countPrestamos}, Solicitudes: {$countSolicitudes}, Renovaciones: {$countRenovaciones}");
             
-            // 1. Desvincular todas las solicitudes de préstamos devueltos
+            // 1. Marcar todas las solicitudes de préstamos devueltos como "eliminados del historial"
             $db->table('solicitud')
-                ->set('idprestamo', null)
+                ->set([
+                    'idprestamo' => null,
+                    'motivo_rechazo' => 'PRESTAMO_ELIMINADO_HISTORIAL: Préstamo eliminado durante limpieza masiva del historial por administrador.'
+                ])
                 ->where('idprestamo IN (SELECT idprestamo FROM prestamos WHERE fechahoraretorno IS NOT NULL)', null, false)
                 ->update();
             
@@ -2098,10 +2104,12 @@ class PrestamoController extends Controller
             // 3. Eliminar todas las renovaciones (son registros administrativos)
             $db->table('renovaciones_prestamo')->truncate();
             
-            // 4. Eliminar todas las solicitudes rechazadas
+            // 4. Eliminar solo las solicitudes realmente rechazadas (no las que son préstamos eliminados)
             $db->table('solicitud')
                 ->where('validado', true)
                 ->where('idprestamo IS NULL', null, false)
+                ->where('motivo_rechazo IS NOT NULL', null, false)
+                ->where('motivo_rechazo NOT LIKE', 'PRESTAMO_ELIMINADO_HISTORIAL:%')
                 ->delete();
             
             // 5. Eliminar todos los préstamos devueltos

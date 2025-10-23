@@ -467,7 +467,9 @@ class PrestamoModel extends Model
                 JOIN personas per ON per.idpersona = m.idpersona
                 JOIN recursos r ON r.idrecurso = s.idrecurso
                 LEFT JOIN recursos_fisicos rf ON rf.idrecurso = r.idrecurso
-                WHERE s.validado = true AND s.idprestamo IS NULL";
+                WHERE s.validado = true 
+                    AND s.idprestamo IS NULL 
+                    AND (s.motivo_rechazo IS NOT NULL AND s.motivo_rechazo NOT LIKE 'PRESTAMO_ELIMINADO_HISTORIAL:%')";
         
         // Unir ambas consultas
         $sql = "({$sqlDevueltos}) UNION ALL ({$sqlRechazadas}) ORDER BY fecha_registro DESC LIMIT 100";
