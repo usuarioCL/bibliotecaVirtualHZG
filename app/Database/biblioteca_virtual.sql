@@ -130,6 +130,8 @@ CREATE TABLE prestamos (
     idrecurso INT NOT NULL, -- recurso prestado
     fechaprestamo DATETIME NOT NULL,
     fechadevolucion DATETIME,
+    cantidad INT NOT NULL DEFAULT 1 COMMENT 'Cantidad de ejemplares prestados en este préstamo',
+    observaciones_devolucion TEXT NULL COMMENT 'Observaciones registradas al momento de la devolución del préstamo',
     fechahoravalidacion DATETIME,
     fechahoraretorno DATETIME,
     FOREIGN KEY (idmatricula) REFERENCES matriculas(idmatricula),

@@ -157,28 +157,94 @@ class PrestamoController extends Controller
         
         // Obtener datos del formulario
         $idRecurso = $this->request->getPost('idRecurso');
-        $fechaPrestamo = $this->request->getPost('fechaPrestamo');
-        $horaInicio = $this->request->getPost('horaInicio');
-        $horaFin = $this->request->getPost('horaFin');
+        $fechaInicio = $this->request->getPost('fechaInicio');
+        $fechaEntrega = $this->request->getPost('fechaEntrega');
+        $cantidad = $this->request->getPost('cantidadLibros') ?? 1;
         
         // Validar datos obligatorios
-        if (!$idRecurso || !$fechaPrestamo || !$horaInicio || !$horaFin) {
+        if (!$idRecurso || !$fechaInicio || !$fechaEntrega) {
             return $this->response->setJSON([
                 'success' => false,
                 'message' => 'Todos los campos obligatorios deben ser completados'
             ]);
         }
         
-        // Las validaciones se manejan en el frontend con validación inline
-        // Solo creamos los objetos DateTime para el procesamiento
-        $horaInicioObj = DateTime::createFromFormat('H:i', $horaInicio);
-        $horaFinObj = DateTime::createFromFormat('H:i', $horaFin);
+        // Validar cantidad
+        $cantidad = (int)$cantidad;
+        if ($cantidad < 1) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'La cantidad debe ser al menos 1'
+            ]);
+        }
         
-        // Crear fecha y hora completa para el préstamo
-        $fechaHoraPrestamo = $fechaPrestamo . ' ' . $horaInicio . ':00';
+        // Log para debugging
+        log_message('info', 'Procesando solicitud de préstamo - Usuario: ' . session()->get('nomuser') . 
+                   ', Recurso: ' . $idRecurso . ', Cantidad: ' . $cantidad . 
+                   ', Fecha inicio: ' . $fechaInicio . ', Fecha entrega: ' . $fechaEntrega);
         
-        // La devolución será el mismo día a la hora de fin especificada
-        $fechaHoraDevolucion = $fechaPrestamo . ' ' . $horaFin . ':00';
+        // Validar fechas
+        try {
+            $fechaInicioObj = new DateTime($fechaInicio);
+            $fechaEntregaObj = new DateTime($fechaEntrega);
+            $hoy = new DateTime();
+            $hoy->setTime(0, 0, 0);
+            
+            // Validar que la fecha de inicio no sea anterior a hoy
+            if ($fechaInicioObj < $hoy) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'La fecha de inicio no puede ser anterior a hoy'
+                ]);
+            }
+            
+            // Validar que sean días hábiles
+            $diaInicio = $fechaInicioObj->format('w'); // 0=domingo, 6=sábado
+            $diaEntrega = $fechaEntregaObj->format('w');
+            
+            if ($diaInicio == 0 || $diaInicio == 6) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'La fecha de inicio debe ser un día hábil (lunes a viernes)'
+                ]);
+            }
+            
+            if ($diaEntrega == 0 || $diaEntrega == 6) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'La fecha de entrega debe ser un día hábil (lunes a viernes)'
+                ]);
+            }
+            
+            // Validar que la fecha de entrega sea posterior a la de inicio
+            if ($fechaEntregaObj <= $fechaInicioObj) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'La fecha de entrega debe ser posterior a la fecha de inicio'
+                ]);
+            }
+            
+            // Validar que no sea más de 7 días
+            $diff = $fechaInicioObj->diff($fechaEntregaObj);
+            if ($diff->days > 7) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'El préstamo no puede durar más de 7 días'
+                ]);
+            }
+            
+        } catch (Exception $e) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Fechas inválidas'
+            ]);
+        }
+        
+        // Crear fecha y hora completa para el préstamo (8:00 AM del día de inicio)
+        $fechaHoraPrestamo = $fechaInicio . ' 08:00:00';
+        
+        // La devolución será a las 13:00 PM del día de entrega
+        $fechaHoraDevolucion = $fechaEntrega . ' 13:00:00';
         
         try {
             // Obtener datos del usuario
@@ -269,17 +335,46 @@ class PrestamoController extends Controller
                 ]);
             }
             
-            // Crear solo la solicitud (sin préstamo activo aún)
+            // Validar cantidad solicitada vs stock disponible
+            if ($cantidad > $stock) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => "Solo hay {$stock} ejemplar(es) disponible(s). No se puede solicitar {$cantidad} ejemplar(es)."
+                ]);
+            }
+            
+            // Validar que solo los docentes y administradores puedan solicitar múltiples ejemplares
+            if ($cantidad > 1 && !in_array($nivelAcceso, ['docente', 'admin'])) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Solo los docentes y administradores pueden solicitar múltiples ejemplares del mismo recurso'
+                ]);
+            }
+            
+            // Crear una sola solicitud para todos los libros requeridos
             $db = \Config\Database::connect();
-            $db->table('solicitud')->insert([
+            
+            // Preparar los datos de la solicitud, incluyendo la cantidad en el motivo_rechazo temporalmente
+            // (usaremos este campo para almacenar la cantidad hasta que se procese)
+            $cantidadInfo = $cantidad > 1 ? "Cantidad solicitada: $cantidad ejemplares" : null;
+            
+            $result = $db->table('solicitud')->insert([
                 'idmatricula' => $idMatricula,
                 'idusuario' => $idUsuario,
                 'idrecurso' => $idRecurso,
                 'fechaprestamo' => $fechaHoraPrestamo,
                 'fechadevolucion' => $fechaHoraDevolucion,
                 'validado' => false,
-                'idprestamo' => null  // Se asignará cuando se apruebe
+                'idprestamo' => null,  // Se asignará cuando se apruebe
+                'motivo_rechazo' => $cantidadInfo  // Almacenar temporalmente la cantidad aquí
             ]);
+            
+            if (!$result) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'No se pudo crear la solicitud. Verifique los datos e intente nuevamente.'
+                ]);
+            }
             
             // Registrar en historial de usuario si existe el helper
             try {
@@ -287,24 +382,45 @@ class PrestamoController extends Controller
                 if (function_exists('registrar_accion')) {
                     // Verificar si es un array o un objeto
                     $titulo = is_array($recurso) ? $recurso['titulo'] : $recurso->titulo;
-                    registrar_accion("Solicitó préstamo del recurso #$idRecurso: $titulo");
+                    if ($cantidad === 1) {
+                        registrar_accion("Solicitó préstamo del recurso #$idRecurso: $titulo");
+                    } else {
+                        registrar_accion("Solicitó préstamo de $cantidad ejemplares del recurso #$idRecurso: $titulo");
+                    }
                 }
             } catch (\Exception $e) {
                 // Si el helper no existe, simplemente continuar sin registrar
                 log_message('debug', 'Helper historial no disponible: ' . $e->getMessage());
             }
             
+            $mensajeExito = $cantidad === 1 
+                ? 'Solicitud de préstamo enviada correctamente'
+                : "Solicitud de préstamo enviada correctamente para $cantidad ejemplares";
+            
             return $this->response->setJSON([
                 'success' => true,
-                'message' => 'Solicitud de préstamo enviada correctamente'
+                'message' => $mensajeExito,
+                'data' => [
+                    'cantidad_solicitada' => $cantidad,
+                    'solicitud_id' => $db->insertID()
+                ]
             ]);
             
         } catch (\Exception $e) {
             log_message('error', 'Error al procesar solicitud de préstamo: ' . $e->getMessage());
+            log_message('error', 'Stack trace: ' . $e->getTraceAsString());
+            log_message('error', 'Datos recibidos: ' . json_encode([
+                'idRecurso' => $idRecurso,
+                'fechaInicio' => $fechaInicio,
+                'fechaEntrega' => $fechaEntrega,
+                'cantidad' => $cantidad,
+                'nivelAcceso' => $nivelAcceso ?? 'no definido',
+                'idUsuario' => $idUsuario ?? 'no definido'
+            ]));
             
             return $this->response->setJSON([
                 'success' => false,
-                'message' => 'Ha ocurrido un error al procesar su solicitud. Por favor, inténtelo nuevamente más tarde.'
+                'message' => 'Ha ocurrido un error al procesar su solicitud. Error: ' . $e->getMessage()
             ]);
         }
     }
@@ -326,6 +442,14 @@ class PrestamoController extends Controller
         try {
             $historial = $this->prestamoModel->getHistorialCompleto();
             $estadisticas = $this->prestamoModel->getEstadisticasHistorial();
+            
+            // Debug temporal: log información del historial
+            log_message('info', 'Historial obtenido: ' . count($historial) . ' registros');
+            if (!empty($historial)) {
+                $primerRegistro = $historial[0];
+                log_message('info', 'Primer registro - ID: ' . ($primerRegistro['id'] ?? 'N/A') . 
+                           ', Observaciones: "' . ($primerRegistro['observaciones'] ?? 'NULL') . '"');
+            }
 
             $data = [
                 'title' => 'Historial de Préstamos',
@@ -365,7 +489,46 @@ class PrestamoController extends Controller
      */
     private function getDatosPruebaHistorial()
     {
-        return [];
+        return [
+            [
+                'id' => 1,
+                'codigo_prestamo' => 'PREST-2025-001',
+                'usuario' => 'Juan Pérez',
+                'documento' => '12345678',
+                'recurso' => 'Cálculo Diferencial',
+                'codigo_ejemplar' => 'LIB-FIS-001',
+                'fecha_prestamo' => '2025-10-01 08:00:00',
+                'fecha_devolucion' => '2025-10-15 10:30:00',
+                'fecha_vencimiento' => '2025-10-15 13:00:00',
+                'cantidad' => 1,
+                'estado_final' => 'Devuelto',
+                'dias_prestamo' => 14,
+                'dias_retraso' => 0,
+                'horas_retraso_total' => 0,
+                'renovaciones' => 0,
+                'estado_ejemplar' => 'Bueno',
+                'observaciones' => 'Libro devuelto en excelente estado, sin daños visibles.'
+            ],
+            [
+                'id' => 2,
+                'codigo_prestamo' => 'PREST-2025-002',
+                'usuario' => 'María García',
+                'documento' => '87654321',
+                'recurso' => 'Álgebra Lineal',
+                'codigo_ejemplar' => 'LIB-FIS-002',
+                'fecha_prestamo' => '2025-10-05 09:00:00',
+                'fecha_devolucion' => '2025-10-20 14:00:00',
+                'fecha_vencimiento' => '2025-10-19 13:00:00',
+                'cantidad' => 2,
+                'estado_final' => 'Devuelto con retraso',
+                'dias_prestamo' => 15,
+                'dias_retraso' => 1,
+                'horas_retraso_total' => 25,
+                'renovaciones' => 1,
+                'estado_ejemplar' => 'Regular',
+                'observaciones' => null // Sin observaciones para probar ambos casos
+            ]
+        ];
     }
     
     

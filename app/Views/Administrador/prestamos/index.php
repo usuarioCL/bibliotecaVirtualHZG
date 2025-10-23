@@ -161,6 +161,7 @@
                             <th class="border-0 px-3 py-3">Usuario</th>
                             <th class="border-0 px-3 py-3">Recurso</th>
                             <th class="border-0 px-3 py-3">Fechas</th>
+                            <th class="border-0 text-center px-3 py-3">Cantidad</th>
                             <th class="border-0 text-center px-3 py-3">Estado</th>
                             <th class="border-0 text-center px-3 py-3">Renovaciones</th>
                             <th class="border-0 text-center px-3 py-3">Acciones</th>
@@ -198,17 +199,37 @@
                                     <td class="px-3 py-3">
                                         <div>
                                             <p class="mb-1 small">
-                                                <i class="ti ti-calendar-event me-1"></i>
-                                                <?= date('d/m/Y', strtotime($prestamo['fecha_prestamo'])) ?>
+                                                <i class="ti ti-calendar-plus text-primary me-1"></i>
+                                                <strong>Inicio:</strong> <?= date('d/m/Y', strtotime($prestamo['fecha_prestamo'])) ?>
                                             </p>
-                                            <p class="mb-1 small text-muted">
-                                                <i class="ti ti-clock me-1"></i>
-                                                Inicio: <?= date('H:i', strtotime($prestamo['fecha_prestamo'])) ?>
+                                            <p class="mb-1 small">
+                                                <i class="ti ti-calendar text-success me-1"></i>
+                                                <strong>Entrega:</strong> <?= !empty($prestamo['fecha_devolucion']) ? date('d/m/Y', strtotime($prestamo['fecha_devolucion'])) : 'No especificada' ?>
                                             </p>
                                             <p class="mb-0 small text-muted">
-                                                <i class="ti ti-clock-off me-1"></i>
-                                                Fin: <?= !empty($prestamo['fecha_devolucion']) ? date('H:i', strtotime($prestamo['fecha_devolucion'])) : 'No especificada' ?>
+                                                <i class="ti ti-clock-hour-3 me-1"></i>
+                                                Duración: 
+                                                <?php
+                                                    if (!empty($prestamo['fecha_devolucion'])) {
+                                                        $inicio = new DateTime($prestamo['fecha_prestamo']);
+                                                        $entrega = new DateTime($prestamo['fecha_devolucion']);
+                                                        $diff = $inicio->diff($entrega);
+                                                        echo $diff->days . ' día' . ($diff->days != 1 ? 's' : '');
+                                                    } else {
+                                                        echo 'No especificada';
+                                                    }
+                                                ?>
                                             </p>
+                                        </div>
+                                    </td>
+                                    <td class="px-3 py-3 text-center">
+                                        <div class="d-flex flex-column align-items-center">
+                                            <span class="badge bg-primary-subtle text-primary fs-6 px-3 py-2 mb-1">
+                                                <?= isset($prestamo['cantidad']) ? $prestamo['cantidad'] : 1 ?>
+                                            </span>
+                                            <small class="text-muted">
+                                                <?= (isset($prestamo['cantidad']) && $prestamo['cantidad'] == 1) ? 'ejemplar' : 'ejemplares' ?>
+                                            </small>
                                         </div>
                                     </td>
                                     <td class="px-3 py-3 text-center">
@@ -328,7 +349,7 @@
                             <?php endforeach; ?>
                         <?php else: ?>
                             <tr>
-                                <td colspan="7" class="text-center py-5">
+                                <td colspan="8" class="text-center py-5">
                                     <div class="empty-state">
                                         <div class="empty-state-icon mb-3">
                                             <i class="ti ti-bookmark-off" style="font-size: 3rem; color: #6c757d;"></i>

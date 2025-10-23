@@ -10,7 +10,8 @@ class PrestamoModel extends Model
     protected $primaryKey = 'idprestamo';
     protected $allowedFields = [
         'idmatricula', 'idusuario', 'idrecurso', 'fechaprestamo', 
-        'fechadevolucion', 'fechahoravalidacion', 'fechahoraretorno'
+        'fechadevolucion', 'fechahoravalidacion', 'fechahoraretorno',
+        'observaciones_devolucion', 'cantidad'
     ];
     
     protected $useTimestamps = false;
@@ -124,6 +125,7 @@ class PrestamoModel extends Model
                     TIME_FORMAT(p.fechaprestamo, '%H:%i') as hora_inicio,
                     p.fechadevolucion as fecha_devolucion,
                     TIME_FORMAT(p.fechadevolucion, '%H:%i') as hora_fin,
+                    p.cantidad,
                     CASE 
                         WHEN p.fechadevolucion IS NOT NULL THEN p.fechadevolucion
                         ELSE DATE_ADD(p.fechaprestamo, INTERVAL 14 DAY)
@@ -245,7 +247,21 @@ class PrestamoModel extends Model
                         WHEN DATEDIFF(NOW(), s.fecha_solicitud) >= 3 THEN 'Media'
                         ELSE 'Normal'
                     END as prioridad,
-                    CASE WHEN r.stock > 0 AND r.estado = 'disponible' THEN true ELSE false END as disponible
+                    CASE 
+                        WHEN r.stock > 0 AND r.estado = 'disponible' AND 
+                             r.stock >= CASE 
+                                WHEN s.motivo_rechazo LIKE 'Cantidad solicitada:%' THEN 
+                                    CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(s.motivo_rechazo, ': ', -1), ' ', 1) AS UNSIGNED)
+                                ELSE 1 
+                             END
+                        THEN true 
+                        ELSE false 
+                    END as disponible,
+                    CASE 
+                        WHEN s.motivo_rechazo LIKE 'Cantidad solicitada:%' THEN 
+                            CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(s.motivo_rechazo, ': ', -1), ' ', 1) AS UNSIGNED)
+                        ELSE 1 
+                    END as cantidad_solicitada
                 FROM solicitud s
                 JOIN matriculas m ON m.idmatricula = s.idmatricula
                 JOIN personas per ON per.idpersona = m.idpersona
@@ -261,7 +277,16 @@ class PrestamoModel extends Model
                     s.fecha_solicitud ASC";
         
         $query = $db->query($sql);
-        return $query->getResultArray();
+        $result = $query->getResultArray();
+        
+        // Log para debug de cantidades
+        foreach ($result as $solicitud) {
+            if (isset($solicitud['cantidad_solicitada'])) {
+                log_message('info', "Solicitud #{$solicitud['id']}: cantidad_solicitada = {$solicitud['cantidad_solicitada']}");
+            }
+        }
+        
+        return $result;
     }
 
     /**
@@ -351,9 +376,14 @@ class PrestamoModel extends Model
                     CONCAT(per.nombres, ' ', per.apellidos) as usuario,
                     per.numerodoc as documento,
                     r.titulo as recurso,
+                    CASE 
+                        WHEN rf.idrecurso IS NOT NULL THEN CONCAT('LIB-FIS-', LPAD(r.idrecurso, 3, '0'))
+                        ELSE CONCAT('LIB-DIG-', LPAD(r.idrecurso, 3, '0'))
+                    END as codigo_ejemplar,
                     p.fechaprestamo as fecha_prestamo,
                     p.fechahoraretorno as fecha_devolucion,
                     p.fechadevolucion as fecha_vencimiento,
+                    p.cantidad,
                     CASE 
                         WHEN p.fechahoraretorno IS NULL THEN 'Activo'
                         WHEN p.fechahoraretorno <= COALESCE(p.fechadevolucion, DATE_ADD(p.fechaprestamo, INTERVAL 14 DAY)) THEN 'Devuelto'
@@ -370,12 +400,19 @@ class PrestamoModel extends Model
                         WHEN p.fechahoraretorno <= COALESCE(p.fechadevolucion, DATE_ADD(p.fechaprestamo, INTERVAL 14 DAY)) THEN 0
                         ELSE TIMESTAMPDIFF(HOUR, COALESCE(p.fechadevolucion, DATE_ADD(p.fechaprestamo, INTERVAL 14 DAY)), p.fechahoraretorno)
                     END as horas_retraso_total,
-                    0 as renovaciones,
-                    'Bueno' as estado_ejemplar
+                    COALESCE(
+                        (SELECT COUNT(*) 
+                         FROM renovaciones_prestamo rp 
+                         WHERE rp.idprestamo = p.idprestamo), 
+                        0
+                    ) as renovaciones,
+                    'Bueno' as estado_ejemplar,
+                    p.observaciones_devolucion as observaciones
                 FROM prestamos p
                 JOIN matriculas m ON m.idmatricula = p.idmatricula
                 JOIN personas per ON per.idpersona = m.idpersona
                 JOIN recursos r ON r.idrecurso = p.idrecurso
+                LEFT JOIN recursos_fisicos rf ON rf.idrecurso = r.idrecurso
                 WHERE p.fechahoraretorno IS NOT NULL
                 ORDER BY p.fechahoraretorno DESC
                 LIMIT 100";
@@ -383,11 +420,49 @@ class PrestamoModel extends Model
         $query = $db->query($sql);
         $historial = $query->getResultArray();
         
-        // Agregar observaciones desde logs
+        // Agregar observaciones desde logs y mantener las de devolución de la BD
         foreach ($historial as &$registro) {
-            $observaciones = $this->obtenerObservacionesDesdeLog($registro['id']);
-            $registro['observaciones'] = $observaciones ?: 'Sin observaciones';
-            $registro['tiene_observaciones'] = !empty($observaciones);
+            $observacionesLog = $this->obtenerObservacionesDesdeLog($registro['id']);
+            $observacionesDevolucion = $registro['observaciones']; // Estas vienen de p.observaciones_devolucion
+            
+            // Limpiar y normalizar las observaciones de devolución
+            $observacionesDevolucion = trim($observacionesDevolucion ?? '');
+            if ($observacionesDevolucion === '' || $observacionesDevolucion === 'NULL' || $observacionesDevolucion === 'Sin observaciones') {
+                $observacionesDevolucion = null;
+            }
+            
+            // Limpiar y normalizar las observaciones del log
+            $observacionesLog = trim($observacionesLog ?? '');
+            if ($observacionesLog === '' || $observacionesLog === 'Sin observaciones') {
+                $observacionesLog = null;
+            }
+            
+            // Combinar observaciones de diferentes fuentes
+            $observacionesCombinadas = [];
+            
+            // Priorizar observaciones de devolución de la BD
+            if (!empty($observacionesDevolucion)) {
+                $observacionesCombinadas[] = $observacionesDevolucion;
+            }
+            
+            // Agregar observaciones del log si son diferentes y no están vacías
+            if (!empty($observacionesLog) && $observacionesLog !== $observacionesDevolucion) {
+                $observacionesCombinadas[] = $observacionesLog;
+            }
+            
+            // Establecer las observaciones finales
+            if (!empty($observacionesCombinadas)) {
+                $registro['observaciones'] = implode(' | ', $observacionesCombinadas);
+                $registro['tiene_observaciones'] = true;
+            } else {
+                $registro['observaciones'] = null;
+                $registro['tiene_observaciones'] = false;
+            }
+            
+            // Log para debugging (temporal)
+            if (!empty($observacionesDevolucion) || !empty($observacionesLog)) {
+                log_message('debug', "Préstamo {$registro['id']}: BD='" . ($observacionesDevolucion ?? 'NULL') . "', Log='" . ($observacionesLog ?? 'NULL') . "', Final='" . ($registro['observaciones'] ?? 'NULL') . "'");
+            }
         }
         
         return $historial;
@@ -491,28 +566,50 @@ class PrestamoModel extends Model
                 throw new \Exception('Solicitud no encontrada o ya procesada');
             }
             
-            // Verificar disponibilidad del recurso
+            // Extraer cantidad solicitada del motivo_rechazo
+            $cantidadSolicitada = 1;
+            if ($solicitud->motivo_rechazo && strpos($solicitud->motivo_rechazo, 'Cantidad solicitada:') !== false) {
+                // Buscar el patrón "Cantidad solicitada: X ejemplares"
+                if (preg_match('/Cantidad solicitada:\s*(\d+)/', $solicitud->motivo_rechazo, $matches)) {
+                    $cantidadSolicitada = (int)$matches[1];
+                } else {
+                    // Fallback: buscar cualquier número en el string
+                    if (preg_match('/\d+/', $solicitud->motivo_rechazo, $matches)) {
+                        $cantidadSolicitada = (int)$matches[0];
+                    }
+                }
+            }
+            
+            // Log para debugging
+            log_message('info', "Aprobando solicitud #{$idsolicitud} - Cantidad solicitada: {$cantidadSolicitada}");
+            
+            // Verificar disponibilidad del recurso para la cantidad solicitada
             $recurso = $db->table('recursos')
                 ->where('idrecurso', $solicitud->idrecurso)
                 ->get()
                 ->getRow();
             
-            if (!$recurso || $recurso->stock <= 0 || $recurso->estado !== 'disponible') {
-                throw new \Exception('El recurso no está disponible para préstamo');
+            if (!$recurso || $recurso->stock < $cantidadSolicitada || $recurso->estado !== 'disponible') {
+                throw new \Exception("No hay suficiente stock disponible. Stock actual: {$recurso->stock}, solicitado: {$cantidadSolicitada}");
             }
             
-            // Crear el préstamo cuando se aprueba la solicitud
+            // Crear un solo préstamo con la cantidad solicitada
+            log_message('info', "Creando préstamo de {$cantidadSolicitada} ejemplares para solicitud #{$idsolicitud}");
+            
             $prestamo = [
                 'idmatricula' => $solicitud->idmatricula,
                 'idusuario' => $solicitud->idusuario,
                 'idrecurso' => $solicitud->idrecurso,
                 'fechaprestamo' => $solicitud->fechaprestamo,
                 'fechadevolucion' => $solicitud->fechadevolucion,
-                'fechahoravalidacion' => date('Y-m-d H:i:s')
+                'fechahoravalidacion' => date('Y-m-d H:i:s'),
+                'cantidad' => $cantidadSolicitada
             ];
             
             $db->table('prestamos')->insert($prestamo);
             $idPrestamo = $db->insertID();
+            
+            log_message('info', "Préstamo #{$idPrestamo} creado para solicitud de {$cantidadSolicitada} ejemplares");
             
             // Actualizar la solicitud como validada y asociar con el préstamo creado
             $db->table('solicitud')
@@ -520,13 +617,17 @@ class PrestamoModel extends Model
                 ->update([
                     'validado' => true,
                     'fecha_procesado' => date('Y-m-d H:i:s'),
-                    'idprestamo' => $idPrestamo
+                    'idprestamo' => $idPrestamo,
+                    'motivo_rechazo' => null  // Limpiar el campo ahora que se procesó
                 ]);
             
-            // Actualizar stock del recurso
-            if ($recurso->stock > 0) {
-                $nuevoStock = $recurso->stock - 1;
+            // Actualizar stock del recurso (descontar la cantidad solicitada)
+            if ($recurso->stock >= $cantidadSolicitada) {
+                $stockAnterior = $recurso->stock;
+                $nuevoStock = $recurso->stock - $cantidadSolicitada;
                 $nuevoEstado = $nuevoStock > 0 ? 'disponible' : 'prestado';
+                
+                log_message('info', "Actualizando stock del recurso #{$solicitud->idrecurso}: {$stockAnterior} -> {$nuevoStock}, estado: {$nuevoEstado}");
                 
                 $db->table('recursos')
                     ->where('idrecurso', $solicitud->idrecurso)
@@ -534,6 +635,8 @@ class PrestamoModel extends Model
                         'stock' => $nuevoStock,
                         'estado' => $nuevoEstado
                     ]);
+                    
+                log_message('info', "Stock actualizado correctamente para recurso #{$solicitud->idrecurso}");
             }
             
             $db->transComplete();
@@ -542,9 +645,15 @@ class PrestamoModel extends Model
                 throw new \Exception('Error en la transacción');
             }
             
+            $mensaje = $cantidadSolicitada === 1 
+                ? 'Solicitud aprobada correctamente y préstamo creado'
+                : "Solicitud aprobada correctamente. Préstamo creado con {$cantidadSolicitada} ejemplares";
+            
             return [
                 'success' => true,
-                'message' => 'Solicitud aprobada correctamente y préstamo creado'
+                'message' => $mensaje,
+                'prestamo_id' => $idPrestamo,
+                'cantidad_solicitada' => $cantidadSolicitada
             ];
             
         } catch (\Exception $e) {
@@ -838,19 +947,23 @@ class PrestamoModel extends Model
                 throw new \Exception('Este préstamo ya ha sido devuelto');
             }
             
-            // Actualizar el préstamo con la fecha de devolución
+            // Actualizar el préstamo con la fecha de devolución y observaciones
             $fechaRetorno = date('Y-m-d H:i:s');
             $updateData = [
-                'fechahoraretorno' => $fechaRetorno
+                'fechahoraretorno' => $fechaRetorno,
+                'observaciones_devolucion' => !empty($observaciones) ? $observaciones : null
             ];
             
             $this->update($idprestamo, $updateData);
             
             // Actualizar el stock del recurso (incrementar disponibilidad)
+            $cantidadDevuelta = $prestamo['cantidad'] ?? 1;
             $db->table('recursos')
                ->where('idrecurso', $prestamo['idrecurso'])
-               ->set('stock', 'stock + 1', false)
+               ->set('stock', "stock + {$cantidadDevuelta}", false)
                ->update();
+            
+            log_message('info', "Devolución procesada: Préstamo #{$idprestamo}, devolviendo {$cantidadDevuelta} ejemplares al stock del recurso #{$prestamo['idrecurso']}");
             
             // Si el recurso estaba marcado como 'prestado' y no hay más préstamos activos, 
             // cambiar el estado a 'disponible'
@@ -1202,13 +1315,16 @@ class PrestamoModel extends Model
                 ]);
             
             // Restaurar stock del recurso
-            $nuevoStock = $prestamo->stock + 1;
+            $cantidadCancelada = $prestamo->cantidad ?? 1;
+            $nuevoStock = $prestamo->stock + $cantidadCancelada;
             $db->table('recursos')
                 ->where('idrecurso', $prestamo->idrecurso)
                 ->update([
                     'stock' => $nuevoStock,
                     'estado' => 'disponible'
                 ]);
+            
+            log_message('info', "Préstamo cancelado: Préstamo #{$idprestamo}, devolviendo {$cantidadCancelada} ejemplares al stock del recurso #{$prestamo->idrecurso}");
             
             // Eliminar solicitudes relacionadas si existen
             $db->table('solicitud')
@@ -1311,7 +1427,13 @@ class PrestamoModel extends Model
                         WHEN rf.idrecurso IS NOT NULL THEN 'Físico'
                         WHEN rd.idrecurso IS NOT NULL THEN 'Digital'
                         ELSE 'Desconocido'
-                    END as tipo_recurso
+                    END as tipo_recurso,
+                    
+                    -- Observaciones de devolución
+                    p.observaciones_devolucion as observaciones_devolucion,
+                    
+                    -- Cantidad de ejemplares
+                    p.cantidad
 
                 FROM prestamos p
                 LEFT JOIN matriculas m ON m.idmatricula = p.idmatricula
@@ -1518,10 +1640,13 @@ class PrestamoModel extends Model
             $this->update($idprestamo, ['fechahoraretorno' => $fechaRetorno]);
             
             // Actualizar el stock del recurso
+            $cantidadDevuelta = $prestamo['cantidad'] ?? 1;
             $db->table('recursos')
                ->where('idrecurso', $prestamo['idrecurso'])
-               ->set('stock', 'stock + 1', false)
+               ->set('stock', "stock + {$cantidadDevuelta}", false)
                ->update();
+            
+            log_message('info', "Devolución completa procesada: Préstamo #{$idprestamo}, devolviendo {$cantidadDevuelta} ejemplares al stock del recurso #{$prestamo['idrecurso']}");
             
             // Verificar si hay más préstamos activos del mismo recurso
             $prestamosActivos = $this->where('idrecurso', $prestamo['idrecurso'])
@@ -1642,6 +1767,7 @@ class PrestamoModel extends Model
                         p.fechaprestamo,
                         p.fechadevolucion as fecha_limite,
                         p.fechahoraretorno as fecha_devolucion_real,
+                        p.observaciones_devolucion as observaciones,
                         DATEDIFF(p.fechahoraretorno, COALESCE(p.fechadevolucion, DATE_ADD(p.fechaprestamo, INTERVAL 14 DAY))) as dias_retraso,
                         TIMESTAMPDIFF(HOUR, COALESCE(p.fechadevolucion, DATE_ADD(p.fechaprestamo, INTERVAL 14 DAY)), p.fechahoraretorno) as horas_retraso_total,
                         DATEDIFF(p.fechahoraretorno, p.fechaprestamo) as dias_prestamo,
@@ -1752,18 +1878,28 @@ class PrestamoModel extends Model
                 if ($ejemplar) {
                     $result = array_merge($result, $ejemplar);
                     // Crear observaciones generales combinando diferentes fuentes
-                    $observaciones = [];
+                    $observacionesCombinadas = [];
+                    
+                    // Priorizar observaciones de devolución de la BD (ya están en $result['observaciones'])
+                    if (!empty($result['observaciones'])) {
+                        $observacionesCombinadas[] = $result['observaciones'];
+                    }
+                    
                     if (!empty($ejemplar['observaciones_ejemplar'])) {
-                        $observaciones[] = "Ejemplar: " . $ejemplar['observaciones_ejemplar'];
+                        $observacionesCombinadas[] = "Ejemplar: " . $ejemplar['observaciones_ejemplar'];
                     }
-                    if (!empty($result['observaciones_devolucion'])) {
-                        $observaciones[] = "Devolución: " . $result['observaciones_devolucion'];
+                    
+                    if (!empty($result['observaciones_devolucion']) && $result['observaciones_devolucion'] !== $result['observaciones']) {
+                        $observacionesCombinadas[] = "Historial: " . $result['observaciones_devolucion'];
                     }
+                    
                     if ($result['dias_retraso'] > 0) {
-                        $observaciones[] = "Devolución con retraso de " . $result['dias_retraso'] . " día(s)";
+                        $observacionesCombinadas[] = "Devolución con retraso de " . $result['dias_retraso'] . " día(s)";
                     }
-                    if (!empty($observaciones)) {
-                        $result['observaciones'] = implode(' | ', $observaciones);
+                    
+                    // Actualizar las observaciones finales manteniendo las originales separadas
+                    if (!empty($observacionesCombinadas)) {
+                        $result['observaciones_combinadas'] = implode(' | ', $observacionesCombinadas);
                     }
                 }
             } catch (\Exception $e) {

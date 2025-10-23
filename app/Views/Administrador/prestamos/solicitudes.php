@@ -108,7 +108,8 @@
                         <tr class="text-uppercase small fw-semibold text-muted">
                             <th class="border-0 px-3 py-3">Usuario</th>
                             <th class="border-0 px-3 py-3">Recurso Solicitado</th>
-                            <th class="border-0 px-3 py-3">Fecha y Horarios</th>
+                            <th class="border-0 px-3 py-3">Fechas del Préstamo</th>
+                            <th class="border-0 text-center px-3 py-3">Cantidad</th>
                             <th class="border-0 text-center px-3 py-3">Prioridad</th>
                             <th class="border-0 text-center px-3 py-3">Disponibilidad</th>
                             <th class="border-0 text-center px-3 py-3">Acciones</th>
@@ -140,17 +141,33 @@
                                     <td class="px-3 py-3">
                                         <div>
                                             <p class="mb-1 small">
-                                                <i class="ti ti-calendar-event me-1"></i>
-                                                <?= date('d/m/Y', strtotime($solicitud['fecha_solicitud'])) ?>
+                                                <i class="ti ti-calendar-plus text-primary me-1"></i>
+                                                <strong>Inicio:</strong> <?= date('d/m/Y', strtotime($solicitud['fecha_solicitud'])) ?>
+                                            </p>
+                                            <p class="mb-1 small">
+                                                <i class="ti ti-calendar text-success me-1"></i>
+                                                <strong>Entrega:</strong> <?= date('d/m/Y', strtotime($solicitud['fecha_devolucion'])) ?>
                                             </p>
                                             <p class="mb-1 small text-muted">
-                                                <i class="ti ti-clock me-1"></i>
-                                                Inicio: <?= date('H:i', strtotime($solicitud['fecha_solicitud'])) ?>
+                                                <i class="ti ti-clock-hour-3 me-1"></i>
+                                                Duración: 
+                                                <?php
+                                                    $inicio = new DateTime($solicitud['fecha_solicitud']);
+                                                    $entrega = new DateTime($solicitud['fecha_devolucion']);
+                                                    $diff = $inicio->diff($entrega);
+                                                    echo $diff->days . ' día' . ($diff->days != 1 ? 's' : '');
+                                                ?>
                                             </p>
-                                            <p class="mb-0 small text-muted">
-                                                <i class="ti ti-clock-off me-1"></i>
-                                                Fin: <?= date('H:i', strtotime($solicitud['fecha_devolucion'])) ?>
-                                            </p>
+                                        </div>
+                                    </td>
+                                    <td class="px-3 py-3 text-center">
+                                        <div class="d-flex flex-column align-items-center">
+                                            <span class="badge bg-primary-subtle text-primary fs-6 px-3 py-2 mb-1">
+                                                <?= isset($solicitud['cantidad_solicitada']) ? $solicitud['cantidad_solicitada'] : 1 ?>
+                                            </span>
+                                            <small class="text-muted">
+                                                <?= (isset($solicitud['cantidad_solicitada']) && $solicitud['cantidad_solicitada'] == 1) ? 'ejemplar' : 'ejemplares' ?>
+                                            </small>
                                         </div>
                                     </td>
                                     <td class="px-3 py-3 text-center">
@@ -430,9 +447,9 @@
         }
 
         // Formatear fechas
-        const fechaSolicitud = new Date(detalle.fecha_solicitud);
-        const fechaDevolucionEsperada = new Date(detalle.fecha_devolucion_esperada);
-        const fechaDevolucion = detalle.fecha_devolucion ? new Date(detalle.fecha_devolucion) : null;
+        const fechaInicio = new Date(detalle.fecha_solicitud);
+        const fechaEntrega = new Date(detalle.fecha_devolucion);
+        const fechaSolicitud = new Date(detalle.fecha_creacion || detalle.fecha_solicitud);
         
         // Determinar el color de la prioridad
         let prioridadClass = 'bg-info';
@@ -494,9 +511,9 @@
                                                 ${detalle.grado && detalle.seccion ? `<p><strong>Grado:</strong> <span>${detalle.grado}° "${detalle.seccion}" - ${detalle.nivel_estudiante}</span></p>` : ''}
                                                 ${detalle.aniolectivo ? `<p><strong>Año Lectivo:</strong> <span>${detalle.aniolectivo}</span></p>` : ''}
                                                 <p><strong>Fecha Solicitud:</strong> <span>${fechaSolicitud.toLocaleDateString('es-ES')}</span></p>
-                                                <p><strong>Hora Inicio:</strong> <span>${fechaSolicitud.toLocaleTimeString('es-ES', {hour: '2-digit', minute: '2-digit'})}</span></p>
-                                                ${fechaDevolucion ? `<p><strong>Hora Fin:</strong> <span>${fechaDevolucion.toLocaleTimeString('es-ES', {hour: '2-digit', minute: '2-digit'})}</span></p>` : ''}
-                                                <p><strong>Tiempo Esperando:</strong> <span>${detalle.dias_desde_solicitud} día(s)</span></p>
+                                                <p><strong>Fecha Inicio:</strong> <span>${fechaInicio.toLocaleDateString('es-ES')}</span></p>
+                                                <p><strong>Fecha Entrega:</strong> <span>${fechaEntrega.toLocaleDateString('es-ES')}</span></p>
+                                                <p><strong>Tiempo Esperando:</strong> <span>${detalle.dias_desde_solicitud || 0} día(s)</span></p>
                                             </div>
                                         </div>
                                     </div>
@@ -552,20 +569,24 @@
                                     </div>
                                     <div class="col-md-3">
                                         <div class="text-center p-3 bg-success bg-opacity-10 rounded">
-                                            <h4 class="mb-1 text-success">${fechaSolicitud.toLocaleTimeString('es-ES', {hour: '2-digit', minute: '2-digit'})}</h4>
-                                            <small class="text-muted">Hora de Inicio</small>
+                                            <h4 class="mb-1 text-success">${fechaInicio.toLocaleDateString('es-ES')}</h4>
+                                            <small class="text-muted">Fecha de Inicio</small>
                                         </div>
                                     </div>
                                     <div class="col-md-3">
                                         <div class="text-center p-3 bg-info bg-opacity-10 rounded">
-                                            <h4 class="mb-1 text-info">${fechaDevolucion ? fechaDevolucion.toLocaleTimeString('es-ES', {hour: '2-digit', minute: '2-digit'}) : 'No especificada'}</h4>
-                                            <small class="text-muted">Hora de Fin</small>
+                                            <h4 class="mb-1 text-info">${fechaEntrega.toLocaleDateString('es-ES')}</h4>
+                                            <small class="text-muted">Fecha de Entrega</small>
                                         </div>
                                     </div>
                                     <div class="col-md-3">
                                         <div class="text-center p-3 bg-warning bg-opacity-10 rounded">
-                                            <h4 class="mb-1 text-warning">${detalle.dias_desde_solicitud}</h4>
-                                            <small class="text-muted">Días Esperando</small>
+                                            <h4 class="mb-1 text-warning">${(() => {
+                                                const diffTime = fechaEntrega - fechaInicio;
+                                                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                                                return diffDays + (diffDays === 1 ? ' día' : ' días');
+                                            })()}</h4>
+                                            <small class="text-muted">Duración del Préstamo</small>
                                         </div>
                                     </div>
 

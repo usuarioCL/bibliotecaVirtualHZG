@@ -1335,9 +1335,8 @@ function enviarSolicitudPrestamo() {
 
 // ===== FUNCIÓN DE VALIDACIÓN UNIFICADA =====
 function validarFormularioPrestamo(esValidacionFinal = false) {
-    const fechaPrestamo = document.getElementById('fechaPrestamo')?.value;
-    const horaInicio = document.getElementById('horaInicio')?.value;
-    const horaFin = document.getElementById('horaFin')?.value;
+    const fechaInicio = document.getElementById('fechaInicio')?.value;
+    const fechaEntrega = document.getElementById('fechaEntrega')?.value;
     let hasErrors = false;
     
     // Limpiar errores anteriores
@@ -1359,137 +1358,279 @@ function validarFormularioPrestamo(esValidacionFinal = false) {
         }
     };
     
-    // Validar campos requeridos
-    if (!fechaPrestamo) mostrarError('fechaPrestamo', 'La fecha es obligatoria.');
-    if (!horaInicio) mostrarError('horaInicio', 'La hora de inicio es obligatoria.');
-    if (!horaFin) mostrarError('horaFin', 'La hora de fin es obligatoria.');
-    
-    // Validar día laboral
-    if (fechaPrestamo) {
-        const fechaPartes = fechaPrestamo.split('-');
-        const fechaSeleccionada = new Date(fechaPartes[0], fechaPartes[1] - 1, fechaPartes[2]);
-        const dia = fechaSeleccionada.getDay();
-        
-        if (dia === 0 || dia === 6) {
-            mostrarError('fechaPrestamo', 'Solo se pueden solicitar préstamos de lunes a viernes.');
-            
-            // Auto-corrección
-            if (!esValidacionFinal) {
-                setTimeout(() => {
-                    const hoy = new Date();
-                    const diaHoy = hoy.getDay();
-                    if (diaHoy === 0 || diaHoy === 6) {
-                        const diasHastaLunes = diaHoy === 0 ? 1 : (8 - diaHoy);
-                        hoy.setDate(hoy.getDate() + diasHastaLunes);
-                    }
-                    
-                    const fechaInput = document.getElementById('fechaPrestamo');
-                    const feedback = fechaInput?.nextElementSibling;
-                    fechaInput.value = hoy.toISOString().split('T')[0];
-                    fechaInput.classList.remove('is-invalid');
-                    if (feedback) feedback.style.display = 'none';
-                }, 2000);
-            }
-        }
-    }
-    
     // Función auxiliar para limpiar error
     const limpiarError = (inputId) => {
         const input = document.getElementById(inputId);
         const feedback = input?.nextElementSibling;
-        if (input && feedback) {
+        if (input && feedback && feedback.classList.contains('invalid-feedback')) {
             input.classList.remove('is-invalid');
             feedback.style.display = 'none';
         }
     };
     
-    // Validar horarios
-    if (horaInicio && horaFin) {
-        const inicioMinutos = horaInicio.split(':').reduce((h, m) => h * 60 + parseInt(m), 0);
-        const finMinutos = horaFin.split(':').reduce((h, m) => h * 60 + parseInt(m), 0);
-        const HORA_MIN = 8 * 60;
-        const HORA_MAX = 13 * 60;
+    // Función para verificar si una fecha es día hábil
+    const esDiaHabil = (fecha) => {
+        const dia = fecha.getDay();
+        return dia >= 1 && dia <= 5; // Lunes a viernes
+    };
+    
+    // Validar campos requeridos
+    if (!fechaInicio) mostrarError('fechaInicio', 'La fecha de inicio es obligatoria.');
+    if (!fechaEntrega) mostrarError('fechaEntrega', 'La fecha de entrega es obligatoria.');
+    
+    // Validar cantidad si es docente
+    const cantidadInput = document.getElementById('cantidadLibros');
+    if (cantidadInput && !validarCantidad()) {
+        hasErrors = true;
+    }
+    
+    // Validar fecha de inicio
+    if (fechaInicio) {
+        const fechaInicioObj = new Date(fechaInicio + 'T00:00:00');
+        const hoy = new Date();
+        hoy.setHours(0, 0, 0, 0);
         
-        // Validar hora de inicio
-        if (inicioMinutos < HORA_MIN || inicioMinutos >= HORA_MAX) {
-            mostrarError('horaInicio', 'La hora de inicio debe estar entre 8:00 AM y 12:59 PM.');
+        // No puede ser anterior a hoy
+        if (fechaInicioObj < hoy) {
+            mostrarError('fechaInicio', 'La fecha de inicio no puede ser anterior a hoy.');
+        }
+        // No puede ser sábado o domingo
+        else if (!esDiaHabil(fechaInicioObj)) {
+            mostrarError('fechaInicio', 'La fecha de inicio debe ser un día hábil (lunes a viernes).');
         } else {
-            limpiarError('horaInicio');
+            limpiarError('fechaInicio');
         }
+    }
+    
+    // Validar fecha de entrega
+    if (fechaInicio && fechaEntrega) {
+        const fechaInicioObj = new Date(fechaInicio + 'T00:00:00');
+        const fechaEntregaObj = new Date(fechaEntrega + 'T00:00:00');
         
-        // Validar hora de fin
-        if (finMinutos <= HORA_MIN || finMinutos > HORA_MAX) {
-            mostrarError('horaFin', 'La hora de fin debe estar entre 8:01 AM y 1:00 PM.');
-        } else if (finMinutos > inicioMinutos) {
-            limpiarError('horaFin');
+        // Calcular días de diferencia
+        const diffTime = fechaEntregaObj - fechaInicioObj;
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        
+        // No puede ser anterior a la fecha de inicio
+        if (fechaEntregaObj <= fechaInicioObj) {
+            mostrarError('fechaEntrega', 'La fecha de entrega debe ser posterior a la fecha de inicio.');
         }
-        
-        // Validar secuencia de horarios
-        if (finMinutos <= inicioMinutos) {
-            mostrarError('horaFin', 'La hora de fin debe ser posterior a la hora de inicio.');
-            
-            // Auto-corrección
-            if (!esValidacionFinal) {
-                setTimeout(() => {
-                    const nuevaHora = Math.min(inicioMinutos + 60, HORA_MAX);
-                    const horas = Math.floor(nuevaHora / 60).toString().padStart(2, '0');
-                    const minutos = (nuevaHora % 60).toString().padStart(2, '0');
-                    
-                    const horaFinInput = document.getElementById('horaFin');
-                    const feedback = horaFinInput?.nextElementSibling;
-                    horaFinInput.value = `${horas}:${minutos}`;
-                    horaFinInput.classList.remove('is-invalid');
-                    if (feedback) feedback.style.display = 'none';
-                    actualizarDuracion();
-                }, 2000);
-            }
+        // No puede ser sábado o domingo
+        else if (!esDiaHabil(fechaEntregaObj)) {
+            mostrarError('fechaEntrega', 'La fecha de entrega debe ser un día hábil (lunes a viernes).');
+        }
+        // No puede ser más de 7 días
+        else if (diffDays > 7) {
+            mostrarError('fechaEntrega', 'El préstamo no puede durar más de 7 días.');
+        } else {
+            limpiarError('fechaEntrega');
         }
     }
     
     return !hasErrors;
 }
 
+// Función para obtener el próximo día hábil (global)
+function obtenerProximoDiaHabil(fecha) {
+    const nuevaFecha = new Date(fecha);
+    const dia = nuevaFecha.getDay();
+    if (dia === 0) { // Domingo
+        nuevaFecha.setDate(nuevaFecha.getDate() + 1); // Lunes
+    } else if (dia === 6) { // Sábado
+        nuevaFecha.setDate(nuevaFecha.getDate() + 2); // Lunes
+    }
+    return nuevaFecha;
+}
+
+// Función para calcular duración entre fechas (global)
+function calcularDuracion(fechaInicio, fechaEntrega) {
+    if (!fechaInicio || !fechaEntrega) return '0 días';
+    
+    const inicio = new Date(fechaInicio + 'T00:00:00');
+    const entrega = new Date(fechaEntrega + 'T00:00:00');
+    const diffTime = entrega - inicio;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays <= 0) return '0 días';
+    if (diffDays === 1) return '1 día';
+    return `${diffDays} días`;
+}
+
+// Función para actualizar la duración mostrada (global)
+function actualizarDuracion() {
+    const duracionElement = document.getElementById('duracionPrestamo');
+    const fechaInicio = document.getElementById('fechaInicio')?.value;
+    const fechaEntrega = document.getElementById('fechaEntrega')?.value;
+    
+    if (duracionElement) {
+        duracionElement.textContent = calcularDuracion(fechaInicio, fechaEntrega);
+    }
+}
+
+// Función para cambiar la cantidad de libros (solo docentes)
+function cambiarCantidad(cambio) {
+    const cantidadInput = document.getElementById('cantidadLibros');
+    if (!cantidadInput) return;
+    
+    const valorActual = parseInt(cantidadInput.value) || 1;
+    const min = parseInt(cantidadInput.min) || 1;
+    const max = parseInt(cantidadInput.max) || 1;
+    
+    let nuevaCantidad = valorActual + cambio;
+    
+    // Validar límites
+    if (nuevaCantidad < min) nuevaCantidad = min;
+    if (nuevaCantidad > max) nuevaCantidad = max;
+    
+    cantidadInput.value = nuevaCantidad;
+    actualizarResumenCantidad(nuevaCantidad);
+    
+    // Validar campo
+    validarCantidad();
+}
+
+// Función para actualizar el resumen de cantidad
+function actualizarResumenCantidad(cantidad) {
+    const resumenElement = document.getElementById('resumenCantidad');
+    if (resumenElement) {
+        const texto = cantidad === 1 ? '1 libro' : `${cantidad} libros`;
+        resumenElement.textContent = texto;
+    }
+}
+
+// Función para validar la cantidad
+function validarCantidad() {
+    const cantidadInput = document.getElementById('cantidadLibros');
+    if (!cantidadInput) return true;
+    
+    const cantidad = parseInt(cantidadInput.value) || 0;
+    const min = parseInt(cantidadInput.min) || 1;
+    const max = parseInt(cantidadInput.max) || 1;
+    const feedback = cantidadInput.nextElementSibling?.nextElementSibling;
+    
+    if (cantidad < min || cantidad > max) {
+        cantidadInput.classList.add('is-invalid');
+        if (feedback && feedback.classList.contains('invalid-feedback')) {
+            feedback.textContent = `Ingrese una cantidad válida (${min} a ${max} libros).`;
+            feedback.style.display = 'block';
+        }
+        return false;
+    } else {
+        cantidadInput.classList.remove('is-invalid');
+        if (feedback && feedback.classList.contains('invalid-feedback')) {
+            feedback.style.display = 'none';
+        }
+        return true;
+    }
+}
+
+// Función para actualizar automáticamente la fecha de entrega (global)
+function actualizarFechaEntrega() {
+    const fechaInicioInput = document.getElementById('fechaInicio');
+    const fechaEntregaInput = document.getElementById('fechaEntrega');
+    
+    if (fechaInicioInput?.value) {
+        const fechaInicio = new Date(fechaInicioInput.value + 'T00:00:00');
+        let fechaEntrega = new Date(fechaInicio);
+        
+        // Agregar exactamente 7 días calendario
+        fechaEntrega.setDate(fechaInicio.getDate() + 7);
+        
+        // Si la fecha de entrega cae en fin de semana, moverla al viernes anterior
+        const diaEntrega = fechaEntrega.getDay();
+        if (diaEntrega === 0) { // Domingo -> Viernes anterior
+            fechaEntrega.setDate(fechaEntrega.getDate() - 2);
+        } else if (diaEntrega === 6) { // Sábado -> Viernes anterior
+            fechaEntrega.setDate(fechaEntrega.getDate() - 1);
+        }
+        
+        fechaEntregaInput.value = fechaEntrega.toISOString().split('T')[0];
+        actualizarDuracion();
+    }
+}
+
 // Validación del formulario de préstamo
 document.addEventListener('DOMContentLoaded', function() {
-    // Función para calcular duración entre horas
-    function calcularDuracion(horaInicio, horaFin) {
-        if (!horaInicio || !horaFin) return '0 minutos';
-        
-        const inicioMinutos = horaInicio.split(':').reduce((h, m) => h * 60 + parseInt(m), 0);
-        const finMinutos = horaFin.split(':').reduce((h, m) => h * 60 + parseInt(m), 0);
-        const diferencia = finMinutos - inicioMinutos;
-        
-        if (diferencia <= 0) return '0 minutos';
-        
-        const horas = Math.floor(diferencia / 60);
-        const minutos = diferencia % 60;
-        
-        if (horas === 0) return `${minutos} minutos`;
-        if (minutos === 0) return `${horas} hora${horas > 1 ? 's' : ''}`;
-        return `${horas} hora${horas > 1 ? 's' : ''} y ${minutos} minutos`;
-    }
-    
-    // Función para actualizar la duración mostrada
-    function actualizarDuracion() {
-        const duracionElement = document.getElementById('duracionPrestamo');
-        const horaInicio = document.getElementById('horaInicio')?.value;
-        const horaFin = document.getElementById('horaFin')?.value;
-        
-        if (duracionElement) {
-            duracionElement.textContent = calcularDuracion(horaInicio, horaFin);
-        }
-    }
     
     // Validar en tiempo real
     document.addEventListener('change', function(e) {
-        if (e.target && ['fechaPrestamo', 'horaInicio', 'horaFin'].includes(e.target.id)) {
+        if (e.target && ['fechaInicio', 'fechaEntrega'].includes(e.target.id)) {
             e.target.setCustomValidity('');
-            validarFormularioPrestamo(false);
             
-            if (e.target.id === 'horaInicio' || e.target.id === 'horaFin') {
+            // Si cambia la fecha de inicio, actualizar automáticamente la fecha de entrega
+            if (e.target.id === 'fechaInicio') {
+                // Corregir automáticamente si es fin de semana
+                const fecha = new Date(e.target.value + 'T00:00:00');
+                const dia = fecha.getDay();
+                
+                if (dia === 0 || dia === 6) { // Domingo o Sábado
+                    const proximoDiaHabil = obtenerProximoDiaHabil(fecha);
+                    e.target.value = proximoDiaHabil.toISOString().split('T')[0];
+                }
+                
+                actualizarFechaEntrega();
+            } else if (e.target.id === 'fechaEntrega') {
+                // Corregir automáticamente si es fin de semana
+                const fecha = new Date(e.target.value + 'T00:00:00');
+                const dia = fecha.getDay();
+                
+                if (dia === 0 || dia === 6) { // Domingo o Sábado
+                    let fechaCorregida = new Date(fecha);
+                    if (dia === 0) { // Domingo -> Viernes anterior
+                        fechaCorregida.setDate(fechaCorregida.getDate() - 2);
+                    } else if (dia === 6) { // Sábado -> Viernes anterior
+                        fechaCorregida.setDate(fechaCorregida.getDate() - 1);
+                    }
+                    e.target.value = fechaCorregida.toISOString().split('T')[0];
+                }
+                
                 actualizarDuracion();
             }
+            
+            // Validar después de las correcciones automáticas
+            setTimeout(() => {
+                validarFormularioPrestamo(false);
+            }, 50);
         }
+    });
+    
+    // Validar también con input en tiempo real (mientras el usuario escribe)
+    document.addEventListener('input', function(e) {
+        if (e.target && ['fechaInicio', 'fechaEntrega'].includes(e.target.id)) {
+            // Limpiar errores mientras el usuario está escribiendo
+            const feedback = e.target.nextElementSibling;
+            if (feedback && feedback.classList.contains('invalid-feedback')) {
+                e.target.classList.remove('is-invalid');
+                feedback.style.display = 'none';
+            }
+        }
+        
+        // Validar cantidad en tiempo real
+        if (e.target && e.target.id === 'cantidadLibros') {
+            const cantidad = parseInt(e.target.value) || 1;
+            actualizarResumenCantidad(cantidad);
+            validarCantidad();
+        }
+    });
+    
+    // Inicializar automáticamente la fecha de entrega cuando se carga el formulario
+    const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            mutation.addedNodes.forEach(function(node) {
+                if (node.nodeType === 1 && node.querySelector && node.querySelector('#fechaInicio')) {
+                    // Se añadió el formulario al DOM, inicializar
+                    setTimeout(() => {
+                        actualizarFechaEntrega();
+                        actualizarDuracion();
+                    }, 100);
+                }
+            });
+        });
+    });
+    
+    observer.observe(document.body, {
+        childList: true,
+        subtree: true
     });
     
     // Prevenir validación HTML5 nativa

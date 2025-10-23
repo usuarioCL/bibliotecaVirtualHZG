@@ -12,41 +12,74 @@
         </div>
     </div>
     
-    <!-- Fecha y horarios -->
+    <!-- Fechas de préstamo -->
     <div class="row">
-        <div class="col-lg-4 col-md-6 mb-3">
-            <label for="fechaPrestamo" class="form-label fw-semibold">
-                <i class="fas fa-calendar-alt text-primary me-1"></i>Fecha de uso:
+        <div class="col-lg-6 col-md-6 mb-3">
+            <label for="fechaInicio" class="form-label fw-semibold">
+                <i class="fas fa-calendar-plus text-primary me-1"></i>Fecha de inicio:
             </label>
-            <input type="date" class="form-control" id="fechaPrestamo" name="fechaPrestamo" 
-                   value="<?= date('Y-m-d') ?>">
+            <input type="date" class="form-control" id="fechaInicio" name="fechaInicio" 
+                   value="<?= date('Y-m-d') ?>" required>
             <div class="invalid-feedback">
                 Seleccione una fecha válida (no puede ser anterior a hoy).
             </div>
         </div>
         
-        <div class="col-lg-4 col-md-6 mb-3">
-            <label for="horaInicio" class="form-label fw-semibold">
-                <i class="fas fa-clock text-success me-1"></i>Hora de inicio:
+        <div class="col-lg-6 col-md-6 mb-3">
+            <label for="fechaEntrega" class="form-label fw-semibold">
+                <i class="fas fa-calendar-check text-success me-1"></i>Fecha de entrega:
             </label>
-            <input type="time" class="form-control" id="horaInicio" name="horaInicio" 
-                   min="08:00" max="12:59" value="08:00" required>
+            <input type="date" class="form-control" id="fechaEntrega" name="fechaEntrega" 
+                   value="" required>
             <div class="invalid-feedback">
-                La hora debe estar entre 8:00 AM y 12:59 PM.
-            </div>
-        </div>
-        
-        <div class="col-lg-4 col-md-12 mb-3">
-            <label for="horaFin" class="form-label fw-semibold">
-                <i class="fas fa-clock text-danger me-1"></i>Hora de fin:
-            </label>
-            <input type="time" class="form-control" id="horaFin" name="horaFin" 
-                   min="08:01" max="13:00" value="09:00" required>
-            <div class="invalid-feedback">
-                La hora debe estar entre 8:01 AM y 1:00 PM.
+                Seleccione una fecha válida (máximo 7 días después de la fecha de inicio).
             </div>
         </div>
     </div>
+    
+    <!-- Campo de cantidad (para docentes y administradores) -->
+    <?php if (in_array(session()->get('nivelacceso'), ['docente', 'admin'])): ?>
+    <div class="row mb-3">
+        <div class="col-lg-6 col-md-6 mb-3">
+            <label for="cantidadLibros" class="form-label fw-semibold">
+                <i class="fas fa-list-ol text-warning me-1"></i>Cantidad de libros:
+            </label>
+            <div class="input-group">
+                <button class="btn btn-outline-secondary" type="button" onclick="cambiarCantidad(-1)">
+                    <i class="fas fa-minus"></i>
+                </button>
+                <input type="number" class="form-control text-center" id="cantidadLibros" name="cantidadLibros" 
+                       value="1" min="1" max="<?= isset($recurso['stock']) ? $recurso['stock'] : 1 ?>" required>
+                <button class="btn btn-outline-secondary" type="button" onclick="cambiarCantidad(1)">
+                    <i class="fas fa-plus"></i>
+                </button>
+            </div>
+            <div class="invalid-feedback">
+                Ingrese una cantidad válida (1 a <?= isset($recurso['stock']) ? $recurso['stock'] : 1 ?> libros).
+            </div>
+            <small class="text-muted">
+                <i class="fas fa-info-circle me-1"></i>
+                Disponibles: <span id="stockDisponible"><?= isset($recurso['stock']) ? $recurso['stock'] : 1 ?></span> ejemplares
+            </small>
+        </div>
+        <div class="col-lg-6 col-md-6 mb-3">
+            <div class="alert alert-info border-0 h-100 d-flex align-items-center">
+                <div>
+                    <h6 class="alert-heading mb-1">
+                        <i class="fas fa-user-shield me-2"></i>Privilegio Especial
+                    </h6>
+                    <p class="mb-0 small">
+                        <?php if (session()->get('nivelacceso') === 'docente'): ?>
+                            Como docente, puede solicitar múltiples ejemplares del mismo recurso para actividades académicas.
+                        <?php else: ?>
+                            Como administrador, puede solicitar múltiples ejemplares del mismo recurso para gestión bibliotecaria.
+                        <?php endif; ?>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
     
     <!-- Resumen de la solicitud -->
     <div class="row mb-3">
@@ -56,16 +89,19 @@
                     <div class="row align-items-center">
                         <div class="col-md-8">
                             <h6 class="card-title mb-1 text-primary">
-                                <i class="fas fa-clock me-2"></i>Resumen del préstamo
+                                <i class="fas fa-calendar-alt me-2"></i>Resumen del préstamo
                             </h6>
                             <p class="card-text mb-0">
-                                <strong>Duración:</strong> <span id="duracionPrestamo" class="text-success fw-bold">1 hora</span>
+                                <strong>Duración:</strong> <span id="duracionPrestamo" class="text-success fw-bold">7 días</span>
+                                <?php if (in_array(session()->get('nivelacceso'), ['docente', 'admin'])): ?>
+                                <br><strong>Cantidad:</strong> <span id="resumenCantidad" class="text-primary fw-bold">1 libro</span>
+                                <?php endif; ?>
                             </p>
                         </div>
                         <div class="col-md-4 text-md-end">
                             <small class="text-muted">
-                                <i class="fas fa-school me-1"></i>Horario escolar<br>
-                                <strong>8:00 AM - 1:00 PM</strong>
+                                <i class="fas fa-book me-1"></i>Préstamo físico<br>
+                                <strong>Máximo 1 semana</strong>
                             </small>
                         </div>
                     </div>
@@ -73,47 +109,6 @@
             </div>
         </div>
     </div>
-    
-    <!-- Información importante -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="alert alert-info border-0 shadow-sm" role="alert">
-                <div class="d-flex align-items-start">
-
-                    <div class="flex-grow-1">
-                        <h6 class="alert-heading fw-bold mb-2">Condiciones del préstamo:</h6>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <ul class="list-unstyled mb-0">
-                                    <li class="mb-1">
-                                        <i class="fas fa-building text-primary me-2"></i>
-                                        Solo dentro de la institución educativa
-                                    </li>
-                                    <li class="mb-1">
-                                        <i class="fas fa-calendar-week text-success me-2"></i>
-                                        Lunes a Viernes únicamente
-                                    </li>
-                                </ul>
-                            </div>
-                            <div class="col-md-6">
-                                <ul class="list-unstyled mb-0">
-                                    <li class="mb-1">
-                                        <i class="fas fa-clock text-warning me-2"></i>
-                                        Horario: 8:00 AM - 1:00 PM
-                                    </li>
-                                    <li class="mb-1">
-                                        <i class="fas fa-graduation-cap text-info me-2"></i>
-                                        Durante horas de clase
-                                    </li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
     <!-- Botones de acción -->
     <div class="row">
         <div class="col-12">

@@ -86,12 +86,12 @@
                 <table class="table table-hover align-middle mb-0" id="tablaHistorial">
                     <thead class="table-light">
                         <tr class="text-uppercase small fw-semibold text-muted">
-                            <th class="border-0 px-3 py-3">Préstamo</th>
                             <th class="border-0 px-3 py-3">Usuario</th>
                             <th class="border-0 px-3 py-3">Recurso</th>
-                            <th class="border-0 px-3 py-3">Fechas</th>
-                            <th class="border-0 text-center px-3 py-3">Estado</th>
-                            <th class="border-0 px-3 py-3">Observaciones</th>
+                            <th class="border-0 px-3 py-3">Período del Préstamo</th>
+                            <th class="border-0 text-center px-3 py-3">Cantidad</th>
+                            <th class="border-0 text-center px-3 py-3">Estado Final</th>
+                            <th class="border-0 text-center px-3 py-3">Observaciones</th>
                             <th class="border-0 text-center px-3 py-3">Acciones</th>
                         </tr>
                     </thead>
@@ -99,19 +99,6 @@
                         <?php if (!empty($historial)): ?>
                             <?php foreach ($historial as $registro): ?>
                                 <tr class="border-bottom">
-                                    <td class="px-3 py-3">
-                                        <div class="d-flex align-items-center">
-                                            <div class="me-3">
-                                                <div class="rounded-2 bg-success bg-opacity-10 p-2">
-                                                    <i class="ti ti-book-upload text-success fs-5"></i>
-                                                </div>
-                                            </div>
-                                            <div>
-                                                <h6 class="mb-1 fw-semibold"><?= esc($registro['codigo_prestamo']) ?></h6>
-                                                <p class="text-muted mb-0 small">ID: <?= esc($registro['id']) ?></p>
-                                            </div>
-                                        </div>
-                                    </td>
                                     <td class="px-3 py-3">
                                         <div>
                                             <h6 class="mb-1 fw-medium"><?= esc($registro['usuario']) ?></h6>
@@ -121,32 +108,56 @@
                                     <td class="px-3 py-3">
                                         <div>
                                             <h6 class="mb-1 fw-medium"><?= esc($registro['recurso']) ?></h6>
-                                            <p class="text-muted mb-0 small">Estado: <?= esc($registro['estado_ejemplar']) ?></p>
+                                            <p class="text-muted mb-0 small">
+                                                <i class="ti ti-book me-1"></i>
+                                                Código: <?= esc($registro['codigo_ejemplar'] ?? 'N/A') ?>
+                                            </p>
                                         </div>
                                     </td>
                                     <td class="px-3 py-3">
                                         <div>
                                             <p class="mb-1 small">
-                                                <i class="ti ti-calendar-check me-1"></i>
-                                                Devuelto: <?= date('d/m/Y H:i', strtotime($registro['fecha_devolucion'])) ?>
+                                                <i class="ti ti-calendar-plus text-primary me-1"></i>
+                                                <strong>Inicio:</strong> <?= date('d/m/Y', strtotime($registro['fecha_prestamo'] ?? $registro['fechaprestamo'] ?? date('Y-m-d'))) ?>
                                             </p>
-                                            <p class="mb-0 small">
-                                                <i class="ti ti-calendar-due me-1"></i>
-                                                Vencía: <?= date('d/m/Y H:i', strtotime($registro['fecha_vencimiento'])) ?>
+                                            <p class="mb-1 small">
+                                                <i class="ti ti-calendar-check text-success me-1"></i>
+                                                <strong>Devuelto:</strong> <?= date('d/m/Y', strtotime($registro['fecha_devolucion'])) ?>
                                             </p>
+                                            <p class="mb-0 small text-muted">
+                                                <i class="ti ti-clock-hour-3 me-1"></i>
+                                                Duración: 
+                                                <?php
+                                                    $fechaInicio = new DateTime($registro['fecha_prestamo'] ?? $registro['fechaprestamo'] ?? date('Y-m-d'));
+                                                    $fechaFin = new DateTime($registro['fecha_devolucion']);
+                                                    $diff = $fechaInicio->diff($fechaFin);
+                                                    echo $diff->days . ' día' . ($diff->days != 1 ? 's' : '');
+                                                ?>
+                                            </p>
+                                        </div>
+                                    </td>
+                                    <td class="px-3 py-3 text-center">
+                                        <div class="d-flex flex-column align-items-center">
+                                            <span class="badge bg-info-subtle text-info fs-6 px-3 py-2 mb-1">
+                                                <?= isset($registro['cantidad']) ? $registro['cantidad'] : 1 ?>
+                                            </span>
+                                            <small class="text-muted">
+                                                <?= (isset($registro['cantidad']) && $registro['cantidad'] == 1) ? 'ejemplar' : 'ejemplares' ?>
+                                            </small>
                                         </div>
                                     </td>
                                     <td class="px-3 py-3 text-center">
                                         <?php 
                                             $horasTotal = $registro['horas_retraso_total'] ?? 0;
                                             $diasRetraso = $registro['dias_retraso'] ?? 0;
-                                            $horasRestantes = $horasTotal % 24;
+                                            $multa = $registro['multa'] ?? 0;
                                         ?>
                                         
                                         <?php if ($horasTotal <= 0): ?>
                                             <span class="badge bg-success-subtle text-success">
-                                                <i class="ti ti-check-circle me-1"></i>A Tiempo
+                                                <i class="ti ti-check-circle me-1"></i>Devuelto a Tiempo
                                             </span>
+                                            <small class="d-block text-muted mt-1">Sin penalización</small>
                                         <?php elseif ($horasTotal > 0): ?>
                                             <span class="badge bg-danger-subtle text-danger">
                                                 <i class="ti ti-alert-circle me-1"></i>Con Retraso
@@ -156,24 +167,54 @@
                                             <?php else: ?>
                                                 <small class="d-block text-danger fw-semibold mt-1"><?= $diasRetraso ?> día<?= $diasRetraso != 1 ? 's' : '' ?></small>
                                             <?php endif; ?>
+                                            <?php if ($multa > 0): ?>
+                                                <small class="d-block text-warning mt-1">
+                                                    <i class="ti ti-cash me-1"></i>Multa: $<?= number_format($multa) ?>
+                                                </small>
+                                            <?php endif; ?>
                                         <?php else: ?>
                                             <span class="badge bg-info-subtle text-info">
-                                                <i class="ti ti-clock me-1"></i>Temprana
+                                                <i class="ti ti-clock me-1"></i>Anticipado
                                             </span>
-                                            <small class="d-block text-muted mt-1"><?= abs($diasRetraso) ?> día<?= abs($diasRetraso) != 1 ? 's' : '' ?></small>
+                                            <small class="d-block text-muted mt-1"><?= abs($diasRetraso) ?> día<?= abs($diasRetraso) != 1 ? 's' : '' ?> antes</small>
                                         <?php endif; ?>
                                     </td>
-                                    <td class="px-3 py-3">
-                                        <div class="d-flex align-items-center">
-                                            <?php if (isset($registro['tiene_observaciones']) && $registro['tiene_observaciones']): ?>
-                                                <div>
-                                                    <i class="ti ti-note text-primary me-2"></i>
-                                                    <span class="text-muted small"><?= esc($registro['observaciones']) ?></span>
-                                                </div>
-                                            <?php else: ?>
-                                                <span class="text-muted fst-italic small">Sin observaciones</span>
-                                            <?php endif; ?>
-                                        </div>
+                                    <td class="px-3 py-3" style="max-width: 200px;">
+                                        <?php 
+                                        // Obtener y limpiar las observaciones
+                                        $observaciones = $registro['observaciones'] ?? null;
+                                        $tieneObservaciones = !empty($observaciones) && trim($observaciones) !== '' && $observaciones !== 'NULL';
+                                        $longitudMaxima = 80; // Caracteres a mostrar antes de truncar
+                                        ?>
+                                        
+                                        <?php if ($tieneObservaciones): ?>
+                                            <div class="text-start">
+                                                <?php if (strlen($observaciones) > $longitudMaxima): ?>
+                                                    <!-- Observación larga - mostrar resumen -->
+                                                    <p class="mb-1 small text-muted">
+                                                        <i class="ti ti-message-circle me-1"></i>
+                                                        <?= esc(substr($observaciones, 0, $longitudMaxima)) ?>...
+                                                    </p>
+                                                    <button type="button" 
+                                                            class="btn btn-link btn-sm p-0 text-decoration-none" 
+                                                            onclick="mostrarObservaciones(<?= json_encode($observaciones, JSON_HEX_APOS | JSON_HEX_QUOT) ?>, <?= json_encode($registro['usuario'], JSON_HEX_APOS | JSON_HEX_QUOT) ?>)">
+                                                        <small><i class="ti ti-eye me-1"></i>Ver completo</small>
+                                                    </button>
+                                                <?php else: ?>
+                                                    <!-- Observación corta - mostrar completa -->
+                                                    <p class="mb-0 small text-muted">
+                                                        <i class="ti ti-message-circle me-1"></i>
+                                                        <?= esc($observaciones) ?>
+                                                    </p>
+                                                <?php endif; ?>
+                                            </div>
+                                        <?php else: ?>
+                                            <div class="text-center">
+                                                <span class="text-muted small">
+                                                    <i class="ti ti-minus"></i> Sin observaciones
+                                                </span>
+                                            </div>
+                                        <?php endif; ?>
                                     </td>
                                     <td class="px-3 py-3 text-center">
                                         <div class="d-flex gap-2 justify-content-center">
@@ -263,6 +304,66 @@
                 showConfirmButton: false
             });
         }
+    }
+
+    // Función para mostrar observaciones de devolución
+    function mostrarObservaciones(observaciones, usuario) {
+        // Debug: verificar qué datos están llegando
+        console.log('mostrarObservaciones llamada con:', {
+            observaciones: observaciones,
+            usuario: usuario,
+            tipoObservaciones: typeof observaciones,
+            tipoUsuario: typeof usuario
+        });
+        
+        // Validar y limpiar los datos
+        const observacionesLimpias = observaciones || 'No hay observaciones disponibles';
+        const usuarioLimpio = usuario || 'Usuario desconocido';
+        
+        // Escapar HTML para seguridad
+        const observacionesHTML = observacionesLimpias.toString().replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        const usuarioHTML = usuarioLimpio.toString().replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        
+        Swal.fire({
+            title: 'Observaciones de Devolución',
+            html: `
+                <div class="text-start">
+                    <div class="mb-3">
+                        <h6 class="text-primary mb-2">
+                            <i class="ti ti-user me-2"></i>Usuario: ${usuarioHTML}
+                        </h6>
+                    </div>
+                    <div class="alert alert-light border">
+                        <div class="d-flex align-items-start">
+                            <i class="ti ti-quote text-muted me-2 mt-1"></i>
+                            <div class="flex-grow-1">
+                                <p class="mb-0 fst-italic">${observacionesHTML}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <small class="text-muted">
+                            <i class="ti ti-info-circle me-1"></i>
+                            Observaciones registradas al momento de la devolución
+                        </small>
+                    </div>
+                    ${window.location.search.includes('debug') ? `
+                    <div class="mt-2 p-2 bg-light border rounded">
+                        <small class="text-muted">
+                            <strong>Debug:</strong><br>
+                            Tipo: ${typeof observaciones}<br>
+                            Longitud: ${observaciones ? observaciones.length : 0}<br>
+                            Valor crudo: "${observaciones}"
+                        </small>
+                    </div>
+                    ` : ''}
+                </div>
+            `,
+            icon: 'info',
+            width: '500px',
+            confirmButtonText: 'Cerrar',
+            confirmButtonColor: '#6c757d'
+        });
     }
 
     // Función para ver detalles completos del historial
@@ -535,6 +636,25 @@
                                         ${detalle.anio_publicacion ? `<p><strong>Año Publicación:</strong> <span>${detalle.anio_publicacion}</span></p>` : ''}
                                         ${detalle.categoria ? `<p><strong>Categoría:</strong> <span>${detalle.categoria}</span></p>` : ''}
                                         ${detalle.estado_ejemplar ? `<p><strong>Estado del Ejemplar:</strong> <span>${detalle.estado_ejemplar}</span></p>` : ''}
+                                        ${detalle.ubicacion ? `<p><strong>Ubicación:</strong> <span>${detalle.ubicacion}</span></p>` : ''}
+                                    </div>
+                                </div>
+                                
+                                ${detalle.observaciones ? `
+                                <hr>
+                                <h6 class="text-primary mb-3">
+                                    <i class="ti ti-message-circle me-2"></i>Observaciones de Devolución
+                                </h6>
+                                <div class="alert alert-light border">
+                                    <div class="d-flex align-items-start">
+                                        <i class="ti ti-quote text-muted me-2 mt-1"></i>
+                                        <p class="mb-0 fst-italic">${detalle.observaciones}</p>
+                                    </div>
+                                </div>
+                                ` : ''}
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
                                         ${detalle.ubicacion ? `<p><strong>Ubicación:</strong> <span>${detalle.ubicacion}</span></p>` : ''}
                                     </div>
                                 </div>
