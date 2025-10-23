@@ -1469,6 +1469,9 @@ function mostrarAlertaLogin(accion) {
 document.getElementById('libroModal').addEventListener('hidden.bs.modal', function() {
     document.getElementById('libroModalBody').innerHTML = '';
 });
+
+// Nota: La función compartirRecurso() y la detección de recurso compartido 
+// se manejan en compartir-whatsapp.js
 </script>
 
 <?= $footer ?>

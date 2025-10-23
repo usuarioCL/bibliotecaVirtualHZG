@@ -47,7 +47,7 @@
         <div class="col-md-8">
             <div class="card">
                 <div class="card-header bg-primary text-white">
-                    <h4 class="mb-0">
+                    <h4 class="mb-0 modal-titulo-libro">
                         <i class="fas fa-book me-2"></i>
                         <?= esc($recurso['titulo']) ?>
                     </h4>

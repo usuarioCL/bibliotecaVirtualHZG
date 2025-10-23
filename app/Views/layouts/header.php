@@ -21,6 +21,8 @@
     <?php if (session()->get('logged_in')): ?>
     <script src="<?= base_url('assets/js/notificaciones.js') ?>"></script>
     <?php endif; ?>
+    <!-- Sistema de Compartir por WhatsApp -->
+    <script src="<?= base_url('assets/js/compartir-whatsapp.js') ?>"></script>
     <!-- Animate.css para animaciones -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
     <!-- Custom CSS -->

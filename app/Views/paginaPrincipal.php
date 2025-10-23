@@ -1202,28 +1202,7 @@ function mostrarAlertaLogin(accion) {
     });
 }
 
-// Función para compartir recurso
-function compartirRecurso(idRecurso) {
-    const url = window.location.href;
-    
-    if (navigator.share) {
-        navigator.share({
-            title: 'Recurso de Biblioteca Virtual HZG',
-            text: 'Mira este recurso de la Biblioteca Virtual HZG',
-            url: url
-        });
-    } else {
-        // Fallback: copiar al portapapeles
-        navigator.clipboard.writeText(url).then(() => {
-            Swal.fire({
-                title: 'Enlace copiado',
-                text: 'El enlace ha sido copiado al portapapeles.',
-                icon: 'success',
-                confirmButtonText: 'Entendido'
-            });
-        });
-    }
-}
+// Función compartirRecurso() está definida en compartir-whatsapp.js
 
 // Función para solicitar préstamo de un recurso
 function solicitarPrestamo(idRecurso) {
@@ -1656,5 +1635,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Inicializar duración
     setTimeout(actualizarDuracion, 100);
+    
+    // Nota: La detección de recurso compartido se maneja en compartir-whatsapp.js
 });
 </script>
