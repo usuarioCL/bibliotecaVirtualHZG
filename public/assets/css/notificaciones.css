@@ -1,0 +1,141 @@
+/**
+ * Estilos para el Sistema de Notificaciones
+ */
+
+/* Dropdown de notificaciones */
+.notificaciones-dropdown {
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+    border: none;
+    padding: 0;
+}
+
+/* Header del dropdown */
+.notificaciones-dropdown .dropdown-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 1rem;
+    border-radius: 12px 12px 0 0;
+}
+
+.notificaciones-dropdown .dropdown-header h6 {
+    font-weight: 600;
+    font-size: 1rem;
+}
+
+/* Botón de marcar todas como leídas */
+#btn-marcar-todas-leidas {
+    color: white;
+    font-size: 1.1rem;
+    transition: all 0.3s ease;
+}
+
+#btn-marcar-todas-leidas:hover {
+    transform: scale(1.2);
+    color: #fff3cd;
+}
+
+/* Items de notificación */
+.notificacion-item {
+    transition: all 0.3s ease;
+    border-left: 4px solid transparent;
+}
+
+.notificacion-item:hover {
+    background-color: #f8f9fa !important;
+    border-left-color: #667eea;
+    transform: translateX(5px);
+}
+
+.notificacion-item.bg-light {
+    background-color: #e3f2fd !important;
+    border-left-color: #2196f3;
+}
+
+/* Animación de campana */
+@keyframes swing {
+    0%, 100% { transform: rotate(0deg); }
+    10%, 30% { transform: rotate(15deg); }
+    20%, 40% { transform: rotate(-15deg); }
+    50% { transform: rotate(10deg); }
+    60% { transform: rotate(-10deg); }
+    70% { transform: rotate(5deg); }
+    80% { transform: rotate(-5deg); }
+    90% { transform: rotate(0deg); }
+}
+
+/* Animar campanita cuando hay notificaciones nuevas */
+.nav-link .fa-bell {
+    transition: all 0.3s ease;
+}
+
+.nav-link:hover .fa-bell {
+    transform: scale(1.1);
+    animation: swing 0.6s ease;
+}
+
+/* Badge de contador */
+#badge-notificaciones {
+    font-size: 0.65rem !important;
+    min-width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.25rem 0.4rem;
+    font-weight: 700;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.1);
+        opacity: 0.9;
+    }
+}
+
+/* Scrollbar personalizado para el dropdown */
+.notificaciones-dropdown::-webkit-scrollbar {
+    width: 6px;
+}
+
+.notificaciones-dropdown::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+.notificaciones-dropdown::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 10px;
+}
+
+.notificaciones-dropdown::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* Estados vacíos */
+#lista-notificaciones .text-center {
+    padding: 2rem 1rem;
+}
+
+#lista-notificaciones .fa-check-circle {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .notificaciones-dropdown {
+        width: 320px !important;
+        max-height: 400px !important;
+    }
+    
+    .notificacion-item {
+        font-size: 0.85rem;
+    }
+}
+

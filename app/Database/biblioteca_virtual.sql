@@ -185,7 +185,7 @@ CREATE TABLE tiposancion (
 CREATE TABLE sanciones (
     idsancion INT AUTO_INCREMENT PRIMARY KEY,
     idtiposancion INT NOT NULL,
-    idprestamo INT NOT NULL,
+    idprestamo INT NULL,
     idpersona INT NOT NULL,
     detallesancion VARCHAR(200),
     fecha_sancion DATE NOT NULL DEFAULT (CURRENT_DATE),
@@ -292,4 +292,24 @@ CREATE TABLE historial_usuarios (
     user_agent TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE notificaciones (
+    idnotificacion INT AUTO_INCREMENT PRIMARY KEY,
+    idusuario INT NOT NULL,
+    tipo ENUM('aprobacion', 'rechazo', 'vencimiento', 'renovacion') NOT NULL,
+    titulo VARCHAR(100) NOT NULL,
+    mensaje TEXT NOT NULL,
+    leida BOOLEAN DEFAULT FALSE,
+    idprestamo INT NULL,
+    idsolicitud INT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    leida_at TIMESTAMP NULL,
+    
+    FOREIGN KEY (idusuario) REFERENCES usuarios(idusuario),
+    FOREIGN KEY (idprestamo) REFERENCES prestamos(idprestamo),
+    FOREIGN KEY (idsolicitud) REFERENCES solicitud(idsolicitud),
+    
+    INDEX idx_usuario_leida (idusuario, leida),
+    INDEX idx_created_at (created_at)
 );

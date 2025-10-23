@@ -699,6 +699,31 @@ class PrestamoModel extends Model
                 throw new \Exception('Error en la transacción');
             }
             
+            // Crear notificación para el usuario
+            try {
+                $notificacionModel = new \App\Models\NotificacionModel();
+                $fechaDevolucion = date('d/m/Y', strtotime($solicitud->fechadevolucion));
+                
+                $tituloRecurso = $recurso->titulo ?? 'el recurso solicitado';
+                $mensajeNotificacion = $cantidadSolicitada === 1
+                    ? "Tu solicitud de préstamo de '{$tituloRecurso}' ha sido aprobada. Puedes recogerlo en la biblioteca. Fecha de devolución: {$fechaDevolucion}."
+                    : "Tu solicitud de préstamo de {$cantidadSolicitada} ejemplares de '{$tituloRecurso}' ha sido aprobada. Puedes recogerlos en la biblioteca. Fecha de devolución: {$fechaDevolucion}.";
+                
+                $notificacionModel->crearNotificacion([
+                    'idusuario' => $solicitud->idusuario,
+                    'tipo' => 'aprobacion',
+                    'titulo' => '¡Préstamo Aprobado! 📚',
+                    'mensaje' => $mensajeNotificacion,
+                    'idprestamo' => $idPrestamo,
+                    'idsolicitud' => $idsolicitud
+                ]);
+                
+                log_message('info', "Notificación de aprobación creada para usuario #{$solicitud->idusuario}");
+            } catch (\Exception $e) {
+                // No fallar si hay error en la notificación, solo log
+                log_message('error', 'Error al crear notificación de aprobación: ' . $e->getMessage());
+            }
+            
             $mensaje = $cantidadSolicitada === 1 
                 ? 'Solicitud aprobada correctamente y préstamo creado'
                 : "Solicitud aprobada correctamente. Préstamo creado con {$cantidadSolicitada} ejemplares";
@@ -832,6 +857,35 @@ class PrestamoModel extends Model
             
             if ($db->transStatus() === false) {
                 throw new \Exception('Error en la transacción');
+            }
+            
+            // Crear notificación de rechazo
+            try {
+                $notificacionModel = new \App\Models\NotificacionModel();
+                
+                // Obtener información del recurso
+                $recurso = $db->table('recursos')
+                    ->where('idrecurso', $solicitud->idrecurso)
+                    ->get()
+                    ->getRow();
+                
+                $tituloRecurso = $recurso->titulo ?? 'el recurso solicitado';
+                $mensajeNotificacion = !empty($motivo)
+                    ? "Tu solicitud de préstamo de '{$tituloRecurso}' ha sido rechazada. Motivo: {$motivo}"
+                    : "Tu solicitud de préstamo de '{$tituloRecurso}' ha sido rechazada.";
+                
+                $notificacionModel->crearNotificacion([
+                    'idusuario' => $solicitud->idusuario,
+                    'tipo' => 'rechazo',
+                    'titulo' => 'Solicitud Rechazada',
+                    'mensaje' => $mensajeNotificacion,
+                    'idprestamo' => null,
+                    'idsolicitud' => $idsolicitud
+                ]);
+                
+                log_message('info', "Notificación de rechazo creada para usuario #{$solicitud->idusuario}");
+            } catch (\Exception $e) {
+                log_message('error', 'Error al crear notificación de rechazo: ' . $e->getMessage());
             }
             
             return [

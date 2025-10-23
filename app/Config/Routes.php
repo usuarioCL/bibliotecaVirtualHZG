@@ -218,6 +218,12 @@ $routes->post('/sanciones/levantar-todas', 'SancionController::levantarTodas');
 $routes->get('/sanciones/estadisticas', 'SancionController::estadisticas');
 $routes->get('/sanciones/exportar-excel', 'SancionController::exportarExcel');
 
+// Sistema de Notificaciones
+$routes->get('/notificaciones/contar', 'NotificacionController::contarNoLeidas');
+$routes->get('/notificaciones/obtener', 'NotificacionController::obtenerNotificaciones');
+$routes->post('/notificaciones/marcar-leida', 'NotificacionController::marcarLeida');
+$routes->post('/notificaciones/marcar-todas-leidas', 'NotificacionController::marcarTodasLeidas');
+
 // Sistema de Préstamos
 $routes->get('/prestamos', 'PrestamoController::index');                      // Préstamos Activos
 $routes->get('/solicitudes', 'PrestamoController::solicitudes');              // Solicitudes Pendientes

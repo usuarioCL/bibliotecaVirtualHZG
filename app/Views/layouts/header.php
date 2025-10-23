@@ -12,14 +12,22 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <!-- Funciones globales para JS -->
     <script>
-        // Definir la URL de login global para todas las vistas
+        // Definir URLs globales para JavaScript
         window.base_url_login = '<?= base_url('login') ?>';
+        window.base_url = '<?= base_url() ?>';
     </script>
     <script src="<?= base_url('assets/js/funciones-globales.js') ?>"></script>
+    <!-- Sistema de Notificaciones -->
+    <?php if (session()->get('logged_in')): ?>
+    <script src="<?= base_url('assets/js/notificaciones.js') ?>"></script>
+    <?php endif; ?>
     <!-- Animate.css para animaciones -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
     <!-- Custom CSS -->
     <link rel="stylesheet" href="<?= base_url('assets/css/recursos-destacados.css') ?>">
+    <?php if (session()->get('logged_in')): ?>
+    <link rel="stylesheet" href="<?= base_url('assets/css/notificaciones.css') ?>">
+    <?php endif; ?>
     <style>
         .sidebar {
             position: fixed;

@@ -46,6 +46,32 @@
             <!-- Área de Usuario - Sección Derecha -->
             <div class="navbar-nav ms-auto">
                 <?php if (session()->get('logged_in')): ?>
+                <!-- Campanita de Notificaciones -->
+                <div class="nav-item dropdown me-3">
+                    <a class="nav-link position-relative" href="#" role="button" id="notificacionesDropdown" 
+                       data-bs-toggle="dropdown" aria-expanded="false" 
+                       title="Notificaciones">
+                        <i class="fas fa-bell" style="font-size: 1.3rem; color: var(--primary-color, #d9534f);"></i>
+                        <span id="badge-notificaciones" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="display: none; font-size: 0.65rem;">
+                            0
+                        </span>
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-end notificaciones-dropdown" aria-labelledby="notificacionesDropdown" style="width: 350px; max-height: 500px; overflow-y: auto;">
+                        <div class="dropdown-header d-flex justify-content-between align-items-center border-bottom pb-2">
+                            <h6 class="mb-0"><i class="fas fa-bell me-2"></i>Notificaciones</h6>
+                            <button class="btn btn-sm btn-link text-decoration-none p-0" id="btn-marcar-todas-leidas" title="Marcar todas como leídas">
+                                <i class="fas fa-check-double"></i>
+                            </button>
+                        </div>
+                        <div id="lista-notificaciones" class="py-2">
+                            <div class="text-center text-muted py-4">
+                                <i class="fas fa-spinner fa-spin fa-2x mb-2"></i>
+                                <p class="mb-0">Cargando notificaciones...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
                 <div class="nav-item dropdown">
                     <a class="btn btn-outline-primary dropdown-toggle d-flex align-items-center" 
                        href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
