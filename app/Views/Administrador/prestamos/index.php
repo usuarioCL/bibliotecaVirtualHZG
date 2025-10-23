@@ -157,7 +157,6 @@
                 <table class="table table-hover align-middle mb-0" id="tablaPrestamos">
                     <thead class="table-light">
                         <tr class="text-uppercase small fw-semibold text-muted">
-                            <th class="border-0 px-3 py-3">Código</th>
                             <th class="border-0 px-3 py-3">Usuario</th>
                             <th class="border-0 px-3 py-3">Recurso</th>
                             <th class="border-0 px-3 py-3">Fechas</th>
@@ -175,19 +174,13 @@
                                         <div class="d-flex align-items-center">
                                             <div class="me-3">
                                                 <div class="rounded-2 bg-primary bg-opacity-10 p-2">
-                                                    <i class="ti ti-bookmark text-primary fs-5"></i>
+                                                    <i class="ti ti-user text-primary fs-5"></i>
                                                 </div>
                                             </div>
                                             <div>
-                                                <h6 class="mb-1 fw-semibold"><?= esc($prestamo['codigo_prestamo']) ?></h6>
-                                                <p class="text-muted mb-0 small"><?= esc($prestamo['codigo_ejemplar']) ?></p>
+                                                <h6 class="mb-1 fw-semibold"><?= esc($prestamo['usuario']) ?></h6>
+                                                <p class="text-muted mb-0 small">CC: <?= esc($prestamo['documento']) ?></p>
                                             </div>
-                                        </div>
-                                    </td>
-                                    <td class="px-3 py-3">
-                                        <div>
-                                            <h6 class="mb-1 fw-medium"><?= esc($prestamo['usuario']) ?></h6>
-                                            <p class="text-muted mb-0 small">CC: <?= esc($prestamo['documento']) ?></p>
                                         </div>
                                     </td>
                                     <td class="px-3 py-3">
@@ -334,22 +327,13 @@
                                                     data-bs-toggle="tooltip">
                                                 <i class="ti ti-book-upload"></i>
                                             </button>
-                                            
-                                            <!-- Cancelar -->
-                                            <button type="button" 
-                                                    class="btn btn-sm btn-outline-danger" 
-                                                    onclick="cancelarPrestamo(<?= $prestamo['idprestamo'] ?>)" 
-                                                    title="Cancelar Préstamo"
-                                                    data-bs-toggle="tooltip">
-                                                <i class="ti ti-x"></i>
-                                            </button>
                                         </div>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>
                         <?php else: ?>
                             <tr>
-                                <td colspan="8" class="text-center py-5">
+                                <td colspan="7" class="text-center py-5">
                                     <div class="empty-state">
                                         <div class="empty-state-icon mb-3">
                                             <i class="ti ti-bookmark-off" style="font-size: 3rem; color: #6c757d;"></i>
@@ -1347,40 +1331,246 @@
     function procesarDevolucion(prestamoId) {
         console.log('Procesar devolución:', prestamoId);
         
+        // Mostrar loading mientras cargamos los tipos de sanción
         Swal.fire({
-            title: '¿Procesar Devolución?',
+            title: 'Cargando...',
+            text: 'Obteniendo tipos de sanción',
+            allowOutsideClick: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+        
+        // Cargar tipos de sanción desde la base de datos
+        fetch('<?= base_url('prestamos/obtener-tipos-sancion') ?>', {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(tiposSancion => {
+            mostrarModalDevolucion(prestamoId, tiposSancion.data || []);
+        })
+        .catch(error => {
+            console.error('Error al cargar tipos de sanción:', error);
+            // Si falla, mostrar modal con opciones predeterminadas
+            mostrarModalDevolucion(prestamoId, []);
+        });
+    }
+    
+    // Función auxiliar para mostrar el modal de devolución
+    function mostrarModalDevolucion(prestamoId, tiposSancion) {
+        // Construir opciones de tipo de sanción dinámicamente
+        let opcionesTipoSancion = '<option value="">Seleccionar tipo de incidencia...</option>';
+        
+        if (tiposSancion && tiposSancion.length > 0) {
+            tiposSancion.forEach(tipo => {
+                // Mostrar TODOS los tipos de sanción disponibles en la base de datos
+                opcionesTipoSancion += `<option value="${tipo.idtiposancion}">${tipo.tiposancion}</option>`;
+            });
+        } else {
+            // Opciones por defecto si no se pudieron cargar
+            opcionesTipoSancion += `
+                <option value="1">Retraso en devolución</option>
+                <option value="2">Pérdida de material</option>
+                <option value="3">Daño al material</option>
+                <option value="4">Incumplimiento de normas</option>
+                <option value="5">Comportamiento inadecuado</option>
+            `;
+        }
+        
+        Swal.fire({
+            title: 'Procesar Devolución',
             html: `
-                <p class="mb-3 text-start">Confirma que el recurso ha sido devuelto correctamente.</p>
+                <p class="mb-3 text-start">Selecciona el estado del material devuelto:</p>
+                
                 <div class="mb-3 text-start">
-                    <label for="observaciones_devolucion" class="form-label fw-bold">
-                        <i class="ti ti-message me-1"></i>Observaciones (opcional):
+                    <label class="form-label fw-bold">
+                        <i class="ti ti-clipboard-check me-1"></i>Estado del Material:
                     </label>
-                    <textarea id="observaciones_devolucion" 
-                              class="form-control" 
-                              placeholder="Escribe cualquier observación sobre el estado del recurso devuelto..." 
-                              rows="3"></textarea>
-                    <small class="text-muted">Puedes dejar este campo vacío si no hay observaciones.</small>
+                    <select id="estado_devolucion" class="form-select form-select-lg">
+                        <option value="bueno" selected>✅ Devuelto en Buen Estado</option>
+                        <option value="con_incidencia">⚠️ Devuelto con Incidencia (Daño/Pérdida)</option>
+                    </select>
+                    <small class="text-muted d-block mt-1">
+                        <i class="ti ti-info-circle me-1"></i>Haz clic para ver las opciones disponibles
+                    </small>
+                </div>
+                
+                <div id="seccion_incidencia" class="mb-3 text-start" style="display: none;">
+                    <label for="tipo_sancion" class="form-label fw-bold">
+                        <i class="ti ti-alert-triangle me-1"></i>Tipo de Incidencia<span class="text-danger">*</span>:
+                    </label>
+                    <select id="tipo_sancion" class="form-select mb-2">
+                        ${opcionesTipoSancion}
+                    </select>
+                    
+                    <div id="detalle_incidencia_container" class="mt-2" style="display: none;">
+                        <label for="detalle_incidencia" class="form-label fw-bold">
+                            <i class="ti ti-file-description me-1"></i>Detalle Específico<span class="text-danger">*</span>:
+                        </label>
+                        <select id="detalle_incidencia" class="form-select mb-2">
+                            <option value="">Seleccionar detalle...</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <label for="observaciones_devolucion" class="form-label fw-bold">
+                            <i class="ti ti-message me-1"></i>Observaciones (opcional):
+                        </label>
+                        <textarea id="observaciones_devolucion" 
+                                  class="form-control" 
+                                  placeholder="Puedes agregar detalles adicionales sobre la incidencia, si lo consideras necesario..." 
+                                  rows="4"></textarea>
+                        <small class="text-muted">Este campo es opcional</small>
+                    </div>
+                    
+                    <div class="alert alert-warning mb-0 mt-3">
+                        <small><i class="ti ti-info-circle me-1"></i><strong>Importante:</strong> Se aplicará una sanción según el tipo de incidencia registrada</small>
+                    </div>
                 </div>
             `,
             icon: 'question',
             showCancelButton: true,
-            confirmButtonText: '<i class="ti ti-check me-1"></i>Sí, procesar devolución',
+            confirmButtonText: '<i class="ti ti-check me-1"></i>Procesar Devolución',
             cancelButtonText: '<i class="ti ti-x me-1"></i>Cancelar',
             confirmButtonColor: '#28a745',
             cancelButtonColor: '#6c757d',
-            width: '550px',
+            width: '600px',
+            didOpen: () => {
+                const estadoSelect = document.getElementById('estado_devolucion');
+                const seccionIncidencia = document.getElementById('seccion_incidencia');
+                const tipoSancionSelect = document.getElementById('tipo_sancion');
+                const detalleIncidenciaContainer = document.getElementById('detalle_incidencia_container');
+                const detalleIncidenciaSelect = document.getElementById('detalle_incidencia');
+                
+                // Definir detalles específicos según el tipo de incidencia
+                const detallesPorTipo = {
+                    'daño': [
+                        { value: 'paginas_rasgadas', text: 'Páginas rasgadas' },
+                        { value: 'paginas_faltantes', text: 'Páginas faltantes' },
+                        { value: 'portada_danada', text: 'Portada dañada' },
+                        { value: 'manchas_humedad', text: 'Manchas o humedad' },
+                        { value: 'lomo_roto', text: 'Lomo roto o despegado' },
+                        { value: 'rayones_escritura', text: 'Rayones o escritura' },
+                        { value: 'encuadernacion_dañada', text: 'Encuadernación dañada' },
+                        { value: 'otro_daño', text: 'Otro tipo de daño' }
+                    ],
+                    'pérdida': [
+                        { value: 'extraviado', text: 'Material extraviado' },
+                        { value: 'no_devuelto', text: 'No devuelto en plazo' },
+                        { value: 'robado', text: 'Reportado como robado' },
+                        { value: 'otro_perdida', text: 'Otra causa de pérdida' }
+                    ],
+                    'retraso': [
+                        { value: 'olvido', text: 'Olvido de fecha de devolución' },
+                        { value: 'imposibilidad', text: 'Imposibilidad de asistir' },
+                        { value: 'enfermedad', text: 'Enfermedad o emergencia' },
+                        { value: 'otro_retraso', text: 'Otro motivo de retraso' }
+                    ],
+                    'incumplimiento': [
+                        { value: 'no_respetar_horarios', text: 'No respetar horarios' },
+                        { value: 'uso_inadecuado', text: 'Uso inadecuado del material' },
+                        { value: 'prestamo_terceros', text: 'Préstamo a terceros sin autorización' },
+                        { value: 'otro_incumplimiento', text: 'Otro incumplimiento' }
+                    ],
+                    'comportamiento': [
+                        { value: 'desorden', text: 'Generar desorden en biblioteca' },
+                        { value: 'ruido_excesivo', text: 'Ruido excesivo' },
+                        { value: 'falta_respeto', text: 'Falta de respeto al personal' },
+                        { value: 'otro_comportamiento', text: 'Otro comportamiento inadecuado' }
+                    ]
+                };
+                
+                // Manejar cambio de estado del material
+                estadoSelect.addEventListener('change', function() {
+                    const estado = this.value;
+                    
+                    if (estado === 'con_incidencia') {
+                        seccionIncidencia.style.display = 'block';
+                    } else {
+                        seccionIncidencia.style.display = 'none';
+                        detalleIncidenciaContainer.style.display = 'none';
+                    }
+                });
+                
+                // Manejar cambio de tipo de sanción para mostrar detalles específicos
+                tipoSancionSelect.addEventListener('change', function() {
+                    const tipoTexto = this.options[this.selectedIndex]?.text.toLowerCase() || '';
+                    
+                    // Limpiar opciones anteriores
+                    detalleIncidenciaSelect.innerHTML = '<option value="">Seleccionar detalle...</option>';
+                    
+                    // Determinar qué detalles mostrar según el tipo de sanción
+                    let detalles = [];
+                    if (tipoTexto.includes('daño')) {
+                        detalles = detallesPorTipo['daño'];
+                    } else if (tipoTexto.includes('pérdida') || tipoTexto.includes('perdida')) {
+                        detalles = detallesPorTipo['pérdida'];
+                    } else if (tipoTexto.includes('retraso')) {
+                        detalles = detallesPorTipo['retraso'];
+                    } else if (tipoTexto.includes('incumplimiento') || tipoTexto.includes('norma')) {
+                        detalles = detallesPorTipo['incumplimiento'];
+                    } else if (tipoTexto.includes('comportamiento')) {
+                        detalles = detallesPorTipo['comportamiento'];
+                    }
+                    
+                    // Agregar opciones de detalle
+                    if (detalles.length > 0) {
+                        detalles.forEach(detalle => {
+                            const option = document.createElement('option');
+                            option.value = detalle.value;
+                            option.textContent = detalle.text;
+                            detalleIncidenciaSelect.appendChild(option);
+                        });
+                        detalleIncidenciaContainer.style.display = 'block';
+                    } else {
+                        detalleIncidenciaContainer.style.display = 'none';
+                    }
+                });
+            },
             preConfirm: () => {
+                const estadoDevolucion = document.getElementById('estado_devolucion').value;
                 const observaciones = document.getElementById('observaciones_devolucion').value.trim();
+                const tipoSancion = document.getElementById('tipo_sancion')?.value || '';
+                const detalleIncidencia = document.getElementById('detalle_incidencia')?.value || '';
+                
+                
+                // Validar tipo de sanción si hay incidencia
+                if (estadoDevolucion === 'con_incidencia' && !tipoSancion) {
+                    Swal.showValidationMessage('Debes seleccionar el tipo de incidencia');
+                    return false;
+                }
+                
+                // Validar detalle de incidencia si está visible
+                const detalleContainer = document.getElementById('detalle_incidencia_container');
+                if (estadoDevolucion === 'con_incidencia' && detalleContainer.style.display !== 'none' && !detalleIncidencia) {
+                    Swal.showValidationMessage('Debes seleccionar el detalle específico de la incidencia');
+                    return false;
+                }
+                
                 return {
+                    estado_devolucion: estadoDevolucion,
+                    idtiposancion: tipoSancion,
+                    detalle_incidencia: detalleIncidencia,
                     observaciones: observaciones || ''
                 };
             }
         }).then((result) => {
             if (result.isConfirmed) {
+                const { estado_devolucion, idtiposancion, detalle_incidencia, observaciones } = result.value;
+                
+                // Determinar el mensaje de loading según el estado
+                let loadingText = 'Registrando devolución';
+                if (estado_devolucion === 'con_incidencia') {
+                    loadingText = 'Registrando devolución con incidencia';
+                }
+                
                 // Mostrar loading
                 Swal.fire({
                     title: 'Procesando...',
-                    text: 'Registrando devolución',
+                    text: loadingText,
                     allowOutsideClick: false,
                     didOpen: () => {
                         Swal.showLoading();
@@ -1395,25 +1585,41 @@
                         'X-Requested-With': 'XMLHttpRequest'
                     },
                     body: 'idprestamo=' + encodeURIComponent(prestamoId) + 
-                          '&observaciones=' + encodeURIComponent(result.value.observaciones || '')
+                          '&estado_devolucion=' + encodeURIComponent(estado_devolucion) +
+                          '&idtiposancion=' + encodeURIComponent(idtiposancion) +
+                          '&detalle_incidencia=' + encodeURIComponent(detalle_incidencia) +
+                          '&observaciones=' + encodeURIComponent(observaciones)
                 })
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
                         let icon = 'success';
                         let title = 'Devolución Procesada';
+                        let htmlContent = data.message;
                         
-                        // Si hubo retraso, mostrar advertencia
-                        if (data.con_retraso) {
+                        // Personalizar mensaje según el estado
+                        if (estado_devolucion === 'con_incidencia') {
                             icon = 'warning';
-                            title = 'Devolución con Retraso';
+                            title = 'Devolución con Incidencia Registrada';
+                            if (data.sancion_aplicada) {
+                                htmlContent += '<br><br><div class="alert alert-warning mt-2 mb-0"><i class="ti ti-alert-triangle me-2"></i>Se ha generado una sanción: <strong>' + (data.tipo_sancion || 'Sanción aplicada') + '</strong></div>';
+                            }
+                        } else {
+                            // Si hubo retraso en devolución normal
+                            if (data.con_retraso) {
+                                icon = 'warning';
+                                title = 'Devolución con Retraso';
+                                if (data.sancion_aplicada) {
+                                    htmlContent += '<br><br><div class="alert alert-warning mt-2 mb-0"><i class="ti ti-clock me-2"></i>Se ha generado una sanción por retraso en la devolución</div>';
+                                }
+                            }
                         }
                         
                         Swal.fire({
                             title: title,
-                            text: data.message,
+                            html: htmlContent,
                             icon: icon,
-                            timer: 3000,
+                            timer: (estado_devolucion === 'bueno' && !data.con_retraso) ? 3000 : null,
                             showConfirmButton: true,
                             confirmButtonText: 'Entendido'
                         }).then(() => {

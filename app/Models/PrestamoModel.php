@@ -364,13 +364,14 @@ class PrestamoModel extends Model
     }
 
     /**
-     * Obtener historial completo de préstamos
+     * Obtener historial completo de préstamos (incluye devueltos y rechazados)
      */
     public function getHistorialCompleto()
     {
         $db = \Config\Database::connect();
         
-        $sql = "SELECT 
+        // Consulta para préstamos devueltos (con información de sanciones/incidencias)
+        $sqlDevueltos = "SELECT 
                     p.idprestamo as id,
                     CONCAT('PREST-', YEAR(p.fechaprestamo), '-', LPAD(p.idprestamo, 3, '0')) as codigo_prestamo,
                     CONCAT(per.nombres, ' ', per.apellidos) as usuario,
@@ -407,61 +408,91 @@ class PrestamoModel extends Model
                         0
                     ) as renovaciones,
                     'Bueno' as estado_ejemplar,
-                    p.observaciones_devolucion as observaciones
+                    p.observaciones_devolucion as observaciones,
+                    p.fechahoraretorno as fecha_registro,
+                    ts.tiposancion as tipo_incidencia,
+                    s.detallesancion as detalle_incidencia,
+                    s.observaciones as observaciones_incidencia,
+                    s.fecha_sancion,
+                    s.estado_sancion,
+                    CASE 
+                        WHEN s.idsancion IS NOT NULL THEN 1
+                        ELSE 0
+                    END as tiene_incidencia
                 FROM prestamos p
                 JOIN matriculas m ON m.idmatricula = p.idmatricula
                 JOIN personas per ON per.idpersona = m.idpersona
                 JOIN recursos r ON r.idrecurso = p.idrecurso
                 LEFT JOIN recursos_fisicos rf ON rf.idrecurso = r.idrecurso
-                WHERE p.fechahoraretorno IS NOT NULL
-                ORDER BY p.fechahoraretorno DESC
-                LIMIT 100";
+                LEFT JOIN sanciones s ON s.idprestamo = p.idprestamo 
+                    AND s.idtiposancion IN (2, 3)
+                LEFT JOIN tiposancion ts ON ts.idtiposancion = s.idtiposancion
+                WHERE p.fechahoraretorno IS NOT NULL";
+        
+        // Consulta para solicitudes rechazadas
+        $sqlRechazadas = "SELECT 
+                    s.idsolicitud as id,
+                    CONCAT('SOL-', YEAR(s.fecha_solicitud), '-', LPAD(s.idsolicitud, 3, '0')) as codigo_prestamo,
+                    CONCAT(per.nombres, ' ', per.apellidos) as usuario,
+                    per.numerodoc as documento,
+                    r.titulo as recurso,
+                    CASE 
+                        WHEN rf.idrecurso IS NOT NULL THEN CONCAT('LIB-FIS-', LPAD(r.idrecurso, 3, '0'))
+                        ELSE CONCAT('LIB-DIG-', LPAD(r.idrecurso, 3, '0'))
+                    END as codigo_ejemplar,
+                    s.fechaprestamo as fecha_prestamo,
+                    NULL as fecha_devolucion,
+                    s.fechadevolucion as fecha_vencimiento,
+                    CASE 
+                        WHEN s.motivo_rechazo LIKE 'Cantidad solicitada:%' THEN 
+                            CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(s.motivo_rechazo, ': ', -1), ' ', 1) AS UNSIGNED)
+                        ELSE 1 
+                    END as cantidad,
+                    'Rechazado' as estado_final,
+                    0 as dias_prestamo,
+                    0 as dias_retraso,
+                    0 as horas_retraso_total,
+                    0 as renovaciones,
+                    'N/A' as estado_ejemplar,
+                    s.motivo_rechazo as observaciones,
+                    s.fecha_procesado as fecha_registro,
+                    NULL as tipo_incidencia,
+                    NULL as detalle_incidencia,
+                    NULL as observaciones_incidencia,
+                    NULL as fecha_sancion,
+                    NULL as estado_sancion,
+                    0 as tiene_incidencia
+                FROM solicitud s
+                JOIN matriculas m ON m.idmatricula = s.idmatricula
+                JOIN personas per ON per.idpersona = m.idpersona
+                JOIN recursos r ON r.idrecurso = s.idrecurso
+                LEFT JOIN recursos_fisicos rf ON rf.idrecurso = r.idrecurso
+                WHERE s.validado = true AND s.idprestamo IS NULL";
+        
+        // Unir ambas consultas
+        $sql = "({$sqlDevueltos}) UNION ALL ({$sqlRechazadas}) ORDER BY fecha_registro DESC LIMIT 100";
         
         $query = $db->query($sql);
         $historial = $query->getResultArray();
         
-        // Agregar observaciones desde logs y mantener las de devolución de la BD
+        // Procesar observaciones del historial
         foreach ($historial as &$registro) {
-            $observacionesLog = $this->obtenerObservacionesDesdeLog($registro['id']);
-            $observacionesDevolucion = $registro['observaciones']; // Estas vienen de p.observaciones_devolucion
+            // Obtener las observaciones directamente de la BD
+            $observacionesDevolucion = $registro['observaciones'] ?? null;
             
-            // Limpiar y normalizar las observaciones de devolución
+            // Limpiar y normalizar las observaciones
             $observacionesDevolucion = trim($observacionesDevolucion ?? '');
             if ($observacionesDevolucion === '' || $observacionesDevolucion === 'NULL' || $observacionesDevolucion === 'Sin observaciones') {
                 $observacionesDevolucion = null;
             }
             
-            // Limpiar y normalizar las observaciones del log
-            $observacionesLog = trim($observacionesLog ?? '');
-            if ($observacionesLog === '' || $observacionesLog === 'Sin observaciones') {
-                $observacionesLog = null;
-            }
-            
-            // Combinar observaciones de diferentes fuentes
-            $observacionesCombinadas = [];
-            
-            // Priorizar observaciones de devolución de la BD
+            // Establecer las observaciones finales (SOLO de la BD, sin mezclar con logs)
             if (!empty($observacionesDevolucion)) {
-                $observacionesCombinadas[] = $observacionesDevolucion;
-            }
-            
-            // Agregar observaciones del log si son diferentes y no están vacías
-            if (!empty($observacionesLog) && $observacionesLog !== $observacionesDevolucion) {
-                $observacionesCombinadas[] = $observacionesLog;
-            }
-            
-            // Establecer las observaciones finales
-            if (!empty($observacionesCombinadas)) {
-                $registro['observaciones'] = implode(' | ', $observacionesCombinadas);
+                $registro['observaciones'] = $observacionesDevolucion;
                 $registro['tiene_observaciones'] = true;
             } else {
                 $registro['observaciones'] = null;
                 $registro['tiene_observaciones'] = false;
-            }
-            
-            // Log para debugging (temporal)
-            if (!empty($observacionesDevolucion) || !empty($observacionesLog)) {
-                log_message('debug', "Préstamo {$registro['id']}: BD='" . ($observacionesDevolucion ?? 'NULL') . "', Log='" . ($observacionesLog ?? 'NULL') . "', Final='" . ($registro['observaciones'] ?? 'NULL') . "'");
             }
         }
         
@@ -499,16 +530,26 @@ class PrestamoModel extends Model
     }
 
     /**
-     * Obtener estadísticas para el historial
+     * Obtener estadísticas para el historial (incluye devueltos y rechazados)
      */
     public function getEstadisticasHistorial()
     {
         $db = \Config\Database::connect();
         
-        // Total de registros
-        $totalRegistros = $this->countAllResults();
+        // Total de préstamos
+        $totalPrestamos = $this->countAllResults();
         
-        // Préstamos de este mes
+        // Total de solicitudes rechazadas
+        $totalRechazadas = $db->query("
+            SELECT COUNT(*) as total 
+            FROM solicitud 
+            WHERE validado = true AND idprestamo IS NULL
+        ")->getRow()->total;
+        
+        // Total de registros (préstamos + rechazados)
+        $totalRegistros = $totalPrestamos + $totalRechazadas;
+        
+        // Préstamos de este mes (incluye rechazados)
         $esteMes = $db->query("
             SELECT COUNT(*) as total 
             FROM prestamos 
@@ -516,7 +557,17 @@ class PrestamoModel extends Model
             AND YEAR(fechaprestamo) = YEAR(CURDATE())
         ")->getRow()->total;
         
-        // Promedio mensual (últimos 6 meses)
+        $esteMesRechazados = $db->query("
+            SELECT COUNT(*) as total 
+            FROM solicitud 
+            WHERE validado = true AND idprestamo IS NULL
+            AND MONTH(fecha_solicitud) = MONTH(CURDATE()) 
+            AND YEAR(fecha_solicitud) = YEAR(CURDATE())
+        ")->getRow()->total;
+        
+        $esteMesTotal = $esteMes + $esteMesRechazados;
+        
+        // Promedio mensual (últimos 6 meses) - solo préstamos
         $promedioMensual = $db->query("
             SELECT AVG(monthly_count) as promedio
             FROM (
@@ -527,20 +578,21 @@ class PrestamoModel extends Model
             ) as monthly_stats
         ")->getRow()->promedio ?? 0;
         
-        // Tasa de devolución
+        // Tasa de devolución (de los préstamos aprobados)
         $totalDevueltos = $db->query("
             SELECT COUNT(*) as total 
             FROM prestamos 
             WHERE fechahoraretorno IS NOT NULL
         ")->getRow()->total;
         
-        $tasaDevolucion = $totalRegistros > 0 ? ($totalDevueltos / $totalRegistros) * 100 : 0;
+        $tasaDevolucion = $totalPrestamos > 0 ? ($totalDevueltos / $totalPrestamos) * 100 : 0;
         
         return [
             'total_registros' => $totalRegistros,
-            'este_mes' => $esteMes,
+            'este_mes' => $esteMesTotal,
             'promedio_mensual' => round($promedioMensual),
-            'tasa_devolucion' => round($tasaDevolucion, 1)
+            'tasa_devolucion' => round($tasaDevolucion, 1),
+            'total_rechazados' => $totalRechazadas
         ];
     }
 
@@ -744,18 +796,35 @@ class PrestamoModel extends Model
                 throw new \Exception('Solicitud no encontrada o ya procesada');
             }
             
+            // Extraer SOLO la cantidad del campo motivo_rechazo (limpiando cualquier otro contenido)
+            $cantidadSolicitada = 1;
+            if ($solicitud->motivo_rechazo) {
+                // Buscar el patrón de cantidad al inicio del string
+                if (preg_match('/^Cantidad solicitada:\s*(\d+)/', $solicitud->motivo_rechazo, $matches)) {
+                    $cantidadSolicitada = (int)$matches[1];
+                }
+            }
+            
+            // Construir el motivo de rechazo NUEVO (reemplazando completamente el anterior)
+            $motivoCompleto = $motivo;
+            if ($cantidadSolicitada > 1) {
+                $motivoCompleto = "Cantidad solicitada: {$cantidadSolicitada} ejemplares. " . $motivo;
+            }
+            
+            log_message('info', "Solicitud {$idsolicitud}: Cantidad extraída = {$cantidadSolicitada}, Motivo original = '{$solicitud->motivo_rechazo}', Motivo nuevo = '{$motivoCompleto}'");
+            
             // Marcar la solicitud como rechazada en lugar de eliminarla (para historial)
             $db->table('solicitud')
                 ->where('idsolicitud', $idsolicitud)
                 ->update([
                     'validado' => true,  // Marcada como procesada
-                    'motivo_rechazo' => $motivo,
+                    'motivo_rechazo' => $motivoCompleto,
                     'fecha_procesado' => date('Y-m-d H:i:s'),
                     'idprestamo' => null  // No se crea préstamo
                 ]);
             
             // Registrar en log el rechazo con el motivo
-            log_message('info', "Solicitud {$idsolicitud} rechazada. Motivo: {$motivo}");
+            log_message('info', "Solicitud {$idsolicitud} rechazada. Cantidad: {$cantidadSolicitada}. Motivo: {$motivo}");
             
             $db->transComplete();
             
@@ -1568,9 +1637,7 @@ class PrestamoModel extends Model
                 
                 // Verificar que la solicitud existe y no está procesada
                 $solicitud = $db->table('solicitud s')
-                    ->select('s.*, p.idprestamo, r.titulo as recurso_titulo')
-                    ->join('prestamos p', 'p.idprestamo = s.idprestamo')
-                    ->join('recursos r', 'r.idrecurso = p.idrecurso')
+                    ->select('s.*')
                     ->where('s.idsolicitud', $idsolicitud)
                     ->where('s.validado', false)
                     ->get()
@@ -1582,15 +1649,32 @@ class PrestamoModel extends Model
                     continue;
                 }
                 
-                // Eliminar la solicitud
+                // Extraer SOLO la cantidad del campo motivo_rechazo (limpiando cualquier otro contenido)
+                $cantidadSolicitada = 1;
+                if ($solicitud->motivo_rechazo) {
+                    // Buscar el patrón de cantidad al inicio del string
+                    if (preg_match('/^Cantidad solicitada:\s*(\d+)/', $solicitud->motivo_rechazo, $matches)) {
+                        $cantidadSolicitada = (int)$matches[1];
+                    }
+                }
+                
+                // Construir el motivo de rechazo NUEVO (reemplazando completamente el anterior)
+                $motivoCompleto = $motivo;
+                if ($cantidadSolicitada > 1) {
+                    $motivoCompleto = "Cantidad solicitada: {$cantidadSolicitada} ejemplares. " . $motivo;
+                }
+                
+                log_message('info', "Solicitud {$idsolicitud}: Cantidad extraída = {$cantidadSolicitada}, Motivo original = '{$solicitud->motivo_rechazo}', Motivo nuevo = '{$motivoCompleto}'");
+                
+                // Marcar la solicitud como rechazada (igual que el rechazo individual)
                 $db->table('solicitud')
                     ->where('idsolicitud', $idsolicitud)
-                    ->delete();
-                
-                // Eliminar el préstamo asociado
-                $db->table('prestamos')
-                    ->where('idprestamo', $solicitud->idprestamo)
-                    ->delete();
+                    ->update([
+                        'validado' => true,  // Marcada como procesada
+                        'motivo_rechazo' => $motivoCompleto,
+                        'fecha_procesado' => date('Y-m-d H:i:s'),
+                        'idprestamo' => null  // No se crea préstamo
+                    ]);
                 
                 $db->transComplete();
                 
@@ -1601,7 +1685,7 @@ class PrestamoModel extends Model
                 
                 $resultados['rechazadas']++;
                 $motivoTexto = !empty($motivo) ? $motivo : 'Sin motivo especificado';
-                log_message('info', "Solicitud {$idsolicitud} rechazada masivamente. Recurso: {$solicitud->recurso_titulo}. Motivo: {$motivoTexto}");
+                log_message('info', "Solicitud {$idsolicitud} rechazada masivamente. Cantidad: {$cantidadSolicitada}. Motivo: {$motivoTexto}");
                 
             } catch (\Exception $e) {
                 $db->transRollback();
@@ -1635,9 +1719,13 @@ class PrestamoModel extends Model
                 throw new \Exception('Este préstamo ya ha sido devuelto');
             }
             
-            // Actualizar el préstamo con la fecha de devolución
+            // Actualizar el préstamo con la fecha de devolución y observaciones
             $fechaRetorno = date('Y-m-d H:i:s');
-            $this->update($idprestamo, ['fechahoraretorno' => $fechaRetorno]);
+            $updateData = [
+                'fechahoraretorno' => $fechaRetorno,
+                'observaciones_devolucion' => !empty($observaciones) ? $observaciones : null
+            ];
+            $this->update($idprestamo, $updateData);
             
             // Actualizar el stock del recurso
             $cantidadDevuelta = $prestamo['cantidad'] ?? 1;
@@ -1647,6 +1735,11 @@ class PrestamoModel extends Model
                ->update();
             
             log_message('info', "Devolución completa procesada: Préstamo #{$idprestamo}, devolviendo {$cantidadDevuelta} ejemplares al stock del recurso #{$prestamo['idrecurso']}");
+            
+            // Registrar las observaciones en logs si se proporcionaron
+            if (!empty($observaciones)) {
+                log_message('info', "Devolución préstamo {$idprestamo}. Observaciones: {$observaciones}");
+            }
             
             // Verificar si hay más préstamos activos del mismo recurso
             $prestamosActivos = $this->where('idrecurso', $prestamo['idrecurso'])

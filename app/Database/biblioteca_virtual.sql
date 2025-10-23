@@ -185,6 +185,7 @@ CREATE TABLE tiposancion (
 CREATE TABLE sanciones (
     idsancion INT AUTO_INCREMENT PRIMARY KEY,
     idtiposancion INT NOT NULL,
+    idprestamo INT NOT NULL,
     idpersona INT NOT NULL,
     detallesancion VARCHAR(200),
     fecha_sancion DATE NOT NULL DEFAULT (CURRENT_DATE),
@@ -204,12 +205,15 @@ CREATE TABLE sanciones (
     FOREIGN KEY (idpersona) REFERENCES personas(idpersona),
     FOREIGN KEY (usuario_registra) REFERENCES usuarios(idusuario) ON DELETE SET NULL ON UPDATE CASCADE,
     FOREIGN KEY (usuario_levanta) REFERENCES usuarios(idusuario) ON DELETE SET NULL ON UPDATE CASCADE,
+    FOREIGN KEY (idprestamo) REFERENCES prestamos(idprestamo) ON DELETE SET NULL ON UPDATE CASCADE,
     
     INDEX idx_sanciones_estado (estado_sancion),
     INDEX idx_sanciones_fecha_sancion (fecha_sancion),
     INDEX idx_sanciones_fecha_vencimiento (fecha_vencimiento),
-    INDEX idx_sanciones_persona_estado (idpersona, estado_sancion)
+    INDEX idx_sanciones_persona_estado (idpersona, estado_sancion),
+    INDEX idx_sanciones_prestamo (idprestamo)
 );
+
 
 
 -- TABLA: Ubicaciones (para libros físicos)

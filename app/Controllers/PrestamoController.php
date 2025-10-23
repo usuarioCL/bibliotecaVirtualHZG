@@ -930,6 +930,41 @@ class PrestamoController extends Controller
     }
 
     /**
+     * Obtener tipos de sanción desde la base de datos
+     */
+    public function obtenerTiposSancion()
+    {
+        // Verificar si es una solicitud AJAX
+        if (!$this->request->isAJAX()) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Solicitud no válida'
+            ]);
+        }
+
+        try {
+            $db = \Config\Database::connect();
+            $builder = $db->table('tiposancion');
+            $tiposSancion = $builder->select('idtiposancion, tiposancion')
+                                    ->orderBy('tiposancion', 'ASC')
+                                    ->get()
+                                    ->getResultArray();
+
+            return $this->response->setJSON([
+                'success' => true,
+                'data' => $tiposSancion
+            ]);
+        } catch (\Exception $e) {
+            log_message('error', 'Error al obtener tipos de sanción: ' . $e->getMessage());
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Error al cargar los tipos de sanción',
+                'data' => []
+            ]);
+        }
+    }
+
+    /**
      * Procesar devolución de un préstamo
      */
     public function procesarDevolucion()
@@ -960,6 +995,9 @@ class PrestamoController extends Controller
 
         // Obtener datos del formulario
         $idprestamo = $this->request->getPost('idprestamo');
+        $estadoDevolucion = $this->request->getPost('estado_devolucion') ?? 'bueno';
+        $idtiposancion = $this->request->getPost('idtiposancion');
+        $detalleIncidencia = $this->request->getPost('detalle_incidencia') ?? '';
         $observaciones = $this->request->getPost('observaciones') ?? '';
         
         if (!$idprestamo) {
@@ -969,25 +1007,138 @@ class PrestamoController extends Controller
             ]);
         }
 
+        // Validar que si hay incidencia, se proporcione el tipo de sanción
+        if ($estadoDevolucion === 'con_incidencia' && !$idtiposancion) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Debe seleccionar el tipo de incidencia'
+            ]);
+        }
+
         try {
+            $db = \Config\Database::connect();
+            $db->transStart(); // Iniciar transacción
+            
+            // Procesar la devolución normal
             $resultado = $this->prestamoModel->procesarDevolucion($idprestamo, $observaciones);
             
-            // Registrar acción en historial si existe el helper
+            if (!$resultado['success']) {
+                $db->transRollback();
+                return $this->response->setJSON($resultado);
+            }
+            
+            // Si hay incidencia, crear sanción
+            $sancionAplicada = false;
+            $tipoSancionNombre = '';
+            
+            if ($estadoDevolucion === 'con_incidencia' && $idtiposancion) {
+                // Obtener información del préstamo para la sanción (con JOIN para obtener idpersona)
+                $prestamoQuery = $db->table('prestamos p')
+                    ->select('m.idpersona')
+                    ->join('matriculas m', 'm.idmatricula = p.idmatricula', 'inner')
+                    ->where('p.idprestamo', $idprestamo)
+                    ->get();
+                $prestamo = $prestamoQuery ? $prestamoQuery->getRowArray() : null;
+
+
+                if (!$prestamo) {
+                    log_message('error', '[DEVOLUCION] No se encontró el préstamo para sanción. idprestamo recibido: ' . print_r($idprestamo, true));
+                    // Mostrar los préstamos activos para depuración
+                    $pruebaQuery = $db->table('prestamos')->select('idprestamo, idpersona, estado')->get();
+                    if ($pruebaQuery !== false) {
+                        $prueba = $pruebaQuery->getResultArray();
+                        log_message('error', '[DEVOLUCION] Préstamos en BD: ' . print_r($prueba, true));
+                    } else {
+                        log_message('error', '[DEVOLUCION] Error al consultar préstamos: ' . $db->error());
+                    }
+                    $db->transRollback();
+                    return $this->response->setJSON([
+                        'success' => false,
+                        'message' => 'No se encontró el préstamo para registrar la sanción. ID recibido: ' . $idprestamo
+                    ]);
+                }
+
+                // Obtener nombre del tipo de sanción
+                $tipoSancionQuery = $db->table('tiposancion')
+                    ->select('tiposancion')
+                    ->where('idtiposancion', $idtiposancion)
+                    ->get();
+                $tipoSancion = $tipoSancionQuery ? $tipoSancionQuery->getRowArray() : null;
+
+                $tipoSancionNombre = $tipoSancion['tiposancion'] ?? 'Sanción';
+
+                // Determinar duración de la sanción según el tipo
+                $duracionDias = $this->calcularDuracionSancion($idtiposancion);
+                $fechaInicio = date('Y-m-d');
+                $fechaVencimiento = $duracionDias > 0 
+                    ? date('Y-m-d', strtotime("+{$duracionDias} days"))
+                    : null;
+
+                // Crear el registro de sanción
+                $dataSancion = [
+                    'idtiposancion' => $idtiposancion,
+                    'idpersona' => $prestamo['idpersona'],
+                    'idprestamo' => $idprestamo, // NUEVA COLUMNA: Relacionar sanción con préstamo
+                    'detallesancion' => $detalleIncidencia ?: $tipoSancionNombre,
+                    'fecha_sancion' => date('Y-m-d'),
+                    'fecha_inicio' => $fechaInicio,
+                    'fecha_vencimiento' => $fechaVencimiento,
+                    'estado_sancion' => 'activa',
+                    'duracion_dias' => $duracionDias,
+                    'usuario_registra' => session()->get('idusuario'),
+                    'observaciones' => $observaciones
+                ];
+
+                $insertado = $db->table('sanciones')->insert($dataSancion);
+                $sancionAplicada = $insertado ? true : false;
+
+                // Log para debugging
+                if ($sancionAplicada) {
+                    log_message('info', "Sanción aplicada - Tipo: {$tipoSancionNombre}, Usuario: {$prestamo['idpersona']}, Préstamo: {$idprestamo}");
+                }
+            }
+            
+            $db->transComplete(); // Completar transacción
+            
+            if ($db->transStatus() === false) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Error al procesar la devolución'
+                ]);
+            }
+            
+            // Registrar acción en historial
             if ($resultado['success']) {
                 try {
                     helper('historial');
                     if (function_exists('registrar_accion')) {
+                        $detalleAccion = "Préstamo #{$idprestamo} devuelto";
+                        if ($sancionAplicada) {
+                            $detalleAccion .= " con incidencia: {$tipoSancionNombre}";
+                        }
+                        if ($observaciones) {
+                            $detalleAccion .= ". Observaciones: {$observaciones}";
+                        }
+                        
                         registrar_accion(
                             'Devolución de Préstamo',
                             session()->get('nomuser'),
                             null,
                             session()->get('nivelacceso'),
-                            "Préstamo #{$idprestamo} devuelto. Observaciones: {$observaciones}"
+                            $detalleAccion
                         );
                     }
                 } catch (\Exception $e) {
                     log_message('debug', 'Helper historial no disponible: ' . $e->getMessage());
                 }
+            }
+            
+            // Preparar respuesta personalizada
+            $resultado['sancion_aplicada'] = $sancionAplicada;
+            $resultado['tipo_sancion'] = $tipoSancionNombre;
+            
+            if ($sancionAplicada) {
+                $resultado['message'] = "Devolución procesada correctamente. Se ha aplicado una sanción por: {$tipoSancionNombre}";
             }
             
             return $this->response->setJSON($resultado);
@@ -996,8 +1147,30 @@ class PrestamoController extends Controller
             log_message('error', 'Error en PrestamoController::procesarDevolucion(): ' . $e->getMessage());
             return $this->response->setJSON([
                 'success' => false,
-                'message' => 'Error interno del servidor'
+                'message' => 'Error interno del servidor: ' . $e->getMessage()
             ]);
+        }
+    }
+    
+    /**
+     * Calcular duración de sanción según el tipo
+     */
+    private function calcularDuracionSancion($idtiposancion)
+    {
+        // Duraciones sugeridas según el tipo de sanción
+        switch ($idtiposancion) {
+            case 1: // Retraso en devolución
+                return 7; // 7 días
+            case 2: // Pérdida de material
+                return 90; // 90 días (hasta reposición)
+            case 3: // Daño al material
+                return 30; // 30 días
+            case 4: // Incumplimiento de normas
+                return 15; // 15 días
+            case 5: // Comportamiento inadecuado
+                return 14; // 14 días
+            default:
+                return 7; // Por defecto 7 días
         }
     }
 
@@ -1700,5 +1873,286 @@ class PrestamoController extends Controller
             ]);
         }
     }
+
+    /**
+     * Eliminar un registro del historial
+     */
+    public function eliminarHistorial()
+    {
+        // Verificar si es una solicitud AJAX
+        if (!$this->request->isAJAX()) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Solicitud no válida'
+            ]);
+        }
+
+        // Verificar autenticación y permisos
+        if (!session()->get('logged_in')) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Debe iniciar sesión'
+            ]);
+        }
+
+        $nivelAcceso = session()->get('nivelacceso');
+        if (!in_array($nivelAcceso, ['admin', 'docente'])) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'No tiene permisos para eliminar registros del historial'
+            ]);
+        }
+
+        // Obtener datos
+        $id = $this->request->getPost('id');
+        $tipo = $this->request->getPost('tipo'); // 'prestamo' o 'solicitud'
+        
+        // Log para debugging
+        log_message('info', 'PrestamoController::eliminarHistorial - ID: ' . $id . ', Tipo: ' . $tipo);
+        
+        if (!$id || !$tipo) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Datos incompletos'
+            ]);
+        }
+
+        try {
+            $db = \Config\Database::connect();
+            
+            if ($tipo === 'solicitud') {
+                // Eliminar solicitud rechazada
+                $resultado = $db->table('solicitud')
+                    ->where('idsolicitud', $id)
+                    ->where('validado', true)
+                    ->where('idprestamo IS NULL', null, false)
+                    ->delete();
+                
+                if (!$resultado) {
+                    return $this->response->setJSON([
+                        'success' => false,
+                        'message' => 'No se encontró la solicitud o no puede ser eliminada'
+                    ]);
+                }
+                
+                $mensaje = 'Solicitud rechazada eliminada del historial';
+                $tipoRegistro = 'Solicitud';
+                
+            } else {
+                // Eliminar préstamo devuelto
+                // Verificar que el préstamo esté devuelto
+                $prestamo = $db->table('prestamos')
+                    ->where('idprestamo', $id)
+                    ->get()
+                    ->getRowArray();
+                
+                // Log para debugging
+                log_message('info', 'PrestamoController::eliminarHistorial - Préstamo encontrado: ' . json_encode($prestamo));
+                
+                if (!$prestamo) {
+                    log_message('error', 'PrestamoController::eliminarHistorial - Préstamo no encontrado con ID: ' . $id);
+                    return $this->response->setJSON([
+                        'success' => false,
+                        'message' => 'Préstamo no encontrado con ID: ' . $id
+                    ]);
+                }
+                
+                if ($prestamo['fechahoraretorno'] === null || $prestamo['fechahoraretorno'] === '') {
+                    log_message('warning', 'PrestamoController::eliminarHistorial - Intento de eliminar préstamo activo. ID: ' . $id . ', fechahoraretorno: ' . ($prestamo['fechahoraretorno'] ?? 'NULL'));
+                    return $this->response->setJSON([
+                        'success' => false,
+                        'message' => 'No se puede eliminar un préstamo activo. Solo se pueden eliminar préstamos ya devueltos.'
+                    ]);
+                }
+                
+                // Usar transacción para eliminar todo relacionado
+                $db->transStart();
+                
+                // 1. Desvincular referencias en la tabla solicitud (poner idprestamo en NULL)
+                //    Esto mantiene la solicitud pero elimina la referencia al préstamo
+                $db->table('solicitud')
+                    ->where('idprestamo', $id)
+                    ->update(['idprestamo' => null]);
+                
+                // 2. Desvincular sanciones del préstamo (poner idprestamo en NULL)
+                //    Las sanciones se mantienen en el historial del usuario
+                $db->table('sanciones')
+                    ->where('idprestamo', $id)
+                    ->update(['idprestamo' => null]);
+                
+                // 3. Eliminar renovaciones relacionadas (son solo registros administrativos del préstamo)
+                $db->table('renovaciones_prestamo')
+                    ->where('idprestamo', $id)
+                    ->delete();
+                
+                // 4. Finalmente, eliminar el préstamo del historial
+                $db->table('prestamos')
+                    ->where('idprestamo', $id)
+                    ->delete();
+                
+                $db->transComplete();
+                
+                if ($db->transStatus() === false) {
+                    return $this->response->setJSON([
+                        'success' => false,
+                        'message' => 'Error al eliminar el préstamo'
+                    ]);
+                }
+                
+                $mensaje = 'Préstamo eliminado del historial';
+                $tipoRegistro = 'Préstamo';
+            }
+            
+            // Registrar acción en historial
+            try {
+                helper('historial');
+                if (function_exists('registrar_accion')) {
+                    registrar_accion(
+                        'Eliminación de Registro del Historial',
+                        session()->get('nomuser'),
+                        null,
+                        session()->get('nivelacceso'),
+                        "{$tipoRegistro} #{$id} eliminado del historial"
+                    );
+                }
+            } catch (\Exception $e) {
+                log_message('debug', 'Helper historial no disponible: ' . $e->getMessage());
+            }
+            
+            return $this->response->setJSON([
+                'success' => true,
+                'message' => $mensaje
+            ]);
+            
+        } catch (\Exception $e) {
+            log_message('error', 'Error en PrestamoController::eliminarHistorial(): ' . $e->getMessage());
+            log_message('error', 'Stack trace: ' . $e->getTraceAsString());
+            
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Error al eliminar el registro: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Eliminar todo el historial de préstamos (solo devueltos y solicitudes rechazadas)
+     */
+    public function eliminarTodoHistorial()
+    {
+        // Verificar si es una solicitud AJAX
+        if (!$this->request->isAJAX()) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Solicitud no válida'
+            ]);
+        }
+
+        // Verificar autenticación y permisos (solo admin)
+        if (!session()->get('logged_in')) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Debe iniciar sesión'
+            ]);
+        }
+
+        $nivelAcceso = session()->get('nivelacceso');
+        if ($nivelAcceso !== 'admin') {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Solo los administradores pueden eliminar todo el historial'
+            ]);
+        }
+
+        try {
+            $db = \Config\Database::connect();
+            $db->transStart();
+            
+            // Contar registros antes de eliminar
+            $countPrestamos = $db->table('prestamos')
+                ->where('fechahoraretorno IS NOT NULL', null, false)
+                ->countAllResults();
+            
+            $countSolicitudes = $db->table('solicitud')
+                ->where('validado', true)
+                ->where('idprestamo IS NULL', null, false)
+                ->countAllResults();
+            
+            $countRenovaciones = $db->table('renovaciones_prestamo')->countAllResults();
+            
+            log_message('info', "Iniciando eliminación completa del historial - Admin: " . session()->get('nomuser'));
+            log_message('info', "Registros a eliminar - Préstamos: {$countPrestamos}, Solicitudes: {$countSolicitudes}, Renovaciones: {$countRenovaciones}");
+            
+            // 1. Desvincular todas las solicitudes de préstamos devueltos
+            $db->table('solicitud')
+                ->set('idprestamo', null)
+                ->where('idprestamo IN (SELECT idprestamo FROM prestamos WHERE fechahoraretorno IS NOT NULL)', null, false)
+                ->update();
+            
+            // 2. Desvincular todas las sanciones de préstamos devueltos (mantener las sanciones)
+            $db->table('sanciones')
+                ->set('idprestamo', null)
+                ->where('idprestamo IN (SELECT idprestamo FROM prestamos WHERE fechahoraretorno IS NOT NULL)', null, false)
+                ->update();
+            
+            // 3. Eliminar todas las renovaciones (son registros administrativos)
+            $db->table('renovaciones_prestamo')->truncate();
+            
+            // 4. Eliminar todas las solicitudes rechazadas
+            $db->table('solicitud')
+                ->where('validado', true)
+                ->where('idprestamo IS NULL', null, false)
+                ->delete();
+            
+            // 5. Eliminar todos los préstamos devueltos
+            $db->table('prestamos')
+                ->where('fechahoraretorno IS NOT NULL', null, false)
+                ->delete();
+            
+            $db->transComplete();
+            
+            if ($db->transStatus() === false) {
+                throw new \Exception('Error en la transacción de eliminación masiva');
+            }
+            
+            // Registrar acción en historial
+            try {
+                helper('historial');
+                if (function_exists('registrar_accion')) {
+                    registrar_accion(
+                        'Eliminación Completa del Historial',
+                        session()->get('nomuser'),
+                        null,
+                        session()->get('nivelacceso'),
+                        "Historial completo eliminado - Préstamos: {$countPrestamos}, Solicitudes: {$countSolicitudes}, Renovaciones: {$countRenovaciones}"
+                    );
+                }
+            } catch (\Exception $e) {
+                log_message('debug', 'Helper historial no disponible: ' . $e->getMessage());
+            }
+            
+            log_message('info', "Historial completo eliminado exitosamente por: " . session()->get('nomuser'));
+            
+            return $this->response->setJSON([
+                'success' => true,
+                'message' => 'El historial completo ha sido eliminado exitosamente',
+                'detalles' => [
+                    'prestamos' => $countPrestamos,
+                    'solicitudes' => $countSolicitudes,
+                    'renovaciones' => $countRenovaciones
+                ]
+            ]);
+            
+        } catch (\Exception $e) {
+            log_message('error', 'Error en PrestamoController::eliminarTodoHistorial(): ' . $e->getMessage());
+            log_message('error', 'Stack trace: ' . $e->getTraceAsString());
+            
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Error al eliminar el historial completo: ' . $e->getMessage()
+            ]);
+        }
+    }
 }
+
 

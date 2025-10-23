@@ -24,6 +24,9 @@
                     <button type="button" class="btn btn-success btn-sm">
                         <i class="ti ti-file-excel"></i> Exportar Excel
                     </button>
+                    <button type="button" class="btn btn-danger btn-sm" onclick="confirmarEliminarTodoHistorial()">
+                        <i class="ti ti-trash"></i> Limpiar Historial
+                    </button>
                 </div>
             </div>
         </div>
@@ -51,6 +54,7 @@
                                 <option value="">Todos los estados</option>
                                 <option value="devuelto">Devuelto</option>
                                 <option value="devuelto_retraso">Devuelto con retraso</option>
+                                <option value="rechazado">Rechazado</option>
                                 <option value="cancelado">Cancelado</option>
                             </select>
                         </div>
@@ -120,9 +124,10 @@
                                                 <i class="ti ti-calendar-plus text-primary me-1"></i>
                                                 <strong>Inicio:</strong> <?= date('d/m/Y', strtotime($registro['fecha_prestamo'] ?? $registro['fechaprestamo'] ?? date('Y-m-d'))) ?>
                                             </p>
+                                            <?php if ($registro['estado_final'] !== 'Rechazado'): ?>
                                             <p class="mb-1 small">
                                                 <i class="ti ti-calendar-check text-success me-1"></i>
-                                                <strong>Devuelto:</strong> <?= date('d/m/Y', strtotime($registro['fecha_devolucion'])) ?>
+                                                <strong>Devuelto:</strong> <?= $registro['fecha_devolucion'] ? date('d/m/Y', strtotime($registro['fecha_devolucion'])) : 'N/A' ?>
                                             </p>
                                             <p class="mb-0 small text-muted">
                                                 <i class="ti ti-clock-hour-3 me-1"></i>
@@ -134,6 +139,12 @@
                                                     echo $diff->days . ' día' . ($diff->days != 1 ? 's' : '');
                                                 ?>
                                             </p>
+                                            <?php else: ?>
+                                            <p class="mb-0 small text-danger">
+                                                <i class="ti ti-x text-danger me-1"></i>
+                                                <strong>Rechazado:</strong> <?= $registro['fecha_registro'] ? date('d/m/Y', strtotime($registro['fecha_registro'])) : 'N/A' ?>
+                                            </p>
+                                            <?php endif; ?>
                                         </div>
                                     </td>
                                     <td class="px-3 py-3 text-center">
@@ -147,47 +158,99 @@
                                         </div>
                                     </td>
                                     <td class="px-3 py-3 text-center">
-                                        <?php 
-                                            $horasTotal = $registro['horas_retraso_total'] ?? 0;
-                                            $diasRetraso = $registro['dias_retraso'] ?? 0;
-                                            $multa = $registro['multa'] ?? 0;
-                                        ?>
-                                        
-                                        <?php if ($horasTotal <= 0): ?>
-                                            <span class="badge bg-success-subtle text-success">
-                                                <i class="ti ti-check-circle me-1"></i>Devuelto a Tiempo
+                                        <?php if ($registro['estado_final'] === 'Rechazado'): ?>
+                                            <span class="badge bg-secondary-subtle text-secondary">
+                                                <i class="ti ti-ban me-1"></i>Rechazado
                                             </span>
-                                            <small class="d-block text-muted mt-1">Sin penalización</small>
-                                        <?php elseif ($horasTotal > 0): ?>
-                                            <span class="badge bg-danger-subtle text-danger">
-                                                <i class="ti ti-alert-circle me-1"></i>Con Retraso
-                                            </span>
-                                            <?php if ($horasTotal < 24): ?>
-                                                <small class="d-block text-danger fw-semibold mt-1"><?= $horasTotal ?> hora<?= $horasTotal != 1 ? 's' : '' ?></small>
-                                            <?php else: ?>
-                                                <small class="d-block text-danger fw-semibold mt-1"><?= $diasRetraso ?> día<?= $diasRetraso != 1 ? 's' : '' ?></small>
-                                            <?php endif; ?>
-                                            <?php if ($multa > 0): ?>
-                                                <small class="d-block text-warning mt-1">
-                                                    <i class="ti ti-cash me-1"></i>Multa: $<?= number_format($multa) ?>
-                                                </small>
-                                            <?php endif; ?>
+                                            <small class="d-block text-muted mt-1">No aprobado</small>
                                         <?php else: ?>
-                                            <span class="badge bg-info-subtle text-info">
-                                                <i class="ti ti-clock me-1"></i>Anticipado
-                                            </span>
-                                            <small class="d-block text-muted mt-1"><?= abs($diasRetraso) ?> día<?= abs($diasRetraso) != 1 ? 's' : '' ?> antes</small>
+                                            <?php 
+                                                $horasTotal = $registro['horas_retraso_total'] ?? 0;
+                                                $diasRetraso = $registro['dias_retraso'] ?? 0;
+                                                $multa = $registro['multa'] ?? 0;
+                                                $tieneIncidencia = isset($registro['tiene_incidencia']) && $registro['tiene_incidencia'] == 1;
+                                            ?>
+                                            
+                                            <?php if ($tieneIncidencia): ?>
+                                                <!-- Devuelto con incidencia (daño/pérdida) -->
+                                                <span class="badge bg-danger-subtle text-danger">
+                                                    <i class="ti ti-alert-triangle me-1"></i>Con Incidencia
+                                                </span>
+                                                <small class="d-block text-danger fw-semibold mt-1">
+                                                    <?= esc($registro['tipo_incidencia'] ?? 'Incidencia') ?>
+                                                </small>
+                                            <?php elseif ($horasTotal <= 0): ?>
+                                                <span class="badge bg-success-subtle text-success">
+                                                    <i class="ti ti-check-circle me-1"></i>Devuelto a Tiempo
+                                                </span>
+                                                <small class="d-block text-muted mt-1">Sin penalización</small>
+                                            <?php elseif ($horasTotal > 0): ?>
+                                                <span class="badge bg-warning-subtle text-warning">
+                                                    <i class="ti ti-clock-exclamation me-1"></i>Con Retraso
+                                                </span>
+                                                <?php if ($horasTotal < 24): ?>
+                                                    <small class="d-block text-warning fw-semibold mt-1"><?= $horasTotal ?> hora<?= $horasTotal != 1 ? 's' : '' ?></small>
+                                                <?php else: ?>
+                                                    <small class="d-block text-warning fw-semibold mt-1"><?= $diasRetraso ?> día<?= $diasRetraso != 1 ? 's' : '' ?></small>
+                                                <?php endif; ?>
+                                                <?php if ($multa > 0): ?>
+                                                    <small class="d-block text-danger mt-1">
+                                                        <i class="ti ti-cash me-1"></i>Multa: $<?= number_format($multa) ?>
+                                                    </small>
+                                                <?php endif; ?>
+                                            <?php else: ?>
+                                                <span class="badge bg-info-subtle text-info">
+                                                    <i class="ti ti-clock me-1"></i>Anticipado
+                                                </span>
+                                                <small class="d-block text-muted mt-1"><?= abs($diasRetraso) ?> día<?= abs($diasRetraso) != 1 ? 's' : '' ?> antes</small>
+                                            <?php endif; ?>
                                         <?php endif; ?>
                                     </td>
                                     <td class="px-3 py-3" style="max-width: 200px;">
                                         <?php 
+                                        // Verificar si hay incidencia
+                                        $tieneIncidencia = isset($registro['tiene_incidencia']) && $registro['tiene_incidencia'] == 1;
+                                        
                                         // Obtener y limpiar las observaciones
                                         $observaciones = $registro['observaciones'] ?? null;
+                                        
+                                        // Si es una solicitud rechazada, limpiar la parte de "Cantidad solicitada:"
+                                        if ($registro['estado_final'] === 'Rechazado' && !empty($observaciones)) {
+                                            // Remover "Cantidad solicitada: X ejemplares. " del inicio
+                                            $observaciones = preg_replace('/^Cantidad solicitada:\s*\d+\s*ejemplares?\.\s*/', '', $observaciones);
+                                        }
+                                        
                                         $tieneObservaciones = !empty($observaciones) && trim($observaciones) !== '' && $observaciones !== 'NULL';
                                         $longitudMaxima = 80; // Caracteres a mostrar antes de truncar
                                         ?>
                                         
-                                        <?php if ($tieneObservaciones): ?>
+                                        <?php if ($tieneIncidencia): ?>
+                                            <!-- Mostrar información de incidencia -->
+                                            <div class="text-start">
+                                                <div class="alert alert-danger alert-sm mb-2 py-2 px-2">
+                                                    <div class="d-flex align-items-start">
+                                                        <i class="ti ti-alert-triangle text-danger me-2 mt-1"></i>
+                                                        <div class="flex-grow-1">
+                                                            <strong class="d-block small"><?= esc($registro['tipo_incidencia'] ?? 'Incidencia') ?></strong>
+                                                            <?php if (!empty($registro['detalle_incidencia'])): ?>
+                                                                <small class="text-muted"><?= esc($registro['detalle_incidencia']) ?></small>
+                                                            <?php endif; ?>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <button type="button" 
+                                                        class="btn btn-link btn-sm p-0 text-decoration-none text-danger" 
+                                                        onclick='mostrarDetalleIncidencia(<?= json_encode([
+                                                            'tipo' => $registro['tipo_incidencia'] ?? 'Incidencia',
+                                                            'detalle' => $registro['detalle_incidencia'] ?? '',
+                                                            'observaciones' => $registro['observaciones_incidencia'] ?? '',
+                                                            'fecha' => $registro['fecha_sancion'] ?? '',
+                                                            'usuario' => $registro['usuario'] ?? ''
+                                                        ], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>)'>
+                                                    <small><i class="ti ti-eye me-1"></i>Ver detalles de incidencia</small>
+                                                </button>
+                                            </div>
+                                        <?php elseif ($tieneObservaciones): ?>
                                             <div class="text-start">
                                                 <?php if (strlen($observaciones) > $longitudMaxima): ?>
                                                     <!-- Observación larga - mostrar resumen -->
@@ -218,28 +281,36 @@
                                     </td>
                                     <td class="px-3 py-3 text-center">
                                         <div class="d-flex gap-2 justify-content-center">
-                                            <button type="button" class="btn btn-sm btn-outline-info" 
-                                                    onclick="verDetalleHistorial(<?= $registro['id'] ?>)"
-                                                    title="Ver Detalles">
-                                                <i class="ti ti-eye"></i>
-                                            </button>
+                                            <?php if ($registro['estado_final'] === 'Rechazado'): ?>
+                                                <button type="button" class="btn btn-sm btn-outline-secondary" 
+                                                        onclick="verDetalleRechazado(<?= $registro['id'] ?>)"
+                                                        title="Ver Motivo de Rechazo">
+                                                    <i class="ti ti-eye"></i>
+                                                </button>
+                                            <?php else: ?>
+                                                <button type="button" class="btn btn-sm btn-outline-info" 
+                                                        onclick="verDetalleHistorial(<?= $registro['id'] ?>)"
+                                                        title="Ver Detalles">
+                                                    <i class="ti ti-eye"></i>
+                                                </button>
 
-                                            <?php 
-                                            $horasTotal = $registro['horas_retraso_total'] ?? 0;
-                                            $diasRetraso = $registro['dias_retraso'] ?? 0;
-                                            $tieneRetraso = ($horasTotal > 0 || $diasRetraso > 0);
-                                            ?>
-                                            
-                                            <?php if ($tieneRetraso): ?>
-                                            <button type="button" class="btn btn-sm btn-outline-warning" 
-                                                    onclick="generarSancion(<?= $registro['id'] ?>, '<?= esc($registro['usuario']) ?>', <?= $horasTotal ?>)"
-                                                    title="Generar Sanción por Retraso">
-                                                <i class="ti ti-alert-triangle"></i>
-                                            </button>
+                                                <?php 
+                                                $horasTotal = $registro['horas_retraso_total'] ?? 0;
+                                                $diasRetraso = $registro['dias_retraso'] ?? 0;
+                                                $tieneRetraso = ($horasTotal > 0 || $diasRetraso > 0);
+                                                ?>
+                                                
+                                                <?php if ($tieneRetraso): ?>
+                                                <button type="button" class="btn btn-sm btn-outline-warning" 
+                                                        onclick="generarSancion(<?= $registro['id'] ?>, '<?= esc($registro['usuario']) ?>', <?= $horasTotal ?>)"
+                                                        title="Generar Sanción por Retraso">
+                                                    <i class="ti ti-alert-triangle"></i>
+                                                </button>
+                                                <?php endif; ?>
                                             <?php endif; ?>
 
                                             <button type="button" class="btn btn-sm btn-outline-danger" 
-                                                    onclick="confirmarEliminacion(<?= $registro['id'] ?>)"
+                                                    onclick="confirmarEliminacion(<?= $registro['id'] ?>, '<?= $registro['estado_final'] ?>')"
                                                     title="Eliminar">
                                                 <i class="ti ti-x"></i>
                                             </button>
@@ -363,6 +434,95 @@
             width: '500px',
             confirmButtonText: 'Cerrar',
             confirmButtonColor: '#6c757d'
+        });
+    }
+
+    // Función para mostrar detalles de incidencia
+    function mostrarDetalleIncidencia(incidencia) {
+        console.log('mostrarDetalleIncidencia llamada con:', incidencia);
+        
+        // Validar que tengamos datos
+        if (!incidencia || typeof incidencia !== 'object') {
+            console.error('Datos de incidencia inválidos:', incidencia);
+            Swal.fire({
+                title: 'Error',
+                text: 'No se pudieron cargar los detalles de la incidencia',
+                icon: 'error'
+            });
+            return;
+        }
+        
+        // Escapar HTML y preparar datos
+        const tipoHTML = String(incidencia.tipo || 'Incidencia').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        const detalleHTML = String(incidencia.detalle || 'Sin detalles específicos').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        const observacionesHTML = String(incidencia.observaciones || 'Sin observaciones adicionales').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        const usuarioHTML = String(incidencia.usuario || 'Usuario desconocido').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        
+        let fechaHTML = 'Fecha no disponible';
+        if (incidencia.fecha) {
+            try {
+                const fecha = new Date(incidencia.fecha);
+                if (!isNaN(fecha.getTime())) {
+                    fechaHTML = fecha.toLocaleDateString('es-ES', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                }
+            } catch (e) {
+                console.warn('Error al formatear fecha:', e);
+            }
+        }
+        
+        Swal.fire({
+            title: '⚠️ Detalles de Incidencia',
+            html: `
+                <div class="text-start">
+                    <div class="mb-3">
+                        <h6 class="text-danger mb-2">
+                            <i class="ti ti-user me-2"></i>Usuario: ${usuarioHTML}
+                        </h6>
+                    </div>
+                    
+                    <div class="alert alert-danger">
+                        <div class="mb-3">
+                            <strong><i class="ti ti-alert-triangle me-2"></i>Tipo de Incidencia:</strong>
+                            <p class="mb-0 mt-1">${tipoHTML}</p>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <strong><i class="ti ti-file-text me-2"></i>Detalle:</strong>
+                            <p class="mb-0 mt-1">${detalleHTML}</p>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <strong><i class="ti ti-message-circle me-2"></i>Observaciones:</strong>
+                            <p class="mb-0 mt-1 fst-italic">${observacionesHTML}</p>
+                        </div>
+                        
+                        <div>
+                            <strong><i class="ti ti-calendar me-2"></i>Fecha de Registro:</strong>
+                            <p class="mb-0 mt-1">${fechaHTML}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <small class="text-muted">
+                            <i class="ti ti-info-circle me-1"></i>
+                            Incidencia registrada al momento de la devolución del material
+                        </small>
+                    </div>
+                </div>
+            `,
+            icon: 'warning',
+            width: '600px',
+            confirmButtonText: 'Cerrar',
+            confirmButtonColor: '#dc3545',
+            customClass: {
+                popup: 'swal-incidencia-popup'
+            }
         });
     }
 
@@ -826,10 +986,17 @@
         }
     }
     // Función para confirmar eliminación
-    function confirmarEliminacion(registroId) {
+    function confirmarEliminacion(registroId, estadoFinal) {
+        const esRechazado = estadoFinal === 'Rechazado';
+        const tipoRegistro = esRechazado ? 'solicitud rechazada' : 'registro de préstamo';
+        
         Swal.fire({
             title: '¿Estás seguro?',
-            text: "Esta acción no se puede deshacer",
+            html: `
+                <p>Se eliminará esta ${tipoRegistro} del historial.</p>
+                <p class="text-danger"><strong>Esta acción no se puede deshacer</strong></p>
+                ${!esRechazado ? '<p class="text-warning"><small><i class="ti ti-alert-circle"></i> Nota: Esto NO eliminará el préstamo original, solo lo ocultará del historial.</small></p>' : ''}
+            `,
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#d33',
@@ -838,14 +1005,72 @@
             cancelButtonText: 'Cancelar'
         }).then((result) => {
             if (result.isConfirmed) {
+                eliminarRegistroHistorial(registroId, estadoFinal);
+            }
+        });
+    }
+
+    // Función para eliminar registro del historial
+    function eliminarRegistroHistorial(registroId, estadoFinal) {
+        const esRechazado = estadoFinal === 'Rechazado';
+        const tipoRegistro = esRechazado ? 'solicitud' : 'prestamo';
+        
+        // Mostrar loading
+        Swal.fire({
+            title: 'Eliminando...',
+            text: 'Por favor espere',
+            allowOutsideClick: false,
+            showConfirmButton: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+
+        // Enviar solicitud al servidor
+        fetch('<?= base_url('prestamos/eliminarHistorial') ?>', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: new URLSearchParams({
+                id: registroId,
+                tipo: tipoRegistro
+            })
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
                 Swal.fire({
-                    title: 'Funcionalidad en desarrollo',
-                    text: 'La eliminación de registros estará disponible próximamente',
-                    icon: 'info',
+                    title: '¡Eliminado!',
+                    text: data.message || 'El registro ha sido eliminado del historial',
+                    icon: 'success',
                     timer: 2000,
                     showConfirmButton: false
+                }).then(() => {
+                    // Recargar el contenido de forma inteligente
+                    recargarContenidoHistorial();
+                });
+            } else {
+                Swal.fire({
+                    title: 'Error',
+                    text: data.message || 'No se pudo eliminar el registro',
+                    icon: 'error'
                 });
             }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            Swal.fire({
+                title: 'Error de Conexión',
+                text: 'No se pudo conectar con el servidor: ' + error.message,
+                icon: 'error'
+            });
         });
     }
 
@@ -933,6 +1158,88 @@
             if (result.isConfirmed) {
                 procesarSancion(result.value);
             }
+        });
+    }
+
+    // Función para ver detalle de solicitud rechazada
+    function verDetalleRechazado(solicitudId) {
+        console.log('Ver detalle de solicitud rechazada:', solicitudId);
+        
+        Swal.fire({
+            title: 'Cargando información...',
+            text: 'Obteniendo detalles de la solicitud rechazada',
+            allowOutsideClick: false,
+            showConfirmButton: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+
+        // Obtener detalles de la solicitud rechazada
+        fetch('<?= base_url('prestamos/detalleSolicitud') ?>', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: new URLSearchParams({
+                idsolicitud: solicitudId
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const detalle = data.data;
+                Swal.fire({
+                    title: '📋 Solicitud Rechazada',
+                    html: `
+                        <div class="text-start">
+                            <div class="mb-3">
+                                <h6 class="fw-bold">Información del Usuario</h6>
+                                <p class="mb-1"><strong>Usuario:</strong> ${detalle.usuario_completo || 'N/A'}</p>
+                                <p class="mb-1"><strong>Documento:</strong> ${detalle.documento || 'N/A'}</p>
+                            </div>
+                            <div class="mb-3">
+                                <h6 class="fw-bold">Información del Recurso</h6>
+                                <p class="mb-1"><strong>Título:</strong> ${detalle.recurso_titulo || 'N/A'}</p>
+                                <p class="mb-1"><strong>Código:</strong> ${detalle.codigo_ejemplar || 'N/A'}</p>
+                            </div>
+                            <div class="mb-3">
+                                <h6 class="fw-bold">Fechas Solicitadas</h6>
+                                <p class="mb-1"><strong>Fecha inicio:</strong> ${detalle.fecha_solicitud ? new Date(detalle.fecha_solicitud).toLocaleDateString('es-CO') : 'N/A'}</p>
+                                <p class="mb-1"><strong>Fecha devolución:</strong> ${detalle.fecha_devolucion ? new Date(detalle.fecha_devolucion).toLocaleDateString('es-CO') : 'N/A'}</p>
+                            </div>
+                            <div class="alert alert-danger">
+                                <h6 class="fw-bold mb-2">Motivo de Rechazo</h6>
+                                <p class="mb-0">${detalle.motivo_rechazo || 'No se especificó motivo'}</p>
+                            </div>
+                            ${detalle.fecha_procesado ? `
+                                <p class="text-muted small mb-0">
+                                    <i class="ti ti-calendar"></i> 
+                                    Rechazado el: ${new Date(detalle.fecha_procesado).toLocaleDateString('es-CO')} a las ${new Date(detalle.fecha_procesado).toLocaleTimeString('es-CO')}
+                                </p>
+                            ` : ''}
+                        </div>
+                    `,
+                    icon: 'info',
+                    confirmButtonText: 'Cerrar',
+                    width: '600px'
+                });
+            } else {
+                Swal.fire({
+                    title: 'Error',
+                    text: data.message || 'No se pudo obtener la información',
+                    icon: 'error'
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            Swal.fire({
+                title: 'Error de Conexión',
+                text: 'No se pudo obtener la información de la solicitud',
+                icon: 'error'
+            });
         });
     }
 
@@ -1071,6 +1378,210 @@
                 location.reload();
             }
         });
+    }
+
+    /**
+     * Confirmar y eliminar todo el historial
+     */
+    function confirmarEliminarTodoHistorial() {
+        Swal.fire({
+            title: '⚠️ ¿Eliminar TODO el Historial?',
+            html: `
+                <div class="text-start">
+                    <p class="text-danger fw-bold mb-3">
+                        <i class="ti ti-alert-triangle me-2"></i>
+                        Esta es una acción EXTREMADAMENTE PELIGROSA
+                    </p>
+                    <div class="alert alert-danger">
+                        <h6 class="fw-bold mb-2">Se eliminarán:</h6>
+                        <ul class="mb-0">
+                            <li>Todos los préstamos devueltos del historial</li>
+                            <li>Todas las solicitudes rechazadas</li>
+                            <li>Todos los registros de renovaciones</li>
+                        </ul>
+                    </div>
+                    <div class="alert alert-warning">
+                        <h6 class="fw-bold mb-2">Se CONSERVARÁN:</h6>
+                        <ul class="mb-0">
+                            <li>Todas las sanciones de los usuarios</li>
+                            <li>Los préstamos activos actuales</li>
+                            <li>Las solicitudes pendientes</li>
+                        </ul>
+                    </div>
+                    <p class="text-danger fw-bold mb-2">
+                        <i class="ti ti-lock me-2"></i>
+                        Esta acción NO se puede deshacer
+                    </p>
+                    <div class="form-group mt-3">
+                        <label class="form-label fw-bold">
+                            Para confirmar, escriba: <span class="text-danger">ELIMINAR HISTORIAL</span>
+                        </label>
+                        <input type="text" id="confirmacionTexto" class="form-control" 
+                               placeholder="Escriba aquí para confirmar">
+                    </div>
+                </div>
+            `,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: '<i class="ti ti-trash me-2"></i>Sí, eliminar TODO',
+            cancelButtonText: 'Cancelar',
+            width: '600px',
+            preConfirm: () => {
+                const confirmacion = document.getElementById('confirmacionTexto').value;
+                if (confirmacion !== 'ELIMINAR HISTORIAL') {
+                    Swal.showValidationMessage('Debe escribir exactamente: ELIMINAR HISTORIAL');
+                    return false;
+                }
+                return true;
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                eliminarTodoHistorial();
+            }
+        });
+    }
+
+    /**
+     * Ejecutar la eliminación completa del historial
+     */
+    function eliminarTodoHistorial() {
+        // Mostrar loading
+        Swal.fire({
+            title: 'Eliminando Historial Completo...',
+            html: `
+                <div class="text-center">
+                    <div class="spinner-border text-danger mb-3" role="status">
+                        <span class="visually-hidden">Eliminando...</span>
+                    </div>
+                    <p class="text-muted">Por favor espere, esto puede tardar unos momentos...</p>
+                </div>
+            `,
+            allowOutsideClick: false,
+            showConfirmButton: false
+        });
+
+        // Enviar solicitud al servidor
+        fetch('<?= base_url('prestamos/eliminarTodoHistorial') ?>', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                Swal.fire({
+                    title: '✅ Historial Eliminado',
+                    html: `
+                        <div class="text-start">
+                            <p class="mb-2">${data.message}</p>
+                            ${data.detalles ? `
+                                <div class="alert alert-info mt-3">
+                                    <h6 class="fw-bold mb-2">Detalles:</h6>
+                                    <ul class="mb-0">
+                                        <li>Préstamos eliminados: ${data.detalles.prestamos || 0}</li>
+                                        <li>Solicitudes eliminadas: ${data.detalles.solicitudes || 0}</li>
+                                        <li>Renovaciones eliminadas: ${data.detalles.renovaciones || 0}</li>
+                                    </ul>
+                                </div>
+                            ` : ''}
+                        </div>
+                    `,
+                    icon: 'success',
+                    confirmButtonText: 'Entendido'
+                }).then(() => {
+                    // Recargar el contenido
+                    recargarContenidoHistorial();
+                });
+            } else {
+                Swal.fire({
+                    title: 'Error',
+                    text: data.message || 'No se pudo eliminar el historial',
+                    icon: 'error'
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            Swal.fire({
+                title: 'Error de Conexión',
+                text: 'No se pudo conectar con el servidor: ' + error.message,
+                icon: 'error'
+            });
+        });
+    }
+
+    /**
+     * Función inteligente para recargar el contenido del historial
+     * Detecta si está en el panel de administración y recarga solo el contenido
+     * o hace una recarga completa si está en página independiente
+     */
+    function recargarContenidoHistorial() {
+        // Detectar si estamos dentro del panel de administración
+        const contenedorPrincipal = document.getElementById('contenedor-principal');
+        
+        if (contenedorPrincipal) {
+            // Estamos en el panel de administración - Recargar solo el contenido via AJAX
+            console.log('🔄 Recargando contenido del historial via AJAX...');
+            
+            // Mostrar indicador de carga
+            Swal.fire({
+                title: 'Actualizando...',
+                text: 'Recargando el historial',
+                allowOutsideClick: false,
+                showConfirmButton: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+            
+            // Hacer petición AJAX para recargar el contenido
+            fetch('<?= base_url('historial-prestamos') ?>', {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.text())
+            .then(html => {
+                // Reemplazar solo el contenido del contenedor principal
+                contenedorPrincipal.innerHTML = html;
+                
+                // Cerrar el indicador de carga
+                Swal.close();
+                
+                console.log('✅ Contenido del historial actualizado correctamente');
+                
+                // Reinicializar eventos si es necesario
+                // (Los scripts inline de la vista se ejecutarán automáticamente)
+            })
+            .catch(error => {
+                console.error('❌ Error al recargar el contenido:', error);
+                
+                // Si falla AJAX, hacer recarga completa
+                Swal.fire({
+                    title: 'Error al actualizar',
+                    text: 'Se recargará la página completa',
+                    icon: 'warning',
+                    timer: 1500,
+                    showConfirmButton: false
+                }).then(() => {
+                    location.reload();
+                });
+            });
+        } else {
+            // No estamos en el panel - Hacer recarga normal de página
+            console.log('🔄 Recargando página completa...');
+            location.reload();
+        }
     }
 
     // Aplicar filtros al presionar Enter en el campo de búsqueda

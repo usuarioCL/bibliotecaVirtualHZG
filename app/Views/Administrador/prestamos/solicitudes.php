@@ -33,56 +33,64 @@
     </div>
 
     <!-- Estadísticas rápidas -->
-    <div class="row mb-4">
-        <div class="col-lg-3 col-md-6 mb-3">
-            <div class="card stats-card primary h-100 shadow-sm">
-                <div class="card-body text-center">
-                    <div class="d-flex align-items-center justify-content-center mb-2">
-                        <div class="rounded-circle bg-primary bg-opacity-10 p-3">
-                            <i class="ti ti-clock text-primary" style="font-size: 2.5rem;"></i>
+    <div class="row mb-3">
+        <div class="col-lg-3 col-md-6 mb-2">
+            <div class="card stats-card primary h-100 shadow-sm border-0">
+                <div class="card-body py-2 px-3">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <h4 class="fw-bold text-primary mb-0"><?= isset($estadisticas['total_solicitudes']) ? number_format($estadisticas['total_solicitudes']) : 0 ?></h4>
+                            <p class="text-muted mb-0 small">Total Solicitudes</p>
+                        </div>
+                        <div class="rounded-circle bg-primary bg-opacity-10 p-2">
+                            <i class="ti ti-clock text-primary" style="font-size: 1.5rem;"></i>
                         </div>
                     </div>
-                    <h3 class="fw-bold text-primary mb-1"><?= isset($estadisticas['total_solicitudes']) ? number_format($estadisticas['total_solicitudes']) : 0 ?></h3>
-                    <p class="text-muted mb-0 small">Total Solicitudes</p>
                 </div>
             </div>
         </div>
-        <div class="col-lg-3 col-md-6 mb-3">
-            <div class="card stats-card info h-100 shadow-sm">
-                <div class="card-body text-center">
-                    <div class="d-flex align-items-center justify-content-center mb-2">
-                        <div class="rounded-circle bg-info bg-opacity-10 p-3">
-                            <i class="ti ti-calendar text-info" style="font-size: 2.5rem;"></i>
+        <div class="col-lg-3 col-md-6 mb-2">
+            <div class="card stats-card info h-100 shadow-sm border-0">
+                <div class="card-body py-2 px-3">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <h4 class="fw-bold text-info mb-0"><?= isset($estadisticas['hoy']) ? number_format($estadisticas['hoy']) : 0 ?></h4>
+                            <p class="text-muted mb-0 small">Solicitudes Hoy</p>
+                        </div>
+                        <div class="rounded-circle bg-info bg-opacity-10 p-2">
+                            <i class="ti ti-calendar text-info" style="font-size: 1.5rem;"></i>
                         </div>
                     </div>
-                    <h3 class="fw-bold text-info mb-1"><?= isset($estadisticas['hoy']) ? number_format($estadisticas['hoy']) : 0 ?></h3>
-                    <p class="text-muted mb-0 small">Solicitudes Hoy</p>
                 </div>
             </div>
         </div>
-        <div class="col-lg-3 col-md-6 mb-3">
-            <div class="card stats-card warning h-100 shadow-sm">
-                <div class="card-body text-center">
-                    <div class="d-flex align-items-center justify-content-center mb-2">
-                        <div class="rounded-circle bg-warning bg-opacity-10 p-3">
-                            <i class="ti ti-calendar text-warning" style="font-size: 2.5rem;"></i>
+        <div class="col-lg-3 col-md-6 mb-2">
+            <div class="card stats-card warning h-100 shadow-sm border-0">
+                <div class="card-body py-2 px-3">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <h4 class="fw-bold text-warning mb-0"><?= isset($estadisticas['esta_semana']) ? number_format($estadisticas['esta_semana']) : 0 ?></h4>
+                            <p class="text-muted mb-0 small">Esta Semana</p>
+                        </div>
+                        <div class="rounded-circle bg-warning bg-opacity-10 p-2">
+                            <i class="ti ti-calendar text-warning" style="font-size: 1.5rem;"></i>
                         </div>
                     </div>
-                    <h3 class="fw-bold text-warning mb-1"><?= isset($estadisticas['esta_semana']) ? number_format($estadisticas['esta_semana']) : 0 ?></h3>
-                    <p class="text-muted mb-0 small">Esta Semana</p>
                 </div>
             </div>
         </div>
-        <div class="col-lg-3 col-md-6 mb-3">
-            <div class="card stats-card success h-100 shadow-sm">
-                <div class="card-body text-center">
-                    <div class="d-flex align-items-center justify-content-center mb-2">
-                        <div class="rounded-circle bg-success bg-opacity-10 p-3">
-                            <i class="ti ti-hourglass text-success" style="font-size: 2.5rem;"></i>
+        <div class="col-lg-3 col-md-6 mb-2">
+            <div class="card stats-card success h-100 shadow-sm border-0">
+                <div class="card-body py-2 px-3">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <h4 class="fw-bold text-success mb-0"><?= isset($estadisticas['esperando_aprobacion']) ? number_format($estadisticas['esperando_aprobacion']) : 0 ?></h4>
+                            <p class="text-muted mb-0 small">Esperando Aprobación</p>
+                        </div>
+                        <div class="rounded-circle bg-success bg-opacity-10 p-2">
+                            <i class="ti ti-hourglass text-success" style="font-size: 1.5rem;"></i>
                         </div>
                     </div>
-                    <h3 class="fw-bold text-success mb-1"><?= isset($estadisticas['esperando_aprobacion']) ? number_format($estadisticas['esperando_aprobacion']) : 0 ?></h3>
-                    <p class="text-muted mb-0 small">Esperando Aprobación</p>
                 </div>
             </div>
         </div>
@@ -97,7 +105,16 @@
                         <i class="ti ti-list text-primary me-2"></i>
                         Lista de Solicitudes Pendientes
                     </h5>
-                    <p class="text-muted small mb-0 mt-1">Gestiona las solicitudes que requieren aprobación</p>
+                    <p class="text-muted small mb-0 mt-1">
+                        Gestiona las solicitudes que requieren aprobación
+                        <span class="badge rounded-circle bg-primary-subtle text-primary d-inline-flex align-items-center justify-content-center ms-1" 
+                              data-bs-toggle="tooltip" 
+                              data-bs-placement="right" 
+                              title="Prioridades: Alta (7+ días de espera) | Media (3-6 días) | Normal (menos de 3 días)"
+                              style="cursor: help; width: 16px; height: 16px; font-size: 10px; font-weight: bold; padding: 0; vertical-align: middle;">
+                            ?
+                        </span>
+                    </p>
                 </div>
             </div>
         </div>
@@ -171,18 +188,44 @@
                                         </div>
                                     </td>
                                     <td class="px-3 py-3 text-center">
+                                        <?php 
+                                        // Calcular días de espera desde la creación de la solicitud
+                                        $diasEspera = 0;
+                                        if (isset($solicitud['fecha_creacion'])) {
+                                            $fechaCreacion = new DateTime($solicitud['fecha_creacion']);
+                                            $fechaActual = new DateTime();
+                                            $diferencia = $fechaCreacion->diff($fechaActual);
+                                            $diasEspera = $diferencia->days;
+                                            
+                                            // Si la fecha de creación es futura (por error), usar 0
+                                            if ($diferencia->invert == 1) {
+                                                $diasEspera = 0;
+                                            }
+                                        }
+                                        
+                                        $textoDias = $diasEspera == 0 ? 'Hoy' : ($diasEspera == 1 ? '1 día' : $diasEspera . ' días');
+                                        ?>
                                         <?php if ($solicitud['prioridad'] == 'Alta'): ?>
-                                            <span class="badge bg-danger-subtle text-danger">
+                                            <span class="badge bg-danger-subtle text-danger" 
+                                                  data-bs-toggle="tooltip" 
+                                                  title="<?= $diasEspera > 0 ? $diasEspera . ' días en espera' : 'Creada hoy' ?>">
                                                 <i class="ti ti-alert-circle me-1"></i>Alta
                                             </span>
+                                            <small class="d-block text-muted mt-1"><?= $textoDias ?></small>
                                         <?php elseif ($solicitud['prioridad'] == 'Media'): ?>
-                                            <span class="badge bg-warning-subtle text-warning">
+                                            <span class="badge bg-warning-subtle text-warning"
+                                                  data-bs-toggle="tooltip" 
+                                                  title="<?= $diasEspera > 0 ? $diasEspera . ' días en espera' : 'Creada hoy' ?>">
                                                 <i class="ti ti-alert-triangle me-1"></i>Media
                                             </span>
+                                            <small class="d-block text-muted mt-1"><?= $textoDias ?></small>
                                         <?php else: ?>
-                                            <span class="badge bg-info-subtle text-info">
+                                            <span class="badge bg-info-subtle text-info"
+                                                  data-bs-toggle="tooltip" 
+                                                  title="<?= $diasEspera > 0 ? $diasEspera . ' días en espera' : 'Creada hoy' ?>">
                                                 <i class="ti ti-info-circle me-1"></i>Normal
                                             </span>
+                                            <small class="d-block text-muted mt-1"><?= $textoDias ?></small>
                                         <?php endif; ?>
                                     </td>
                                     <td class="px-3 py-3 text-center">
@@ -510,10 +553,7 @@
                                             <div class="col-md-6">
                                                 ${detalle.grado && detalle.seccion ? `<p><strong>Grado:</strong> <span>${detalle.grado}° "${detalle.seccion}" - ${detalle.nivel_estudiante}</span></p>` : ''}
                                                 ${detalle.aniolectivo ? `<p><strong>Año Lectivo:</strong> <span>${detalle.aniolectivo}</span></p>` : ''}
-                                                <p><strong>Fecha Solicitud:</strong> <span>${fechaSolicitud.toLocaleDateString('es-ES')}</span></p>
-                                                <p><strong>Fecha Inicio:</strong> <span>${fechaInicio.toLocaleDateString('es-ES')}</span></p>
-                                                <p><strong>Fecha Entrega:</strong> <span>${fechaEntrega.toLocaleDateString('es-ES')}</span></p>
-                                                <p><strong>Tiempo Esperando:</strong> <span>${detalle.dias_desde_solicitud || 0} día(s)</span></p>
+                                                <p><strong>Tiempo Esperando:</strong> <span class="badge bg-warning-subtle text-warning">${detalle.dias_desde_solicitud || 0} día(s)</span></p>
                                             </div>
                                         </div>
                                     </div>
@@ -552,44 +592,6 @@
                                         <p><strong>Stock Disponible:</strong> <span>${detalle.stock} unidades</span></p>
                                         ${detalle.otros_prestamos_activos > 0 ? `<p class="text-warning"><strong>Préstamos Activos:</strong> <span>${detalle.otros_prestamos_activos}</span></p>` : ''}
                                     </div>
-                                </div>
-
-                                <hr>
-
-                                <!-- Detalles de la Solicitud -->
-                                <h6 class="text-primary mb-3">
-                                    <i class="ti ti-clock-hour-3 me-2"></i>Detalles de la Solicitud
-                                </h6>
-                                <div class="row">
-                                    <div class="col-md-3">
-                                        <div class="text-center p-3 bg-primary bg-opacity-10 rounded">
-                                            <h4 class="mb-1 text-primary">${fechaSolicitud.toLocaleDateString('es-ES')}</h4>
-                                            <small class="text-muted">Fecha de Solicitud</small>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <div class="text-center p-3 bg-success bg-opacity-10 rounded">
-                                            <h4 class="mb-1 text-success">${fechaInicio.toLocaleDateString('es-ES')}</h4>
-                                            <small class="text-muted">Fecha de Inicio</small>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <div class="text-center p-3 bg-info bg-opacity-10 rounded">
-                                            <h4 class="mb-1 text-info">${fechaEntrega.toLocaleDateString('es-ES')}</h4>
-                                            <small class="text-muted">Fecha de Entrega</small>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <div class="text-center p-3 bg-warning bg-opacity-10 rounded">
-                                            <h4 class="mb-1 text-warning">${(() => {
-                                                const diffTime = fechaEntrega - fechaInicio;
-                                                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                                                return diffDays + (diffDays === 1 ? ' día' : ' días');
-                                            })()}</h4>
-                                            <small class="text-muted">Duración del Préstamo</small>
-                                        </div>
-                                    </div>
-
                                 </div>
 
                                 <hr>
@@ -960,4 +962,25 @@
             location.reload();
         }
     }
+
+    // Inicializar tooltips de Bootstrap
+    document.addEventListener('DOMContentLoaded', function() {
+        // Inicializar todos los tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+        
+        console.log('Tooltips inicializados:', tooltipList.length);
+    });
+
+    // Reinicializar tooltips después de cargar contenido dinámico
+    document.addEventListener('content-loaded', function() {
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+        
+        console.log('Tooltips reinicializados:', tooltipList.length);
+    });
 </script>

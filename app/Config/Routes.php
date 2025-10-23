@@ -238,6 +238,7 @@ $routes->post('/prestamos/detalleSolicitud', 'PrestamoController::detalleSolicit
 // Gestión de préstamos activos (Admin/Docente)
 $routes->post('/prestamos/crear', 'PrestamoController::crearPrestamo');           // Crear nuevo préstamo
 $routes->post('/prestamos/cancelar', 'PrestamoController::cancelar');             // Cancelar préstamo activo
+$routes->get('/prestamos/obtener-tipos-sancion', 'PrestamoController::obtenerTiposSancion'); // Obtener tipos de sanción
 $routes->post('/prestamos/procesar-devolucion', 'PrestamoController::procesarDevolucion'); // Procesar devolución
 $routes->post('/prestamos/renovar', 'PrestamoController::renovarPrestamo');       // Renovar préstamo
 $routes->post('/prestamos/detalle', 'PrestamoController::obtenerDetallePrestamo'); // Obtener detalles de préstamo
@@ -245,6 +246,8 @@ $routes->post('/prestamos/obtenerDetalleDevolucion', 'PrestamoController::obtene
 $routes->post('/prestamos/obtenerObservaciones', 'PrestamoController::obtenerObservaciones'); // Obtener observaciones desde logs
 $routes->post('/prestamos/buscarPrestamoPorCodigo', 'PrestamoController::buscarPrestamoPorCodigo'); // Buscar préstamo por código
 $routes->post('/prestamos/procesarDevolucionCompleta', 'PrestamoController::procesarDevolucionCompleta'); // Procesar devolución completa
+$routes->post('/prestamos/eliminarHistorial', 'PrestamoController::eliminarHistorial'); // Eliminar registro del historial
+$routes->post('/prestamos/eliminarTodoHistorial', 'PrestamoController::eliminarTodoHistorial'); // Eliminar todo el historial
 
 // =====================================
 // RUTAS PARA MODALES DEL SISTEMA
