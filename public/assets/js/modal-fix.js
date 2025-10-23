@@ -187,7 +187,9 @@ const commonModals = [
     { id: 'modalNuevoAutor', name: 'NuevoAutor' },
     { id: 'modalEditarAutor', name: 'EditarAutor' },
     { id: 'modalNuevaSancion', name: 'NuevaSancion' },
-    { id: 'modalEditarSancion', name: 'EditarSancion' }
+    { id: 'modalEditarSancion', name: 'EditarSancion' },
+    { id: 'modalEditarEjemplar', name: 'EditarEjemplar' },
+    { id: 'modalEditarEjemplarInterno', name: 'EditarEjemplarInterno' }
 ];
 
 // Función para aplicar fix a todos los modales comunes

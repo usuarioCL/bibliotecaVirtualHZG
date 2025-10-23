@@ -268,6 +268,7 @@ CREATE TABLE ejemplares_fisicos (
     codigo_ejemplar VARCHAR(20) NOT NULL UNIQUE,
     estado_ejemplar ENUM('disponible','prestado','dañado','perdido','mantenimiento') DEFAULT 'disponible',
     ubicacion VARCHAR(100), 
+    estado_fisico ENUM('excelente','bueno','regular','malo','muy_malo'),
     observaciones TEXT,
     fecha_ingreso DATE DEFAULT (CURRENT_DATE),
     fecha_ultima_revision DATE,

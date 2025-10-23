@@ -15,7 +15,6 @@
                             'prestado' => ['label' => 'Prestados', 'class' => 'warning', 'count' => 0],
                             'dañado' => ['label' => 'Dañados', 'class' => 'danger', 'count' => 0],
                             'perdido' => ['label' => 'Perdidos', 'class' => 'dark', 'count' => 0],
-                            'mantenimiento' => ['label' => 'Mantenimiento', 'class' => 'info', 'count' => 0],
                         ];
 
                         if (!empty($estadisticas)) {
@@ -62,6 +61,7 @@
                             <th>ID</th>
                             <th>Código</th>
                             <th>Estado</th>
+                            <th>Estado Físico</th>
                             <th>Ubicación</th>
                             <th>Observaciones</th>
                             <th>Fecha Ingreso</th>
@@ -89,6 +89,38 @@
                                     ?>
                                     <span class="badge <?= $estadoClass ?>"><?= ucfirst($ejemplar->estado_ejemplar) ?></span>
                                 </td>
+                                <td>
+                                    <?php
+                                    $estadoFisicoClass = '';
+                                    $estadoFisicoText = '';
+                                    switch($ejemplar->estado_fisico) {
+                                        case 'excelente': 
+                                            $estadoFisicoClass = 'bg-success'; 
+                                            $estadoFisicoText = 'Excelente'; 
+                                            break;
+                                        case 'bueno': 
+                                            $estadoFisicoClass = 'bg-primary'; 
+                                            $estadoFisicoText = 'Bueno'; 
+                                            break;
+                                        case 'regular': 
+                                            $estadoFisicoClass = 'bg-warning'; 
+                                            $estadoFisicoText = 'Regular'; 
+                                            break;
+                                        case 'malo': 
+                                            $estadoFisicoClass = 'bg-danger'; 
+                                            $estadoFisicoText = 'Malo'; 
+                                            break;
+                                        case 'muy_malo': 
+                                            $estadoFisicoClass = 'bg-dark'; 
+                                            $estadoFisicoText = 'Muy Malo'; 
+                                            break;
+                                        default: 
+                                            $estadoFisicoClass = 'bg-secondary'; 
+                                            $estadoFisicoText = 'Sin evaluar';
+                                    }
+                                    ?>
+                                    <span class="badge <?= $estadoFisicoClass ?>"><?= $estadoFisicoText ?></span>
+                                </td>
                                 <td><?= esc($ejemplar->ubicacion) ?: 'N/A' ?></td>
                                 <td><?= esc($ejemplar->observaciones) ?: 'Ninguna' ?></td>
                                 <td><?= date('d/m/Y', strtotime($ejemplar->fecha_ingreso)) ?></td>
@@ -96,8 +128,8 @@
                                 <td>
                                     <div class="btn-group" role="group">
                                         <button type="button" class="btn btn-sm btn-outline-warning" 
-                                                onclick="editarEjemplarModal(<?= $ejemplar->idejemplar ?>, '<?= esc($ejemplar->estado_ejemplar) ?>', '<?= esc($ejemplar->ubicacion) ?>', '<?= esc($ejemplar->observaciones) ?>')">
-                                            <i class="ti ti-edit"></i>
+                                                onclick="abrirModalEditar(<?= $ejemplar->idejemplar ?>, '<?= esc($ejemplar->estado_ejemplar) ?>', '<?= esc($ejemplar->estado_fisico) ?>', '<?= esc($ejemplar->ubicacion) ?>', '<?= esc($ejemplar->observaciones) ?>')">
+                                            <i class="ti ti-settings"></i>
                                         </button>
                                         <?php if ($ejemplar->activo): ?>
                                             <button type="button" class="btn btn-sm btn-outline-danger" 
@@ -116,7 +148,7 @@
                             <?php endforeach; ?>
                         <?php else: ?>
                             <tr>
-                                <td colspan="8" class="text-center text-muted py-4">
+                                <td colspan="9" class="text-center text-muted py-4">
                                     <i class="ti ti-inbox fs-1 d-block mb-2"></i>
                                     No hay ejemplares registrados para este recurso.
                                 </td>
@@ -156,39 +188,45 @@
         </div>
     </div>
 
-    <!-- Modal para Editar Ejemplar -->
-    <div class="modal fade" id="modalEditarEjemplar" tabindex="-1" aria-labelledby="modalEditarEjemplarLabel" aria-hidden="true">
+    <!-- Modal para Editar Ejemplar - Dentro del contenido del modal -->
+    <div class="modal fade" id="modalEditarEjemplarInterno" tabindex="-1" aria-labelledby="modalEditarEjemplarInternoLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="modalEditarEjemplarLabel">Editar Ejemplar</h5>
+                    <h5 class="modal-title" id="modalEditarEjemplarInternoLabel">Editar Ejemplar</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <form id="formEditarEjemplar">
+                <form id="formEditarEjemplarInterno">
                     <div class="modal-body">
-                        <input type="hidden" name="idejemplar" id="editIdejemplar">
+                        <input type="hidden" name="idejemplar" id="editIdejemplarInterno">
                         <div class="mb-3">
-                            <label for="editEstado" class="form-label">Estado</label>
-                            <select class="form-select" id="editEstado" name="estado" required>
+                            <label for="editEstadoInterno" class="form-label">Estado Operativo</label>
+                            <select class="form-select" id="editEstadoInterno" name="estado" required>
                                 <option value="disponible">Disponible</option>
-                                <option value="prestado">Prestado</option>
-                                <option value="dañado">Dañado</option>
-                                <option value="perdido">Perdido</option>
-                                <option value="mantenimiento">Mantenimiento</option>
                             </select>
                         </div>
                         <div class="mb-3">
-                            <label for="editUbicacion" class="form-label">Ubicación</label>
-                            <input type="text" class="form-control" id="editUbicacion" name="ubicacion" maxlength="100">
+                            <label for="editEstadoFisicoInterno" class="form-label">Estado Físico</label>
+                            <select class="form-select" id="editEstadoFisicoInterno" name="estado_fisico" required>
+                                <option value="excelente">Excelente</option>
+                                <option value="bueno">Bueno</option>
+                                <option value="regular">Regular</option>
+                                <option value="malo">Malo</option>
+                                <option value="muy_malo">Muy Malo</option>
+                            </select>
                         </div>
                         <div class="mb-3">
-                            <label for="editObservaciones" class="form-label">Observaciones</label>
-                            <textarea class="form-control" id="editObservaciones" name="observaciones" rows="3" maxlength="500"></textarea>
+                            <label for="editUbicacionInterno" class="form-label">Ubicación</label>
+                            <input type="text" class="form-control" id="editUbicacionInterno" name="ubicacion" maxlength="100" placeholder="Ej: Estante A-1, Sección Literatura">
+                        </div>
+                        <div class="mb-3">
+                            <label for="editObservacionesInterno" class="form-label">Observaciones</label>
+                            <textarea class="form-control" id="editObservacionesInterno" name="observaciones" rows="3" maxlength="500" placeholder="Detalles sobre el estado del ejemplar..."></textarea>
                         </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                        <button type="button" class="btn btn-warning" onclick="guardarEdicionEjemplar()">Actualizar Ejemplar</button>
                     </div>
                 </form>
             </div>
@@ -196,14 +234,34 @@
     </div>
 
     <script>
-        // Función para abrir el modal de edición
-        function editarEjemplarModal(idejemplar, estado, ubicacion, observaciones) {
-            document.getElementById('editIdejemplar').value = idejemplar;
-            document.getElementById('editEstado').value = estado;
-            document.getElementById('editUbicacion').value = ubicacion;
-            document.getElementById('editObservaciones').value = observaciones;
-            var modal = new bootstrap.Modal(document.getElementById('modalEditarEjemplar'));
-            modal.show();
+        // Función simple para abrir el modal de edición - Hacerla global
+        window.abrirModalEditar = function(idejemplar, estado, estadoFisico, ubicacion, observaciones) {
+            console.log('Abriendo modal de edición:', {idejemplar, estado, estadoFisico, ubicacion, observaciones});
+            
+            // Buscar el modal interno
+            const modalEditar = document.getElementById('modalEditarEjemplarInterno');
+            const editIdejemplar = document.getElementById('editIdejemplarInterno');
+            const editEstado = document.getElementById('editEstadoInterno');
+            const editEstadoFisico = document.getElementById('editEstadoFisicoInterno');
+            const editUbicacion = document.getElementById('editUbicacionInterno');
+            const editObservaciones = document.getElementById('editObservacionesInterno');
+            
+            // Verificar que todos los elementos existen
+            if (modalEditar && editIdejemplar && editEstado && editEstadoFisico && editUbicacion && editObservaciones) {
+                // Llenar los campos del modal de edición
+                editIdejemplar.value = idejemplar;
+                editEstado.value = estado;
+                editEstadoFisico.value = estadoFisico;
+                editUbicacion.value = ubicacion || '';
+                editObservaciones.value = observaciones || '';
+                
+                // Abrir el modal de edición
+                const modal = new bootstrap.Modal(modalEditar);
+                modal.show();
+            } else {
+                console.error('Modal de edición interno no encontrado o elementos faltantes');
+                alert('Error: No se pudo encontrar el modal de edición. Por favor, recarga la página e intenta de nuevo.');
+            }
         }
 
         // Manejar el envío del formulario de creación de ejemplares
@@ -234,10 +292,37 @@
             });
         });
 
-        // Manejar el envío del formulario de edición de ejemplares
-        document.getElementById('formEditarEjemplar').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const formData = new FormData(this);
+        // Función para guardar la edición del ejemplar
+        window.guardarEdicionEjemplar = function() {
+            console.log('Guardando edición del ejemplar...');
+            
+            // Obtener los valores del formulario
+            const idejemplar = document.getElementById('editIdejemplarInterno').value;
+            const estado = document.getElementById('editEstadoInterno').value;
+            const estadoFisico = document.getElementById('editEstadoFisicoInterno').value;
+            const ubicacion = document.getElementById('editUbicacionInterno').value;
+            const observaciones = document.getElementById('editObservacionesInterno').value;
+            
+            // Validar que el ID del ejemplar existe
+            if (!idejemplar) {
+                Swal.fire({
+                    title: 'Error',
+                    text: 'ID del ejemplar no encontrado',
+                    icon: 'error',
+                    confirmButtonText: 'Aceptar'
+                });
+                return;
+            }
+            
+            // Crear FormData
+            const formData = new FormData();
+            formData.append('idejemplar', idejemplar);
+            formData.append('estado', estado);
+            formData.append('estado_fisico', estadoFisico);
+            formData.append('ubicacion', ubicacion);
+            formData.append('observaciones', observaciones);
+            
+            // Enviar por AJAX
             fetch('<?= base_url('ejemplares-fisicos/actualizar-estado') ?>', {
                 method: 'POST',
                 body: formData,
@@ -248,19 +333,51 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    Swal.fire('¡Éxito!', data.message, 'success').then(() => {
-                        // Recargar el contenido del modal
-                        location.reload();
+                    Swal.fire({
+                        title: '¡Éxito!',
+                        text: data.message,
+                        icon: 'success',
+                        confirmButtonText: 'Aceptar',
+                        timer: 3000,
+                        timerProgressBar: true,
+                        allowOutsideClick: false,
+                        allowEscapeKey: false
+                    }).then(() => {
+                        // Cerrar todos los modales
+                        const modalEditar = bootstrap.Modal.getInstance(document.getElementById('modalEditarEjemplarInterno'));
+                        if (modalEditar) {
+                            modalEditar.hide();
+                        }
+                        
+                        const modalEjemplares = bootstrap.Modal.getInstance(document.getElementById('modalEjemplares'));
+                        if (modalEjemplares) {
+                            modalEjemplares.hide();
+                        }
+                        
+                        // Recargar la página después de cerrar los modales
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 500);
                     });
                 } else {
-                    Swal.fire('Error', data.message, 'error');
+                    Swal.fire({
+                        title: 'Error',
+                        text: data.message,
+                        icon: 'error',
+                        confirmButtonText: 'Aceptar'
+                    });
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                Swal.fire('Error', 'Hubo un problema al actualizar el ejemplar.', 'error');
+                Swal.fire({
+                    title: 'Error',
+                    text: 'Hubo un problema al actualizar el ejemplar. Por favor, inténtalo de nuevo.',
+                    icon: 'error',
+                    confirmButtonText: 'Aceptar'
+                });
             });
-        });
+        };
 
         // Función para eliminar lógicamente un ejemplar
         function eliminarEjemplarModal(idejemplar) {

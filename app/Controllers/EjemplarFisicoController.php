@@ -143,6 +143,8 @@ class EjemplarFisicoController extends BaseController
 
         $idejemplar = $this->request->getPost('idejemplar');
         $nuevo_estado = $this->request->getPost('estado');
+        $estado_fisico = $this->request->getPost('estado_fisico');
+        $ubicacion = $this->request->getPost('ubicacion');
         $observaciones = $this->request->getPost('observaciones');
 
         // Validaciones
@@ -153,25 +155,45 @@ class EjemplarFisicoController extends BaseController
             ]);
         }
 
-        $estados_validos = ['disponible', 'prestado', 'dañado', 'perdido', 'mantenimiento'];
+        $estados_validos = ['disponible', 'prestado', 'dañado', 'perdido'];
         if (!in_array($nuevo_estado, $estados_validos)) {
             return $this->response->setJSON([
                 'success' => false, 
-                'message' => 'Estado no válido'
+                'message' => 'Estado operativo no válido'
+            ]);
+        }
+
+        $estados_fisicos_validos = ['excelente', 'bueno', 'regular', 'malo', 'muy_malo'];
+        if (!empty($estado_fisico) && !in_array($estado_fisico, $estados_fisicos_validos)) {
+            return $this->response->setJSON([
+                'success' => false, 
+                'message' => 'Estado físico no válido'
             ]);
         }
 
         try {
-            $this->ejemplarModel->actualizarEstadoEjemplar($idejemplar, $nuevo_estado, $observaciones);
+            // Log para debug
+            log_message('info', 'Actualizando ejemplar: ' . $idejemplar . ' - Estado: ' . $nuevo_estado . ' - Estado Físico: ' . $estado_fisico);
+            
+            $this->ejemplarModel->actualizarEstadoEjemplar($idejemplar, $nuevo_estado, $observaciones, $estado_fisico);
+            
+            // Actualizar ubicación si se proporciona
+            if (!empty($ubicacion)) {
+                $this->ejemplarModel->update($idejemplar, ['ubicacion' => $ubicacion]);
+            }
+            
+            log_message('info', 'Ejemplar actualizado exitosamente: ' . $idejemplar);
             
             return $this->response->setJSON([
                 'success' => true,
-                'message' => 'Estado del ejemplar actualizado exitosamente'
+                'message' => 'Ejemplar actualizado exitosamente'
             ]);
         } catch (\Exception $e) {
+            log_message('error', 'Error al actualizar ejemplar: ' . $e->getMessage());
+            
             return $this->response->setJSON([
                 'success' => false,
-                'message' => 'Error al actualizar estado: ' . $e->getMessage()
+                'message' => 'Error al actualizar ejemplar: ' . $e->getMessage()
             ]);
         }
     }

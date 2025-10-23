@@ -4,6 +4,7 @@ SELECT
     e.idrecurso,
     e.codigo_ejemplar,
     e.estado_ejemplar,
+    e.estado_fisico,
     e.ubicacion,
     e.observaciones,
     e.fecha_ingreso,

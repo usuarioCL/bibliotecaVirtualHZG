@@ -16,6 +16,7 @@ class EjemplarFisicoModel extends Model
         'idrecurso',
         'codigo_ejemplar',
         'estado_ejemplar',
+        'estado_fisico',
         'ubicacion',
         'observaciones',
         'fecha_ingreso',
@@ -34,6 +35,7 @@ class EjemplarFisicoModel extends Model
         'idrecurso' => 'required|integer',
         'codigo_ejemplar' => 'required|max_length[20]|is_unique[ejemplares_fisicos.codigo_ejemplar,idejemplar,{idejemplar}]',
         'estado_ejemplar' => 'required|in_list[disponible,prestado,dañado,perdido,mantenimiento]',
+        'estado_fisico' => 'permit_empty|in_list[excelente,bueno,regular,malo,muy_malo]',
         'ubicacion' => 'permit_empty|max_length[100]',
         'observaciones' => 'permit_empty',
         'fecha_ingreso' => 'permit_empty|valid_date',
@@ -145,7 +147,7 @@ class EjemplarFisicoModel extends Model
     /**
      * Actualizar estado de un ejemplar
      */
-    public function actualizarEstadoEjemplar($idejemplar, $nuevo_estado, $observaciones = null)
+    public function actualizarEstadoEjemplar($idejemplar, $nuevo_estado, $observaciones = null, $estado_fisico = null)
     {
         $data = [
             'estado_ejemplar' => $nuevo_estado,
@@ -154,6 +156,10 @@ class EjemplarFisicoModel extends Model
         
         if ($observaciones !== null) {
             $data['observaciones'] = $observaciones;
+        }
+        
+        if ($estado_fisico !== null) {
+            $data['estado_fisico'] = $estado_fisico;
         }
         
         return $this->update($idejemplar, $data);
