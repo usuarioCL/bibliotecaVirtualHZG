@@ -2082,4 +2082,243 @@ class PrestamoModel extends Model
             throw $e;
         }
     }
+
+    /**
+     * Obtener estadísticas generales para el reporte de préstamos por usuario
+     */
+    public function getEstadisticasGeneralesUsuarios()
+    {
+        $db = \Config\Database::connect();
+        
+        // Total de usuarios activos (con matrícula activa)
+        $totalUsuarios = $db->query("
+            SELECT COUNT(DISTINCT m.idpersona) as total
+            FROM matriculas m
+            WHERE m.estadomatricula = true
+        ")->getRow()->total;
+        
+        // Total de préstamos
+        $totalPrestamos = $this->countAllResults();
+        
+        // Préstamos pendientes (activos)
+        $prestamosPendientes = $this->where('fechahoraretorno IS NULL', null, false)->countAllResults();
+        
+        // Préstamos vencidos
+        $prestamosVencidos = $db->query("
+            SELECT COUNT(*) as total 
+            FROM prestamos p 
+            WHERE p.fechahoraretorno IS NULL 
+            AND CASE 
+                WHEN p.fechadevolucion IS NOT NULL THEN p.fechadevolucion < NOW()
+                ELSE DATE_ADD(p.fechaprestamo, INTERVAL 14 DAY) < NOW()
+            END
+        ")->getRow()->total;
+        
+        // Promedio de préstamos por usuario (mensual)
+        $promedioMensual = $db->query("
+            SELECT AVG(prestamos_por_usuario) as promedio
+            FROM (
+                SELECT COUNT(*) as prestamos_por_usuario
+                FROM prestamos p
+                JOIN matriculas m ON m.idmatricula = p.idmatricula
+                WHERE p.fechaprestamo >= DATE_SUB(CURDATE(), INTERVAL 1 MONTH)
+                GROUP BY m.idpersona
+            ) as stats
+        ")->getRow()->promedio ?? 0;
+        
+        // Crecimiento mensual (comparar mes actual vs anterior)
+        $prestamosEsteMes = $db->query("
+            SELECT COUNT(*) as total
+            FROM prestamos
+            WHERE MONTH(fechaprestamo) = MONTH(CURDATE()) 
+            AND YEAR(fechaprestamo) = YEAR(CURDATE())
+        ")->getRow()->total;
+        
+        $prestamosMesAnterior = $db->query("
+            SELECT COUNT(*) as total
+            FROM prestamos
+            WHERE MONTH(fechaprestamo) = MONTH(DATE_SUB(CURDATE(), INTERVAL 1 MONTH))
+            AND YEAR(fechaprestamo) = YEAR(DATE_SUB(CURDATE(), INTERVAL 1 MONTH))
+        ")->getRow()->total;
+        
+        $crecimiento = 0;
+        if ($prestamosMesAnterior > 0) {
+            $crecimiento = (($prestamosEsteMes - $prestamosMesAnterior) / $prestamosMesAnterior) * 100;
+        }
+        
+        return [
+            'total_usuarios' => $totalUsuarios,
+            'total_prestamos' => $totalPrestamos,
+            'prestamos_pendientes' => $prestamosPendientes,
+            'prestamos_vencidos' => $prestamosVencidos,
+            'promedio_mensual' => round($promedioMensual, 1),
+            'crecimiento_mensual' => ($crecimiento >= 0 ? '+' : '') . round($crecimiento, 1) . '%'
+        ];
+    }
+
+    /**
+     * Obtener top usuarios más activos
+     */
+    public function getTopUsuariosActivos($limit = 5)
+    {
+        $db = \Config\Database::connect();
+        
+        $sql = "SELECT 
+                    CONCAT(per.nombres, ' ', per.apellidos) as nombre,
+                    CONCAT(g.grado, '° ', g.nivel, ' ', g.seccion) as grado,
+                    COUNT(p.idprestamo) as total_prestamos,
+                    m.idpersona
+                FROM prestamos p
+                JOIN matriculas m ON m.idmatricula = p.idmatricula
+                JOIN personas per ON per.idpersona = m.idpersona
+                JOIN grupos g ON g.idgrupo = m.idgrupo
+                WHERE m.estadomatricula = true
+                GROUP BY m.idpersona, per.nombres, per.apellidos, g.grado, g.nivel, g.seccion
+                ORDER BY total_prestamos DESC
+                LIMIT ?";
+        
+        $query = $db->query($sql, [$limit]);
+        return $query->getResultArray();
+    }
+
+    /**
+     * Obtener estadísticas detalladas de préstamos por usuario
+     */
+    public function getEstadisticasDetalladasUsuarios($filtros = [])
+    {
+        $db = \Config\Database::connect();
+        
+        $whereConditions = ['m.estadomatricula = true'];
+        $params = [];
+        
+        // Aplicar filtros
+        if (!empty($filtros['fecha_desde'])) {
+            $whereConditions[] = 'p.fechaprestamo >= ?';
+            $params[] = $filtros['fecha_desde'];
+        }
+        
+        if (!empty($filtros['fecha_hasta'])) {
+            $whereConditions[] = 'p.fechaprestamo <= ?';
+            $params[] = $filtros['fecha_hasta'] . ' 23:59:59';
+        }
+        
+        if (!empty($filtros['nivel'])) {
+            $whereConditions[] = 'g.nivel = ?';
+            $params[] = $filtros['nivel'];
+        }
+        
+        if (!empty($filtros['grado'])) {
+            $whereConditions[] = 'g.grado = ?';
+            $params[] = $filtros['grado'];
+        }
+        
+        $whereClause = implode(' AND ', $whereConditions);
+        
+        $sql = "SELECT 
+                    m.idpersona,
+                    CONCAT(per.nombres, ' ', per.apellidos) as nombre_completo,
+                    per.email,
+                    CONCAT(g.grado, '° ', g.nivel, ' ', g.seccion) as nivel_grado,
+                    COUNT(p.idprestamo) as total_prestamos,
+                    SUM(CASE WHEN p.fechahoraretorno IS NULL THEN 1 ELSE 0 END) as prestamos_activos,
+                    SUM(CASE WHEN p.fechahoraretorno IS NOT NULL THEN 1 ELSE 0 END) as prestamos_completados,
+                    SUM(CASE 
+                        WHEN p.fechahoraretorno IS NULL 
+                        AND CASE 
+                            WHEN p.fechadevolucion IS NOT NULL THEN p.fechadevolucion < NOW()
+                            ELSE DATE_ADD(p.fechaprestamo, INTERVAL 14 DAY) < NOW()
+                        END THEN 1 ELSE 0 
+                    END) as prestamos_vencidos,
+                    MAX(p.fechaprestamo) as ultimo_prestamo,
+                    ROUND(COUNT(p.idprestamo) / 
+                        GREATEST(1, TIMESTAMPDIFF(MONTH, MIN(p.fechaprestamo), NOW())), 1
+                    ) as promedio_mensual
+                FROM matriculas m
+                JOIN personas per ON per.idpersona = m.idpersona
+                JOIN grupos g ON g.idgrupo = m.idgrupo
+                LEFT JOIN prestamos p ON p.idmatricula = m.idmatricula
+                WHERE {$whereClause}
+                GROUP BY m.idpersona, per.nombres, per.apellidos, per.email, g.grado, g.nivel, g.seccion
+                HAVING total_prestamos > 0
+                ORDER BY total_prestamos DESC";
+        
+        $query = $db->query($sql, $params);
+        return $query->getResultArray();
+    }
+
+    /**
+     * Obtener datos para gráfico de tendencias mensuales
+     */
+    public function getTendenciasMensuales($meses = 12)
+    {
+        $db = \Config\Database::connect();
+        
+        $sql = "SELECT 
+                    DATE_FORMAT(fechaprestamo, '%Y-%m') as mes,
+                    DATE_FORMAT(fechaprestamo, '%M %Y') as mes_nombre,
+                    COUNT(*) as total_prestamos
+                FROM prestamos
+                WHERE fechaprestamo >= DATE_SUB(CURDATE(), INTERVAL ? MONTH)
+                GROUP BY DATE_FORMAT(fechaprestamo, '%Y-%m')
+                ORDER BY mes ASC";
+        
+        $query = $db->query($sql, [$meses]);
+        return $query->getResultArray();
+    }
+
+    /**
+     * Obtener detalle completo de un usuario específico
+     */
+    public function getDetalleCompletoUsuario($idpersona)
+    {
+        $db = \Config\Database::connect();
+        
+        // Información básica del usuario
+        $infoUsuario = $db->query("
+            SELECT 
+                CONCAT(per.nombres, ' ', per.apellidos) as nombre_completo,
+                per.email,
+                per.telefono,
+                per.numerodoc,
+                CONCAT(g.grado, '° ', g.nivel, ' ', g.seccion) as nivel_grado,
+                m.fechamatricula,
+                m.idmatricula
+            FROM personas per
+            JOIN matriculas m ON m.idpersona = per.idpersona
+            JOIN grupos g ON g.idgrupo = m.idgrupo
+            WHERE per.idpersona = ? AND m.estadomatricula = true
+        ", [$idpersona])->getRow();
+        
+        if (!$infoUsuario) {
+            return null;
+        }
+        
+        // Estadísticas del usuario
+        $estadisticas = $db->query("
+            SELECT 
+                COUNT(*) as total_prestamos,
+                SUM(CASE WHEN fechahoraretorno IS NULL THEN 1 ELSE 0 END) as activos,
+                SUM(CASE WHEN fechahoraretorno IS NOT NULL THEN 1 ELSE 0 END) as completados,
+                SUM(CASE 
+                    WHEN fechahoraretorno IS NULL 
+                    AND CASE 
+                        WHEN fechadevolucion IS NOT NULL THEN fechadevolucion < NOW()
+                        ELSE DATE_ADD(fechaprestamo, INTERVAL 14 DAY) < NOW()
+                    END THEN 1 ELSE 0 
+                END) as vencidos,
+                MAX(fechaprestamo) as ultimo_prestamo,
+                MIN(fechaprestamo) as primer_prestamo
+            FROM prestamos p
+            WHERE p.idmatricula = ?
+        ", [$infoUsuario->idmatricula])->getRow();
+        
+        // Historial de préstamos
+        $historial = $this->getHistorialPrestamosByUsuario($infoUsuario->idmatricula, 20);
+        
+        return [
+            'info_usuario' => $infoUsuario,
+            'estadisticas' => $estadisticas,
+            'historial' => $historial
+        ];
+    }
 }

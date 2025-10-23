@@ -12,86 +12,76 @@ use App\Controllers\BaseController;
  */
 class ReporteController extends BaseController
 {
+    protected $prestamoModel;
+    protected $recursoModel;
+    protected $usuarioModel;
+
     /**
      * Inicialización del controlador
      */
     public function __construct()
     {
-        // Inicializar modelos necesarios cuando estén disponibles
-        // $this->prestamoModel = new PrestamoModel();
-        // $this->recursoModel = new RecursoModel();
-        // $this->usuarioModel = new UsuarioModel();
+        // Inicializar modelos necesarios
+        try {
+            $this->prestamoModel = new \App\Models\PrestamoModel();
+            $this->recursoModel = new \App\Models\RecursoModel();
+            $this->usuarioModel = new \App\Models\usuarioModel();
+        } catch (\Exception $e) {
+            log_message('error', 'Error inicializando modelos: ' . $e->getMessage());
+        }
     }
 
     /**
      * Reporte de Préstamos por Usuario
      * Muestra estadísticas detalladas de préstamos agrupados por usuario
      * 
-     * @return string
+     * @return string|\CodeIgniter\HTTP\ResponseInterface
      */
     public function prestamosUsuarios()
     {
+        // Datos básicos para evitar errores
+        $data = [
+            'title' => 'Reporte - Préstamos por Usuario | Sistema Biblioteca',
+            'estadisticas' => [
+                'total_usuarios' => 0,
+                'total_prestamos' => 0,
+                'prestamos_pendientes' => 0,
+                'prestamos_vencidos' => 0,
+                'promedio_mensual' => 0,
+                'crecimiento_mensual' => '0%'
+            ],
+            'top_usuarios' => [],
+            'usuarios_prestamos' => [],
+            'tendencias_mensuales' => [],
+            'filtros' => [
+                'niveles' => ['Inicial', 'Primaria', 'Secundaria'],
+                'grados' => ['1', '2', '3', '4', '5', '6']
+            ]
+        ];
+
+        // Intentar obtener datos reales si es posible
         try {
-            // Datos de prueba mientras se desarrollan los modelos completos
-            $data = [
-                'title' => 'Reporte - Préstamos por Usuario | Sistema Biblioteca',
-                'breadcrumb' => [
-                    'Inicio' => base_url('admin'),
-                    'Reportes y Estadísticas' => '#',
-                    'Préstamos por Usuario' => ''
-                ],
-                // Estadísticas generales
-                'estadisticas' => [
-                    'total_usuarios' => 156,
-                    'total_prestamos' => 2847,
-                    'prestamos_pendientes' => 23,
-                    'prestamos_vencidos' => 8,
-                    'promedio_mensual' => 18.3,
-                    'crecimiento_mensual' => '+12%'
-                ],
-                // Top usuarios más activos
-                'top_usuarios' => [
-                    [
-                        'id' => 1,
-                        'nombre' => 'María González',
-                        'grado' => '5° Secundaria A',
-                        'prestamos' => 47
-                    ],
-                    [
-                        'id' => 2,
-                        'nombre' => 'Carlos Mendoza',
-                        'grado' => '4° Secundaria B',
-                        'prestamos' => 42
-                    ],
-                    // ... más usuarios
-                ],
-                // Lista completa de usuarios con estadísticas
-                'usuarios_prestamos' => [], // Se cargaría desde el modelo
-                'filtros' => [
-                    'niveles' => ['Inicial', 'Primaria', 'Secundaria'],
-                    'grados' => ['1', '2', '3', '4', '5', '6']
-                ]
-            ];
-
-            // Si es una petición AJAX, retornar solo la vista
-            if ($this->request->isAJAX()) {
-                return view('Administrador/reportes/prestamos-usuarios', $data);
+            if (isset($this->prestamoModel) && $this->prestamoModel) {
+                $estadisticas = $this->prestamoModel->getEstadisticasGeneralesUsuarios();
+                if ($estadisticas && is_array($estadisticas)) {
+                    $data['estadisticas'] = $estadisticas;
+                }
+                
+                $topUsuarios = $this->prestamoModel->getTopUsuariosActivos(5);
+                if ($topUsuarios && is_array($topUsuarios)) {
+                    $data['top_usuarios'] = $topUsuarios;
+                }
+                
+                $usuariosPrestamos = $this->prestamoModel->getEstadisticasDetalladasUsuarios([]);
+                if ($usuariosPrestamos && is_array($usuariosPrestamos)) {
+                    $data['usuarios_prestamos'] = $usuariosPrestamos;
+                }
             }
-
-            return view('Administrador/reportes/prestamos-usuarios', $data);
-            
         } catch (\Exception $e) {
-            log_message('error', 'Error en ReporteController::prestamosUsuarios: ' . $e->getMessage());
-            
-            return view('Administrador/reportes/prestamos-usuarios', [
-                'title' => 'Error - Reporte de Préstamos',
-                'error' => 'Error al cargar los datos del reporte: ' . $e->getMessage(),
-                'estadisticas' => [],
-                'top_usuarios' => [],
-                'usuarios_prestamos' => [],
-                'filtros' => []
-            ]);
+            $data['error'] = 'Error al conectar con la base de datos: ' . $e->getMessage();
         }
+
+        return view('Administrador/reportes/prestamos-usuarios', $data);
     }
 
     /**
@@ -314,11 +304,92 @@ class ReporteController extends BaseController
      */
     public function grafico($tipo)
     {
-        // TODO: Implementar generación de gráficos
-        return $this->response->setJSON([
-            'status' => 'error',
-            'message' => 'Funcionalidad de gráficos en desarrollo',
-            'tipo' => $tipo
-        ]);
+        try {
+            if ($tipo === 'tendencias-mensuales') {
+                $tendencias = $this->prestamoModel->getTendenciasMensuales(12);
+                return $this->response->setJSON([
+                    'status' => 'success',
+                    'data' => $tendencias
+                ]);
+            }
+            
+            return $this->response->setJSON([
+                'status' => 'error',
+                'message' => 'Tipo de gráfico no soportado',
+                'tipo' => $tipo
+            ]);
+        } catch (\Exception $e) {
+            return $this->response->setJSON([
+                'status' => 'error',
+                'message' => 'Error al generar gráfico: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Obtener detalle completo de un usuario específico
+     */
+    public function detalleUsuario($idpersona)
+    {
+        try {
+            $detalle = $this->prestamoModel->getDetalleCompletoUsuario($idpersona);
+            
+            if (!$detalle) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Usuario no encontrado'
+                ]);
+            }
+            
+            return $this->response->setJSON([
+                'success' => true,
+                'data' => $detalle
+            ]);
+            
+        } catch (\Exception $e) {
+            log_message('error', 'Error en detalleUsuario: ' . $e->getMessage());
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Error al obtener detalle del usuario: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Aplicar filtros y obtener datos actualizados
+     */
+    public function aplicarFiltros()
+    {
+        try {
+            $filtros = [
+                'fecha_desde' => $this->request->getPost('fecha_desde'),
+                'fecha_hasta' => $this->request->getPost('fecha_hasta'),
+                'nivel' => $this->request->getPost('nivel'),
+                'grado' => $this->request->getPost('grado')
+            ];
+
+            // Obtener datos filtrados
+            $estadisticas = $this->prestamoModel->getEstadisticasGeneralesUsuarios();
+            $topUsuarios = $this->prestamoModel->getTopUsuariosActivos(5);
+            $usuariosPrestamos = $this->prestamoModel->getEstadisticasDetalladasUsuarios($filtros);
+            $tendenciasMensuales = $this->prestamoModel->getTendenciasMensuales(12);
+
+            return $this->response->setJSON([
+                'success' => true,
+                'data' => [
+                    'estadisticas' => $estadisticas,
+                    'top_usuarios' => $topUsuarios,
+                    'usuarios_prestamos' => $usuariosPrestamos,
+                    'tendencias_mensuales' => $tendenciasMensuales
+                ]
+            ]);
+            
+        } catch (\Exception $e) {
+            log_message('error', 'Error en aplicarFiltros: ' . $e->getMessage());
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Error al aplicar filtros: ' . $e->getMessage()
+            ]);
+        }
     }
 }

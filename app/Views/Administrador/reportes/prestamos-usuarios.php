@@ -4,7 +4,30 @@
  * Descripción: Estadísticas detalladas de préstamos agrupados por usuario
  * Ubicación: app/Views/Administrador/reportes/prestamos-usuarios.php
  */
+
+// Verificar si hay datos disponibles
+$estadisticas = $estadisticas ?? [
+    'total_usuarios' => 0,
+    'total_prestamos' => 0,
+    'prestamos_pendientes' => 0,
+    'prestamos_vencidos' => 0,
+    'promedio_mensual' => 0,
+    'crecimiento_mensual' => '0%'
+];
+
+$top_usuarios = $top_usuarios ?? [];
+$usuarios_prestamos = $usuarios_prestamos ?? [];
+$tendencias_mensuales = $tendencias_mensuales ?? [];
 ?>
+
+<?php if (isset($error)): ?>
+<div class="container-fluid py-4">
+    <div class="alert alert-warning">
+        <i class="ti ti-alert-triangle me-2"></i>
+        <?= esc($error) ?>
+    </div>
+</div>
+<?php endif; ?>
 
 <div class="container-fluid py-4">
     <!-- Header de la sección -->
@@ -83,7 +106,7 @@
             <div class="card bg-gradient-primary text-white h-100">
                 <div class="card-body text-center">
                     <i class="ti ti-users fs-1 mb-2"></i>
-                    <h4 class="mb-1" id="totalUsuarios">156</h4>
+                    <h4 class="mb-1" id="totalUsuarios"><?= isset($estadisticas['total_usuarios']) ? $estadisticas['total_usuarios'] : 0 ?></h4>
                     <p class="mb-0 small">Usuarios Activos</p>
                 </div>
             </div>
@@ -92,7 +115,7 @@
             <div class="card bg-gradient-success text-white h-100">
                 <div class="card-body text-center">
                     <i class="ti ti-book fs-1 mb-2"></i>
-                    <h4 class="mb-1" id="totalPrestamos">2,847</h4>
+                    <h4 class="mb-1" id="totalPrestamos"><?= number_format($estadisticas['total_prestamos'] ?? 0) ?></h4>
                     <p class="mb-0 small">Total Préstamos</p>
                 </div>
             </div>
@@ -101,7 +124,7 @@
             <div class="card bg-gradient-info text-white h-100">
                 <div class="card-body text-center">
                     <i class="ti ti-clock fs-1 mb-2"></i>
-                    <h4 class="mb-1" id="prestamosPendientes">23</h4>
+                    <h4 class="mb-1" id="prestamosPendientes"><?= $estadisticas['prestamos_pendientes'] ?? 0 ?></h4>
                     <p class="mb-0 small">Pendientes</p>
                 </div>
             </div>
@@ -110,7 +133,7 @@
             <div class="card bg-gradient-warning text-white h-100">
                 <div class="card-body text-center">
                     <i class="ti ti-alert-circle fs-1 mb-2"></i>
-                    <h4 class="mb-1" id="prestamosVencidos">8</h4>
+                    <h4 class="mb-1" id="prestamosVencidos"><?= $estadisticas['prestamos_vencidos'] ?? 0 ?></h4>
                     <p class="mb-0 small">Vencidos</p>
                 </div>
             </div>
@@ -119,7 +142,7 @@
             <div class="card bg-gradient-secondary text-white h-100">
                 <div class="card-body text-center">
                     <i class="ti ti-calendar fs-1 mb-2"></i>
-                    <h4 class="mb-1" id="promedioMensual">18.3</h4>
+                    <h4 class="mb-1" id="promedioMensual"><?= $estadisticas['promedio_mensual'] ?? 0 ?></h4>
                     <p class="mb-0 small">Promedio/Usuario</p>
                 </div>
             </div>
@@ -128,7 +151,7 @@
             <div class="card bg-gradient-dark text-white h-100">
                 <div class="card-body text-center">
                     <i class="ti ti-trending-up fs-1 mb-2"></i>
-                    <h4 class="mb-1" id="crecimientoMensual">+12%</h4>
+                    <h4 class="mb-1" id="crecimientoMensual"><?= $estadisticas['crecimiento_mensual'] ?? '0%' ?></h4>
                     <p class="mb-0 small">Crecimiento</p>
                 </div>
             </div>
@@ -169,46 +192,28 @@
                 </div>
                 <div class="card-body p-0">
                     <div class="list-group list-group-flush">
-                        <div class="list-group-item d-flex align-items-center">
-                            <div class="badge bg-warning text-dark me-3">1°</div>
-                            <div class="flex-grow-1">
-                                <div class="fw-medium">María González</div>
-                                <small class="text-muted">5° Secundaria A</small>
+                        <?php if (!empty($top_usuarios)): ?>
+                            <?php 
+                            $badges = ['bg-warning text-dark', 'bg-secondary', 'bg-success', 'bg-info', 'bg-primary'];
+                            foreach ($top_usuarios as $index => $usuario): 
+                                $badgeClass = $badges[$index] ?? 'bg-secondary';
+                                $posicion = $index + 1;
+                            ?>
+                            <div class="list-group-item d-flex align-items-center">
+                                <div class="badge <?= $badgeClass ?> me-3"><?= $posicion ?>°</div>
+                                <div class="flex-grow-1">
+                                    <div class="fw-medium"><?= esc($usuario['nombre']) ?></div>
+                                    <small class="text-muted"><?= esc($usuario['grado']) ?></small>
+                                </div>
+                                <div class="text-primary fw-bold"><?= $usuario['total_prestamos'] ?> libros</div>
                             </div>
-                            <div class="text-primary fw-bold">47 libros</div>
-                        </div>
-                        <div class="list-group-item d-flex align-items-center">
-                            <div class="badge bg-secondary me-3">2°</div>
-                            <div class="flex-grow-1">
-                                <div class="fw-medium">Carlos Mendoza</div>
-                                <small class="text-muted">4° Secundaria B</small>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <div class="list-group-item text-center text-muted">
+                                <i class="ti ti-info-circle me-1"></i>
+                                No hay datos de usuarios disponibles
                             </div>
-                            <div class="text-primary fw-bold">42 libros</div>
-                        </div>
-                        <div class="list-group-item d-flex align-items-center">
-                            <div class="badge bg-success me-3">3°</div>
-                            <div class="flex-grow-1">
-                                <div class="fw-medium">Ana Rodríguez</div>
-                                <small class="text-muted">5° Secundaria C</small>
-                            </div>
-                            <div class="text-primary fw-bold">38 libros</div>
-                        </div>
-                        <div class="list-group-item d-flex align-items-center">
-                            <div class="badge bg-info me-3">4°</div>
-                            <div class="flex-grow-1">
-                                <div class="fw-medium">Luis Herrera</div>
-                                <small class="text-muted">3° Secundaria A</small>
-                            </div>
-                            <div class="text-primary fw-bold">35 libros</div>
-                        </div>
-                        <div class="list-group-item d-flex align-items-center">
-                            <div class="badge bg-primary me-3">5°</div>
-                            <div class="flex-grow-1">
-                                <div class="fw-medium">Sofia López</div>
-                                <small class="text-muted">4° Secundaria A</small>
-                            </div>
-                            <div class="text-primary fw-bold">33 libros</div>
-                        </div>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>
@@ -251,90 +256,72 @@
                         </tr>
                     </thead>
                     <tbody id="cuerpoTablaUsuarios">
-                        <!-- Datos de ejemplo -->
-                        <tr>
-                            <td class="text-center">1</td>
-                            <td>
-                                <div class="d-flex align-items-center">
-                                    <div class="avatar-sm bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2">
-                                        <span class="small fw-bold">MG</span>
+                        <?php if (!empty($usuarios_prestamos)): ?>
+                            <?php foreach ($usuarios_prestamos as $index => $usuario): 
+                                $iniciales = '';
+                                $nombres = explode(' ', $usuario['nombre_completo']);
+                                foreach ($nombres as $nombre) {
+                                    $iniciales .= strtoupper(substr($nombre, 0, 1));
+                                }
+                                $iniciales = substr($iniciales, 0, 2);
+                                
+                                $avatarColors = ['bg-primary', 'bg-success', 'bg-info', 'bg-warning', 'bg-danger', 'bg-secondary'];
+                                $avatarColor = $avatarColors[$index % count($avatarColors)];
+                                
+                                $vencidosBadge = $usuario['prestamos_vencidos'] > 0 ? 'bg-danger' : 'bg-success';
+                            ?>
+                            <tr>
+                                <td class="text-center"><?= $index + 1 ?></td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar-sm <?= $avatarColor ?> text-white rounded-circle d-flex align-items-center justify-content-center me-2">
+                                            <span class="small fw-bold"><?= $iniciales ?></span>
+                                        </div>
+                                        <div>
+                                            <div class="fw-medium"><?= esc($usuario['nombre_completo']) ?></div>
+                                            <small class="text-muted"><?= esc($usuario['email'] ?? 'Sin email') ?></small>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <div class="fw-medium">María González</div>
-                                        <small class="text-muted">maria.gonzalez@email.com</small>
+                                </td>
+                                <td>
+                                    <span class="badge bg-primary"><?= esc($usuario['nivel_grado']) ?></span>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-success fs-6"><?= $usuario['total_prestamos'] ?></span>
+                                </td>
+                                <td class="text-center"><?= $usuario['prestamos_activos'] ?></td>
+                                <td class="text-center"><?= $usuario['prestamos_completados'] ?></td>
+                                <td class="text-center">
+                                    <span class="badge <?= $vencidosBadge ?>"><?= $usuario['prestamos_vencidos'] ?></span>
+                                </td>
+                                <td class="text-center">
+                                    <?= $usuario['ultimo_prestamo'] ? date('d/m/Y', strtotime($usuario['ultimo_prestamo'])) : 'N/A' ?>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-info"><?= $usuario['promedio_mensual'] ?></span>
+                                </td>
+                                <td class="text-center">
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <button type="button" class="btn btn-outline-primary" 
+                                                onclick="verDetalleUsuario(<?= $usuario['idpersona'] ?>)" title="Ver detalle completo">
+                                            <i class="ti ti-eye"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-outline-info" 
+                                                onclick="verHistorialCompleto(<?= $usuario['idpersona'] ?>)" title="Ver historial">
+                                            <i class="ti ti-history"></i>
+                                        </button>
                                     </div>
-                                </div>
-                            </td>
-                            <td>
-                                <span class="badge bg-primary">5° Secundaria A</span>
-                            </td>
-                            <td class="text-center">
-                                <span class="badge bg-success fs-6">47</span>
-                            </td>
-                            <td class="text-center">3</td>
-                            <td class="text-center">44</td>
-                            <td class="text-center">
-                                <span class="badge bg-danger">0</span>
-                            </td>
-                            <td class="text-center">15/03/2024</td>
-                            <td class="text-center">
-                                <span class="badge bg-info">3.9</span>
-                            </td>
-                            <td class="text-center">
-                                <div class="btn-group btn-group-sm" role="group">
-                                    <button type="button" class="btn btn-outline-primary" 
-                                            onclick="verDetalleUsuario(1)" title="Ver detalle completo">
-                                        <i class="ti ti-eye"></i>
-                                    </button>
-                                    <button type="button" class="btn btn-outline-info" 
-                                            onclick="verHistorialCompleto(1)" title="Ver historial">
-                                        <i class="ti ti-history"></i>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="text-center">2</td>
-                            <td>
-                                <div class="d-flex align-items-center">
-                                    <div class="avatar-sm bg-success text-white rounded-circle d-flex align-items-center justify-content-center me-2">
-                                        <span class="small fw-bold">CM</span>
-                                    </div>
-                                    <div>
-                                        <div class="fw-medium">Carlos Mendoza</div>
-                                        <small class="text-muted">carlos.mendoza@email.com</small>
-                                    </div>
-                                </div>
-                            </td>
-                            <td>
-                                <span class="badge bg-primary">4° Secundaria B</span>
-                            </td>
-                            <td class="text-center">
-                                <span class="badge bg-success fs-6">42</span>
-                            </td>
-                            <td class="text-center">2</td>
-                            <td class="text-center">39</td>
-                            <td class="text-center">
-                                <span class="badge bg-warning">1</span>
-                            </td>
-                            <td class="text-center">12/03/2024</td>
-                            <td class="text-center">
-                                <span class="badge bg-info">3.5</span>
-                            </td>
-                            <td class="text-center">
-                                <div class="btn-group btn-group-sm" role="group">
-                                    <button type="button" class="btn btn-outline-primary" 
-                                            onclick="verDetalleUsuario(2)" title="Ver detalle completo">
-                                        <i class="ti ti-eye"></i>
-                                    </button>
-                                    <button type="button" class="btn btn-outline-info" 
-                                            onclick="verHistorialCompleto(2)" title="Ver historial">
-                                        <i class="ti ti-history"></i>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                        <!-- Más filas... -->
+                                </td>
+                            </tr>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <tr>
+                                <td colspan="10" class="text-center text-muted py-4">
+                                    <i class="ti ti-info-circle fs-1 mb-2"></i>
+                                    <p>No hay datos de usuarios disponibles con los filtros aplicados</p>
+                                </td>
+                            </tr>
+                        <?php endif; ?>
                     </tbody>
                 </table>
             </div>
@@ -342,7 +329,7 @@
         <div class="card-footer bg-light">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
-                    <small class="text-muted">Mostrando 1-25 de 156 usuarios</small>
+                    <small class="text-muted">Mostrando <?= count($usuarios_prestamos) ?> de <?= count($usuarios_prestamos) ?> usuarios</small>
                 </div>
                 <nav aria-label="Navegación de usuarios">
                     <ul class="pagination pagination-sm mb-0">
@@ -390,48 +377,228 @@
 <script>
 // Funciones JavaScript para el reporte de préstamos por usuario
 function aplicarFiltrosUsuarios() {
-    console.log('Aplicando filtros de usuarios...');
-    // Implementar lógica de filtrado
+    const fechaDesde = document.getElementById('filtroFechaDesde').value;
+    const fechaHasta = document.getElementById('filtroFechaHasta').value;
+    const nivel = document.getElementById('filtroNivelUsuarios').value;
+    const grado = document.getElementById('filtroGrado').value;
+    
+    // Mostrar loading
+    const btn = event.target;
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="spinner-border spinner-border-sm me-1"></i>Aplicando...';
+    btn.disabled = true;
+    
+    // Construir URL con parámetros
+    const params = new URLSearchParams();
+    if (fechaDesde) params.append('fecha_desde', fechaDesde);
+    if (fechaHasta) params.append('fecha_hasta', fechaHasta);
+    if (nivel) params.append('nivel', nivel);
+    if (grado) params.append('grado', grado);
+    
+    // Recargar página con filtros
+    window.location.href = window.location.pathname + '?' + params.toString();
 }
 
 function exportarReportePrestamos() {
-    console.log('Exportando reporte de préstamos...');
     // Implementar exportación
+    fetch('<?= base_url('reportes/exportar/prestamos-usuarios/excel') ?>')
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                // Descargar archivo
+                window.open(data.url, '_blank');
+            } else {
+                alert('Error al exportar: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al exportar el reporte');
+        });
 }
 
 function generarGrafico() {
-    console.log('Generando gráfico de tendencias...');
-    // Implementar generación de gráfico
+    cargarGrafico();
 }
 
 function cargarGrafico() {
-    // Simular carga de gráfico
-    document.getElementById('chartPrestamos').innerHTML = '<div class="alert alert-info">Gráfico cargado correctamente</div>';
+    fetch('<?= base_url('reportes/grafico/tendencias-mensuales') ?>')
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                renderizarGraficoTendencias(data.data);
+            } else {
+                document.getElementById('chartPrestamos').innerHTML = 
+                    '<div class="alert alert-warning">Error al cargar gráfico: ' + data.message + '</div>';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            document.getElementById('chartPrestamos').innerHTML = 
+                '<div class="alert alert-danger">Error al cargar el gráfico</div>';
+        });
+}
+
+function renderizarGraficoTendencias(datos) {
+    const chartContainer = document.getElementById('chartPrestamos');
+    
+    if (!datos || datos.length === 0) {
+        chartContainer.innerHTML = '<div class="alert alert-info">No hay datos suficientes para mostrar el gráfico</div>';
+        return;
+    }
+    
+    // Crear gráfico simple con los datos
+    let html = '<div class="chart-simple">';
+    html += '<h6 class="text-center mb-3">Préstamos por Mes</h6>';
+    html += '<div class="row">';
+    
+    datos.forEach(item => {
+        const altura = Math.max(20, (item.total_prestamos / Math.max(...datos.map(d => d.total_prestamos))) * 200);
+        html += `
+            <div class="col text-center">
+                <div class="chart-bar bg-primary mb-2" style="height: ${altura}px; width: 30px; margin: 0 auto;"></div>
+                <small class="text-muted">${item.mes_nombre}</small>
+                <div class="fw-bold">${item.total_prestamos}</div>
+            </div>
+        `;
+    });
+    
+    html += '</div></div>';
+    chartContainer.innerHTML = html;
 }
 
 function cambiarVistaTabla(vista) {
     console.log('Cambiando vista de tabla a:', vista);
-    // Implementar cambio de vista
+    // Implementar cambio de vista según necesidades
 }
 
 function exportarTablaUsuarios() {
-    console.log('Exportando tabla de usuarios...');
     // Implementar exportación de tabla
+    const tabla = document.getElementById('tablaUsuarios');
+    const csv = tableToCSV(tabla);
+    downloadCSV(csv, 'usuarios_prestamos.csv');
 }
 
-function verDetalleUsuario(id) {
-    $('#modalDetalleUsuario').modal('show');
-    // Cargar datos del usuario
+function tableToCSV(table) {
+    let csv = [];
+    const rows = table.querySelectorAll('tr');
+    
+    for (let i = 0; i < rows.length; i++) {
+        const row = [];
+        const cols = rows[i].querySelectorAll('td, th');
+        
+        for (let j = 0; j < cols.length - 1; j++) { // Excluir columna de acciones
+            row.push(cols[j].innerText.replace(/,/g, ';'));
+        }
+        csv.push(row.join(','));
+    }
+    
+    return csv.join('\n');
 }
 
-function verHistorialCompleto(id) {
-    console.log('Ver historial completo del usuario:', id);
-    // Implementar vista de historial
+function downloadCSV(csv, filename) {
+    const csvFile = new Blob([csv], { type: 'text/csv' });
+    const downloadLink = document.createElement('a');
+    downloadLink.download = filename;
+    downloadLink.href = window.URL.createObjectURL(csvFile);
+    downloadLink.style.display = 'none';
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+    document.body.removeChild(downloadLink);
+}
+
+function verDetalleUsuario(idpersona) {
+    fetch(`<?= base_url('reportes/detalle-usuario/') ?>${idpersona}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                mostrarDetalleUsuario(data.data);
+                $('#modalDetalleUsuario').modal('show');
+            } else {
+                alert('Error al cargar detalle: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al cargar el detalle del usuario');
+        });
+}
+
+function mostrarDetalleUsuario(datos) {
+    const contenido = document.getElementById('contenidoDetalleUsuario');
+    
+    let html = `
+        <div class="row">
+            <div class="col-md-6">
+                <h6>Información Personal</h6>
+                <p><strong>Nombre:</strong> ${datos.info_usuario.nombre_completo}</p>
+                <p><strong>Email:</strong> ${datos.info_usuario.email || 'No disponible'}</p>
+                <p><strong>Teléfono:</strong> ${datos.info_usuario.telefono || 'No disponible'}</p>
+                <p><strong>Documento:</strong> ${datos.info_usuario.numerodoc}</p>
+                <p><strong>Nivel/Grado:</strong> ${datos.info_usuario.nivel_grado}</p>
+            </div>
+            <div class="col-md-6">
+                <h6>Estadísticas de Préstamos</h6>
+                <p><strong>Total Préstamos:</strong> ${datos.estadisticas.total_prestamos}</p>
+                <p><strong>Activos:</strong> ${datos.estadisticas.activos}</p>
+                <p><strong>Completados:</strong> ${datos.estadisticas.completados}</p>
+                <p><strong>Vencidos:</strong> ${datos.estadisticas.vencidos}</p>
+                <p><strong>Primer Préstamo:</strong> ${datos.estadisticas.primer_prestamo ? new Date(datos.estadisticas.primer_prestamo).toLocaleDateString() : 'N/A'}</p>
+            </div>
+        </div>
+    `;
+    
+    if (datos.historial && datos.historial.length > 0) {
+        html += `
+            <hr>
+            <h6>Historial Reciente</h6>
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>Recurso</th>
+                            <th>Fecha Préstamo</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+        `;
+        
+        datos.historial.slice(0, 10).forEach(prestamo => {
+            html += `
+                <tr>
+                    <td>${prestamo.titulo}</td>
+                    <td>${new Date(prestamo.fechaprestamo).toLocaleDateString()}</td>
+                    <td>${prestamo.fechahoraretorno ? 'Devuelto' : 'Activo'}</td>
+                </tr>
+            `;
+        });
+        
+        html += `
+                    </tbody>
+                </table>
+            </div>
+        `;
+    }
+    
+    contenido.innerHTML = html;
+}
+
+function verHistorialCompleto(idpersona) {
+    // Redirigir a una página de historial completo o abrir modal con más datos
+    window.open(`<?= base_url('admin/usuarios/historial/') ?>${idpersona}`, '_blank');
 }
 
 function exportarDetalleUsuario() {
-    console.log('Exportando detalle de usuario...');
-    // Implementar exportación de detalle
+    // Implementar exportación del detalle mostrado en el modal
+    const contenido = document.getElementById('contenidoDetalleUsuario').innerText;
+    const blob = new Blob([contenido], { type: 'text/plain' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'detalle_usuario.txt';
+    a.click();
+    window.URL.revokeObjectURL(url);
 }
 
 // Inicializar fechas por defecto (último mes)
@@ -441,5 +608,12 @@ document.addEventListener('DOMContentLoaded', function() {
     
     document.getElementById('filtroFechaDesde').valueAsDate = lastMonth;
     document.getElementById('filtroFechaHasta').valueAsDate = today;
+    
+    // Cargar gráfico automáticamente si hay datos
+    <?php if (!empty($tendencias_mensuales)): ?>
+    setTimeout(() => {
+        renderizarGraficoTendencias(<?= json_encode($tendencias_mensuales) ?>);
+    }, 1000);
+    <?php endif; ?>
 });
 </script>
