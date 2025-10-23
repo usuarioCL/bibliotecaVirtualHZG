@@ -1541,7 +1541,7 @@ class PrestamoController extends Controller
             // Crear el préstamo
             $prestamo = [
                 'idmatricula' => $idmatricula,
-                'idusuario' => session()->get('id'), // Usuario que registra el préstamo
+                'idusuario' => $idusuario, // Usuario que recibe el préstamo
                 'idrecurso' => $idrecurso,
                 'fechaprestamo' => $fechaPrestamoCompleta,
                 'fechadevolucion' => $fechaDevolucionCompleta,
@@ -1957,50 +1957,116 @@ class PrestamoController extends Controller
                     ]);
                 }
                 
-                if ($prestamo['fechahoraretorno'] === null || $prestamo['fechahoraretorno'] === '') {
-                    log_message('warning', 'PrestamoController::eliminarHistorial - Intento de eliminar préstamo activo. ID: ' . $id . ', fechahoraretorno: ' . ($prestamo['fechahoraretorno'] ?? 'NULL'));
+                // Verificar si el préstamo está validado (aprobado)
+                if ($prestamo['fechahoravalidacion'] === null || $prestamo['fechahoravalidacion'] === '') {
+                    log_message('warning', 'PrestamoController::eliminarHistorial - Intento de eliminar préstamo no validado. ID: ' . $id . ', fechahoravalidacion: ' . ($prestamo['fechahoravalidacion'] ?? 'NULL'));
                     return $this->response->setJSON([
                         'success' => false,
-                        'message' => 'No se puede eliminar un préstamo activo. Solo se pueden eliminar préstamos ya devueltos.'
+                        'message' => 'No se puede eliminar un préstamo que no ha sido validado. Solo se pueden eliminar préstamos aprobados.'
                     ]);
                 }
                 
                 // Usar transacción para eliminar todo relacionado
                 $db->transStart();
                 
+                log_message('info', 'PrestamoController::eliminarHistorial - Iniciando transacción para préstamo ID: ' . $id);
+                
+                // Si el préstamo está activo (no devuelto), restaurar el stock del recurso
+                if ($prestamo['fechahoraretorno'] === null || $prestamo['fechahoraretorno'] === '') {
+                    log_message('info', 'PrestamoController::eliminarHistorial - Restaurando stock para recurso ID: ' . $prestamo['idrecurso']);
+                    
+                    // Restaurar stock del recurso
+                    $resultadoStock = $db->table('recursos')
+                        ->where('idrecurso', $prestamo['idrecurso'])
+                        ->set('stock', 'stock + 1', false)
+                        ->update();
+                    
+                    log_message('info', 'PrestamoController::eliminarHistorial - Resultado actualización stock: ' . ($resultadoStock ? 'OK' : 'ERROR'));
+                    
+                    // Si el stock se restaura, cambiar estado a disponible
+                    $recursoActualizado = $db->table('recursos')
+                        ->where('idrecurso', $prestamo['idrecurso'])
+                        ->get()->getRow();
+                    
+                    if ($recursoActualizado && $recursoActualizado->stock > 0) {
+                        $resultadoEstado = $db->table('recursos')
+                            ->where('idrecurso', $prestamo['idrecurso'])
+                            ->update(['estado' => 'disponible']);
+                        
+                        log_message('info', 'PrestamoController::eliminarHistorial - Resultado actualización estado: ' . ($resultadoEstado ? 'OK' : 'ERROR'));
+                    }
+                }
+                
                 // 1. Marcar solicitudes vinculadas como "préstamo eliminado del historial"
                 //    Esto las distingue de las solicitudes realmente rechazadas
-                $db->table('solicitud')
+                log_message('info', 'PrestamoController::eliminarHistorial - Actualizando solicitudes vinculadas');
+                $resultadoSolicitudes = $db->table('solicitud')
                     ->where('idprestamo', $id)
                     ->update([
                         'idprestamo' => null,
                         'motivo_rechazo' => 'PRESTAMO_ELIMINADO_HISTORIAL: El préstamo asociado fue eliminado del historial por un administrador.'
                     ]);
+                log_message('info', 'PrestamoController::eliminarHistorial - Resultado actualización solicitudes: ' . ($resultadoSolicitudes ? 'OK' : 'ERROR'));
                 
                 // 2. Desvincular sanciones del préstamo (poner idprestamo en NULL)
                 //    Las sanciones se mantienen en el historial del usuario
-                $db->table('sanciones')
+                log_message('info', 'PrestamoController::eliminarHistorial - Desvinculando sanciones');
+                $resultadoSanciones = $db->table('sanciones')
                     ->where('idprestamo', $id)
                     ->update(['idprestamo' => null]);
+                log_message('info', 'PrestamoController::eliminarHistorial - Resultado desvinculación sanciones: ' . ($resultadoSanciones ? 'OK' : 'ERROR'));
                 
                 // 3. Eliminar renovaciones relacionadas (son solo registros administrativos del préstamo)
-                $db->table('renovaciones_prestamo')
+                log_message('info', 'PrestamoController::eliminarHistorial - Eliminando renovaciones');
+                $resultadoRenovaciones = $db->table('renovaciones_prestamo')
                     ->where('idprestamo', $id)
                     ->delete();
+                log_message('info', 'PrestamoController::eliminarHistorial - Resultado eliminación renovaciones: ' . ($resultadoRenovaciones ? 'OK' : 'ERROR'));
                 
-                // 4. Finalmente, eliminar el préstamo del historial
-                $db->table('prestamos')
+                // 4. Eliminar notificaciones relacionadas (tienen clave foránea)
+                log_message('info', 'PrestamoController::eliminarHistorial - Eliminando notificaciones');
+                $resultadoNotificaciones = $db->table('notificaciones')
                     ->where('idprestamo', $id)
                     ->delete();
+                log_message('info', 'PrestamoController::eliminarHistorial - Resultado eliminación notificaciones: ' . ($resultadoNotificaciones ? 'OK' : 'ERROR'));
+                
+                // 5. Finalmente, eliminar el préstamo del historial
+                log_message('info', 'PrestamoController::eliminarHistorial - Eliminando préstamo');
+                try {
+                    // Intentar eliminación directa primero
+                    $resultadoPrestamo = $db->table('prestamos')
+                        ->where('idprestamo', $id)
+                        ->delete();
+                    log_message('info', 'PrestamoController::eliminarHistorial - Resultado eliminación préstamo: ' . ($resultadoPrestamo ? 'OK' : 'ERROR'));
+                } catch (\Exception $e) {
+                    log_message('error', 'PrestamoController::eliminarHistorial - Error específico al eliminar préstamo: ' . $e->getMessage());
+                    
+                    // Si falla la eliminación directa, intentar eliminación lógica
+                    log_message('info', 'PrestamoController::eliminarHistorial - Intentando eliminación lógica');
+                    try {
+                        // Agregar un campo para marcar como eliminado (si no existe, crear uno temporal)
+                        $resultadoPrestamo = $db->table('prestamos')
+                            ->where('idprestamo', $id)
+                            ->update(['observaciones_devolucion' => 'ELIMINADO_DEL_HISTORIAL: ' . date('Y-m-d H:i:s')]);
+                        log_message('info', 'PrestamoController::eliminarHistorial - Resultado eliminación lógica: ' . ($resultadoPrestamo ? 'OK' : 'ERROR'));
+                    } catch (\Exception $e2) {
+                        log_message('error', 'PrestamoController::eliminarHistorial - Error en eliminación lógica: ' . $e2->getMessage());
+                        throw $e; // Lanzar el error original
+                    }
+                }
                 
                 $db->transComplete();
                 
                 if ($db->transStatus() === false) {
+                    $error = $db->error();
+                    log_message('error', 'PrestamoController::eliminarHistorial - Error en transacción: ' . json_encode($error));
                     return $this->response->setJSON([
                         'success' => false,
-                        'message' => 'Error al eliminar el préstamo'
+                        'message' => 'Error al eliminar el préstamo: ' . ($error['message'] ?? 'Error desconocido')
                     ]);
                 }
+                
+                log_message('info', 'PrestamoController::eliminarHistorial - Transacción completada exitosamente para préstamo ID: ' . $id);
                 
                 $mensaje = 'Préstamo eliminado del historial';
                 $tipoRegistro = 'Préstamo';

@@ -1879,10 +1879,6 @@
                                   rows="2"></textarea>
                     </div>
 
-                    <div class="alert alert-warning text-start mb-0">
-                        <i class="ti ti-info-circle me-2"></i>
-                        <small>Asegúrate de verificar la disponibilidad del recurso antes de crear el préstamo.</small>
-                    </div>
                 </div>
             `,
             width: '700px',
