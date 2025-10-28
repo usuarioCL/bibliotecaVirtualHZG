@@ -550,6 +550,32 @@ class SancionController extends BaseController
             if ($this->sancionModel->levantarSancion($idsancion, $motivoLevantamiento, $usuarioLevanta)) {
                 log_message('info', "Sanción {$idsancion} levantada por usuario {$usuarioLevanta}. Motivo: {$motivoLevantamiento}");
                 
+                // CAMBIO 2025-10-28: Crear notificación de levantamiento de sanción
+                try {
+                    $usuario = $this->usuarioModel->where('idpersona', $sancion['idpersona'])->first();
+                    
+                    if ($usuario) {
+                        $notificacionModel = new NotificacionModel();
+                        
+                        $mensaje = "Tu sanción ha sido levantada.\n\n";
+                        $mensaje .= "📋 Tipo: {$sancion['tiposancion']}\n";
+                        $mensaje .= "📝 Motivo del levantamiento: {$motivoLevantamiento}\n";
+                        $mensaje .= "📅 Fecha: " . date('d/m/Y H:i');
+                        
+                        $notificacionModel->crearNotificacion([
+                            'idusuario' => $usuario['idusuario'],
+                            'tipo' => 'sancion',
+                            'titulo' => '✅ Sanción Levantada',
+                            'mensaje' => $mensaje,
+                            'idsancion' => $idsancion
+                        ]);
+                        
+                        log_message('info', "Notificación de levantamiento creada para usuario #{$usuario['idusuario']}");
+                    }
+                } catch (\Exception $e) {
+                    log_message('error', 'Error al crear notificación de levantamiento: ' . $e->getMessage());
+                }
+                
                 return $this->response->setJSON([
                     'success' => true,
                     'message' => 'Sanción levantada exitosamente',
@@ -621,6 +647,32 @@ class SancionController extends BaseController
 
             // Verificar resultados
             if ($totalLevantadas > 0) {
+                // CAMBIO 2025-10-28: Crear notificación de levantamiento masivo
+                try {
+                    $usuario = $this->usuarioModel->where('idpersona', $idpersona)->first();
+                    
+                    if ($usuario) {
+                        $notificacionModel = new NotificacionModel();
+                        
+                        $mensaje = "Todas tus sanciones han sido levantadas.\n\n";
+                        $mensaje .= "📊 Total de sanciones levantadas: {$totalLevantadas}\n";
+                        $mensaje .= "📝 Motivo: {$motivoLevantamiento}\n";
+                        $mensaje .= "📅 Fecha: " . date('d/m/Y H:i');
+                        
+                        $notificacionModel->crearNotificacion([
+                            'idusuario' => $usuario['idusuario'],
+                            'tipo' => 'sancion',
+                            'titulo' => '✅ Sanciones Levantadas',
+                            'mensaje' => $mensaje,
+                            'idsancion' => null // No se vincula a una sanción específica
+                        ]);
+                        
+                        log_message('info', "Notificación de levantamiento masivo creada para usuario #{$usuario['idusuario']}");
+                    }
+                } catch (\Exception $e) {
+                    log_message('error', 'Error al crear notificación de levantamiento masivo: ' . $e->getMessage());
+                }
+                
                 return $this->response->setJSON([
                     'success' => true,
                     'message' => "Se levantaron exitosamente {$totalLevantadas} sanción(es)",
