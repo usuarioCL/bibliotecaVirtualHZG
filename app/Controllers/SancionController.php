@@ -6,6 +6,7 @@ use App\Models\SancionModel;
 use App\Models\TiposancionModel;
 use App\Models\personaModel;
 use App\Models\usuarioModel;
+use App\Models\NotificacionModel; // CAMBIO 2025-10-28: Agregado para enviar notificaciones de sanciones
 
 class SancionController extends BaseController
 {
@@ -269,7 +270,44 @@ class SancionController extends BaseController
             }
 
             if ($this->sancionModel->insert($data)) {
+                $idsancion = $this->sancionModel->getInsertID();
                 log_message('info', 'Sanción creada exitosamente: ' . json_encode($data));
+                
+                // CAMBIO 2025-10-28: Crear notificación automática para el usuario sancionado
+                try {
+                    // Obtener el ID de usuario desde la persona
+                    $usuario = $this->usuarioModel->where('idpersona', $data['idpersona'])->first();
+                    
+                    if ($usuario) {
+                        $notificacionModel = new NotificacionModel();
+                        
+                        // Formatear fecha de vencimiento si existe
+                        $fechaVencimiento = $fechaVencimiento 
+                            ? date('d/m/Y', strtotime($fechaVencimiento)) 
+                            : 'Sin fecha límite';
+                        
+                        $tipoSancionNombre = is_array($tipoSancion) ? $tipoSancion['tiposancion'] : $tipoSancion->tiposancion;
+                        
+                        $mensaje = "Has recibido una sanción disciplinaria.\n\n";
+                        $mensaje .= "📋 Tipo: {$tipoSancionNombre}\n";
+                        $mensaje .= "📝 Detalle: {$data['detallesancion']}\n";
+                        $mensaje .= "📅 Vence: {$fechaVencimiento}";
+                        
+                        $notificacionModel->crearNotificacion([
+                            'idusuario' => $usuario['idusuario'],
+                            'tipo' => 'sancion',
+                            'titulo' => '⚠️ Nueva Sanción Disciplinaria',
+                            'mensaje' => $mensaje,
+                            'idsancion' => $idsancion
+                        ]);
+                        
+                        log_message('info', "Notificación de sanción creada para usuario #{$usuario['idusuario']}");
+                    }
+                } catch (\Exception $e) {
+                    // No fallar si hay error en la notificación, solo log
+                    log_message('error', 'Error al crear notificación de sanción: ' . $e->getMessage());
+                }
+                
                 return $this->response->setJSON([
                     'success' => true,
                     'message' => 'Sanción registrada exitosamente'

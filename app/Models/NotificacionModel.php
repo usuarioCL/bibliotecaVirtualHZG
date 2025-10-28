@@ -21,6 +21,7 @@ class NotificacionModel extends Model
         'leida',
         'idprestamo',
         'idsolicitud',
+        'idsancion', // CAMBIO 2025-10-28: Agregado para soportar notificaciones de sanciones
         'leida_at'
     ];
 
@@ -31,7 +32,8 @@ class NotificacionModel extends Model
 
     protected $validationRules = [
         'idusuario' => 'required|integer',
-        'tipo' => 'required|in_list[aprobacion,rechazo,vencimiento,renovacion,devolucion]',
+        // CAMBIO 2025-10-28: Agregado 'sancion' al listado de tipos válidos
+        'tipo' => 'required|in_list[aprobacion,rechazo,vencimiento,renovacion,devolucion,sancion]',
         'titulo' => 'required|max_length[100]',
         'mensaje' => 'required',
         'leida' => 'permit_empty|in_list[0,1]'
@@ -68,7 +70,8 @@ class NotificacionModel extends Model
                 'mensaje' => $datos['mensaje'],
                 'leida' => false,
                 'idprestamo' => $datos['idprestamo'] ?? null,
-                'idsolicitud' => $datos['idsolicitud'] ?? null
+                'idsolicitud' => $datos['idsolicitud'] ?? null,
+                'idsancion' => $datos['idsancion'] ?? null // CAMBIO 2025-10-28: Agregado para vincular notificación con sanción
             ];
 
             if ($this->insert($notificacion)) {

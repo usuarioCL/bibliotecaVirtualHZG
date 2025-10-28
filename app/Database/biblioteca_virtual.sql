@@ -295,22 +295,38 @@ CREATE TABLE historial_usuarios (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
+-- ============================================
+-- TABLA: notificaciones
+-- DESCRIPCIÓN: Sistema de notificaciones para usuarios
+-- ÚLTIMA MODIFICACIÓN: 2025-10-28
+-- CAMBIOS RECIENTES:
+--   - Agregado tipo 'devolucion' y 'sancion' al ENUM tipo
+--   - Agregado campo idsancion para notificaciones de sanciones
+--   - Agregado índice idx_sancion para mejorar consultas
+-- ============================================
 CREATE TABLE notificaciones (
     idnotificacion INT AUTO_INCREMENT PRIMARY KEY,
     idusuario INT NOT NULL,
-    tipo ENUM('aprobacion', 'rechazo', 'vencimiento', 'renovacion') NOT NULL,
+    -- MODIFICADO 2025-10-28: Agregados tipos 'devolucion' y 'sancion'
+    tipo ENUM('aprobacion', 'rechazo', 'vencimiento', 'renovacion', 'devolucion', 'sancion') NOT NULL,
     titulo VARCHAR(100) NOT NULL,
     mensaje TEXT NOT NULL,
     leida BOOLEAN DEFAULT FALSE,
     idprestamo INT NULL,
     idsolicitud INT NULL,
+    -- AGREGADO 2025-10-28: Campo para relacionar notificaciones con sanciones
+    idsancion INT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     leida_at TIMESTAMP NULL,
     
     FOREIGN KEY (idusuario) REFERENCES usuarios(idusuario),
     FOREIGN KEY (idprestamo) REFERENCES prestamos(idprestamo),
     FOREIGN KEY (idsolicitud) REFERENCES solicitud(idsolicitud),
+    -- AGREGADO 2025-10-28: Clave foránea para sanciones
+    FOREIGN KEY (idsancion) REFERENCES sanciones(idsancion) ON DELETE CASCADE,
     
     INDEX idx_usuario_leida (idusuario, leida),
-    INDEX idx_created_at (created_at)
+    INDEX idx_created_at (created_at),
+    -- AGREGADO 2025-10-28: Índice para consultas de sanciones
+    INDEX idx_sancion (idsancion)
 );

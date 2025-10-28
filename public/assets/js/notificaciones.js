@@ -170,7 +170,8 @@ function obtenerIconoTipo(tipo) {
         'rechazo': 'fas fa-times-circle',
         'vencimiento': 'fas fa-exclamation-triangle',
         'renovacion': 'fas fa-sync-alt',
-        'devolucion': 'fas fa-undo'
+        'devolucion': 'fas fa-undo',
+        'sancion': 'fas fa-shield-alt' // CAMBIO 2025-10-28: Agregado icono para notificaciones de sanciones
     };
     return iconos[tipo] || 'fas fa-bell';
 }
@@ -184,7 +185,8 @@ function obtenerColorTipo(tipo) {
         'rechazo': '#dc3545',
         'vencimiento': '#ffc107',
         'renovacion': '#17a2b8',
-        'devolucion': '#6c757d'
+        'devolucion': '#6c757d',
+        'sancion': '#dc3545' // CAMBIO 2025-10-28: Agregado color rojo para notificaciones de sanciones
     };
     return colores[tipo] || '#007bff';
 }
