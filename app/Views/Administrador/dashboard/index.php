@@ -137,7 +137,12 @@
           <!--  Row 1 -->
           <div class="row" >
             <div id="contenedor-principal">
-              <?php include __DIR__ . '/default.php'; ?>
+              <?php 
+              // CAMBIO 2025-10-28: Usar view() con get_defined_vars() en lugar de include()
+              // Esto asegura que todas las variables del controlador se pasen correctamente al partial
+              // Anteriormente se usaba AJAX (cargarContenidoDefault) pero sobrescribía los datos del controlador
+              ?>
+              <?= view('Administrador/dashboard/default', get_defined_vars()); ?>
             </div>
           </div>
         </div>
@@ -147,19 +152,16 @@
   <script src="<?= base_url('./assets/libs/jquery/dist/jquery.min.js') ?>"></script>
   <script src="<?= base_url('./assets/js/modal-fix.js') ?>"></script>
   <script>
-  // Cargar contenido por defecto al inicializar
-  $(document).ready(function() {
-    cargarContenidoDefault();
-  });
+  // NO cargar contenido por defecto - ya viene del controlador
+  // $(document).ready(function() {
+  //   cargarContenidoDefault();
+  // });
 
-  // Función para cargar contenido por defecto
+  // Función para cargar contenido por defecto (deshabilitada)
   function cargarContenidoDefault() {
-    $('#contenedor-principal').html('<div class="text-center py-5">Cargando dashboard...</div>');
-    $.get('<?= base_url("admin/dashboard-default") ?>', function(data) {
-      $('#contenedor-principal').html(data);
-    }).fail(function() {
-      $('#contenedor-principal').html('<div class="text-danger text-center py-5">Error al cargar el dashboard.</div>');
-    });
+    // El contenido ya viene cargado del controlador
+    // No necesitamos hacer una petición AJAX adicional
+    console.log('Dashboard ya cargado desde el controlador');
   }
   
   // Manejar clics en enlaces AJAX
@@ -190,15 +192,16 @@
     });
   });
 
-  // Hacer que el enlace del Dashboard también cargue el contenido por defecto
+  // Hacer que el enlace del Dashboard recargue la página completa
   $(document).on('click', '.dashboard-link', function(e) {
-    e.preventDefault();
-    var dashboardUrl = $(this).attr('href');
-    cargarContenidoDefault();
+    // No prevenir default - dejar que navegue normalmente
+    // e.preventDefault();
+    // var dashboardUrl = $(this).attr('href');
+    // cargarContenidoDefault();
     // Actualizar el estado del sidebar para el dashboard
-    if (typeof window.initSidebarMenu === 'function') {
-      window.initSidebarMenu(dashboardUrl);
-    }
+    // if (typeof window.initSidebarMenu === 'function') {
+    //   window.initSidebarMenu(dashboardUrl);
+    // }
   });
 
   // Funcionalidad del sidebar para móviles
@@ -372,8 +375,67 @@
   <script src="<?= base_url('./assets/libs/apexcharts/dist/apexcharts.min.js') ?>"></script>
   <script src="<?= base_url('./assets/libs/simplebar/dist/simplebar.js') ?>"></script>
   <script src="<?= base_url('./assets/js/dashboard.js') ?>"></script>
+  <!-- Chart.js -->
+  <script src="<?= base_url('./assets/js/chart.js-4.5.0/package/dist/chart.umd.js') ?>"></script>
   <!-- solar icons -->
   <script src="https://cdn.jsdelivr.net/npm/iconify-icon@1.0.8/dist/iconify-icon.min.js"></script>
+  
+  <!-- Script para gráfico de préstamos -->
+  <script>
+  // CAMBIO 2025-10-28: Gráfico de préstamos del mes con Chart.js (datos reales)
+  document.addEventListener('DOMContentLoaded', function() {
+      const ctx = document.getElementById('prestamos-overview');
+      if (ctx) {
+          // Datos reales de los últimos 7 días desde el controlador
+          const labels = <?= json_encode($grafico_prestamos['labels'] ?? []) ?>;
+          const prestamosData = <?= json_encode($grafico_prestamos['prestamos'] ?? []) ?>;
+          const devolucionesData = <?= json_encode($grafico_prestamos['devoluciones'] ?? []) ?>;
+          
+          new Chart(ctx, {
+              type: 'line',
+              data: {
+                  labels: labels,
+                  datasets: [{
+                      label: 'Préstamos',
+                      data: prestamosData,
+                      borderColor: '#5D87FF',
+                      backgroundColor: 'rgba(93, 135, 255, 0.1)',
+                      tension: 0.4,
+                      fill: true
+                  }, {
+                      label: 'Devoluciones',
+                      data: devolucionesData,
+                      borderColor: '#49BEFF',
+                      backgroundColor: 'rgba(73, 190, 255, 0.1)',
+                      tension: 0.4,
+                      fill: true
+                  }]
+              },
+              options: {
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: {
+                      legend: {
+                          display: false
+                      },
+                      tooltip: {
+                          mode: 'index',
+                          intersect: false,
+                      }
+                  },
+                  scales: {
+                      y: {
+                          beginAtZero: true,
+                          ticks: {
+                              stepSize: 5
+                          }
+                      }
+                  }
+              }
+          });
+      }
+  });
+  </script>
 </body>
 
 </html>

@@ -15,7 +15,173 @@ class AdminController extends BaseController
 
     public function dashboard()
     {   
-        return view('Administrador/dashboard/index');
+        // CAMBIO 2025-10-28: Agregar estadísticas reales al dashboard
+        try {
+            // Estadísticas de recursos
+            $totalRecursos = $this->db->query("SELECT COUNT(*) as total FROM recursos")->getRow()->total;
+            $recursosDisponibles = $this->db->query("SELECT COUNT(*) as total FROM recursos WHERE estado = 'disponible'")->getRow()->total;
+            $recursosPrestados = $this->db->query("SELECT COUNT(*) as total FROM recursos WHERE estado = 'prestado'")->getRow()->total;
+            
+            // Estadísticas de préstamos
+            $prestamosActivos = $this->db->query("SELECT COUNT(*) as total FROM prestamos WHERE fechahoraretorno IS NULL")->getRow()->total;
+            $solicitudesPendientes = $this->db->query("SELECT COUNT(*) as total FROM solicitud WHERE validado = 0")->getRow()->total;
+            
+            // Estadísticas de usuarios
+            $totalUsuarios = $this->db->query("SELECT COUNT(*) as total FROM usuarios")->getRow()->total;
+            $totalEstudiantes = $this->db->query("SELECT COUNT(*) as total FROM usuarios WHERE nivelacceso = 'estudiante'")->getRow()->total;
+            $totalDocentes = $this->db->query("SELECT COUNT(*) as total FROM usuarios WHERE nivelacceso = 'docente'")->getRow()->total;
+            
+            // Estadísticas de sanciones
+            $sancionesActivas = $this->db->query("SELECT COUNT(*) as total FROM sanciones WHERE estado_sancion = 'activa'")->getRow()->total;
+            
+            // Préstamos recientes (últimos 5)
+            $prestamosRecientes = $this->db->query("
+                SELECT p.fechaprestamo, p.fechadevolucion, 
+                       CONCAT(per.nombres, ' ', per.apellidos) as estudiante,
+                       r.titulo as recurso
+                FROM prestamos p
+                INNER JOIN matriculas m ON p.idmatricula = m.idmatricula
+                INNER JOIN personas per ON m.idpersona = per.idpersona
+                INNER JOIN recursos r ON p.idrecurso = r.idrecurso
+                ORDER BY p.fechaprestamo DESC
+                LIMIT 5
+            ")->getResultArray();
+            
+            // Recursos más prestados (top 5)
+            $recursosMasPrestados = $this->db->query("
+                SELECT r.titulo, r.estado, r.stock,
+                       COUNT(p.idprestamo) as total_prestamos,
+                       GROUP_CONCAT(DISTINCT CONCAT(a.nomautor, ' ', a.apeautor) SEPARATOR ', ') as autor,
+                       c.categoria
+                FROM recursos r
+                LEFT JOIN prestamos p ON r.idrecurso = p.idrecurso
+                LEFT JOIN detautores da ON r.idrecurso = da.idrecurso
+                LEFT JOIN autores a ON da.idautor = a.idautor
+                LEFT JOIN subcategorias sc ON r.idsubcategoria = sc.idsubcategoria
+                LEFT JOIN categorias c ON sc.idcategoria = c.idcategoria
+                GROUP BY r.idrecurso
+                ORDER BY total_prestamos DESC
+                LIMIT 5
+            ")->getResultArray();
+            
+            // Recursos recientes para la tabla (últimos 5)
+            $recursosRecientes = $this->db->query("
+                SELECT r.titulo, r.estado, r.stock,
+                       GROUP_CONCAT(DISTINCT CONCAT(a.nomautor, ' ', a.apeautor) SEPARATOR ', ') as autor,
+                       c.categoria
+                FROM recursos r
+                LEFT JOIN detautores da ON r.idrecurso = da.idrecurso
+                LEFT JOIN autores a ON da.idautor = a.idautor
+                LEFT JOIN subcategorias sc ON r.idsubcategoria = sc.idsubcategoria
+                LEFT JOIN categorias c ON sc.idcategoria = c.idcategoria
+                GROUP BY r.idrecurso
+                ORDER BY r.idrecurso DESC
+                LIMIT 5
+            ")->getResultArray();
+            
+            // Categorías populares (top 4)
+            $categoriasPopulares = $this->db->query("
+                SELECT c.categoria, COUNT(r.idrecurso) as total_recursos,
+                       (COUNT(r.idrecurso) * 100.0 / (SELECT COUNT(*) FROM recursos)) as porcentaje
+                FROM categorias c
+                LEFT JOIN subcategorias sc ON c.idcategoria = sc.idcategoria
+                LEFT JOIN recursos r ON sc.idsubcategoria = r.idsubcategoria
+                GROUP BY c.idcategoria
+                HAVING total_recursos > 0
+                ORDER BY total_recursos DESC
+                LIMIT 4
+            ")->getResultArray();
+            
+            // Préstamos y devoluciones de los últimos 7 días
+            $prestamosPorDia = $this->db->query("
+                SELECT 
+                    DATE(fechaprestamo) as fecha,
+                    COUNT(*) as total_prestamos
+                FROM prestamos
+                WHERE fechaprestamo >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+                GROUP BY DATE(fechaprestamo)
+                ORDER BY fecha ASC
+            ")->getResultArray();
+            
+            $devolucionesPorDia = $this->db->query("
+                SELECT 
+                    DATE(fechahoraretorno) as fecha,
+                    COUNT(*) as total_devoluciones
+                FROM prestamos
+                WHERE fechahoraretorno IS NOT NULL 
+                AND fechahoraretorno >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+                GROUP BY DATE(fechahoraretorno)
+                ORDER BY fecha ASC
+            ")->getResultArray();
+            
+            // Preparar datos para el gráfico (últimos 7 días)
+            $labels = [];
+            $prestamosData = [];
+            $devolucionesData = [];
+            $diasSemana = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+            
+            for ($i = 6; $i >= 0; $i--) {
+                $fecha = date('Y-m-d', strtotime("-$i days"));
+                $diaSemana = $diasSemana[date('w', strtotime($fecha))];
+                $labels[] = $diaSemana;
+                
+                // Buscar préstamos de ese día
+                $prestamos = 0;
+                foreach ($prestamosPorDia as $p) {
+                    if ($p['fecha'] == $fecha) {
+                        $prestamos = $p['total_prestamos'];
+                        break;
+                    }
+                }
+                $prestamosData[] = $prestamos;
+                
+                // Buscar devoluciones de ese día
+                $devoluciones = 0;
+                foreach ($devolucionesPorDia as $d) {
+                    if ($d['fecha'] == $fecha) {
+                        $devoluciones = $d['total_devoluciones'];
+                        break;
+                    }
+                }
+                $devolucionesData[] = $devoluciones;
+            }
+            
+            $data = [
+                'estadisticas' => [
+                    'recursos' => [
+                        'total' => $totalRecursos,
+                        'disponibles' => $recursosDisponibles,
+                        'prestados' => $recursosPrestados
+                    ],
+                    'prestamos' => [
+                        'activos' => $prestamosActivos,
+                        'solicitudes_pendientes' => $solicitudesPendientes
+                    ],
+                    'usuarios' => [
+                        'total' => $totalUsuarios,
+                        'estudiantes' => $totalEstudiantes,
+                        'docentes' => $totalDocentes
+                    ],
+                    'sanciones' => [
+                        'activas' => $sancionesActivas
+                    ]
+                ],
+                'prestamos_recientes' => $prestamosRecientes,
+                'recursos_populares' => $recursosMasPrestados,
+                'recursos_recientes' => $recursosRecientes,
+                'categorias_populares' => $categoriasPopulares,
+                'grafico_prestamos' => [
+                    'labels' => $labels,
+                    'prestamos' => $prestamosData,
+                    'devoluciones' => $devolucionesData
+                ]
+            ];
+            
+            return view('Administrador/dashboard/index', $data);
+        } catch (\Exception $e) {
+            log_message('error', 'Error al cargar dashboard: ' . $e->getMessage());
+            return view('Administrador/dashboard/index', ['error' => 'Error al cargar estadísticas']);
+        }
     }
 
     public function dashboardDefault()
