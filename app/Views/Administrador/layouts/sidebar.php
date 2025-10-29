@@ -245,55 +245,6 @@
       </ul>
     </li>
 
-    <!-- Reportes y Estadísticas -->
-    <li class="sidebar-item" role="none">
-      <a class="sidebar-link has-arrow" 
-         href="javascript:void(0)" 
-         role="button"
-         aria-expanded="false"
-         aria-haspopup="true"
-         aria-label="Expandir menú de reportes"
-         title="Ver reportes y estadísticas"
-         tabindex="0">
-        <div class="d-flex align-items-center gap-3">
-          <i class="ti ti-chart-bar" aria-hidden="true"></i>
-          <span class="hide-menu">Reportes y Estadísticas</span>
-        </div>
-      </a>
-      <ul aria-expanded="false" class="collapse first-level" role="menu" aria-hidden="true">
-        <li class="sidebar-item">
-          <a class="sidebar-link ajax-link" 
-             href="<?= base_url('Administrador/vistas/PrestamosAlumnos'); ?>"
-             title="Reporte de préstamos por estudiante">
-            <div class="d-flex align-items-center gap-3">
-              <i class="ti ti-chart-line fs-5"></i>
-              <span class="hide-menu">Préstamos por Usuario</span>
-            </div>
-          </a>
-        </li>
-        <li class="sidebar-item">
-          <a class="sidebar-link ajax-link" 
-             href="<?= base_url('Administrador/vistas/RecursosPopulares'); ?>"
-             title="Recursos más solicitados">
-            <div class="d-flex align-items-center gap-3">
-              <i class="ti ti-trending-up fs-5"></i>
-              <span class="hide-menu">Recursos Populares</span>
-            </div>
-          </a>
-        </li>
-        <li class="sidebar-item">
-          <a class="sidebar-link ajax-link" 
-             href="<?= base_url('reportes/inventario'); ?>"
-             title="Estado del inventario">
-            <div class="d-flex align-items-center gap-3">
-              <i class="ti ti-clipboard-list fs-5"></i>
-              <span class="hide-menu">Inventario</span>
-            </div>
-          </a>
-        </li>
-      </ul>
-    </li>
-
     <!-- Administración de Datos -->
     <li class="sidebar-item" role="none">
       <a class="sidebar-link has-arrow" 

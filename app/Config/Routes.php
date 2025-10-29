@@ -91,11 +91,6 @@ $routes->get('/admin/register', 'AdminController::register');
 //Vistas de administrador
 $routes->get('Administrador/vistas/UsuariosRoles', 'AdminController::VistaUsuariosRoles');
 
-// Rutas para Reportes y Estadísticas
-$routes->get('Administrador/vistas/PrestamosAlumnos', 'ReporteController::prestamosUsuarios');
-$routes->get('Administrador/vistas/RecursosPopulares', 'ReporteController::recursosPopulares');
-$routes->get('reportes/inventario', 'ReporteController::inventario');
-
 // Importación de datos
 $routes->get('admin/importar-datos', 'AdminController::importarDatos');
 $routes->get('admin/descargar-plantilla/(:segment)', 'AdminController::descargarPlantilla/$1');
