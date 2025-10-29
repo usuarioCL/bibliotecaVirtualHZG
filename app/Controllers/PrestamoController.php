@@ -105,6 +105,110 @@ class PrestamoController extends Controller
     }
 
     /**
+     * Verificar si un usuario tiene sanciones activas
+     */
+    public function verificarSanciones()
+    {
+        // Verificar si es una solicitud AJAX
+        if (!$this->request->isAJAX()) {
+            return $this->response->setStatusCode(400)->setJSON([
+                'success' => false,
+                'message' => 'Solicitud inválida'
+            ]);
+        }
+
+        // Verificar si el usuario está autenticado
+        if (!session()->get('logged_in')) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Debe iniciar sesión'
+            ]);
+        }
+
+        try {
+            $db = \Config\Database::connect();
+            
+            // Obtener el ID del usuario desde la sesión
+            $idUsuario = session()->get('id');
+            $nombreUsuario = session()->get('nomuser');
+            
+            // Si no hay ID en la sesión, buscar por nombre de usuario
+            if (!$idUsuario && $nombreUsuario) {
+                $usuario = $db->table('usuarios')
+                    ->where('nomuser', $nombreUsuario)
+                    ->get()->getRow();
+                    
+                if ($usuario) {
+                    $idUsuario = $usuario->idusuario;
+                }
+            }
+            
+            if (!$idUsuario) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Usuario no encontrado'
+                ]);
+            }
+            
+            // Obtener el idpersona del usuario
+            $usuario = $db->table('usuarios')
+                ->select('idpersona')
+                ->where('idusuario', $idUsuario)
+                ->get()->getRow();
+            
+            if (!$usuario || !$usuario->idpersona) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Datos de usuario incompletos'
+                ]);
+            }
+            
+            // Verificar si tiene sanciones activas
+            $sanciones = $db->table('sanciones s')
+                ->select('s.*, ts.tiposancion')
+                ->join('tiposancion ts', 'ts.idtiposancion = s.idtiposancion')
+                ->where('s.idpersona', $usuario->idpersona)
+                ->where('s.estado_sancion', 'activa')
+                ->get()
+                ->getResultArray();
+            
+            if (!empty($sanciones)) {
+                // El usuario tiene sanciones activas
+                $detallesSanciones = [];
+                foreach ($sanciones as $sancion) {
+                    $detallesSanciones[] = [
+                        'tipo' => $sancion['tiposancion'],
+                        'detalle' => $sancion['detallesancion'],
+                        'fecha_inicio' => $sancion['fecha_inicio'],
+                        'fecha_vencimiento' => $sancion['fecha_vencimiento']
+                    ];
+                }
+                
+                return $this->response->setJSON([
+                    'success' => true,
+                    'sancionado' => true,
+                    'sanciones' => $detallesSanciones,
+                    'message' => 'Usuario con sanciones activas'
+                ]);
+            }
+            
+            // El usuario no tiene sanciones activas
+            return $this->response->setJSON([
+                'success' => true,
+                'sancionado' => false,
+                'message' => 'Usuario sin sanciones'
+            ]);
+            
+        } catch (\Exception $e) {
+            log_message('error', 'Error en PrestamoController::verificarSanciones(): ' . $e->getMessage());
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Error al verificar sanciones'
+            ]);
+        }
+    }
+
+    /**
      * Muestra el formulario de solicitud de préstamo para un recurso específico
      * Se usa para mostrar en la interfaz del usuario final
      */

@@ -233,6 +233,7 @@ $routes->get('/historial-prestamos', 'PrestamoController::historial');        //
 // Formulario de préstamos (para usuarios)
 $routes->get('/prestamo/formulario/(:num)', 'PrestamoController::formulario/$1');  // Formulario de solicitud
 $routes->post('/prestamo/solicitar', 'PrestamoController::solicitar');            // Procesar solicitud
+$routes->post('/prestamo/verificar-sanciones', 'PrestamoController::verificarSanciones'); // Verificar sanciones del usuario
 
 // Gestión de solicitudes de préstamo (Admin/Docente)
 $routes->post('/prestamos/aprobar', 'PrestamoController::aprobar');               // Aprobar solicitud individual

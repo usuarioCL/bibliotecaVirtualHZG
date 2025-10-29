@@ -1234,26 +1234,75 @@ document.addEventListener('keydown', function(e) {
  * Solicitar préstamo de un recurso físico
  */
 function solicitarPrestamo(idRecurso) {
-    Swal.fire({
-        title: '¿Solicitar Préstamo?',
-        text: 'Se enviará una solicitud de préstamo para este recurso',
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonColor: '#28a745',
-        cancelButtonColor: '#6c757d',
-        confirmButtonText: 'Sí, solicitar',
-        cancelButtonText: 'Cancelar'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            // Aquí iría la llamada AJAX para solicitar el préstamo
-            // Por ahora mostramos un mensaje de éxito
+    // Primero verificar si el usuario tiene sanciones activas
+    fetch('<?= base_url('prestamo/verificar-sanciones') ?>', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success && data.sancionado) {
+            // El usuario tiene sanciones activas, mostrar alerta
+            let sancionesHtml = '<div class="alert alert-danger"><strong>Sanciones activas:</strong><ul class="mb-0 mt-2">';
+            data.sanciones.forEach(sancion => {
+                sancionesHtml += `<li><strong>${sancion.tipo}:</strong> ${sancion.detalle}`;
+                if (sancion.fecha_vencimiento) {
+                    const fechaVenc = new Date(sancion.fecha_vencimiento);
+                    sancionesHtml += `<br><small>Vence: ${fechaVenc.toLocaleDateString('es-ES')}</small>`;
+                }
+                sancionesHtml += '</li>';
+            });
+            sancionesHtml += '</ul></div>';
+            
             Swal.fire({
-                title: '¡Solicitud Enviada!',
-                text: 'Tu solicitud de préstamo ha sido enviada. Te notificaremos cuando sea procesada.',
-                icon: 'success',
-                confirmButtonColor: '#28a745'
+                title: 'No puede solicitar préstamos',
+                html: sancionesHtml + '<p class="mt-3">Usted tiene sanciones activas y no puede solicitar préstamos hasta que se resuelvan.</p>',
+                icon: 'warning',
+                confirmButtonText: 'Entendido',
+                confirmButtonColor: '#dc3545'
+            });
+        } else if (data.success && !data.sancionado) {
+            // No tiene sanciones, continuar con el proceso normal
+            Swal.fire({
+                title: '¿Solicitar Préstamo?',
+                text: 'Se enviará una solicitud de préstamo para este recurso',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#28a745',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Sí, solicitar',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Aquí iría la llamada AJAX para solicitar el préstamo
+                    // Por ahora mostramos un mensaje de éxito
+                    Swal.fire({
+                        title: '¡Solicitud Enviada!',
+                        text: 'Tu solicitud de préstamo ha sido enviada. Te notificaremos cuando sea procesada.',
+                        icon: 'success',
+                        confirmButtonColor: '#28a745'
+                    });
+                }
+            });
+        } else {
+            // Error al verificar sanciones
+            Swal.fire({
+                title: 'Error',
+                text: data.message || 'No se pudo verificar su estado de sanciones',
+                icon: 'error'
             });
         }
+    })
+    .catch(error => {
+        console.error('Error al verificar sanciones:', error);
+        Swal.fire({
+            title: 'Error',
+            text: 'Error al verificar sanciones. Por favor intente nuevamente.',
+            icon: 'error'
+        });
     });
 }
 </script>

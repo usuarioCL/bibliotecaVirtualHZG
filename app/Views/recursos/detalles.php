@@ -302,30 +302,78 @@ function solicitarPrestamo(idRecurso) {
         }
     }
     
-    // Esperar a que termine la animación de cierre del modal anterior
-    setTimeout(() => {
-        // Cargar el formulario de solicitud de préstamo
-        fetch(`<?= base_url('prestamo/formulario/') ?>${idRecurso}`)
-            .then(response => response.text())
-            .then(html => {
-                // Mostrar el formulario en un modal
-                Swal.fire({
-                    title: 'Solicitud de Préstamo',
-                    html: html,
-                    width: '600px',
-                    showConfirmButton: false,
-                    showCloseButton: true
-                });
-            })
-            .catch(error => {
-                console.error('Error al cargar el formulario:', error);
-                Swal.fire({
-                    title: 'Error',
-                    text: 'No se pudo cargar el formulario de solicitud.',
-                    icon: 'error'
-                });
+    // Primero verificar si el usuario tiene sanciones activas
+    fetch('<?= base_url('prestamo/verificar-sanciones') ?>', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success && data.sancionado) {
+            // El usuario tiene sanciones activas, mostrar alerta
+            let sancionesHtml = '<div class="alert alert-danger"><strong>Sanciones activas:</strong><ul class="mb-0 mt-2">';
+            data.sanciones.forEach(sancion => {
+                sancionesHtml += `<li><strong>${sancion.tipo}:</strong> ${sancion.detalle}`;
+                if (sancion.fecha_vencimiento) {
+                    const fechaVenc = new Date(sancion.fecha_vencimiento);
+                    sancionesHtml += `<br><small>Vence: ${fechaVenc.toLocaleDateString('es-ES')}</small>`;
+                }
+                sancionesHtml += '</li>';
             });
-    }, 300); // Esperar 300ms para que el modal termine de cerrarse
+            sancionesHtml += '</ul></div>';
+            
+            Swal.fire({
+                title: 'No puede solicitar préstamos',
+                html: sancionesHtml + '<p class="mt-3">Usted tiene sanciones activas y no puede solicitar préstamos hasta que se resuelvan.</p>',
+                icon: 'warning',
+                confirmButtonText: 'Entendido',
+                confirmButtonColor: '#dc3545'
+            });
+        } else if (data.success && !data.sancionado) {
+            // No tiene sanciones, continuar con el proceso normal
+            setTimeout(() => {
+                // Cargar el formulario de solicitud de préstamo
+                fetch(`<?= base_url('prestamo/formulario/') ?>${idRecurso}`)
+                    .then(response => response.text())
+                    .then(html => {
+                        // Mostrar el formulario en un modal
+                        Swal.fire({
+                            title: 'Solicitud de Préstamo',
+                            html: html,
+                            width: '600px',
+                            showConfirmButton: false,
+                            showCloseButton: true
+                        });
+                    })
+                    .catch(error => {
+                        console.error('Error al cargar el formulario:', error);
+                        Swal.fire({
+                            title: 'Error',
+                            text: 'No se pudo cargar el formulario de solicitud.',
+                            icon: 'error'
+                        });
+                    });
+            }, 300);
+        } else {
+            // Error al verificar sanciones
+            Swal.fire({
+                title: 'Error',
+                text: data.message || 'No se pudo verificar su estado de sanciones',
+                icon: 'error'
+            });
+        }
+    })
+    .catch(error => {
+        console.error('Error al verificar sanciones:', error);
+        Swal.fire({
+            title: 'Error',
+            text: 'Error al verificar sanciones. Por favor intente nuevamente.',
+            icon: 'error'
+        });
+    });
 }
 
 // Función para alternar favorito (agregar/quitar)

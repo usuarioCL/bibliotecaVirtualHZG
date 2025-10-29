@@ -381,11 +381,59 @@ function verDetalles(idRecurso) {
 function solicitarPrestamo(idRecurso) {
     // Verificar si el usuario está logueado
     <?php if (session()->get('logged_in')): ?>
-        if (confirm('¿Deseas solicitar el préstamo de este recurso?')) {
-            // Aquí iría la lógica AJAX para solicitar préstamo
-            console.log('Solicitar préstamo del recurso:', idRecurso);
-            alert('Solicitud de préstamo enviada exitosamente');
-        }
+        // Primero verificar si el usuario tiene sanciones activas
+        fetch('<?= base_url('prestamo/verificar-sanciones') ?>', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.sancionado) {
+                // El usuario tiene sanciones activas, mostrar alerta
+                let sancionesHtml = '<div class="alert alert-danger"><strong>Sanciones activas:</strong><ul class="mb-0 mt-2">';
+                data.sanciones.forEach(sancion => {
+                    sancionesHtml += `<li><strong>${sancion.tipo}:</strong> ${sancion.detalle}`;
+                    if (sancion.fecha_vencimiento) {
+                        const fechaVenc = new Date(sancion.fecha_vencimiento);
+                        sancionesHtml += `<br><small>Vence: ${fechaVenc.toLocaleDateString('es-ES')}</small>`;
+                    }
+                    sancionesHtml += '</li>';
+                });
+                sancionesHtml += '</ul></div>';
+                
+                Swal.fire({
+                    title: 'No puede solicitar préstamos',
+                    html: sancionesHtml + '<p class="mt-3">Usted tiene sanciones activas y no puede solicitar préstamos hasta que se resuelvan.</p>',
+                    icon: 'warning',
+                    confirmButtonText: 'Entendido',
+                    confirmButtonColor: '#dc3545'
+                });
+            } else if (data.success && !data.sancionado) {
+                // No tiene sanciones, continuar con el proceso normal
+                if (confirm('¿Deseas solicitar el préstamo de este recurso?')) {
+                    console.log('Solicitar préstamo del recurso:', idRecurso);
+                    alert('Solicitud de préstamo enviada exitosamente');
+                }
+            } else {
+                // Error al verificar sanciones
+                Swal.fire({
+                    title: 'Error',
+                    text: data.message || 'No se pudo verificar su estado de sanciones',
+                    icon: 'error'
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error al verificar sanciones:', error);
+            Swal.fire({
+                title: 'Error',
+                text: 'Error al verificar sanciones. Por favor intente nuevamente.',
+                icon: 'error'
+            });
+        });
     <?php else: ?>
         alert('Debes iniciar sesión para solicitar un préstamo');
         window.location.href = '<?= site_url('login') ?>';
