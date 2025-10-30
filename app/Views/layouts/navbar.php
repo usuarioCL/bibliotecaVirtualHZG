@@ -60,7 +60,7 @@
                         <div class="dropdown-header d-flex justify-content-between align-items-center border-bottom pb-2">
                             <h6 class="mb-0"><i class="fas fa-bell me-2"></i>Notificaciones</h6>
                             <div>
-                                <button class="btn btn-sm btn-link text-decoration-none p-0" onclick="eliminarTodas()" title="Eliminar todas las notificaciones">
+                                <button class="btn btn-sm btn-link text-decoration-none p-0" onclick="eliminarTodas()" title="Marcar todas como leídas">
                                     <i class="fas fa-check-double text-success"></i>
                                 </button>
                             </div>

@@ -130,7 +130,7 @@ function mostrarNotificaciones(notificaciones) {
                     <div class="ms-2">
                         <button class="btn btn-sm btn-outline-success" 
                                 onclick="event.stopPropagation(); eliminarNotificacion(${notif.idnotificacion})"
-                                title="Eliminar notificación"
+                                title="Marcar como leída"
                                 style="padding: 0.25rem 0.5rem;">
                             <i class="fas fa-check"></i>
                         </button>
@@ -237,7 +237,7 @@ function eliminarNotificacion(idNotificacion) {
             
             Toast.fire({
                 icon: 'success',
-                title: 'Notificación eliminada'
+                title: 'Notificación leída'
             });
         } else {
             Swal.fire({
@@ -268,20 +268,20 @@ function eliminarTodas() {
         Swal.fire({
             icon: 'info',
             title: 'Sin notificaciones',
-            text: 'No hay notificaciones para eliminar',
+            text: 'No hay notificaciones pendientes',
             confirmButtonColor: '#17a2b8'
         });
         return;
     }
     
     Swal.fire({
-        title: '¿Eliminar todas las notificaciones?',
-        text: "Esta acción no se puede deshacer",
-        icon: 'warning',
+        title: '¿Marcar todas como leídas?',
+        text: "Todas las notificaciones se eliminarán del buzón",
+        icon: 'question',
         showCancelButton: true,
         confirmButtonColor: '#28a745',
         cancelButtonColor: '#6c757d',
-        confirmButtonText: 'Sí, eliminar todas',
+        confirmButtonText: 'Sí, marcar todas',
         cancelButtonText: 'Cancelar'
     }).then((result) => {
         if (result.isConfirmed) {
@@ -310,7 +310,7 @@ function eliminarTodas() {
                     Swal.fire({
                         icon: 'success',
                         title: '¡Listo!',
-                        text: 'Todas las notificaciones han sido eliminadas',
+                        text: 'Todas las notificaciones han sido leídas',
                         timer: 2000,
                         showConfirmButton: false
                     });
@@ -318,7 +318,7 @@ function eliminarTodas() {
                     Swal.fire({
                         icon: 'error',
                         title: 'Error',
-                        text: 'No se pudieron eliminar las notificaciones'
+                        text: 'No se pudieron marcar las notificaciones'
                     });
                 }
             })
