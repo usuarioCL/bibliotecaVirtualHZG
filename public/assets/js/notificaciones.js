@@ -1,13 +1,8 @@
-/**
- * Sistema de Notificaciones
- * Maneja la campanita de notificaciones en el navbar
- */
+// Sistema de Notificaciones - Maneja la campanita del navbar
+// Actualización automática cada 30 segundos
 
 let intervaloNotificaciones = null;
 
-/**
- * Inicializar el sistema de notificaciones
- */
 function inicializarNotificaciones() {
     // Cargar notificaciones al iniciar
     cargarNotificaciones();
@@ -25,9 +20,7 @@ function inicializarNotificaciones() {
     console.log('✅ Sistema de notificaciones inicializado');
 }
 
-/**
- * Actualizar solo el contador de notificaciones
- */
+// Actualiza solo el número del badge sin recargar toda la lista
 function actualizarContador() {
     fetch(base_url + '/notificaciones/contar', {
         method: 'GET',
@@ -46,9 +39,7 @@ function actualizarContador() {
     });
 }
 
-/**
- * Cargar notificaciones completas
- */
+// Carga la lista completa de notificaciones desde el servidor
 function cargarNotificaciones() {
     const listaNotificaciones = document.getElementById('lista-notificaciones');
     
@@ -91,9 +82,7 @@ function cargarNotificaciones() {
     });
 }
 
-/**
- * Mostrar lista de notificaciones
- */
+// Renderiza el HTML de las notificaciones en el dropdown
 function mostrarNotificaciones(notificaciones) {
     const listaNotificaciones = document.getElementById('lista-notificaciones');
     
@@ -152,23 +141,9 @@ function mostrarNotificaciones(notificaciones) {
     });
     
     listaNotificaciones.innerHTML = html;
-    
-    // Agregar event listeners a cada notificación
-    document.querySelectorAll('.notificacion-item').forEach(item => {
-        item.addEventListener('click', function() {
-            const idNotificacion = this.dataset.id;
-            const leida = this.dataset.leida;
-            
-            if (leida == 0) {
-                marcarComoLeida(idNotificacion);
-            }
-        });
-    });
 }
 
-/**
- * Obtener icono según tipo de notificación
- */
+// Retorna el ícono de FontAwesome según el tipo de notificación
 function obtenerIconoTipo(tipo) {
     const iconos = {
         'aprobacion': 'fas fa-check-circle',
@@ -181,9 +156,7 @@ function obtenerIconoTipo(tipo) {
     return iconos[tipo] || 'fas fa-bell';
 }
 
-/**
- * Obtener color según tipo de notificación
- */
+// Retorna el color hexadecimal según el tipo de notificación
 function obtenerColorTipo(tipo) {
     const colores = {
         'aprobacion': '#28a745',
@@ -196,9 +169,7 @@ function obtenerColorTipo(tipo) {
     return colores[tipo] || '#007bff';
 }
 
-/**
- * Formatear fecha de forma relativa
- */
+// Convierte timestamp a formato relativo ("Hace 5 minutos")
 function formatearFechaRelativa(fecha) {
     const ahora = new Date();
     const fechaNotif = new Date(fecha);
@@ -224,9 +195,7 @@ function formatearFechaRelativa(fecha) {
     }
 }
 
-/**
- * Actualizar badge de notificaciones
- */
+// Actualiza el badge rojo con el número de notificaciones no leídas
 function actualizarBadge(contador) {
     const badge = document.getElementById('badge-notificaciones');
     
@@ -240,78 +209,8 @@ function actualizarBadge(contador) {
     }
 }
 
-/**
- * Marcar una notificación como leída
- */
-function marcarComoLeida(idNotificacion) {
-    fetch(base_url + '/notificaciones/marcar-leida', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'X-Requested-With': 'XMLHttpRequest'
-        },
-        body: `idnotificacion=${idNotificacion}`
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            actualizarBadge(data.contador);
-            // Actualizar visualmente la notificación
-            const notifElement = document.querySelector(`[data-id="${idNotificacion}"]`);
-            if (notifElement) {
-                notifElement.classList.remove('bg-light');
-                notifElement.dataset.leida = '1';
-                const badgeNueva = notifElement.querySelector('.badge.bg-primary');
-                if (badgeNueva) {
-                    badgeNueva.remove();
-                }
-            }
-        }
-    })
-    .catch(error => {
-        console.error('Error al marcar como leída:', error);
-    });
-}
+// CAMBIO 2025-10-30: Elimina una notificación individual (sin confirmación)
 
-/**
- * Marcar todas las notificaciones como leídas
- */
-function marcarTodasComoLeidas() {
-    fetch(base_url + '/notificaciones/marcar-todas-leidas', {
-        method: 'POST',
-        headers: {
-            'X-Requested-With': 'XMLHttpRequest'
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            actualizarBadge(0);
-            cargarNotificaciones(); // Recargar lista
-            
-            // Mostrar mensaje de éxito
-            const Toast = Swal.mixin({
-                toast: true,
-                position: 'top-end',
-                showConfirmButton: false,
-                timer: 2000,
-                timerProgressBar: true
-            });
-            
-            Toast.fire({
-                icon: 'success',
-                title: 'Todas las notificaciones marcadas como leídas'
-            });
-        }
-    })
-    .catch(error => {
-        console.error('Error al marcar todas como leídas:', error);
-    });
-}
-
-/**
- * Eliminar una notificación
- */
 function eliminarNotificacion(idNotificacion) {
     fetch(base_url + '/notificaciones/eliminar', {
         method: 'POST',
@@ -358,9 +257,8 @@ function eliminarNotificacion(idNotificacion) {
     });
 }
 
-/**
- * Eliminar todas las notificaciones
- */
+// CAMBIO 2025-10-30: Elimina TODAS las notificaciones del usuario
+// Valida que haya notificaciones antes de mostrar confirmación
 function eliminarTodas() {
     // Verificar si hay notificaciones en la lista
     const listaNotificaciones = document.getElementById('lista-notificaciones');
@@ -436,9 +334,7 @@ function eliminarTodas() {
     });
 }
 
-/**
- * Detener el intervalo de actualización (llamar al salir de la página)
- */
+// Detiene el intervalo de actualización cuando se cierra la página
 function detenerNotificaciones() {
     if (intervaloNotificaciones) {
         clearInterval(intervaloNotificaciones);

@@ -188,9 +188,8 @@ class NotificacionController extends BaseController
         }
     }
 
-    /**
-     * Eliminar una notificación (AJAX)
-     */
+    // CAMBIO 2025-10-30: Elimina una notificación individual
+    // Endpoint: POST /notificaciones/eliminar
     public function eliminarNotificacion()
     {
         if (!$this->request->isAJAX()) {
@@ -243,9 +242,8 @@ class NotificacionController extends BaseController
         }
     }
 
-    /**
-     * Eliminar todas las notificaciones leídas (AJAX)
-     */
+    // CAMBIO 2025-10-30: Elimina solo las notificaciones marcadas como leídas
+    // Endpoint: POST /notificaciones/eliminar-todas-leidas
     public function eliminarTodasLeidas()
     {
         if (!$this->request->isAJAX()) {
@@ -286,9 +284,8 @@ class NotificacionController extends BaseController
         }
     }
 
-    /**
-     * Eliminar TODAS las notificaciones del usuario (AJAX)
-     */
+    // CAMBIO 2025-10-30: Elimina TODAS las notificaciones del usuario
+    // Endpoint: POST /notificaciones/eliminar-todas
     public function eliminarTodas()
     {
         if (!$this->request->isAJAX()) {
@@ -329,9 +326,8 @@ class NotificacionController extends BaseController
         }
     }
 
-    /**
-     * Vista de historial completo de notificaciones
-     */
+    // CAMBIO 2025-10-30: Vista del historial completo de notificaciones
+    // Muestra hasta 50 notificaciones con opciones de eliminación
     public function historial()
     {
         if (!session()->get('logged_in')) {

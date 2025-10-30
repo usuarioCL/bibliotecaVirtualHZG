@@ -132,27 +132,9 @@
 </div>
 
 <script>
-// Funciones para el historial
-function marcarComoLeidaHistorial(idNotificacion) {
-    fetch('<?= base_url('notificaciones/marcar-leida') ?>', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'X-Requested-With': 'XMLHttpRequest'
-        },
-        body: `idnotificacion=${idNotificacion}`
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            location.reload();
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-    });
-}
+// CAMBIO 2025-10-30: Scripts para gestión de notificaciones en el historial
 
+// Elimina una notificación individual y recarga la página
 function eliminarNotificacionHistorial(idNotificacion) {
     fetch('<?= base_url('notificaciones/eliminar') ?>', {
         method: 'POST',
@@ -197,10 +179,12 @@ function eliminarNotificacionHistorial(idNotificacion) {
     });
 }
 
+// Elimina TODAS las notificaciones del usuario
+// Valida que existan notificaciones antes de mostrar confirmación
 function eliminarTodas() {
-    // Verificar si hay notificaciones
     const totalNotificaciones = <?= count($notificaciones) ?>;
     
+    // Si no hay notificaciones, mostrar mensaje informativo
     if (totalNotificaciones === 0) {
         Swal.fire({
             icon: 'info',

@@ -160,9 +160,8 @@ class NotificacionModel extends Model
         }
     }
 
-    /**
-     * Eliminar una notificación específica
-     */
+    // CAMBIO 2025-10-30: Elimina una notificación específica
+    // Valida que la notificación pertenezca al usuario antes de eliminar
     public function eliminarNotificacion($idnotificacion, $idusuario)
     {
         try {
@@ -181,9 +180,7 @@ class NotificacionModel extends Model
         }
     }
 
-    /**
-     * Eliminar todas las notificaciones leídas de un usuario
-     */
+    // CAMBIO 2025-10-30: Elimina solo las notificaciones marcadas como leídas
     public function eliminarTodasLeidas($idusuario)
     {
         try {
@@ -196,9 +193,7 @@ class NotificacionModel extends Model
         }
     }
 
-    /**
-     * Eliminar TODAS las notificaciones de un usuario
-     */
+    // CAMBIO 2025-10-30: Elimina TODAS las notificaciones sin filtro
     public function eliminarTodas($idusuario)
     {
         try {
