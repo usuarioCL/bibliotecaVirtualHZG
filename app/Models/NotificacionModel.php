@@ -161,6 +161,56 @@ class NotificacionModel extends Model
     }
 
     /**
+     * Eliminar una notificación específica
+     */
+    public function eliminarNotificacion($idnotificacion, $idusuario)
+    {
+        try {
+            $notificacion = $this->where('idnotificacion', $idnotificacion)
+                                 ->where('idusuario', $idusuario)
+                                 ->first();
+
+            if (!$notificacion) {
+                return false;
+            }
+
+            return $this->delete($idnotificacion);
+        } catch (\Exception $e) {
+            log_message('error', 'Error al eliminar notificación: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Eliminar todas las notificaciones leídas de un usuario
+     */
+    public function eliminarTodasLeidas($idusuario)
+    {
+        try {
+            return $this->where('idusuario', $idusuario)
+                        ->where('leida', true)
+                        ->delete();
+        } catch (\Exception $e) {
+            log_message('error', 'Error al eliminar notificaciones leídas: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Eliminar TODAS las notificaciones de un usuario
+     */
+    public function eliminarTodas($idusuario)
+    {
+        try {
+            return $this->where('idusuario', $idusuario)
+                        ->delete();
+        } catch (\Exception $e) {
+            log_message('error', 'Error al eliminar todas las notificaciones: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
      * Eliminar notificaciones antiguas (más de X días)
      */
     public function eliminarAntiguas($dias = 30)

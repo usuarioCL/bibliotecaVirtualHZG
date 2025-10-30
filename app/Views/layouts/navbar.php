@@ -59,9 +59,11 @@
                     <div class="dropdown-menu dropdown-menu-end notificaciones-dropdown" aria-labelledby="notificacionesDropdown" style="width: 350px; max-height: 500px; overflow-y: auto;">
                         <div class="dropdown-header d-flex justify-content-between align-items-center border-bottom pb-2">
                             <h6 class="mb-0"><i class="fas fa-bell me-2"></i>Notificaciones</h6>
-                            <button class="btn btn-sm btn-link text-decoration-none p-0" id="btn-marcar-todas-leidas" title="Marcar todas como leídas">
-                                <i class="fas fa-check-double"></i>
-                            </button>
+                            <div>
+                                <button class="btn btn-sm btn-link text-decoration-none p-0" onclick="eliminarTodas()" title="Eliminar todas las notificaciones">
+                                    <i class="fas fa-check-double text-success"></i>
+                                </button>
+                            </div>
                         </div>
                         <div id="lista-notificaciones" class="py-2">
                             <div class="text-center text-muted py-4">
@@ -69,6 +71,10 @@
                                 <p class="mb-0">Cargando notificaciones...</p>
                             </div>
                         </div>
+                        <div class="dropdown-divider"></div>
+                        <a href="<?= site_url('notificaciones/historial') ?>" class="dropdown-item text-center text-primary">
+                            <i class="fas fa-history me-2"></i>Ver historial completo
+                        </a>
                     </div>
                 </div>
                 

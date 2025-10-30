@@ -187,5 +187,170 @@ class NotificacionController extends BaseController
             ]);
         }
     }
+
+    /**
+     * Eliminar una notificación (AJAX)
+     */
+    public function eliminarNotificacion()
+    {
+        if (!$this->request->isAJAX()) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Solicitud no válida'
+            ]);
+        }
+
+        if (!session()->get('logged_in')) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'No autenticado'
+            ]);
+        }
+
+        try {
+            $idnotificacion = $this->request->getPost('idnotificacion');
+            $idusuario = session()->get('idusuario');
+
+            if (!$idnotificacion) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'ID de notificación requerido'
+                ]);
+            }
+
+            $resultado = $this->notificacionModel->eliminarNotificacion($idnotificacion, $idusuario);
+
+            if ($resultado) {
+                $contador = $this->notificacionModel->contarNoLeidas($idusuario);
+                
+                return $this->response->setJSON([
+                    'success' => true,
+                    'message' => 'Notificación eliminada',
+                    'contador' => $contador
+                ]);
+            } else {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'No se pudo eliminar la notificación'
+                ]);
+            }
+        } catch (\Exception $e) {
+            log_message('error', 'Error al eliminar notificación: ' . $e->getMessage());
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Error al procesar la solicitud'
+            ]);
+        }
+    }
+
+    /**
+     * Eliminar todas las notificaciones leídas (AJAX)
+     */
+    public function eliminarTodasLeidas()
+    {
+        if (!$this->request->isAJAX()) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Solicitud no válida'
+            ]);
+        }
+
+        if (!session()->get('logged_in')) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'No autenticado'
+            ]);
+        }
+
+        try {
+            $idusuario = session()->get('idusuario');
+            $resultado = $this->notificacionModel->eliminarTodasLeidas($idusuario);
+
+            if ($resultado) {
+                return $this->response->setJSON([
+                    'success' => true,
+                    'message' => 'Notificaciones leídas eliminadas'
+                ]);
+            } else {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'No se pudieron eliminar las notificaciones'
+                ]);
+            }
+        } catch (\Exception $e) {
+            log_message('error', 'Error al eliminar notificaciones leídas: ' . $e->getMessage());
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Error al procesar la solicitud'
+            ]);
+        }
+    }
+
+    /**
+     * Eliminar TODAS las notificaciones del usuario (AJAX)
+     */
+    public function eliminarTodas()
+    {
+        if (!$this->request->isAJAX()) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Solicitud no válida'
+            ]);
+        }
+
+        if (!session()->get('logged_in')) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'No autenticado'
+            ]);
+        }
+
+        try {
+            $idusuario = session()->get('idusuario');
+            $resultado = $this->notificacionModel->eliminarTodas($idusuario);
+
+            if ($resultado) {
+                return $this->response->setJSON([
+                    'success' => true,
+                    'message' => 'Todas las notificaciones eliminadas'
+                ]);
+            } else {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'No se pudieron eliminar las notificaciones'
+                ]);
+            }
+        } catch (\Exception $e) {
+            log_message('error', 'Error al eliminar todas las notificaciones: ' . $e->getMessage());
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Error al procesar la solicitud'
+            ]);
+        }
+    }
+
+    /**
+     * Vista de historial completo de notificaciones
+     */
+    public function historial()
+    {
+        if (!session()->get('logged_in')) {
+            return redirect()->to('/login');
+        }
+
+        $idusuario = session()->get('idusuario');
+        $notificaciones = $this->notificacionModel->obtenerNotificacionesCompletas($idusuario, 50);
+        $contador = $this->notificacionModel->contarNoLeidas($idusuario);
+
+        $datos = [
+            'notificaciones' => $notificaciones,
+            'contador' => $contador,
+            'header' => view('layouts/header'),
+            'footer' => view('layouts/footer'),
+            'navbar' => view('layouts/navbar')
+        ];
+
+        return view('notificaciones/historial', $datos);
+    }
 }
 

@@ -218,6 +218,10 @@ $routes->get('/notificaciones/contar', 'NotificacionController::contarNoLeidas')
 $routes->get('/notificaciones/obtener', 'NotificacionController::obtenerNotificaciones');
 $routes->post('/notificaciones/marcar-leida', 'NotificacionController::marcarLeida');
 $routes->post('/notificaciones/marcar-todas-leidas', 'NotificacionController::marcarTodasLeidas');
+$routes->post('/notificaciones/eliminar', 'NotificacionController::eliminarNotificacion');
+$routes->post('/notificaciones/eliminar-todas-leidas', 'NotificacionController::eliminarTodasLeidas');
+$routes->post('/notificaciones/eliminar-todas', 'NotificacionController::eliminarTodas');
+$routes->get('/notificaciones/historial', 'NotificacionController::historial');
 
 // Sistema de Préstamos
 $routes->get('/prestamos', 'PrestamoController::index');                      // Préstamos Activos

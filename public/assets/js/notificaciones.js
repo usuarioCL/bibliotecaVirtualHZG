@@ -15,9 +15,6 @@ function inicializarNotificaciones() {
     // Actualizar contador cada 30 segundos
     intervaloNotificaciones = setInterval(actualizarContador, 30000);
     
-    // Event listeners
-    document.getElementById('btn-marcar-todas-leidas')?.addEventListener('click', marcarTodasComoLeidas);
-    
     // Recargar notificaciones al abrir el dropdown
     document.getElementById('notificacionesDropdown')?.addEventListener('click', function(e) {
         if (!this.classList.contains('show')) {
@@ -123,12 +120,12 @@ function mostrarNotificaciones(notificaciones) {
             <div class="dropdown-item notificacion-item ${noLeida}" 
                  data-id="${notif.idnotificacion}" 
                  data-leida="${notif.leida}"
-                 style="cursor: pointer; border-bottom: 1px solid #eee; padding: 0.75rem 1rem;">
+                 style="border-bottom: 1px solid #eee; padding: 0.75rem 1rem; position: relative;">
                 <div class="d-flex align-items-start">
                     <div class="me-3">
                         <i class="${iconoTipo}" style="color: ${colorTipo}; font-size: 1.5rem;"></i>
                     </div>
-                    <div class="flex-grow-1">
+                    <div class="flex-grow-1" style="cursor: pointer;">
                         <h6 class="mb-1" style="font-size: 0.9rem; font-weight: 600;">
                             ${notif.titulo}
                             ${notif.leida == 0 ? '<span class="badge bg-primary ms-2" style="font-size: 0.65rem;">NUEVA</span>' : ''}
@@ -140,6 +137,14 @@ function mostrarNotificaciones(notificaciones) {
                         <small class="text-muted">
                             <i class="fas fa-clock me-1"></i>${fechaFormato}
                         </small>
+                    </div>
+                    <div class="ms-2">
+                        <button class="btn btn-sm btn-outline-success" 
+                                onclick="event.stopPropagation(); eliminarNotificacion(${notif.idnotificacion})"
+                                title="Eliminar notificación"
+                                style="padding: 0.25rem 0.5rem;">
+                            <i class="fas fa-check"></i>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -301,6 +306,133 @@ function marcarTodasComoLeidas() {
     })
     .catch(error => {
         console.error('Error al marcar todas como leídas:', error);
+    });
+}
+
+/**
+ * Eliminar una notificación
+ */
+function eliminarNotificacion(idNotificacion) {
+    fetch(base_url + '/notificaciones/eliminar', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: `idnotificacion=${idNotificacion}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            actualizarBadge(data.contador);
+            cargarNotificaciones(); // Recargar lista (automáticamente mostrará "No tienes notificaciones" si está vacío)
+            
+            // Mostrar mensaje de éxito
+            const Toast = Swal.mixin({
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 1500,
+                timerProgressBar: true
+            });
+            
+            Toast.fire({
+                icon: 'success',
+                title: 'Notificación eliminada'
+            });
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'No se pudo eliminar la notificación'
+            });
+        }
+    })
+    .catch(error => {
+        console.error('Error al eliminar notificación:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Error de conexión',
+            text: 'No se pudo conectar con el servidor'
+        });
+    });
+}
+
+/**
+ * Eliminar todas las notificaciones
+ */
+function eliminarTodas() {
+    // Verificar si hay notificaciones en la lista
+    const listaNotificaciones = document.getElementById('lista-notificaciones');
+    const notificacionesItems = listaNotificaciones.querySelectorAll('.notificacion-item');
+    
+    if (notificacionesItems.length === 0) {
+        Swal.fire({
+            icon: 'info',
+            title: 'Sin notificaciones',
+            text: 'No hay notificaciones para eliminar',
+            confirmButtonColor: '#17a2b8'
+        });
+        return;
+    }
+    
+    Swal.fire({
+        title: '¿Eliminar todas las notificaciones?',
+        text: "Esta acción no se puede deshacer",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#28a745',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Sí, eliminar todas',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(base_url + '/notificaciones/eliminar-todas', {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Actualizar badge a 0
+                    actualizarBadge(0);
+                    
+                    // Mostrar mensaje de "No tienes notificaciones"
+                    listaNotificaciones.innerHTML = `
+                        <div class="text-center text-muted py-4">
+                            <i class="fas fa-check-circle fa-2x mb-3" style="color: #28a745;"></i>
+                            <p class="mb-0">No tienes notificaciones</p>
+                            <small class="text-muted">¡Estás al día!</small>
+                        </div>
+                    `;
+                    
+                    // Mostrar mensaje de éxito
+                    Swal.fire({
+                        icon: 'success',
+                        title: '¡Listo!',
+                        text: 'Todas las notificaciones han sido eliminadas',
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'No se pudieron eliminar las notificaciones'
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error al eliminar notificaciones:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error de conexión',
+                    text: 'No se pudo conectar con el servidor'
+                });
+            });
+        }
     });
 }
 

@@ -8,7 +8,7 @@ class FavoritoModel extends Model
 {
     protected $table = 'favoritos';
     protected $primaryKey = 'idfavorito';
-    protected $allowedFields = ['idusuario', 'idrecurso'];
+    protected $allowedFields = ['idusuario', 'idrecurso', 'fecha_agregado'];
     
     protected $useTimestamps = false;
     protected $useSoftDeletes = false;
@@ -31,6 +31,7 @@ class FavoritoModel extends Model
                 'f.idfavorito',
                 'f.idusuario',
                 'f.idrecurso',
+                'f.fecha_agregado',
                 'r.titulo',
                 'r.anio', 
                 'r.isbn',
@@ -55,6 +56,7 @@ class FavoritoModel extends Model
                 'f.idfavorito',
                 'f.idusuario', 
                 'f.idrecurso',
+                'f.fecha_agregado',
                 'r.titulo',
                 'r.anio',
                 'r.isbn', 
