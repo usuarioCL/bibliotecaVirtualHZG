@@ -224,6 +224,7 @@ $routes->get('/prestamos', 'PrestamoController::index');                      //
 $routes->get('/solicitudes', 'PrestamoController::solicitudes');              // Solicitudes Pendientes
 $routes->get('/devoluciones', 'PrestamoController::devoluciones');            // Devoluciones
 $routes->get('/historial-prestamos', 'PrestamoController::historial');        // Historial Completo
+$routes->get('/prestamo/detalles/(:num)', 'PrestamoController::detalles/$1'); // Detalles de préstamo
 
 // Formulario de préstamos (para usuarios)
 $routes->get('/prestamo/formulario/(:num)', 'PrestamoController::formulario/$1');  // Formulario de solicitud
@@ -242,7 +243,12 @@ $routes->post('/prestamos/crear', 'PrestamoController::crearPrestamo');         
 $routes->post('/prestamos/cancelar', 'PrestamoController::cancelar');             // Cancelar préstamo activo
 $routes->get('/prestamos/obtener-tipos-sancion', 'PrestamoController::obtenerTiposSancion'); // Obtener tipos de sanción
 $routes->post('/prestamos/procesar-devolucion', 'PrestamoController::procesarDevolucion'); // Procesar devolución
-$routes->post('/prestamos/renovar', 'PrestamoController::renovarPrestamo');       // Renovar préstamo
+$routes->post('/prestamos/renovar', 'PrestamoController::renovarPrestamo');       // Renovar préstamo (admin/docente)
+$routes->post('/prestamo/solicitar-renovacion', 'PrestamoController::solicitarRenovacion'); // Solicitar renovación (usuarios)
+$routes->post('/prestamo/aprobar-renovacion', 'PrestamoController::aprobarRenovacion');    // Aprobar solicitud de renovación (admin/docente)
+$routes->post('/prestamo/rechazar-renovacion', 'PrestamoController::rechazarRenovacion');  // Rechazar solicitud de renovación (admin/docente)
+$routes->get('/prestamo/formulario-renovacion/(:num)', 'PrestamoController::formularioRenovacion/$1'); // Formulario de renovación
+$routes->post('/prestamo/renovar', 'PrestamoController::renovarPrestamo');        // Procesar renovación
 $routes->post('/prestamos/detalle', 'PrestamoController::obtenerDetallePrestamo'); // Obtener detalles de préstamo
 $routes->post('/prestamos/obtenerDetalleDevolucion', 'PrestamoController::obtenerDetalleDevolucion'); // Obtener detalles de devolución
 $routes->post('/prestamos/obtenerObservaciones', 'PrestamoController::obtenerObservaciones'); // Obtener observaciones desde logs

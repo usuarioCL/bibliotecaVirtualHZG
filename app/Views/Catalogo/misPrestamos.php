@@ -37,209 +37,115 @@
     <!-- Pestañas de navegación -->
     <div class="row mb-4">
         <div class="col-12">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body p-0">
-                    <ul class="nav nav-tabs nav-fill border-0 mb-0" id="prestamosTab" role="tablist">
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link active border-0 py-3" id="activos-tab" data-bs-toggle="tab" data-bs-target="#activos" type="button" role="tab" aria-controls="activos" aria-selected="true">
-                                <i class="fas fa-book-open me-2"></i>
-                                <span class="d-none d-sm-inline">Préstamos </span>Activos
-                                <span class="badge bg-primary ms-2"><?= $contadorActivos ?></span>
-                            </button>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link border-0 py-3" id="historial-tab" data-bs-toggle="tab" data-bs-target="#historial" type="button" role="tab" aria-controls="historial" aria-selected="false">
-                                <i class="fas fa-history me-2"></i>
-                                <span class="d-none d-sm-inline">Historial</span>
-                                <span class="d-sm-none">Hist.</span>
-                                <span class="badge bg-secondary ms-2"><?= count($historialPrestamos) ?></span>
-                            </button>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Filtros y búsqueda - Solo mostrar si hay préstamos -->
-    <?php if (!empty($prestamosActivos) || !empty($historialPrestamos)): ?>
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card border-0 shadow-sm bg-light">
-                <div class="card-body">
-                    <div class="row g-3">
-                        <div class="col-lg-5 col-md-6">
-                            <label for="buscarPrestamos" class="form-label fw-semibold text-muted small mb-1">
-                                <i class="fas fa-search me-1"></i>Buscar préstamos
-                            </label>
-                            <div class="input-group">
-                                <input type="text" class="form-control" placeholder="Buscar por título o autor..." id="buscarPrestamos">
-                                <button class="btn btn-outline-primary" type="button">
-                                    <i class="fas fa-search"></i>
-                                </button>
-                            </div>
-                        </div>
-                        <div class="col-lg-3 col-md-3 col-sm-6">
-                            <label for="filtroEstado" class="form-label fw-semibold text-muted small mb-1">
-                                <i class="fas fa-filter me-1"></i>Estado
-                            </label>
-                            <select class="form-select" id="filtroEstado">
-                                <option value="">Todos los estados</option>
-                                <option value="activo">Activos</option>
-                                <option value="vencido">Vencidos</option>
-                                <option value="devuelto">Devueltos</option>
-                                <option value="renovado">Renovados</option>
-                            </select>
-                        </div>
-                        <div class="col-lg-3 col-md-3 col-sm-6">
-                            <label for="ordenarPor" class="form-label fw-semibold text-muted small mb-1">
-                                <i class="fas fa-sort me-1"></i>Ordenar por
-                            </label>
-                            <select class="form-select" id="ordenarPor">
-                                <option value="reciente">Más recientes</option>
-                                <option value="alfabetico">Orden alfabético</option>
-                                <option value="autor">Por autor</option>
-                                <option value="estado">Por estado</option>
-                            </select>
-                        </div>
-                        <div class="col-lg-1 col-md-12 d-flex align-items-end justify-content-center">
-                            <button type="button" class="btn btn-outline-secondary" onclick="limpiarFiltros()" title="Limpiar filtros">
-                                <i class="fas fa-times"></i>
-                                <span class="d-none d-lg-inline ms-1">Limpiar</span>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Controles de vista y resultados - Solo mostrar si hay préstamos -->
-    <div class="row mb-3">
-        <div class="col-12">
-            <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-3">
-                <div class="d-flex align-items-center">
-                    <span class="text-muted">
-                        <i class="fas fa-info-circle me-1"></i>
-                        Mostrando <strong><span id="resultadosCount"><?= $contadorActivos ?></span></strong> préstamos
-                    </span>
-                </div>
-                <div class="btn-group shadow-sm" role="group">
-                    <button type="button" class="btn btn-outline-primary active" id="vistaGrilla" title="Vista en grilla">
-                        <i class="fas fa-th me-1"></i><span class="d-none d-md-inline">Grilla</span>
+            <ul class="nav nav-tabs nav-fill border-0 mb-0" id="prestamosTab" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active border-0 py-3" id="activos-tab" data-bs-toggle="tab" data-bs-target="#activos" type="button" role="tab" aria-controls="activos" aria-selected="true">
+                        <i class="fas fa-book-open me-2"></i>
+                        <span class="d-none d-sm-inline">Préstamos </span>Activos
+                        <span class="badge bg-primary ms-2"><?= $contadorActivos ?></span>
                     </button>
-                    <button type="button" class="btn btn-outline-primary" id="vistaLista" title="Vista en lista">
-                        <i class="fas fa-list me-1"></i><span class="d-none d-md-inline">Lista</span>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link border-0 py-3" id="historial-tab" data-bs-toggle="tab" data-bs-target="#historial" type="button" role="tab" aria-controls="historial" aria-selected="false">
+                        <i class="fas fa-history me-2"></i>
+                        <span class="d-none d-sm-inline">Historial</span>
+                        <span class="d-sm-none">Hist.</span>
+                        <span class="badge bg-secondary ms-2"><?= count($historialPrestamos) ?></span>
                     </button>
-                </div>
-            </div>
+                </li>
+            </ul>
         </div>
     </div>
-    <?php endif; ?>
 
     <!-- Contenido de pestañas -->
     <div class="tab-content" id="prestamosTabContent">
         <!-- Préstamos Activos -->
         <div class="tab-pane fade show active" id="activos" role="tabpanel">
             <?php if (!empty($prestamosActivos)): ?>
-                <!-- Contenido de préstamos activos - Vista Grilla -->
-                <div class="row" id="prestamosActivosGrilla">
-                    <?php foreach ($prestamosActivos as $prestamo): ?>
-                        <?= view('partials/prestamo_card', ['prestamo' => $prestamo]) ?>
-                    <?php endforeach; ?>
-                </div>
-
-                <!-- Contenido de préstamos activos - Vista Lista (oculta por defecto) -->
-                <div class="d-none" id="prestamosActivosLista">
-                    <div class="card border-0 shadow-sm">
-                        <div class="card-body p-0">
-                            <div class="table-responsive">
-                                <table class="table table-hover mb-0">
-                                    <thead class="table-light">
-                                        <tr>
-                                            <th class="border-0 fw-semibold">Libro</th>
-                                            <th class="border-0 fw-semibold">Autor</th>
-                                            <th class="border-0 fw-semibold">Fecha Préstamo</th>
-                                            <th class="border-0 fw-semibold">Fecha Vencimiento</th>
-                                            <th class="border-0 fw-semibold">Estado</th>
-                                            <th class="border-0 fw-semibold text-center">Acciones</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <?php foreach ($prestamosActivos as $prestamo): ?>
-                                            <tr class="align-middle">
-                                                <td>
-                                                    <div class="d-flex align-items-center">
-                                                        <?php if (!empty($prestamo['portada'])): ?>
-                                                            <img src="<?= base_url($prestamo['portada']) ?>" class="rounded me-3" style="width: 40px; height: 50px; object-fit: cover;" alt="Portada">
-                                                        <?php else: ?>
-                                                            <div class="bg-light rounded me-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 50px;">
-                                                                <i class="fas fa-book text-muted"></i>
-                                                            </div>
-                                                        <?php endif; ?>
-                                                        <div>
-                                                            <h6 class="mb-0 fw-semibold"><?= esc($prestamo['titulo']) ?></h6>
-                                                            <?php if (!empty($prestamo['isbn'])): ?>
-                                                                <small class="text-muted">ISBN: <?= esc($prestamo['isbn']) ?></small>
-                                                            <?php endif; ?>
+                <!-- Vista Lista de préstamos activos -->
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th class="border-0 fw-semibold">Libro</th>
+                                        <th class="border-0 fw-semibold">Autor</th>
+                                        <th class="border-0 fw-semibold">Fecha Préstamo</th>
+                                        <th class="border-0 fw-semibold">Fecha Vencimiento</th>
+                                        <th class="border-0 fw-semibold">Estado</th>
+                                        <th class="border-0 fw-semibold text-center">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="prestamosActivosLista">
+                                    <?php foreach ($prestamosActivos as $prestamo): ?>
+                                        <tr class="align-middle">
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <?php if (!empty($prestamo['portada'])): ?>
+                                                        <img src="<?= base_url($prestamo['portada']) ?>" class="rounded me-3" style="width: 40px; height: 50px; object-fit: cover;" alt="Portada">
+                                                    <?php else: ?>
+                                                        <div class="bg-light rounded me-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 50px;">
+                                                            <i class="fas fa-book text-muted"></i>
                                                         </div>
+                                                    <?php endif; ?>
+                                                    <div>
+                                                        <h6 class="mb-0 fw-semibold"><?= esc($prestamo['titulo']) ?></h6>
+                                                        <?php if (!empty($prestamo['isbn'])): ?>
+                                                            <small class="text-muted">ISBN: <?= esc($prestamo['isbn']) ?></small>
+                                                        <?php endif; ?>
                                                     </div>
-                                                </td>
-                                                <td class="text-muted"><?= esc($prestamo['nomautor'] ?: 'Sin autor') ?></td>
-                                                <td>
-                                                    <small class="text-muted">
-                                                        <i class="fas fa-calendar-alt me-1"></i>
-                                                        <?= date('d/M/Y', strtotime($prestamo['fechaprestamo'])) ?>
+                                                </div>
+                                            </td>
+                                            <td class="text-muted"><?= esc($prestamo['nomautor'] ?: 'Sin autor') ?></td>
+                                            <td>
+                                                <small class="text-muted">
+                                                    <i class="fas fa-calendar-alt me-1"></i>
+                                                    <?= date('d/M/Y', strtotime($prestamo['fechaprestamo'])) ?>
+                                                </small>
+                                            </td>
+                                            <td>
+                                                <?php if (!empty($prestamo['fechadevolucion'])): ?>
+                                                    <?php 
+                                                    $fechaVencimiento = strtotime($prestamo['fechadevolucion']);
+                                                    $hoy = time();
+                                                    $esVencido = $fechaVencimiento < $hoy;
+                                                    ?>
+                                                    <small class="<?= $esVencido ? 'text-danger' : 'text-success' ?>">
+                                                        <i class="fas fa-clock me-1"></i>
+                                                        <?= date('d/M/Y', $fechaVencimiento) ?>
                                                     </small>
-                                                </td>
-                                                <td>
-                                                    <?php if (!empty($prestamo['fechadevolucion'])): ?>
-                                                        <?php 
-                                                        $fechaVencimiento = strtotime($prestamo['fechadevolucion']);
-                                                        $hoy = time();
-                                                        $esVencido = $fechaVencimiento < $hoy;
-                                                        ?>
-                                                        <small class="<?= $esVencido ? 'text-danger' : 'text-success' ?>">
-                                                            <i class="fas fa-clock me-1"></i>
-                                                            <?= date('d/M/Y', $fechaVencimiento) ?>
-                                                        </small>
-                                                    <?php else: ?>
-                                                        <small class="text-muted">Sin fecha</small>
-                                                    <?php endif; ?>
-                                                </td>
-                                                <td>
-                                                    <?php if (!empty($prestamo['fechadevolucion']) && strtotime($prestamo['fechadevolucion']) < time()): ?>
-                                                        <span class="badge bg-danger">Vencido</span>
-                                                    <?php else: ?>
-                                                        <span class="badge bg-success">Activo</span>
-                                                    <?php endif; ?>
-                                                </td>
-                                                <td>
-                                                    <div class="btn-group" role="group">
-                                                        <button class="btn btn-sm btn-outline-primary" 
-                                                                data-bs-toggle="modal" 
-                                                                data-bs-target="#prestamoModal"
-                                                                onclick="cargarDetallesPrestamo(<?= $prestamo['idprestamo'] ?>)" 
-                                                                title="Ver detalles">
-                                                            <i class="fas fa-eye"></i>
-                                                        </button>
-                                                        <button class="btn btn-sm btn-warning" 
-                                                                onclick="renovarPrestamo(<?= $prestamo['idprestamo'] ?>)" 
-                                                                title="Renovar">
-                                                            <i class="fas fa-redo"></i>
-                                                        </button>
-                                                        <button class="btn btn-sm btn-success" 
-                                                                onclick="devolverPrestamo(<?= $prestamo['idprestamo'] ?>)" 
-                                                                title="Devolver">
-                                                            <i class="fas fa-check"></i>
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        <?php endforeach; ?>
-                                    </tbody>
-                                </table>
-                            </div>
+                                                <?php else: ?>
+                                                    <small class="text-muted">Sin fecha</small>
+                                                <?php endif; ?>
+                                            </td>
+                                            <td>
+                                                <?php if (!empty($prestamo['fechadevolucion']) && strtotime($prestamo['fechadevolucion']) < time()): ?>
+                                                    <span class="badge bg-danger">Vencido</span>
+                                                <?php else: ?>
+                                                    <span class="badge bg-success">Activo</span>
+                                                <?php endif; ?>
+                                            </td>
+                                            <td>
+                                                <div class="d-flex gap-2 justify-content-center">
+                                                    <button class="btn btn-sm btn-primary" 
+                                                            data-bs-toggle="modal" 
+                                                            data-bs-target="#prestamoModal"
+                                                            onclick="cargarDetallesPrestamo(<?= $prestamo['idprestamo'] ?>)" 
+                                                            title="Ver detalles">
+                                                        <i class="fas fa-eye"></i>
+                                                    </button>
+                                                    <button class="btn btn-sm btn-info text-white" 
+                                                            onclick="renovarPrestamo(<?= $prestamo['idprestamo'] ?>)" 
+                                                            title="Renovar">
+                                                        <i class="fas fa-redo"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
@@ -353,7 +259,7 @@
                                                 <?php endif; ?>
                                             </td>
                                             <td class="text-center">
-                                                <button class="btn btn-sm btn-outline-primary" 
+                                                <button class="btn btn-sm btn-primary" 
                                                         data-bs-toggle="modal" 
                                                         data-bs-target="#prestamoModal"
                                                         onclick="cargarDetallesPrestamo(<?= $prestamo['idprestamo'] ?>)" 
@@ -457,75 +363,205 @@ function cargarDetallesPrestamo(idPrestamo) {
 
 // Funciones globales para los botones de préstamo
 function renovarPrestamo(idPrestamo) {
-    if (typeof Swal !== 'undefined') {
-        Swal.fire({
-            title: '¿Renovar préstamo?',
-            text: 'Se extenderá el período de préstamo por 15 días más.',
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonText: 'Sí, renovar',
-            cancelButtonText: 'Cancelar',
-            confirmButtonColor: '#28a745'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                procesarRenovacion(idPrestamo);
+    // Cargar el formulario de renovación vía AJAX
+    fetch(`<?= base_url('prestamo/formulario-renovacion/') ?>${idPrestamo}`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Error al cargar el formulario');
             }
+            return response.text();
+        })
+        .then(html => {
+            // Mostrar el formulario en un modal de SweetAlert
+            Swal.fire({
+                title: '<i class="fas fa-redo me-2"></i>Renovar Préstamo',
+                html: html,
+                width: '800px',
+                showConfirmButton: false,
+                showCloseButton: true,
+                customClass: {
+                    popup: 'swal-wide',
+                    htmlContainer: 'swal-html-container-custom'
+                },
+                didOpen: () => {
+                    // El formulario ya tiene sus propios botones de acción
+                }
+            });
+        })
+        .catch(error => {
+            console.error('Error al cargar formulario de renovación:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'No se pudo cargar el formulario de renovación. Por favor, intente nuevamente.',
+                confirmButtonColor: '#dc3545'
+            });
         });
+}
+
+/**
+ * Validar que la fecha de devolución esté dentro del rango permitido
+ */
+function validarFechaDevolucion() {
+    const fechaInicio = document.getElementById('nuevaFechaPrestamo');
+    const fechaDevolucion = document.getElementById('nuevaFechaDevolucion');
+    
+    if (!fechaInicio || !fechaDevolucion || !fechaInicio.value || !fechaDevolucion.value) {
+        return;
+    }
+    
+    const inicio = new Date(fechaInicio.value + 'T00:00:00');
+    const devolucion = new Date(fechaDevolucion.value + 'T00:00:00');
+    
+    // Calcular la diferencia en días
+    const diffTime = devolucion - inicio;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    // Validar que esté entre 0 y 7 días
+    if (diffDays < 0) {
+        fechaDevolucion.setCustomValidity('La fecha de devolución no puede ser anterior a la fecha de inicio');
+        Swal.fire({
+            icon: 'warning',
+            title: 'Fecha inválida',
+            text: 'La fecha de devolución no puede ser anterior a la fecha de inicio',
+            confirmButtonColor: '#f39c12'
+        });
+        // Resetear a la fecha máxima permitida
+        const maxDate = new Date(inicio);
+        maxDate.setDate(maxDate.getDate() + 7);
+        fechaDevolucion.value = maxDate.toISOString().split('T')[0];
+    } else if (diffDays > 7) {
+        fechaDevolucion.setCustomValidity('No puede extender el préstamo por más de 7 días');
+        Swal.fire({
+            icon: 'warning',
+            title: 'Período máximo excedido',
+            text: 'La renovación no puede extender el préstamo por más de 7 días',
+            confirmButtonColor: '#f39c12'
+        });
+        // Resetear a la fecha máxima permitida
+        const maxDate = new Date(inicio);
+        maxDate.setDate(maxDate.getDate() + 7);
+        fechaDevolucion.value = maxDate.toISOString().split('T')[0];
     } else {
-        if (confirm('¿Deseas renovar este préstamo?')) {
-            procesarRenovacion(idPrestamo);
-        }
+        fechaDevolucion.setCustomValidity('');
     }
 }
 
-function procesarRenovacion(idPrestamo) {
-    fetch('<?= base_url('catalogo/renovar-prestamo') ?>', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest'
-        },
-        body: JSON.stringify({idprestamo: idPrestamo})
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            if (typeof Swal !== 'undefined') {
-                Swal.fire({
-                    title: 'Préstamo Renovado',
-                    text: data.message,
-                    icon: 'success',
-                    timer: 2000,
-                    showConfirmButton: false
-                }).then(() => {
-                    location.reload();
-                });
-            } else {
-                alert('Préstamo renovado exitosamente');
-                location.reload();
-            }
+/**
+ * Función para enviar la renovación del préstamo
+ */
+function enviarRenovacionPrestamo() {
+    const form = document.getElementById('formRenovacionPrestamo');
+    if (!form) {
+        console.error('No se encontró el formulario de renovación');
+        return;
+    }
+    
+    const formData = new FormData(form);
+    const data = {};
+    formData.forEach((value, key) => {
+        data[key] = value;
+    });
+    
+    // Debug: Verificar datos recopilados
+    console.log('Datos del formulario:', data);
+    
+    // Validar que tenemos el idprestamo
+    if (!data.idprestamo) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'No se encontró el ID del préstamo',
+            confirmButtonColor: '#dc3545'
+        });
+        return;
+    }
+    
+    // Calcular días de extensión reales
+    const fechaInicio = document.getElementById('nuevaFechaPrestamo');
+    const fechaDevolucion = document.getElementById('nuevaFechaDevolucion');
+    
+    let diasExtension = 7; // valor por defecto
+    let mensajeExtension = 'El préstamo se extenderá por 7 días más';
+    
+    if (fechaInicio && fechaDevolucion && fechaInicio.value && fechaDevolucion.value) {
+        const inicio = new Date(fechaInicio.value + 'T00:00:00');
+        const fin = new Date(fechaDevolucion.value + 'T00:00:00');
+        const diffTime = fin - inicio;
+        diasExtension = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        
+        if (diasExtension === 1) {
+            mensajeExtension = 'El préstamo se extenderá por 1 día más';
         } else {
-            if (typeof Swal !== 'undefined') {
-                Swal.fire({
-                    title: 'Error',
-                    text: data.message || 'Error al renovar el préstamo',
-                    icon: 'error'
-                });
-            } else {
-                alert('Error al renovar: ' + (data.message || 'Error desconocido'));
-            }
+            mensajeExtension = `El préstamo se extenderá por ${diasExtension} días más`;
         }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        if (typeof Swal !== 'undefined') {
-            Swal.fire({
-                title: 'Error',
-                text: 'Error de conexión',
-                icon: 'error'
+    }
+    
+    // Determinar la URL según el nivel de acceso del usuario
+    const nivelAcceso = '<?= session()->get("nivelacceso") ?>';
+    const urlRenovacion = (nivelAcceso === 'admin' || nivelAcceso === 'docente') 
+        ? '<?= base_url('prestamo/renovar') ?>'
+        : '<?= base_url('prestamo/solicitar-renovacion') ?>';
+    
+    // Mensaje de confirmación según el tipo de acción
+    const tituloConfirmacion = (nivelAcceso === 'admin' || nivelAcceso === 'docente')
+        ? '¿Confirmar renovación?'
+        : '¿Enviar solicitud de renovación?';
+    
+    const textoConfirmacion = (nivelAcceso === 'admin' || nivelAcceso === 'docente')
+        ? mensajeExtension
+        : mensajeExtension + '. La solicitud será revisada por un administrador.';
+    
+    const botonConfirmar = (nivelAcceso === 'admin' || nivelAcceso === 'docente')
+        ? 'Sí, renovar'
+        : 'Sí, enviar solicitud';
+    
+    Swal.fire({
+        title: tituloConfirmacion,
+        text: textoConfirmacion,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: botonConfirmar,
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#28a745',
+        cancelButtonColor: '#6c757d',
+        showLoaderOnConfirm: true,
+        preConfirm: () => {
+            return fetch(urlRenovacion, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (!data.success) {
+                    throw new Error(data.message || 'Error desconocido');
+                }
+                return data;
+            })
+            .catch(error => {
+                Swal.showValidationMessage(`Error: ${error.message}`);
             });
-        } else {
-            alert('Error de conexión');
+        },
+        allowOutsideClick: () => !Swal.isLoading()
+    }).then((result) => {
+        if (result.isConfirmed && result.value) {
+            const esSolicitud = result.value.tipo === 'solicitud';
+            const titulo = esSolicitud ? '¡Solicitud Enviada!' : '¡Renovado!';
+            const icono = esSolicitud ? 'info' : 'success';
+            
+            Swal.fire({
+                icon: icono,
+                title: titulo,
+                text: result.value.message,
+                confirmButtonColor: '#28a745',
+                timer: esSolicitud ? 3000 : 2000
+            }).then(() => {
+                window.location.reload();
+            });
         }
     });
 }
@@ -605,232 +641,8 @@ function procesarDevolucion(idPrestamo) {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Funcionalidad de cambio de vista - Solo si existen los elementos
-    const vistaGrilla = document.getElementById('vistaGrilla');
-    const vistaLista = document.getElementById('vistaLista');
-    const prestamosActivosGrilla = document.getElementById('prestamosActivosGrilla');
-    const prestamosActivosLista = document.getElementById('prestamosActivosLista');
-
-    if (vistaGrilla && vistaLista && prestamosActivosGrilla && prestamosActivosLista) {
-        vistaGrilla.addEventListener('click', function() {
-            this.classList.add('active');
-            vistaLista.classList.remove('active');
-            prestamosActivosGrilla.classList.remove('d-none');
-            prestamosActivosLista.classList.add('d-none');
-            // Reaplicar filtros después del cambio de vista
-            filtrarPrestamos();
-        });
-
-        vistaLista.addEventListener('click', function() {
-            this.classList.add('active');
-            vistaGrilla.classList.remove('active');
-            prestamosActivosLista.classList.remove('d-none');
-            prestamosActivosGrilla.classList.add('d-none');
-            // Reaplicar filtros después del cambio de vista
-            filtrarPrestamos();
-        });
-    }
-
-    // Funcionalidad de búsqueda y filtros
-    const buscarInput = document.getElementById('buscarPrestamos');
-    const filtroEstado = document.getElementById('filtroEstado');
-    const ordenarPor = document.getElementById('ordenarPor');
-
-    if (buscarInput && filtroEstado && ordenarPor) {
-        buscarInput.addEventListener('input', filtrarPrestamos);
-        filtroEstado.addEventListener('change', filtrarPrestamos);
-        ordenarPor.addEventListener('change', filtrarPrestamos);
-    }
-
-    function filtrarPrestamos() {
-        // Verificar que los elementos existan antes de usarlos
-        if (!buscarInput || !filtroEstado || !ordenarPor) {
-            return;
-        }
-        
-        const busqueda = buscarInput.value.toLowerCase().trim();
-        const estadoSeleccionado = filtroEstado.value.toLowerCase();
-        const ordenSeleccionado = ordenarPor.value;
-        
-        console.log('Filtros aplicados:', { busqueda, estadoSeleccionado, ordenSeleccionado });
-        
-        // Obtener todas las cards de préstamos activos (grilla)
-        const cards = Array.from(document.querySelectorAll('#prestamosActivosGrilla .col-lg-6'));
-        let cardsVisibles = [];
-        
-        // Obtener todas las filas de la tabla de préstamos activos (lista)
-        const filas = Array.from(document.querySelectorAll('#prestamosActivosLista tbody tr'));
-        let filasVisibles = [];
-        
-        // Obtener todas las filas del historial
-        const filasHistorial = Array.from(document.querySelectorAll('#historialPrestamos tr'));
-        let filasHistorialVisibles = [];
-        
-        // Filtrar cards de grilla (préstamos activos)
-        cards.forEach(card => {
-            const titulo = card.querySelector('h5.card-title, .card-title h5')?.textContent.toLowerCase() || '';
-            const autor = card.querySelector('.card-text')?.textContent.toLowerCase() || '';
-            const badge = card.querySelector('.badge');
-            const estado = badge?.textContent.toLowerCase() || '';
-            
-            const coincideBusqueda = !busqueda || 
-                titulo.includes(busqueda) || 
-                autor.includes(busqueda);
-            
-            const coincidenEstado = !estadoSeleccionado || 
-                estado.includes(estadoSeleccionado);
-            
-            if (coincideBusqueda && coincidenEstado) {
-                card.style.display = 'block';
-                cardsVisibles.push(card);
-            } else {
-                card.style.display = 'none';
-            }
-        });
-        
-        // Filtrar filas de préstamos activos (lista)
-        filas.forEach(fila => {
-            if (fila.querySelector('td[colspan]')) {
-                return; // Evitar filtrar la fila de "no hay préstamos"
-            }
-            
-            const titulo = fila.querySelector('h6')?.textContent.toLowerCase() || '';
-            const autor = fila.cells[1]?.textContent.toLowerCase() || '';
-            const badge = fila.querySelector('.badge');
-            const estado = badge?.textContent.toLowerCase() || '';
-            
-            const coincideBusqueda = !busqueda || 
-                titulo.includes(busqueda) || 
-                autor.includes(busqueda);
-            
-            const coincidenEstado = !estadoSeleccionado || 
-                estado.includes(estadoSeleccionado);
-            
-            if (coincideBusqueda && coincidenEstado) {
-                fila.style.display = 'table-row';
-                filasVisibles.push(fila);
-            } else {
-                fila.style.display = 'none';
-            }
-        });
-        
-        // Filtrar filas del historial
-        filasHistorial.forEach(fila => {
-            if (fila.querySelector('td[colspan]')) {
-                return; // Evitar filtrar la fila de "no hay historial"
-            }
-            
-            const titulo = fila.querySelector('h6')?.textContent.toLowerCase() || '';
-            const autor = fila.cells[1]?.textContent.toLowerCase() || '';
-            const badge = fila.querySelector('.badge');
-            const estado = badge?.textContent.toLowerCase() || '';
-            
-            const coincideBusqueda = !busqueda || 
-                titulo.includes(busqueda) || 
-                autor.includes(busqueda);
-            
-            const coincidenEstado = !estadoSeleccionado || 
-                estado.includes(estadoSeleccionado);
-            
-            if (coincideBusqueda && coincidenEstado) {
-                fila.style.display = 'table-row';
-                filasHistorialVisibles.push(fila);
-            } else {
-                fila.style.display = 'none';
-            }
-        });
-        
-        // Ordenar elementos visibles
-        if (cardsVisibles.length > 0) {
-            ordenarCards(cardsVisibles, ordenSeleccionado);
-        }
-        if (filasVisibles.length > 0) {
-            ordenarFilas(filasVisibles, ordenSeleccionado, '#prestamosActivosLista tbody');
-        }
-        if (filasHistorialVisibles.length > 0) {
-            ordenarFilas(filasHistorialVisibles, ordenSeleccionado, '#historialPrestamos');
-        }
-        
-        // Actualizar contador
-        const totalVisibles = Math.max(cardsVisibles.length, filasVisibles.length);
-        const contadorElement = document.getElementById('resultadosCount');
-        if (contadorElement) {
-            contadorElement.textContent = totalVisibles;
-        }
-    }
-    
-    function ordenarCards(cards, criterio) {
-        const container = document.getElementById('prestamosActivosGrilla');
-        
-        cards.sort((a, b) => {
-            switch (criterio) {
-                case 'alfabetico':
-                    const tituloA = a.querySelector('.card-title h5, h5.card-title')?.textContent || '';
-                    const tituloB = b.querySelector('.card-title h5, h5.card-title')?.textContent || '';
-                    return tituloA.localeCompare(tituloB);
-                    
-                case 'autor':
-                    const autorA = a.querySelector('.card-text')?.textContent || '';
-                    const autorB = b.querySelector('.card-text')?.textContent || '';
-                    return autorA.localeCompare(autorB);
-                    
-                case 'estado':
-                    const estadoA = a.querySelector('.badge')?.textContent || '';
-                    const estadoB = b.querySelector('.badge')?.textContent || '';
-                    return estadoA.localeCompare(estadoB);
-                    
-                case 'reciente':
-                default:
-                    return 0; // Mantener orden original
-            }
-        });
-        
-        cards.forEach(card => {
-            container.appendChild(card);
-        });
-    }
-    
-    function ordenarFilas(filas, criterio, contenedor) {
-        const tbody = document.querySelector(contenedor);
-        
-        filas.sort((a, b) => {
-            switch (criterio) {
-                case 'alfabetico':
-                    const tituloA = a.querySelector('h6')?.textContent || '';
-                    const tituloB = b.querySelector('h6')?.textContent || '';
-                    return tituloA.localeCompare(tituloB);
-                    
-                case 'autor':
-                    const autorA = a.cells[1]?.textContent || '';
-                    const autorB = b.cells[1]?.textContent || '';
-                    return autorA.localeCompare(autorB);
-                    
-                case 'estado':
-                    const estadoA = a.querySelector('.badge')?.textContent || '';
-                    const estadoB = b.querySelector('.badge')?.textContent || '';
-                    return estadoA.localeCompare(estadoB);
-                    
-                case 'reciente':
-                default:
-                    return 0; // Mantener orden original
-            }
-        });
-        
-        filas.forEach(fila => {
-            tbody.appendChild(fila);
-        });
-    }
-
-    // Limpiar filtros función global
-    window.limpiarFiltros = function() {
-        if (buscarInput) buscarInput.value = '';
-        if (filtroEstado) filtroEstado.value = '';
-        if (ordenarPor) ordenarPor.value = 'reciente';
-        
-        if (buscarInput) {
-            buscarInput.dispatchEvent(new Event('input'));
-        }
-    };
+    // No se necesitan filtros ni búsqueda para solo 2 préstamos activos máximo
+    console.log('Vista de préstamos cargada correctamente');
 });
 </script>
 

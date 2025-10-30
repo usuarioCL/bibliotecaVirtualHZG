@@ -50,6 +50,36 @@
             </div>
         </div>
         <div class="col-lg-3 col-md-6 mb-2">
+            <div class="card stats-card success h-100 shadow-sm border-0">
+                <div class="card-body py-2 px-3">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <h4 class="fw-bold text-success mb-0"><?= isset($estadisticas['solicitudes_prestamo']) ? number_format($estadisticas['solicitudes_prestamo']) : 0 ?></h4>
+                            <p class="text-muted mb-0 small">Préstamos Nuevos</p>
+                        </div>
+                        <div class="rounded-circle bg-success bg-opacity-10 p-2">
+                            <i class="ti ti-book-plus text-success" style="font-size: 1.5rem;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-2">
+            <div class="card stats-card warning h-100 shadow-sm border-0">
+                <div class="card-body py-2 px-3">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <h4 class="fw-bold text-warning mb-0"><?= isset($estadisticas['solicitudes_renovacion']) ? number_format($estadisticas['solicitudes_renovacion']) : 0 ?></h4>
+                            <p class="text-muted mb-0 small">Renovaciones</p>
+                        </div>
+                        <div class="rounded-circle bg-warning bg-opacity-10 p-2">
+                            <i class="ti ti-refresh text-warning" style="font-size: 1.5rem;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-2">
             <div class="card stats-card info h-100 shadow-sm border-0">
                 <div class="card-body py-2 px-3">
                     <div class="d-flex align-items-center justify-content-between">
@@ -64,58 +94,19 @@
                 </div>
             </div>
         </div>
-        <div class="col-lg-3 col-md-6 mb-2">
-            <div class="card stats-card warning h-100 shadow-sm border-0">
-                <div class="card-body py-2 px-3">
-                    <div class="d-flex align-items-center justify-content-between">
-                        <div>
-                            <h4 class="fw-bold text-warning mb-0"><?= isset($estadisticas['esta_semana']) ? number_format($estadisticas['esta_semana']) : 0 ?></h4>
-                            <p class="text-muted mb-0 small">Esta Semana</p>
-                        </div>
-                        <div class="rounded-circle bg-warning bg-opacity-10 p-2">
-                            <i class="ti ti-calendar text-warning" style="font-size: 1.5rem;"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-lg-3 col-md-6 mb-2">
-            <div class="card stats-card success h-100 shadow-sm border-0">
-                <div class="card-body py-2 px-3">
-                    <div class="d-flex align-items-center justify-content-between">
-                        <div>
-                            <h4 class="fw-bold text-success mb-0"><?= isset($estadisticas['esperando_aprobacion']) ? number_format($estadisticas['esperando_aprobacion']) : 0 ?></h4>
-                            <p class="text-muted mb-0 small">Esperando Aprobación</p>
-                        </div>
-                        <div class="rounded-circle bg-success bg-opacity-10 p-2">
-                            <i class="ti ti-hourglass text-success" style="font-size: 1.5rem;"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
     </div>
 
-    <!-- Tabla de solicitudes con diseño mejorado -->
+    <!-- Tabla única con todas las solicitudes -->
     <div class="card shadow-sm">
         <div class="card-header bg-white py-3">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h5 class="card-title mb-0 fw-semibold">
-                        <i class="ti ti-list text-primary me-2"></i>
-                        Lista de Solicitudes Pendientes
-                    </h5>
-                    <p class="text-muted small mb-0 mt-1">
-                        Gestiona las solicitudes que requieren aprobación
-                        <span class="badge rounded-circle bg-primary-subtle text-primary d-inline-flex align-items-center justify-content-center ms-1" 
-                              data-bs-toggle="tooltip" 
-                              data-bs-placement="right" 
-                              title="Prioridades: Alta (7+ días de espera) | Media (3-6 días) | Normal (menos de 3 días)"
-                              style="cursor: help; width: 16px; height: 16px; font-size: 10px; font-weight: bold; padding: 0; vertical-align: middle;">
-                            ?
-                        </span>
-                    </p>
-                </div>
+            <div>
+                <h5 class="card-title mb-0 fw-semibold">
+                    <i class="ti ti-list text-primary me-2"></i>
+                    Todas las Solicitudes Pendientes
+                </h5>
+                <p class="text-muted small mb-0 mt-1">
+                    Solicitudes de préstamos nuevos y renovaciones
+                </p>
             </div>
         </div>
         <div class="card-body p-3">
@@ -123,24 +114,40 @@
                 <table class="table table-hover align-middle mb-0" id="tablaSolicitudes">
                     <thead class="table-light">
                         <tr class="text-uppercase small fw-semibold text-muted">
+                            <th class="border-0 px-3 py-3">Tipo</th>
                             <th class="border-0 px-3 py-3">Usuario</th>
-                            <th class="border-0 px-3 py-3">Recurso Solicitado</th>
-                            <th class="border-0 px-3 py-3">Fechas del Préstamo</th>
-                            <th class="border-0 text-center px-3 py-3">Cantidad</th>
+                            <th class="border-0 px-3 py-3">Recurso</th>
+                            <th class="border-0 px-3 py-3">Fechas</th>
+                            <th class="border-0 text-center px-3 py-3">Extensión</th>
                             <th class="border-0 text-center px-3 py-3">Prioridad</th>
-                            <th class="border-0 text-center px-3 py-3">Disponibilidad</th>
+                            <th class="border-0 text-center px-3 py-3">Estado</th>
                             <th class="border-0 text-center px-3 py-3">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php if (!empty($solicitudes)): ?>
                             <?php foreach ($solicitudes as $solicitud): ?>
+                                <?php $esRenovacion = ($solicitud['tipo_solicitud'] ?? 'prestamo') === 'renovacion'; ?>
                                 <tr class="border-bottom">
+                                    <!-- Tipo de Solicitud -->
+                                    <td class="px-3 py-3">
+                                        <?php if ($esRenovacion): ?>
+                                            <span class="badge bg-warning-subtle text-warning">
+                                                <i class="ti ti-refresh me-1"></i>Renovación
+                                            </span>
+                                        <?php else: ?>
+                                            <span class="badge bg-success-subtle text-success">
+                                                <i class="ti ti-book-plus me-1"></i>Nuevo
+                                            </span>
+                                        <?php endif; ?>
+                                    </td>
+                                    
+                                    <!-- Usuario -->
                                     <td class="px-3 py-3">
                                         <div class="d-flex align-items-center">
                                             <div class="me-3">
-                                                <div class="rounded-2 bg-primary bg-opacity-10 p-2">
-                                                    <i class="ti ti-user text-primary fs-5"></i>
+                                                <div class="rounded-2 <?= $esRenovacion ? 'bg-warning' : 'bg-primary' ?> bg-opacity-10 p-2">
+                                                    <i class="ti ti-user <?= $esRenovacion ? 'text-warning' : 'text-primary' ?> fs-5"></i>
                                                 </div>
                                             </div>
                                             <div>
@@ -149,116 +156,192 @@
                                             </div>
                                         </div>
                                     </td>
+                                    
+                                    <!-- Recurso -->
                                     <td class="px-3 py-3">
                                         <div>
                                             <h6 class="mb-1 fw-medium"><?= esc($solicitud['recurso']) ?></h6>
-                                            <p class="text-muted mb-0 small">Código: <?= esc($solicitud['codigo_ejemplar']) ?></p>
+                                            <p class="text-muted mb-0 small">
+                                                Código: <?= esc($solicitud['codigo_ejemplar']) ?>
+                                                <?php if ($esRenovacion): ?>
+                                                    | Préstamo #<?= $solicitud['idprestamo'] ?>
+                                                <?php endif; ?>
+                                            </p>
+                                            <?php if ($esRenovacion && !empty($solicitud['motivo'])): ?>
+                                                <p class="text-muted mb-0 small">
+                                                    <i class="ti ti-message text-info me-1"></i>
+                                                    <?= esc($solicitud['motivo']) ?>
+                                                </p>
+                                            <?php endif; ?>
                                         </div>
                                     </td>
+                                    
+                                    <!-- Fechas -->
                                     <td class="px-3 py-3">
-                                        <div>
-                                            <p class="mb-1 small">
-                                                <i class="ti ti-calendar-plus text-primary me-1"></i>
-                                                <strong>Inicio:</strong> <?= date('d/m/Y', strtotime($solicitud['fecha_solicitud'])) ?>
-                                            </p>
-                                            <p class="mb-1 small">
-                                                <i class="ti ti-calendar text-success me-1"></i>
-                                                <strong>Entrega:</strong> <?= date('d/m/Y', strtotime($solicitud['fecha_devolucion'])) ?>
-                                            </p>
-                                            <p class="mb-1 small text-muted">
-                                                <i class="ti ti-clock-hour-3 me-1"></i>
-                                                Duración: 
-                                                <?php
-                                                    $inicio = new DateTime($solicitud['fecha_solicitud']);
-                                                    $entrega = new DateTime($solicitud['fecha_devolucion']);
-                                                    $diff = $inicio->diff($entrega);
-                                                    echo $diff->days . ' día' . ($diff->days != 1 ? 's' : '');
-                                                ?>
-                                            </p>
-                                        </div>
+                                        <?php if ($esRenovacion): ?>
+                                            <!-- Fechas para renovación -->
+                                            <div>
+                                                <p class="mb-1 small text-danger">
+                                                    <strong>Vence:</strong> 
+                                                    <?= date('d/m/Y', strtotime($solicitud['fecha_vencimiento_actual'])) ?>
+                                                </p>
+                                                <p class="mb-0 small text-success">
+                                                    <strong>Nueva:</strong> 
+                                                    <?= date('d/m/Y', strtotime($solicitud['nueva_fecha_devolucion'])) ?>
+                                                </p>
+                                            </div>
+                                        <?php else: ?>
+                                            <!-- Fechas para préstamo nuevo -->
+                                            <div>
+                                                <p class="mb-1 small">
+                                                    <i class="ti ti-calendar-plus text-primary me-1"></i>
+                                                    <strong>Inicio:</strong> <?= date('d/m/Y', strtotime($solicitud['fecha_solicitud'])) ?>
+                                                </p>
+                                                <p class="mb-0 small">
+                                                    <i class="ti ti-calendar text-success me-1"></i>
+                                                    <strong>Entrega:</strong> <?= date('d/m/Y', strtotime($solicitud['fecha_devolucion'])) ?>
+                                                </p>
+                                            </div>
+                                        <?php endif; ?>
                                     </td>
+                                    
+                                    <!-- Extensión / Cantidad -->
                                     <td class="px-3 py-3 text-center">
-                                        <div class="d-flex flex-column align-items-center">
-                                            <span class="badge bg-primary-subtle text-primary fs-6 px-3 py-2 mb-1">
-                                                <?= isset($solicitud['cantidad_solicitada']) ? $solicitud['cantidad_solicitada'] : 1 ?>
-                                            </span>
-                                            <small class="text-muted">
-                                                <?= (isset($solicitud['cantidad_solicitada']) && $solicitud['cantidad_solicitada'] == 1) ? 'ejemplar' : 'ejemplares' ?>
-                                            </small>
-                                        </div>
+                                        <?php if ($esRenovacion): ?>
+                                            <div class="d-flex flex-column align-items-center">
+                                                <span class="badge bg-warning-subtle text-warning fs-6 px-3 py-2 mb-1">
+                                                    +<?= $solicitud['dias_extension'] ?? 0 ?>
+                                                </span>
+                                                <small class="text-muted">
+                                                    <?= ($solicitud['dias_extension'] ?? 0) == 1 ? 'día' : 'días' ?>
+                                                </small>
+                                            </div>
+                                        <?php else: ?>
+                                            <div class="d-flex flex-column align-items-center">
+                                                <span class="badge bg-primary-subtle text-primary fs-6 px-3 py-2 mb-1">
+                                                    <?= isset($solicitud['cantidad_solicitada']) ? $solicitud['cantidad_solicitada'] : 1 ?>
+                                                </span>
+                                                <small class="text-muted">
+                                                    <?= (isset($solicitud['cantidad_solicitada']) && $solicitud['cantidad_solicitada'] == 1) ? 'ejemplar' : 'ejemplares' ?>
+                                                </small>
+                                            </div>
+                                        <?php endif; ?>
                                     </td>
+                                    
+                                    <!-- Prioridad -->
                                     <td class="px-3 py-3 text-center">
                                         <?php 
-                                        // Calcular días de espera desde la creación de la solicitud
                                         $diasEspera = 0;
                                         if (isset($solicitud['fecha_creacion'])) {
                                             $fechaCreacion = new DateTime($solicitud['fecha_creacion']);
                                             $fechaActual = new DateTime();
                                             $diferencia = $fechaCreacion->diff($fechaActual);
-                                            $diasEspera = $diferencia->days;
-                                            
-                                            // Si la fecha de creación es futura (por error), usar 0
-                                            if ($diferencia->invert == 1) {
-                                                $diasEspera = 0;
-                                            }
+                                            $diasEspera = $diferencia->invert == 1 ? 0 : $diferencia->days;
+                                        } elseif (isset($solicitud['fecha_solicitud'])) {
+                                            $fechaCreacion = new DateTime($solicitud['fecha_solicitud']);
+                                            $fechaActual = new DateTime();
+                                            $diferencia = $fechaCreacion->diff($fechaActual);
+                                            $diasEspera = $diferencia->invert == 1 ? 0 : $diferencia->days;
                                         }
-                                        
                                         $textoDias = $diasEspera == 0 ? 'Hoy' : ($diasEspera == 1 ? '1 día' : $diasEspera . ' días');
                                         ?>
                                         <?php if ($solicitud['prioridad'] == 'Alta'): ?>
-                                            <span class="badge bg-danger-subtle text-danger" 
-                                                  data-bs-toggle="tooltip" 
-                                                  title="<?= $diasEspera > 0 ? $diasEspera . ' días en espera' : 'Creada hoy' ?>">
+                                            <span class="badge bg-danger-subtle text-danger">
                                                 <i class="ti ti-alert-circle me-1"></i>Alta
                                             </span>
                                             <small class="d-block text-muted mt-1"><?= $textoDias ?></small>
                                         <?php elseif ($solicitud['prioridad'] == 'Media'): ?>
-                                            <span class="badge bg-warning-subtle text-warning"
-                                                  data-bs-toggle="tooltip" 
-                                                  title="<?= $diasEspera > 0 ? $diasEspera . ' días en espera' : 'Creada hoy' ?>">
+                                            <span class="badge bg-warning-subtle text-warning">
                                                 <i class="ti ti-alert-triangle me-1"></i>Media
                                             </span>
                                             <small class="d-block text-muted mt-1"><?= $textoDias ?></small>
                                         <?php else: ?>
-                                            <span class="badge bg-info-subtle text-info"
-                                                  data-bs-toggle="tooltip" 
-                                                  title="<?= $diasEspera > 0 ? $diasEspera . ' días en espera' : 'Creada hoy' ?>">
+                                            <span class="badge bg-info-subtle text-info">
                                                 <i class="ti ti-info-circle me-1"></i>Normal
                                             </span>
                                             <small class="d-block text-muted mt-1"><?= $textoDias ?></small>
                                         <?php endif; ?>
                                     </td>
+                                    
+                                    <!-- Estado / Disponibilidad -->
                                     <td class="px-3 py-3 text-center">
-                                        <?php if ($solicitud['disponible']): ?>
-                                            <span class="badge bg-success-subtle text-success">
-                                                <i class="ti ti-check-circle me-1"></i>Disponible
-                                            </span>
+                                        <?php if ($esRenovacion): ?>
+                                            <!-- Para renovaciones, mostrar estado del vencimiento -->
+                                            <?php 
+                                            $hoy = new DateTime();
+                                            $vencimiento = new DateTime($solicitud['fecha_vencimiento_actual']);
+                                            $diff = $hoy->diff($vencimiento);
+                                            $diasRestantes = $diff->invert ? -$diff->days : $diff->days;
+                                            ?>
+                                            <?php if ($diasRestantes < 0): ?>
+                                                <span class="badge bg-danger-subtle text-danger">
+                                                    <i class="ti ti-alert-circle me-1"></i>Vencido
+                                                </span>
+                                            <?php elseif ($diasRestantes <= 2): ?>
+                                                <span class="badge bg-warning-subtle text-warning">
+                                                    <i class="ti ti-alert-triangle me-1"></i>Por vencer
+                                                </span>
+                                            <?php else: ?>
+                                                <span class="badge bg-success-subtle text-success">
+                                                    <i class="ti ti-check-circle me-1"></i>Vigente
+                                                </span>
+                                            <?php endif; ?>
                                         <?php else: ?>
-                                            <span class="badge bg-secondary-subtle text-secondary">
-                                                <i class="ti ti-x-circle me-1"></i>No Disponible
-                                            </span>
+                                            <!-- Para préstamos nuevos, mostrar disponibilidad -->
+                                            <?php if ($solicitud['disponible']): ?>
+                                                <span class="badge bg-success-subtle text-success">
+                                                    <i class="ti ti-check-circle me-1"></i>Disponible
+                                                </span>
+                                            <?php else: ?>
+                                                <span class="badge bg-secondary-subtle text-secondary">
+                                                    <i class="ti ti-x-circle me-1"></i>No Disponible
+                                                </span>
+                                            <?php endif; ?>
                                         <?php endif; ?>
                                     </td>
+                                    
+                                    <!-- Acciones -->
                                     <td class="px-3 py-3 text-center">
                                         <div class="d-flex gap-1 justify-content-center">
-                                            <?php if ($solicitud['disponible']): ?>
-                                                <button class="btn btn-sm btn-success" onclick="aprobarSolicitud(<?= $solicitud['id'] ?>)" title="Aprobar Solicitud">
+                                            <?php if ($esRenovacion): ?>
+                                                <!-- Botones para renovación -->
+                                                <button class="btn btn-sm btn-success" 
+                                                        onclick="aprobarRenovacion(<?= $solicitud['id'] ?>, <?= $solicitud['idprestamo'] ?>)" 
+                                                        title="Aprobar Renovación">
                                                     <i class="ti ti-check"></i>
                                                 </button>
+                                                <button class="btn btn-sm btn-danger" 
+                                                        onclick="rechazarRenovacion(<?= $solicitud['id'] ?>)" 
+                                                        title="Rechazar Renovación">
+                                                    <i class="ti ti-x"></i>
+                                                </button>
+                                            <?php else: ?>
+                                                <!-- Botones para préstamo nuevo -->
+                                                <?php if ($solicitud['disponible']): ?>
+                                                    <button class="btn btn-sm btn-success" 
+                                                            onclick="aprobarSolicitud(<?= $solicitud['id'] ?>)" 
+                                                            title="Aprobar Solicitud">
+                                                        <i class="ti ti-check"></i>
+                                                    </button>
+                                                <?php endif; ?>
+                                                <button class="btn btn-sm btn-danger" 
+                                                        onclick="rechazarSolicitud(<?= $solicitud['id'] ?>)" 
+                                                        title="Rechazar Solicitud">
+                                                    <i class="ti ti-x"></i>
+                                                </button>
+                                                <button class="btn btn-sm btn-outline-secondary" 
+                                                        onclick="verDetalleSolicitud(<?= $solicitud['id'] ?>)" 
+                                                        title="Ver Detalles">
+                                                    <i class="ti ti-eye"></i>
+                                                </button>
                                             <?php endif; ?>
-                                            <button class="btn btn-sm btn-danger" onclick="rechazarSolicitud(<?= $solicitud['id'] ?>)" title="Rechazar Solicitud">
-                                                <i class="ti ti-x"></i>
-                                            </button>
-                                            <button class="btn btn-sm btn-outline-secondary" onclick="verDetalleSolicitud(<?= $solicitud['id'] ?>)" title="Ver Detalles">
-                                                <i class="ti ti-eye"></i>
-                                            </button>
                                         </div>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>
                         <?php else: ?>
                             <tr>
-                                <td colspan="7" class="text-center py-5">
+                                <td colspan="8" class="text-center py-5">
                                     <div class="empty-state">
                                         <div class="empty-state-icon mb-3">
                                             <i class="ti ti-clock-off" style="font-size: 3rem; color: #6c757d;"></i>
@@ -276,13 +359,19 @@
             </div>
         </div>
         
-        <!-- Footer de la tarjeta con información adicional -->
+        <!-- Footer con información -->
         <?php if (!empty($solicitudes)): ?>
         <div class="card-footer bg-light border-top-0">
             <div class="d-flex justify-content-between align-items-center text-muted small">
                 <span>
                     <i class="ti ti-info-circle me-1"></i>
-                    Mostrando <?= count($solicitudes) ?> de <?= count($solicitudes) ?> solicitudes
+                    Mostrando <?= count($solicitudes) ?> solicitud(es) |
+                    <span class="badge bg-success-subtle text-success ms-1">
+                        <?= $estadisticas['solicitudes_prestamo'] ?? 0 ?> préstamos
+                    </span>
+                    <span class="badge bg-warning-subtle text-warning ms-1">
+                        <?= $estadisticas['solicitudes_renovacion'] ?? 0 ?> renovaciones
+                    </span>
                 </span>
                 <span>
                     <i class="ti ti-clock me-1"></i>
@@ -886,6 +975,155 @@
                         Swal.fire({
                             title: 'Error en el Servidor',
                             text: data.message || 'No se pudieron rechazar las solicitudes',
+                            icon: 'error'
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    Swal.fire({
+                        title: 'Error',
+                        text: 'Ha ocurrido un error de conexión',
+                        icon: 'error'
+                    });
+                });
+            }
+        });
+    }
+
+    // ============================================
+    // FUNCIONES PARA RENOVACIONES
+    // ============================================
+    
+    // Función para aprobar renovación
+    function aprobarRenovacion(solicitudId, idprestamo) {
+        console.log('Aprobar renovación:', solicitudId, 'Préstamo:', idprestamo);
+        
+        Swal.fire({
+            title: '¿Aprobar Renovación?',
+            text: '¿Estás seguro de que deseas aprobar esta solicitud de renovación?',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, aprobar',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#28a745'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Mostrar loading
+                Swal.fire({
+                    title: 'Procesando...',
+                    text: 'Aprobando renovación de préstamo',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
+                // Enviar solicitud AJAX
+                fetch('<?= base_url('prestamo/aprobar-renovacion') ?>', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify({
+                        idsolicitud_renovacion: solicitudId,
+                        idprestamo: idprestamo
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        Swal.fire({
+                            title: 'Renovación Aprobada',
+                            text: data.message || 'La renovación ha sido aprobada correctamente',
+                            icon: 'success',
+                            timer: 2000,
+                            showConfirmButton: false
+                        }).then(() => {
+                            recargarContenidoSolicitudes();
+                        });
+                    } else {
+                        Swal.fire({
+                            title: 'Error',
+                            text: data.message || 'No se pudo aprobar la renovación',
+                            icon: 'error'
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    Swal.fire({
+                        title: 'Error',
+                        text: 'Ha ocurrido un error de conexión',
+                        icon: 'error'
+                    });
+                });
+            }
+        });
+    }
+
+    // Función para rechazar renovación
+    function rechazarRenovacion(solicitudId) {
+        console.log('Rechazar renovación:', solicitudId);
+        
+        Swal.fire({
+            title: '¿Rechazar Renovación?',
+            input: 'textarea',
+            inputLabel: 'Motivo del rechazo',
+            inputPlaceholder: 'Escribe el motivo por el cual se rechaza la renovación...',
+            inputAttributes: {
+                'aria-label': 'Motivo del rechazo'
+            },
+            showCancelButton: true,
+            confirmButtonText: 'Rechazar',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#dc3545',
+            inputValidator: (value) => {
+                if (!value) {
+                    return 'Debes proporcionar un motivo para rechazar la renovación';
+                }
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Mostrar loading
+                Swal.fire({
+                    title: 'Procesando...',
+                    text: 'Rechazando renovación de préstamo',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
+                // Enviar solicitud AJAX
+                fetch('<?= base_url('prestamo/rechazar-renovacion') ?>', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify({
+                        idsolicitud_renovacion: solicitudId,
+                        motivo_rechazo: result.value
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        Swal.fire({
+                            title: 'Renovación Rechazada',
+                            text: data.message || 'La renovación ha sido rechazada correctamente',
+                            icon: 'success',
+                            timer: 2000,
+                            showConfirmButton: false
+                        }).then(() => {
+                            recargarContenidoSolicitudes();
+                        });
+                    } else {
+                        Swal.fire({
+                            title: 'Error',
+                            text: data.message || 'No se pudo rechazar la renovación',
                             icon: 'error'
                         });
                     }

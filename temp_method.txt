@@ -1,0 +1,90 @@
+﻿    /**
+     * Solicitar renovación de un préstamo
+     */
+    public function solicitarRenovacion()
+    {
+        if (!$this->request->isAJAX()) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Solicitud no válida'
+            ]);
+        }
+
+        if (!session()->get('logged_in')) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Debes iniciar sesión para solicitar renovación'
+            ]);
+        }
+
+        $idUsuario = session()->get('idusuario');
+        $idprestamo = $this->request->getPost('idprestamo');
+        $nuevaFechaDevolucion = $this->request->getPost('nueva_fecha_devolucion');
+        $motivo = $this->request->getPost('motivo') ?? '';
+
+        if (!$idprestamo || !$nuevaFechaDevolucion) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Datos incompletos'
+            ]);
+        }
+
+        try {
+            // Verificar que el préstamo pertenezca al usuario
+            $prestamoModel = new PrestamoModel();
+            $prestamo = $prestamoModel->find($idprestamo);
+
+            if (!$prestamo) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Préstamo no encontrado'
+                ]);
+            }
+
+            if ($prestamo['idusuario'] != $idUsuario) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'No tienes permisos para renovar este préstamo'
+                ]);
+            }
+
+            // Validar fecha
+            $fechaSeleccionada = new \DateTime($nuevaFechaDevolucion);
+            $hoy = new \DateTime();
+            $hoy->setTime(0, 0, 0);
+
+            if ($fechaSeleccionada <= $hoy) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'La fecha de devolución debe ser posterior a hoy'
+                ]);
+            }
+
+            // Validar que no sea fin de semana
+            $diaSemana = $fechaSeleccionada->format('N');
+            if ($diaSemana == 6 || $diaSemana == 7) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'No se pueden hacer devoluciones en fin de semana'
+                ]);
+            }
+
+            // Crear la solicitud
+            $renovacionModel = new RenovacionModel();
+            $resultado = $renovacionModel->crearSolicitudRenovacion(
+                $idprestamo,
+                $nuevaFechaDevolucion,
+                $motivo,
+                $idUsuario
+            );
+
+            return $this->response->setJSON($resultado);
+
+        } catch (\Exception $e) {
+            log_message('error', 'Error en solicitarRenovacion: ' . $e->getMessage());
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Error al procesar la solicitud: ' . $e->getMessage()
+            ]);
+        }
+    }

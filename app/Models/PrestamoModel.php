@@ -2321,4 +2321,121 @@ class PrestamoModel extends Model
             'historial' => $historial
         ];
     }
+
+    /**
+     * Obtener detalles completos de un préstamo específico
+     */
+    public function getDetallePrestamo($idprestamo)
+    {
+        try {
+            $db = \Config\Database::connect();
+            
+            $sql = "SELECT 
+                        p.*,
+                        r.titulo,
+                        r.anio,
+                        r.isbn,
+                        CONCAT(COALESCE(a.nomautor, ''), ' ', COALESCE(a.apeautor, '')) as nomautor,
+                        e.editorial as nomeditorial,
+                        COALESCE(rf.portada, rd.portada) as portada,
+                        CONCAT(per.nombres, ' ', per.apellidos) as nombre_usuario,
+                        per.email,
+                        per.numerodoc,
+                        CONCAT(g.grado, '° ', g.nivel, ' ', g.seccion) as nivel_grado,
+                        (SELECT COUNT(*) FROM renovaciones_prestamo WHERE idprestamo = p.idprestamo) as num_renovaciones
+                    FROM prestamos p
+                    JOIN matriculas m ON m.idmatricula = p.idmatricula
+                    JOIN personas per ON per.idpersona = m.idpersona
+                    JOIN grupos g ON g.idgrupo = m.idgrupo
+                    JOIN recursos r ON r.idrecurso = p.idrecurso
+                    LEFT JOIN detautores da ON da.idrecurso = r.idrecurso
+                    LEFT JOIN autores a ON a.idautor = da.idautor
+                    LEFT JOIN editoriales e ON e.ideditorial = r.ideditorial
+                    LEFT JOIN recursos_fisicos rf ON rf.idrecurso = r.idrecurso
+                    LEFT JOIN recursos_digitales rd ON rd.idrecurso = r.idrecurso
+                    WHERE p.idprestamo = ?
+                    LIMIT 1";
+            
+            log_message('info', "Ejecutando consulta getDetallePrestamo para ID: {$idprestamo}");
+            $query = $db->query($sql, [$idprestamo]);
+            $result = $query->getRowArray();
+            
+            if ($result) {
+                log_message('info', "Préstamo {$idprestamo} encontrado: " . $result['titulo']);
+            } else {
+                log_message('warning', "No se encontraron resultados para préstamo ID: {$idprestamo}");
+            }
+            
+            return $result;
+        } catch (\Exception $e) {
+            log_message('error', 'Error en PrestamoModel::getDetallePrestamo(): ' . $e->getMessage());
+            throw $e;
+        }
+    }
+
+    /**
+     * Obtener solicitudes de renovación pendientes
+     */
+    public function getSolicitudesRenovacionPendientes()
+    {
+        $db = \Config\Database::connect();
+        
+        // Verificar si la tabla existe
+        if (!$db->tableExists('solicitudes_renovacion')) {
+            log_message('warning', 'Tabla solicitudes_renovacion no existe');
+            return [];
+        }
+        
+        $sql = "SELECT 
+                    sr.idsolicitud_renovacion as id,
+                    sr.idprestamo,
+                    CONCAT(per.nombres, ' ', per.apellidos) as usuario,
+                    per.numerodoc as documento,
+                    r.titulo as recurso,
+                    CASE 
+                        WHEN rf.idrecurso IS NOT NULL THEN CONCAT('LIB-FIS-', LPAD(r.idrecurso, 3, '0'))
+                        ELSE CONCAT('LIB-DIG-', LPAD(r.idrecurso, 3, '0'))
+                    END as codigo_ejemplar,
+                    sr.fecha_solicitud,
+                    sr.fecha_vencimiento_actual,
+                    sr.nueva_fecha_inicio,
+                    sr.nueva_fecha_devolucion,
+                    sr.motivo,
+                    sr.estado,
+                    'Renovación' as tipo_solicitud,
+                    CASE 
+                        WHEN DATEDIFF(NOW(), sr.fecha_solicitud) >= 7 THEN 'Alta'
+                        WHEN DATEDIFF(NOW(), sr.fecha_solicitud) >= 3 THEN 'Media'
+                        ELSE 'Normal'
+                    END as prioridad,
+                    DATEDIFF(sr.nueva_fecha_devolucion, sr.nueva_fecha_inicio) as dias_extension,
+                    true as disponible -- Las renovaciones siempre están disponibles (el libro ya está prestado)
+                FROM solicitudes_renovacion sr
+                JOIN prestamos p ON p.idprestamo = sr.idprestamo
+                JOIN matriculas m ON m.idmatricula = p.idmatricula
+                JOIN personas per ON per.idpersona = m.idpersona
+                JOIN recursos r ON r.idrecurso = p.idrecurso
+                LEFT JOIN recursos_fisicos rf ON rf.idrecurso = r.idrecurso
+                WHERE sr.estado = 'pendiente'
+                  AND p.fechahoraretorno IS NULL
+                ORDER BY 
+                    CASE 
+                        WHEN DATEDIFF(NOW(), sr.fecha_solicitud) >= 7 THEN 1
+                        WHEN DATEDIFF(NOW(), sr.fecha_solicitud) >= 3 THEN 2
+                        ELSE 3
+                    END,
+                    sr.fecha_solicitud ASC";
+        
+        try {
+            $query = $db->query($sql);
+            $result = $query->getResultArray();
+            
+            log_message('info', 'Solicitudes de renovación pendientes obtenidas: ' . count($result));
+            
+            return $result;
+        } catch (\Exception $e) {
+            log_message('error', 'Error en PrestamoModel::getSolicitudesRenovacionPendientes(): ' . $e->getMessage());
+            return [];
+        }
+    }
 }

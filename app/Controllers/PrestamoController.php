@@ -65,28 +65,67 @@ class PrestamoController extends Controller
 
         try {
             log_message('info', 'Accediendo a solicitudes pendientes - Usuario: ' . session()->get('nomuser'));
-            $solicitudes = $this->prestamoModel->getSolicitudesPendientes();
+            
+            // Obtener solicitudes de préstamo
+            $solicitudesPrestamo = $this->prestamoModel->getSolicitudesPendientes();
+            
+            // Obtener solicitudes de renovación pendientes
+            $solicitudesRenovacion = $this->prestamoModel->getSolicitudesRenovacionPendientes();
+            
+            // Agregar tipo a cada solicitud de préstamo
+            foreach ($solicitudesPrestamo as &$solicitud) {
+                $solicitud['tipo_solicitud'] = 'prestamo';
+            }
+            
+            // Agregar tipo a cada solicitud de renovación
+            foreach ($solicitudesRenovacion as &$solicitud) {
+                $solicitud['tipo_solicitud'] = 'renovacion';
+            }
+            
+            // Combinar ambas listas en una sola
+            $todasSolicitudes = array_merge($solicitudesPrestamo, $solicitudesRenovacion);
+            
+            // Ordenar por prioridad y fecha
+            usort($todasSolicitudes, function($a, $b) {
+                // Prioridad: Alta > Media > Normal
+                $prioridadValor = ['Alta' => 3, 'Media' => 2, 'Normal' => 1];
+                $prioA = $prioridadValor[$a['prioridad']] ?? 1;
+                $prioB = $prioridadValor[$b['prioridad']] ?? 1;
+                
+                if ($prioA != $prioB) {
+                    return $prioB - $prioA; // Descendente (Alta primero)
+                }
+                
+                // Si tienen la misma prioridad, ordenar por fecha (más antiguas primero)
+                return strtotime($a['fecha_solicitud']) - strtotime($b['fecha_solicitud']);
+            });
+            
+            // Calcular estadísticas combinadas
+            $totalSolicitudes = count($todasSolicitudes);
             
             $estadisticas = [
-                'total_solicitudes' => count($solicitudes),
-                'hoy' => count(array_filter($solicitudes, function($s) {
+                'total_solicitudes' => $totalSolicitudes,
+                'solicitudes_prestamo' => count($solicitudesPrestamo),
+                'solicitudes_renovacion' => count($solicitudesRenovacion),
+                'hoy' => count(array_filter($todasSolicitudes, function($s) {
                     return date('Y-m-d', strtotime($s['fecha_solicitud'])) == date('Y-m-d');
                 })),
-                'esta_semana' => count(array_filter($solicitudes, function($s) {
+                'esta_semana' => count(array_filter($todasSolicitudes, function($s) {
                     return date('Y-W', strtotime($s['fecha_solicitud'])) == date('Y-W');
                 })),
-                'esperando_aprobacion' => count($solicitudes)
+                'esperando_aprobacion' => $totalSolicitudes
             ];
 
             $data = [
                 'title' => 'Solicitudes Pendientes',
-                'solicitudes' => $solicitudes,
+                'solicitudes' => $todasSolicitudes,
                 'estadisticas' => $estadisticas
             ];
 
             return view('Administrador/prestamos/solicitudes', $data);
         } catch (\Exception $e) {
             log_message('error', 'Error en PrestamoController::solicitudes(): ' . $e->getMessage());
+            log_message('error', 'Stack trace: ' . $e->getTraceAsString());
             
             // En caso de error, mostrar una lista vacía y estadísticas en cero
             $data = [
@@ -94,6 +133,8 @@ class PrestamoController extends Controller
                 'solicitudes' => [],
                 'estadisticas' => [
                     'total_solicitudes' => 0,
+                    'solicitudes_prestamo' => 0,
+                    'solicitudes_renovacion' => 0,
                     'hoy' => 0,
                     'esta_semana' => 0,
                     'esperando_aprobacion' => 0
@@ -1353,7 +1394,450 @@ class PrestamoController extends Controller
     }
 
     /**
-     * Renovar un préstamo activo
+     * Solicitar renovación de un préstamo (para usuarios normales)
+     */
+    public function solicitarRenovacion()
+    {
+        // Verificar si es una solicitud AJAX
+        if (!$this->request->isAJAX()) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Solicitud no válida'
+            ]);
+        }
+
+        // Verificar autenticación
+        if (!session()->get('logged_in')) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Debe iniciar sesión'
+            ]);
+        }
+
+        // Obtener datos del formulario - Los datos vienen como JSON
+        $json = $this->request->getJSON(true); // true para obtener como array
+        
+        // Si no viene como JSON, intentar con POST normal
+        if (empty($json)) {
+            $idprestamo = $this->request->getPost('idprestamo');
+            $motivo = $this->request->getPost('motivo') ?? '';
+            $nuevaFechaDevolucion = $this->request->getPost('nueva_fecha_devolucion');
+            $nuevaFechaPrestamo = $this->request->getPost('nueva_fecha_prestamo');
+        } else {
+            $idprestamo = $json['idprestamo'] ?? null;
+            $motivo = $json['motivo'] ?? '';
+            $nuevaFechaDevolucion = $json['nueva_fecha_devolucion'] ?? null;
+            $nuevaFechaPrestamo = $json['nueva_fecha_prestamo'] ?? null;
+        }
+        
+        // Log para debugging
+        log_message('info', 'Datos recibidos en solicitarRenovacion: ' . json_encode([
+            'idprestamo' => $idprestamo,
+            'nueva_fecha_prestamo' => $nuevaFechaPrestamo,
+            'nueva_fecha_devolucion' => $nuevaFechaDevolucion,
+            'motivo' => $motivo,
+            'json_recibido' => $json
+        ]));
+        
+        if (!$idprestamo) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'ID de préstamo requerido. Datos recibidos: ' . json_encode($json)
+            ]);
+        }
+        
+        if (!$nuevaFechaDevolucion) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Nueva fecha de devolución requerida'
+            ]);
+        }
+
+        try {
+            $db = \Config\Database::connect();
+            
+            // Verificar que el préstamo existe y pertenece al usuario
+            $prestamo = $db->table('prestamos p')
+                ->select('p.*, m.idpersona')
+                ->join('matriculas m', 'm.idmatricula = p.idmatricula')
+                ->join('usuarios u', 'u.idpersona = m.idpersona')
+                ->where('p.idprestamo', $idprestamo)
+                ->where('u.idusuario', session()->get('idusuario'))
+                ->where('p.fechahoraretorno IS NULL', null, false)
+                ->get()
+                ->getRow();
+
+            if (!$prestamo) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Préstamo no encontrado o no autorizado'
+                ]);
+            }
+
+            // Verificar que no exista una solicitud de renovación pendiente
+            $solicitudExistente = $db->table('solicitudes_renovacion')
+                ->where('idprestamo', $idprestamo)
+                ->where('estado', 'pendiente')
+                ->countAllResults();
+
+            if ($solicitudExistente > 0) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Ya existe una solicitud de renovación pendiente para este préstamo'
+                ]);
+            }
+
+            // Crear tabla de solicitudes de renovación si no existe
+            if (!$db->tableExists('solicitudes_renovacion')) {
+                $forge = \Config\Database::forge();
+                $forge->addField([
+                    'idsolicitud_renovacion' => [
+                        'type' => 'INT',
+                        'constraint' => 11,
+                        'unsigned' => true,
+                        'auto_increment' => true
+                    ],
+                    'idprestamo' => [
+                        'type' => 'INT',
+                        'constraint' => 11,
+                        'unsigned' => true
+                    ],
+                    'idusuario_solicita' => [
+                        'type' => 'INT',
+                        'constraint' => 11,
+                        'unsigned' => true
+                    ],
+                    'fecha_solicitud' => [
+                        'type' => 'DATETIME',
+                        'null' => false
+                    ],
+                    'fecha_vencimiento_actual' => [
+                        'type' => 'DATETIME',
+                        'null' => false
+                    ],
+                    'nueva_fecha_inicio' => [
+                        'type' => 'DATE',
+                        'null' => true
+                    ],
+                    'nueva_fecha_devolucion' => [
+                        'type' => 'DATE',
+                        'null' => false
+                    ],
+                    'motivo' => [
+                        'type' => 'TEXT',
+                        'null' => true
+                    ],
+                    'estado' => [
+                        'type' => 'ENUM',
+                        'constraint' => ['pendiente', 'aprobada', 'rechazada'],
+                        'default' => 'pendiente'
+                    ],
+                    'idusuario_procesa' => [
+                        'type' => 'INT',
+                        'constraint' => 11,
+                        'unsigned' => true,
+                        'null' => true
+                    ],
+                    'fecha_procesado' => [
+                        'type' => 'DATETIME',
+                        'null' => true
+                    ],
+                    'motivo_rechazo' => [
+                        'type' => 'TEXT',
+                        'null' => true
+                    ]
+                ]);
+                $forge->addKey('idsolicitud_renovacion', true);
+                $forge->createTable('solicitudes_renovacion', true);
+            }
+
+            // Insertar solicitud de renovación
+            $dataSolicitud = [
+                'idprestamo' => $idprestamo,
+                'idusuario_solicita' => session()->get('idusuario'),
+                'fecha_solicitud' => date('Y-m-d H:i:s'),
+                'fecha_vencimiento_actual' => $prestamo->fechadevolucion,
+                'nueva_fecha_inicio' => $nuevaFechaPrestamo,
+                'nueva_fecha_devolucion' => $nuevaFechaDevolucion,
+                'motivo' => $motivo,
+                'estado' => 'pendiente'
+            ];
+            
+            log_message('info', 'Insertando solicitud de renovación: ' . json_encode($dataSolicitud));
+
+            $db->table('solicitudes_renovacion')->insert($dataSolicitud);
+
+            // Registrar en historial
+            try {
+                helper('historial');
+                if (function_exists('registrar_accion')) {
+                    registrar_accion("Solicitó renovación del préstamo #{$idprestamo} hasta {$nuevaFechaDevolucion}");
+                }
+            } catch (\Exception $e) {
+                log_message('debug', 'Helper historial no disponible: ' . $e->getMessage());
+            }
+
+            return $this->response->setJSON([
+                'success' => true,
+                'message' => 'Solicitud de renovación enviada correctamente. Será revisada por un administrador.',
+                'tipo' => 'solicitud'
+            ]);
+
+        } catch (\Exception $e) {
+            log_message('error', 'Error en PrestamoController::solicitarRenovacion(): ' . $e->getMessage());
+            log_message('error', 'Stack trace: ' . $e->getTraceAsString());
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Error al procesar la solicitud: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Aprobar solicitud de renovación (Admin/Docente)
+     */
+    public function aprobarRenovacion()
+    {
+        // Verificar si es una solicitud AJAX
+        if (!$this->request->isAJAX()) {
+            return $this->response->setStatusCode(400)->setJSON([
+                'success' => false,
+                'message' => 'Solicitud inválida'
+            ]);
+        }
+
+        // Verificar autenticación y permisos
+        if (!session()->get('logged_in')) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Debe iniciar sesión'
+            ]);
+        }
+
+        $nivelAcceso = session()->get('nivelacceso');
+        if (!in_array($nivelAcceso, ['admin', 'docente'])) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'No tiene permisos para aprobar renovaciones'
+            ]);
+        }
+
+        // Obtener datos del JSON
+        $json = $this->request->getJSON(true);
+        $idsolicitudRenovacion = $json['idsolicitud_renovacion'] ?? null;
+        $idprestamo = $json['idprestamo'] ?? null;
+
+        if (!$idsolicitudRenovacion || !$idprestamo) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Datos incompletos'
+            ]);
+        }
+
+        try {
+            $db = \Config\Database::connect();
+
+            // Obtener detalles de la solicitud
+            $solicitud = $db->table('solicitudes_renovacion')
+                ->where('idsolicitud_renovacion', $idsolicitudRenovacion)
+                ->where('estado', 'pendiente')
+                ->get()
+                ->getRow();
+
+            if (!$solicitud) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Solicitud no encontrada o ya procesada'
+                ]);
+            }
+
+            // Usar el método del modelo para renovar el préstamo
+            $resultado = $this->prestamoModel->renovarPrestamoConFecha(
+                $idprestamo,
+                $solicitud->nueva_fecha_devolucion,
+                $solicitud->motivo ?? '',
+                $solicitud->nueva_fecha_inicio
+            );
+
+            if (!$resultado['success']) {
+                return $this->response->setJSON($resultado);
+            }
+
+            // Obtener ID de usuario de sesión
+            $idusuarioSesion = session()->get('idusuario');
+            if (!$idusuarioSesion) {
+                // Intentar obtener de otra forma
+                $nombreUsuario = session()->get('nomuser');
+                if ($nombreUsuario) {
+                    $usuario = $db->table('usuarios')
+                        ->where('nomuser', $nombreUsuario)
+                        ->get()->getRow();
+                    if ($usuario) {
+                        $idusuarioSesion = $usuario->idusuario;
+                        session()->set('idusuario', $idusuarioSesion);
+                    }
+                }
+            }
+
+            // Actualizar estado de la solicitud
+            $db->table('solicitudes_renovacion')
+                ->where('idsolicitud_renovacion', $idsolicitudRenovacion)
+                ->update([
+                    'estado' => 'aprobada',
+                    'idusuario_procesa' => $idusuarioSesion,
+                    'fecha_procesado' => date('Y-m-d H:i:s')
+                ]);
+
+            // Registrar en historial
+            try {
+                helper('historial');
+                if (function_exists('registrar_accion')) {
+                    registrar_accion(
+                        'Aprobación de Renovación de Préstamo',
+                        session()->get('nomuser'),
+                        null,
+                        session()->get('nivelacceso'),
+                        "Renovación de préstamo #{$idprestamo} aprobada exitosamente"
+                    );
+                }
+            } catch (\Exception $e) {
+                log_message('debug', 'Helper historial no disponible: ' . $e->getMessage());
+            }
+
+            return $this->response->setJSON([
+                'success' => true,
+                'message' => 'Renovación aprobada correctamente'
+            ]);
+
+        } catch (\Exception $e) {
+            log_message('error', 'Error en PrestamoController::aprobarRenovacion(): ' . $e->getMessage());
+            log_message('error', 'Stack trace: ' . $e->getTraceAsString());
+            
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Error al aprobar la renovación: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Rechazar solicitud de renovación (Admin/Docente)
+     */
+    public function rechazarRenovacion()
+    {
+        // Verificar si es una solicitud AJAX
+        if (!$this->request->isAJAX()) {
+            return $this->response->setStatusCode(400)->setJSON([
+                'success' => false,
+                'message' => 'Solicitud inválida'
+            ]);
+        }
+
+        // Verificar autenticación y permisos
+        if (!session()->get('logged_in')) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Debe iniciar sesión'
+            ]);
+        }
+
+        $nivelAcceso = session()->get('nivelacceso');
+        if (!in_array($nivelAcceso, ['admin', 'docente'])) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'No tiene permisos para rechazar renovaciones'
+            ]);
+        }
+
+        // Obtener datos del JSON
+        $json = $this->request->getJSON(true);
+        $idsolicitudRenovacion = $json['idsolicitud_renovacion'] ?? null;
+        $motivoRechazo = $json['motivo_rechazo'] ?? 'No especificado';
+
+        if (!$idsolicitudRenovacion) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'ID de solicitud requerido'
+            ]);
+        }
+
+        try {
+            $db = \Config\Database::connect();
+
+            // Verificar que la solicitud existe y está pendiente
+            $solicitud = $db->table('solicitudes_renovacion')
+                ->where('idsolicitud_renovacion', $idsolicitudRenovacion)
+                ->where('estado', 'pendiente')
+                ->get()
+                ->getRow();
+
+            if (!$solicitud) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Solicitud no encontrada o ya procesada'
+                ]);
+            }
+
+            // Obtener ID de usuario de sesión
+            $idusuarioSesion = session()->get('idusuario');
+            if (!$idusuarioSesion) {
+                // Intentar obtener de otra forma
+                $nombreUsuario = session()->get('nomuser');
+                if ($nombreUsuario) {
+                    $usuario = $db->table('usuarios')
+                        ->where('nomuser', $nombreUsuario)
+                        ->get()->getRow();
+                    if ($usuario) {
+                        $idusuarioSesion = $usuario->idusuario;
+                        session()->set('idusuario', $idusuarioSesion);
+                    }
+                }
+            }
+
+            // Actualizar estado de la solicitud
+            $db->table('solicitudes_renovacion')
+                ->where('idsolicitud_renovacion', $idsolicitudRenovacion)
+                ->update([
+                    'estado' => 'rechazada',
+                    'idusuario_procesa' => $idusuarioSesion,
+                    'fecha_procesado' => date('Y-m-d H:i:s'),
+                    'motivo_rechazo' => $motivoRechazo
+                ]);
+
+            // Registrar en historial
+            try {
+                helper('historial');
+                if (function_exists('registrar_accion')) {
+                    registrar_accion(
+                        'Rechazo de Renovación de Préstamo',
+                        session()->get('nomuser'),
+                        null,
+                        session()->get('nivelacceso'),
+                        "Renovación de préstamo #{$solicitud->idprestamo} rechazada"
+                    );
+                }
+            } catch (\Exception $e) {
+                log_message('debug', 'Helper historial no disponible: ' . $e->getMessage());
+            }
+
+            return $this->response->setJSON([
+                'success' => true,
+                'message' => 'Solicitud de renovación rechazada'
+            ]);
+
+        } catch (\Exception $e) {
+            log_message('error', 'Error en PrestamoController::rechazarRenovacion(): ' . $e->getMessage());
+            log_message('error', 'Stack trace: ' . $e->getTraceAsString());
+            
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Error al rechazar la renovación'
+            ]);
+        }
+    }
+
+    /**
+     * Renovar un préstamo activo (solo admin/docente)
      */
     public function renovarPrestamo()
     {
@@ -1467,6 +1951,75 @@ class PrestamoController extends Controller
                 'success' => false,
                 'message' => 'Error interno del servidor: ' . $e->getMessage()
             ]);
+        }
+    }
+
+    /**
+     * Mostrar formulario de renovación de préstamo
+     */
+    public function formularioRenovacion($idprestamo = null)
+    {
+        // Verificar si el usuario está autenticado
+        if (!session()->get('logged_in')) {
+            return $this->response->setStatusCode(403)->setBody('No autorizado');
+        }
+
+        if (!$idprestamo) {
+            return $this->response->setStatusCode(400)->setBody('ID de préstamo requerido');
+        }
+
+        try {
+            // Cargar el modelo de recursos
+            $recursoModel = new \App\Models\RecursoModel();
+            
+            // Obtener detalles del préstamo con información del usuario que tiene el préstamo
+            $prestamo = $this->prestamoModel
+                ->select('prestamos.*, usuarios.idusuario as usuario_prestamo')
+                ->join('matriculas', 'matriculas.idmatricula = prestamos.idmatricula', 'left')
+                ->join('usuarios', 'usuarios.idpersona = matriculas.idpersona', 'left')
+                ->where('prestamos.idprestamo', $idprestamo)
+                ->first();
+
+            if (!$prestamo) {
+                return $this->response->setStatusCode(404)->setBody('Préstamo no encontrado');
+            }
+
+            // Obtener información del recurso
+            $recurso = $recursoModel
+                ->select('recursos.idrecurso, recursos.titulo, recursos.isbn, recursos_fisicos.portada')
+                ->join('recursos_fisicos', 'recursos_fisicos.idrecurso = recursos.idrecurso', 'left')
+                ->where('recursos.idrecurso', $prestamo['idrecurso'])
+                ->first();
+
+            // Combinar información del préstamo y recurso
+            if ($recurso) {
+                $prestamo['titulo'] = $recurso['titulo'];
+                $prestamo['isbn'] = $recurso['isbn'] ?? '';
+                $prestamo['portada'] = $recurso['portada'] ?? '';
+            }
+
+            // Verificar que el préstamo pertenece al usuario (excepto admin)
+            $nivelAcceso = session()->get('nivelacceso');
+            if ($nivelAcceso !== 'admin' && $prestamo['usuario_prestamo'] != session()->get('idusuario')) {
+                return $this->response->setStatusCode(403)->setBody('No tiene permisos para renovar este préstamo');
+            }
+
+            // Verificar que el préstamo está activo
+            if (!empty($prestamo['fechahoraretorno'])) {
+                return $this->response->setStatusCode(400)->setBody('El préstamo ya ha sido devuelto');
+            }
+
+            // Cargar la vista del formulario de renovación
+            $data = [
+                'prestamo' => $prestamo
+            ];
+
+            return view('prestamos/formulario_renovacion', $data);
+
+        } catch (\Exception $e) {
+            log_message('error', 'Error en PrestamoController::formularioRenovacion(): ' . $e->getMessage());
+            log_message('error', 'Stack trace: ' . $e->getTraceAsString());
+            return $this->response->setStatusCode(500)->setBody('Error al cargar el formulario: ' . $e->getMessage());
         }
     }
 
@@ -2331,6 +2884,36 @@ class PrestamoController extends Controller
             ]);
         }
     }
+
+    /**
+     * Obtener detalles de un préstamo para mostrar en modal
+     */
+    public function detalles($idprestamo)
+    {
+        try {
+            log_message('info', "Solicitando detalles del préstamo ID: {$idprestamo}");
+            
+            $prestamo = $this->prestamoModel->getDetallePrestamo($idprestamo);
+            
+            if (!$prestamo) {
+                log_message('warning', "No se encontró el préstamo con ID: {$idprestamo}");
+                return view('partials/prestamo_detalles_error', [
+                    'mensaje' => 'No se encontró el préstamo solicitado'
+                ]);
+            }
+
+            log_message('info', "Detalles del préstamo {$idprestamo} cargados correctamente");
+            return view('partials/prestamo_detalles', ['prestamo' => $prestamo]);
+        } catch (\Exception $e) {
+            log_message('error', 'Error en PrestamoController::detalles(): ' . $e->getMessage());
+            log_message('error', 'Stack trace: ' . $e->getTraceAsString());
+            return view('partials/prestamo_detalles_error', [
+                'mensaje' => 'Error al cargar los detalles: ' . $e->getMessage()
+            ]);
+        }
+    }
 }
+
+
 
 
