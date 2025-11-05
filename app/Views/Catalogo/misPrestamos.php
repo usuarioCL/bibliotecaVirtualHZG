@@ -457,11 +457,13 @@ function enviarRenovacionPrestamo() {
         return;
     }
     
-    const formData = new FormData(form);
-    const data = {};
-    formData.forEach((value, key) => {
-        data[key] = value;
-    });
+    // Recopilar datos del formulario manualmente para asegurar que todo se capture correctamente
+    const data = {
+        idprestamo: form.querySelector('input[name="idprestamo"]')?.value,
+        motivo: form.querySelector('textarea[name="motivo"]')?.value || '',
+        nueva_fecha_devolucion: form.querySelector('input[name="nueva_fecha_devolucion"]')?.value,
+        nueva_fecha_prestamo: form.querySelector('input[name="nueva_fecha_prestamo"]')?.value
+    };
     
     // Debug: Verificar datos recopilados
     console.log('Datos del formulario:', data);
@@ -497,24 +499,13 @@ function enviarRenovacionPrestamo() {
         }
     }
     
-    // Determinar la URL según el nivel de acceso del usuario
-    const nivelAcceso = '<?= session()->get("nivelacceso") ?>';
-    const urlRenovacion = (nivelAcceso === 'admin' || nivelAcceso === 'docente') 
-        ? '<?= base_url('prestamo/renovar') ?>'
-        : '<?= base_url('prestamo/solicitar-renovacion') ?>';
+    // Esta vista es SOLO para estudiantes - siempre enviar solicitud de renovación
+    const urlRenovacion = '<?= base_url('prestamo/solicitar-renovacion') ?>';
     
-    // Mensaje de confirmación según el tipo de acción
-    const tituloConfirmacion = (nivelAcceso === 'admin' || nivelAcceso === 'docente')
-        ? '¿Confirmar renovación?'
-        : '¿Enviar solicitud de renovación?';
-    
-    const textoConfirmacion = (nivelAcceso === 'admin' || nivelAcceso === 'docente')
-        ? mensajeExtension
-        : mensajeExtension + '. La solicitud será revisada por un administrador.';
-    
-    const botonConfirmar = (nivelAcceso === 'admin' || nivelAcceso === 'docente')
-        ? 'Sí, renovar'
-        : 'Sí, enviar solicitud';
+    // Mensaje de confirmación para solicitud de renovación
+    const tituloConfirmacion = '¿Enviar solicitud de renovación?';
+    const textoConfirmacion = mensajeExtension + '. Tu solicitud será revisada por un administrador.';
+    const botonConfirmar = 'Sí, enviar solicitud';
     
     Swal.fire({
         title: tituloConfirmacion,
@@ -549,16 +540,22 @@ function enviarRenovacionPrestamo() {
         allowOutsideClick: () => !Swal.isLoading()
     }).then((result) => {
         if (result.isConfirmed && result.value) {
-            const esSolicitud = result.value.tipo === 'solicitud';
-            const titulo = esSolicitud ? '¡Solicitud Enviada!' : '¡Renovado!';
-            const icono = esSolicitud ? 'info' : 'success';
-            
+            // Como esta vista es solo para estudiantes, siempre es una solicitud
             Swal.fire({
-                icon: icono,
-                title: titulo,
-                text: result.value.message,
-                confirmButtonColor: '#28a745',
-                timer: esSolicitud ? 3000 : 2000
+                icon: 'info',
+                title: '¡Solicitud Enviada!',
+                html: `
+                    <div class="text-start">
+                        <p class="mb-2"><strong>Tu solicitud de renovación ha sido enviada exitosamente.</strong></p>
+                        <p class="mb-2">Un administrador o docente revisará tu solicitud pronto.</p>
+                        <div class="alert alert-info mt-3 mb-0">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <small>Recibirás una notificación cuando tu solicitud sea procesada.</small>
+                        </div>
+                    </div>
+                `,
+                confirmButtonText: 'Entendido',
+                confirmButtonColor: '#28a745'
             }).then(() => {
                 window.location.reload();
             });

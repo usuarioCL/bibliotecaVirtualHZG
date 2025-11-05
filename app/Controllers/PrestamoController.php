@@ -1417,32 +1417,44 @@ class PrestamoController extends Controller
         // Obtener datos del formulario - Los datos vienen como JSON
         $json = $this->request->getJSON(true); // true para obtener como array
         
-        // Si no viene como JSON, intentar con POST normal
-        if (empty($json)) {
+        // Log del contenido RAW para debugging
+        $rawInput = file_get_contents('php://input');
+        log_message('info', 'RAW Input en solicitarRenovacion: ' . $rawInput);
+        log_message('info', 'JSON parseado: ' . json_encode($json));
+        
+        // Intentar obtener datos de diferentes fuentes
+        $idprestamo = null;
+        $motivo = '';
+        $nuevaFechaDevolucion = null;
+        $nuevaFechaPrestamo = null;
+        
+        // Prioridad 1: JSON del body
+        if (!empty($json) && isset($json['idprestamo'])) {
+            $idprestamo = $json['idprestamo'];
+            $motivo = $json['motivo'] ?? '';
+            $nuevaFechaDevolucion = $json['nueva_fecha_devolucion'] ?? null;
+            $nuevaFechaPrestamo = $json['nueva_fecha_prestamo'] ?? null;
+        } 
+        // Prioridad 2: POST normal
+        else {
             $idprestamo = $this->request->getPost('idprestamo');
             $motivo = $this->request->getPost('motivo') ?? '';
             $nuevaFechaDevolucion = $this->request->getPost('nueva_fecha_devolucion');
             $nuevaFechaPrestamo = $this->request->getPost('nueva_fecha_prestamo');
-        } else {
-            $idprestamo = $json['idprestamo'] ?? null;
-            $motivo = $json['motivo'] ?? '';
-            $nuevaFechaDevolucion = $json['nueva_fecha_devolucion'] ?? null;
-            $nuevaFechaPrestamo = $json['nueva_fecha_prestamo'] ?? null;
         }
         
         // Log para debugging
-        log_message('info', 'Datos recibidos en solicitarRenovacion: ' . json_encode([
+        log_message('info', 'Datos procesados en solicitarRenovacion: ' . json_encode([
             'idprestamo' => $idprestamo,
             'nueva_fecha_prestamo' => $nuevaFechaPrestamo,
             'nueva_fecha_devolucion' => $nuevaFechaDevolucion,
-            'motivo' => $motivo,
-            'json_recibido' => $json
+            'motivo' => $motivo
         ]));
         
-        if (!$idprestamo) {
+        if (empty($idprestamo)) {
             return $this->response->setJSON([
                 'success' => false,
-                'message' => 'ID de préstamo requerido. Datos recibidos: ' . json_encode($json)
+                'message' => 'ID de préstamo requerido. Raw input: ' . $rawInput
             ]);
         }
         
@@ -1865,21 +1877,43 @@ class PrestamoController extends Controller
             ]);
         }
 
-        // Obtener datos del formulario
-        $idprestamo = $this->request->getPost('idprestamo');
-        $motivo = $this->request->getPost('motivo') ?? '';
-        $nuevaFechaDevolucion = $this->request->getPost('nueva_fecha_devolucion');
-        $nuevaFechaPrestamo = $this->request->getPost('nueva_fecha_prestamo');
+        // Obtener datos del formulario - Los datos vienen como JSON
+        $json = $this->request->getJSON(true);
+        
+        // Log del contenido RAW para debugging
+        $rawInput = file_get_contents('php://input');
+        log_message('info', 'RAW Input en renovarPrestamo: ' . $rawInput);
+        
+        // Intentar obtener datos de diferentes fuentes
+        $idprestamo = null;
+        $motivo = '';
+        $nuevaFechaDevolucion = null;
+        $nuevaFechaPrestamo = null;
+        
+        // Prioridad 1: JSON del body
+        if (!empty($json) && isset($json['idprestamo'])) {
+            $idprestamo = $json['idprestamo'];
+            $motivo = $json['motivo'] ?? '';
+            $nuevaFechaDevolucion = $json['nueva_fecha_devolucion'] ?? null;
+            $nuevaFechaPrestamo = $json['nueva_fecha_prestamo'] ?? null;
+        } 
+        // Prioridad 2: POST normal
+        else {
+            $idprestamo = $this->request->getPost('idprestamo');
+            $motivo = $this->request->getPost('motivo') ?? '';
+            $nuevaFechaDevolucion = $this->request->getPost('nueva_fecha_devolucion');
+            $nuevaFechaPrestamo = $this->request->getPost('nueva_fecha_prestamo');
+        }
         
         // Log para debugging
-        log_message('info', 'Datos recibidos para renovación: ' . json_encode([
+        log_message('info', 'Datos procesados en renovarPrestamo: ' . json_encode([
             'idprestamo' => $idprestamo,
             'nueva_fecha_prestamo' => $nuevaFechaPrestamo,
             'nueva_fecha_devolucion' => $nuevaFechaDevolucion,
             'motivo' => $motivo
         ]));
         
-        if (!$idprestamo) {
+        if (empty($idprestamo)) {
             return $this->response->setJSON([
                 'success' => false,
                 'message' => 'ID de préstamo requerido'
