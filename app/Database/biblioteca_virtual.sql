@@ -285,6 +285,7 @@ CREATE TABLE favoritos (
     idfavorito INT AUTO_INCREMENT PRIMARY KEY,
     idusuario INT NOT NULL,
     idrecurso INT NOT NULL,
+    fecha_agregado TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (idusuario) REFERENCES usuarios(idusuario),
     FOREIGN KEY (idrecurso) REFERENCES recursos(idrecurso)
 );

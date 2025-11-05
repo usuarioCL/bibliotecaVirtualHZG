@@ -34,147 +34,129 @@
         </div>
     </div>
 
-    <!-- Filtros y búsqueda - Solo mostrar si hay favoritos -->
+    <!-- Contenido de favoritos -->
     <?php if (!empty($favoritos)): ?>
-    <div class="row mb-4 g-3">
-        <div class="col-md-4">
-            <div class="input-group">
-                <input type="text" class="form-control" placeholder="Buscar en favoritos..." id="buscarFavoritos">
-                <button class="btn btn-outline-primary" type="button">
-                    <i class="fas fa-search"></i>
-                </button>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <select class="form-select" id="filtroCategoria">
-                <option value="">Todas las categorías</option>
-                <option value="literatura">Literatura</option>
-                <option value="matemáticas">Matemáticas</option>
-                <option value="informática">Informática</option>
-                <option value="historia">Historia</option>
-            </select>
-        </div>
-        <div class="col-md-4">
-            <select class="form-select" id="ordenarPor">
-                <option value="reciente">Más recientes</option>
-                <option value="alfabetico">Orden alfabético</option>
-                <option value="autor">Por autor</option>
-                <option value="categoria">Por categoría</option>
-            </select>
-        </div>
-    </div>
-
-    <!-- Contador de resultados - Solo mostrar si hay favoritos -->
-    <div class="row mb-3">
-        <div class="col-12">
-            <span class="text-muted">Mostrando <span id="resultadosCount"><?= count($favoritos) ?></span> favoritos</span>
-        </div>
-    </div>
-    <?php endif; ?>
-
-    <!-- Contenido de favoritos - Vista Lista -->
-    <?php if (!empty($favoritos)): ?>
-    <div id="favoritosLista">
-        <div class="table-responsive">
-            <table class="table table-hover">
-                <thead class="table-light">
-                    <tr>
-                        <th>Libro</th>
-                        <th>Autor</th>
-                        <th>Categoría</th>
-                        <th>Fecha Agregado</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($favoritos as $favorito): ?>
-                        <tr>
-                            <td>
-                                <div class="d-flex align-items-center">
-                                    <?php if (!empty($favorito['portada'])): ?>
-                                        <img src="<?= base_url($favorito['portada']) ?>" class="rounded me-3" style="width: 40px; height: 50px; object-fit: cover;" alt="Portada">
-                                    <?php else: ?>
-                                        <div class="bg-light rounded me-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 50px;">
-                                            <i class="fas fa-book text-muted"></i>
+        <!-- Vista Lista de favoritos -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="border-0 fw-semibold">Libro</th>
+                                <th class="border-0 fw-semibold">Autor</th>
+                                <th class="border-0 fw-semibold">Categoría</th>
+                                <th class="border-0 fw-semibold">Estado</th>
+                                <th class="border-0 fw-semibold text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="favoritosLista">
+                            <?php foreach ($favoritos as $favorito): ?>
+                                <tr class="align-middle">
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <?php if (!empty($favorito['portada'])): ?>
+                                                <img src="<?= base_url($favorito['portada']) ?>" class="rounded me-3" style="width: 40px; height: 50px; object-fit: cover;" alt="Portada">
+                                            <?php else: ?>
+                                                <div class="bg-light rounded me-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 50px;">
+                                                    <i class="fas fa-book text-muted"></i>
+                                                </div>
+                                            <?php endif; ?>
+                                            <div>
+                                                <h6 class="mb-0 fw-semibold"><?= esc($favorito['titulo']) ?></h6>
+                                                <?php if (!empty($favorito['isbn'])): ?>
+                                                    <small class="text-muted">ISBN: <?= esc($favorito['isbn']) ?></small>
+                                                <?php endif; ?>
+                                            </div>
                                         </div>
-                                    <?php endif; ?>
-                                    <div>
-                                        <h6 class="mb-0"><?= esc($favorito['titulo']) ?></h6>
-                                        <?php if (!empty($favorito['isbn'])): ?>
-                                            <small class="text-muted">ISBN: <?= esc($favorito['isbn']) ?></small>
+                                    </td>
+                                    <td class="text-muted"><?= esc($favorito['nomautor'] ?: 'Sin autor') ?></td>
+                                    <td>
+                                        <?php if (!empty($favorito['categoria'])): ?>
+                                            <span class="badge bg-primary"><?= esc($favorito['categoria']) ?></span>
+                                            <?php if (!empty($favorito['subcategoria'])): ?>
+                                                <br><small class="text-muted"><?= esc($favorito['subcategoria']) ?></small>
+                                            <?php endif; ?>
+                                        <?php elseif (!empty($favorito['subcategoria'])): ?>
+                                            <span class="badge bg-info"><?= esc($favorito['subcategoria']) ?></span>
+                                        <?php else: ?>
+                                            <span class="badge bg-secondary">Sin categoría</span>
                                         <?php endif; ?>
-                                    </div>
-                                </div>
-                            </td>
-                            <td><?= esc($favorito['nomautor'] ?: 'Sin autor') ?></td>
-                            <td>
-                                <?php if (!empty($favorito['categoria'])): ?>
-                                    <span class="badge bg-primary"><?= esc($favorito['categoria']) ?></span>
-                                <?php else: ?>
-                                    <span class="badge bg-secondary">Sin categoría</span>
-                                <?php endif; ?>
-                            </td>
-                            <td>
-                                <?php if (!empty($favorito['fecha_agregado'])): ?>
-                                    <small class="text-muted">
-                                        <?= date('d/m/Y', strtotime($favorito['fecha_agregado'])) ?>
-                                    </small>
-                                <?php else: ?>
-                                    <small class="text-muted">-</small>
-                                <?php endif; ?>
-                            </td>
-                            <td>
-                                <div class="btn-group" role="group">
-                                    <button class="btn btn-sm btn-outline-primary" 
-                                            data-bs-toggle="modal" 
-                                            data-bs-target="#libroModal"
-                                            onclick="cargarDetallesLibro(<?= $favorito['idrecurso'] ?>)" 
-                                            title="Ver detalles">
-                                        <i class="fas fa-eye"></i>
-                                    </button>
-                                    <?php if ($favorito['estado'] === 'disponible'): ?>
-                                        <button class="btn btn-sm btn-primary" 
-                                                onclick="solicitarPrestamo(<?= $favorito['idrecurso'] ?>)" 
-                                                title="Prestar">
-                                            <i class="fas fa-book"></i>
-                                        </button>
-                                    <?php else: ?>
-                                        <button class="btn btn-sm btn-secondary" disabled title="No disponible">
-                                            <i class="fas fa-ban"></i>
-                                        </button>
-                                    <?php endif; ?>
-                                    <button class="btn btn-sm btn-outline-danger" 
-                                            onclick="quitarFavorito(<?= $favorito['idfavorito'] ?>, <?= $favorito['idrecurso'] ?>)" 
-                                            title="Quitar de favoritos">
-                                        <i class="fas fa-heart-broken"></i>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
-        </div>
-    </div>
-    <?php endif; ?>
-
-    <!-- Mensaje cuando no hay favoritos -->
-    <div class="row <?= empty($favoritos) ? '' : 'd-none' ?>" id="sinFavoritos">
-        <div class="col-12">
-            <div class="text-center py-5">
-                <i class="fas fa-heart fa-3x text-muted mb-3"></i>
-                <h4 class="text-muted">No tienes libros favoritos</h4>
-                <p class="text-muted mb-4">¡Explora nuestro catálogo y marca tus libros favoritos!</p>
-                <a href="<?= site_url('catalogo') ?>" class="btn btn-primary">
-                    <i class="fas fa-search me-2"></i>Explorar Catálogo
-                </a>
+                                    </td>
+                                    <td>
+                                        <?php if ($favorito['estado'] === 'disponible'): ?>
+                                            <span class="badge bg-success">
+                                                <i class="fas fa-check-circle me-1"></i>Disponible
+                                            </span>
+                                        <?php else: ?>
+                                            <span class="badge bg-secondary">
+                                                <i class="fas fa-ban me-1"></i>No disponible
+                                            </span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex gap-2 justify-content-center">
+                                            <button class="btn btn-sm btn-primary" 
+                                                    data-bs-toggle="modal" 
+                                                    data-bs-target="#libroModal"
+                                                    onclick="cargarDetallesLibro(<?= $favorito['idrecurso'] ?>)" 
+                                                    title="Ver detalles">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <?php if ($favorito['estado'] === 'disponible'): ?>
+                                                <button class="btn btn-sm btn-success" 
+                                                        onclick="solicitarPrestamo(<?= $favorito['idrecurso'] ?>)" 
+                                                        title="Solicitar préstamo">
+                                                    <i class="fas fa-book"></i>
+                                                </button>
+                                            <?php else: ?>
+                                                <button class="btn btn-sm btn-secondary" disabled title="No disponible">
+                                                    <i class="fas fa-ban"></i>
+                                                </button>
+                                            <?php endif; ?>
+                                            <button class="btn btn-sm btn-danger" 
+                                                    onclick="quitarFavorito(<?= $favorito['idfavorito'] ?>, <?= $favorito['idrecurso'] ?>)" 
+                                                    title="Quitar de favoritos">
+                                                <i class="fas fa-heart-broken"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
-    </div>
+    <?php else: ?>
+        <!-- Mensaje cuando no hay favoritos -->
+        <div class="row" id="sinFavoritos">
+            <div class="col-12">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body text-center py-5">
+                        <div class="mb-4">
+                            <i class="fas fa-heart fa-4x text-danger opacity-50"></i>
+                        </div>
+                        <h4 class="text-muted mb-3">No tienes libros favoritos</h4>
+                        <p class="text-muted mb-4 lead">¡Explora nuestro catálogo y marca tus libros favoritos!</p>
+                        
+                        <div class="d-flex flex-column flex-sm-row gap-3 justify-content-center">
+                            <a href="<?= site_url('catalogo') ?>" class="btn btn-primary btn-lg">
+                                <i class="fas fa-search me-2"></i>Explorar Catálogo
+                            </a>
+                            <a href="<?= site_url('catalogo') ?>?categoria=populares" class="btn btn-outline-primary btn-lg">
+                                <i class="fas fa-star me-2"></i>Libros Populares
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    <?php endif; ?>
 </div>
 
 <script>
-// Función para cargar detalles del libro (debe estar fuera del DOMContentLoaded para ser accesible globalmente)
+// Función para cargar detalles del libro
 function cargarDetallesLibro(idRecurso) {
     const modalBody = document.getElementById('libroModalBody');
     
@@ -205,191 +187,61 @@ function cargarDetallesLibro(idRecurso) {
         });
 }
 
-document.addEventListener('DOMContentLoaded', function() {
-    // Funcionalidad de búsqueda y filtros - Solo si existen los elementos
-    const buscarInput = document.getElementById('buscarFavoritos');
-    const filtroCategoria = document.getElementById('filtroCategoria');
-    const ordenarPor = document.getElementById('ordenarPor');
-
-    if (buscarInput && filtroCategoria && ordenarPor) {
-        buscarInput.addEventListener('input', filtrarFavoritos);
-        filtroCategoria.addEventListener('change', filtrarFavoritos);
-        ordenarPor.addEventListener('change', filtrarFavoritos);
-    }
-    function filtrarFavoritos() {
-        // Verificar que los elementos existan antes de usarlos
-        if (!buscarInput || !filtroCategoria || !ordenarPor) {
-            return;
-        }
-        
-        const busqueda = buscarInput.value.toLowerCase().trim();
-        const categoriaSeleccionada = filtroCategoria.value.toLowerCase();
-        const ordenSeleccionado = ordenarPor.value;
-        
-        console.log('Filtros aplicados:', { busqueda, categoriaSeleccionada, ordenSeleccionado });
-        
-        // Obtener todas las filas de la tabla (lista)
-        const filas = Array.from(document.querySelectorAll('#favoritosLista tbody tr'));
-        let filasVisibles = [];
-        
-        // Filtrar filas de la tabla
-        filas.forEach(fila => {
-            // Evitar filtrar la fila de "no hay favoritos"
-            if (fila.querySelector('td[colspan]')) {
-                return;
-            }
-            
-            const titulo = fila.querySelector('h6')?.textContent.toLowerCase() || '';
-            const autor = fila.cells[1]?.textContent.toLowerCase() || '';
-            const categoriaElement = fila.querySelector('.badge');
-            const categoria = categoriaElement?.textContent.toLowerCase() || '';
-            
-            // Verificar si coincide con la búsqueda
-            const coincideBusqueda = !busqueda || 
-                titulo.includes(busqueda) || 
-                autor.includes(busqueda);
-            
-            // Verificar si coincide con la categoría
-            const coincidenCategoria = !categoriaSeleccionada || 
-                categoria.includes(categoriaSeleccionada);
-            
-            // Mostrar/ocultar fila
-            if (coincideBusqueda && coincidenCategoria) {
-                fila.style.display = 'table-row';
-                filasVisibles.push(fila);
-            } else {
-                fila.style.display = 'none';
+// Función para quitar favorito
+function quitarFavorito(idfavorito, idrecurso) {
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            title: '¿Quitar de favoritos?',
+            text: '¿Estás seguro de que quieres quitar este libro de tus favoritos?',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, quitar',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#6c757d'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                procesarQuitarFavorito(idfavorito);
             }
         });
-        
-        // Ordenar elementos visibles
-        if (filasVisibles.length > 0) {
-            ordenarFilas(filasVisibles, ordenSeleccionado);
-        }
-        
-        // Actualizar contador
-        const totalVisibles = filasVisibles.length;
-        document.getElementById('resultadosCount').textContent = totalVisibles;
-        
-        // Mostrar mensaje si no hay resultados
-        const sinFavoritos = document.getElementById('sinFavoritos');
-        const favoritosLista = document.getElementById('favoritosLista');
-        
-        if (totalVisibles === 0 && filas.length > 0) {
-            // Hay favoritos pero no coinciden con el filtro
-            favoritosLista.classList.add('d-none'); // Ocultar tabla
-            sinFavoritos.innerHTML = `
-                <div class="col-12">
-                    <div class="text-center py-5">
-                        <i class="fas fa-search fa-3x text-muted mb-3"></i>
-                        <h4 class="text-muted">No se encontraron resultados</h4>
-                        <p class="text-muted mb-4">Intenta con otros términos de búsqueda o filtros</p>
-                        <button class="btn btn-outline-primary" onclick="limpiarFiltros()">
-                            <i class="fas fa-times me-2"></i>Limpiar Filtros
-                        </button>
-                    </div>
-                </div>
-            `;
-            sinFavoritos.classList.remove('d-none');
-        } else if (totalVisibles === 0 && filas.length === 0) {
-            // No hay favoritos en absoluto
-            favoritosLista.classList.add('d-none'); // Ocultar tabla
-            sinFavoritos.innerHTML = `
-                <div class="col-12">
-                    <div class="text-center py-5">
-                        <i class="fas fa-heart fa-3x text-muted mb-3"></i>
-                        <h4 class="text-muted">No tienes libros favoritos</h4>
-                        <p class="text-muted mb-4">¡Explora nuestro catálogo y marca tus libros favoritos!</p>
-                        <a href="<?= site_url('catalogo') ?>" class="btn btn-primary">
-                            <i class="fas fa-search me-2"></i>Explorar Catálogo
-                        </a>
-                    </div>
-                </div>
-            `;
-            sinFavoritos.classList.remove('d-none');
-        } else {
-            favoritosLista.classList.remove('d-none'); // Mostrar tabla
-            sinFavoritos.classList.add('d-none');
+    } else {
+        if (confirm('¿Estás seguro de que quieres quitar este libro de favoritos?')) {
+            procesarQuitarFavorito(idfavorito);
         }
     }
-    
-    function ordenarFilas(filas, criterio) {
-        const tbody = document.querySelector('#favoritosLista tbody');
-        
-        filas.sort((a, b) => {
-            switch (criterio) {
-                case 'alfabetico':
-                    const tituloA = a.querySelector('h6')?.textContent || '';
-                    const tituloB = b.querySelector('h6')?.textContent || '';
-                    return tituloA.localeCompare(tituloB);
-                    
-                case 'autor':
-                    const autorA = a.cells[1]?.textContent || '';
-                    const autorB = b.cells[1]?.textContent || '';
-                    return autorA.localeCompare(autorB);
-                    
-                case 'categoria':
-                    const catA = a.querySelector('.badge')?.textContent || '';
-                    const catB = b.querySelector('.badge')?.textContent || '';
-                    return catA.localeCompare(catB);
-                    
-                case 'reciente':
-                default:
-                    // Mantener orden original (más recientes primero)
-                    return 0;
-            }
-        });
-        
-        // Reordenar en el DOM
-        filas.forEach(fila => {
-            tbody.appendChild(fila);
-        });
-    }
-
-});
-
-// Funciones globales para favoritos (fuera del DOMContentLoaded para acceso global)
-// Función para agregar a favoritos (ahora usa toggleFavorito)
-function agregarFavorito(idRecurso) {
-    toggleFavorito(idRecurso);
 }
 
-// Función para alternar favorito (agregar/quitar)
-function toggleFavorito(idRecurso) {
-    fetch('<?= base_url('catalogo/toggle-favorito') ?>', {
+function procesarQuitarFavorito(idfavorito) {
+    fetch('<?= base_url('catalogo/quitar-favorito') ?>', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
             'X-Requested-With': 'XMLHttpRequest'
         },
-        body: JSON.stringify({idrecurso: idRecurso})
+        body: JSON.stringify({idfavorito: idfavorito})
     })
     .then(response => response.json())
     .then(data => {
         if (data.success) {
             if (typeof Swal !== 'undefined') {
                 Swal.fire({
-                    title: data.agregado ? 'Agregado a Favoritos' : 'Quitado de Favoritos',
+                    title: '¡Eliminado!',
                     text: data.message,
                     icon: 'success',
                     timer: 2000,
                     showConfirmButton: false
+                }).then(() => {
+                    location.reload();
                 });
             } else {
                 alert(data.message);
-            }
-            
-            // Si se quitó de favoritos, recargar la página para actualizar la lista
-            if (!data.agregado) {
-                setTimeout(() => {
-                    location.reload();
-                }, 1500);
+                location.reload();
             }
         } else {
             if (typeof Swal !== 'undefined') {
                 Swal.fire({
                     title: 'Error',
-                    text: data.message || 'Error al procesar la solicitud',
+                    text: data.message || 'Error al quitar de favoritos',
                     icon: 'error'
                 });
             } else {
@@ -411,57 +263,8 @@ function toggleFavorito(idRecurso) {
     });
 }
 
-// Función para mostrar alerta de login
-function mostrarAlertaLogin(accion) {
-    if (typeof Swal !== 'undefined') {
-        Swal.fire({
-            title: 'Iniciar Sesión',
-            text: `Debes iniciar sesión para ${accion}.`,
-            icon: 'info',
-            showCancelButton: true,
-            confirmButtonText: 'Iniciar Sesión',
-            cancelButtonText: 'Cancelar',
-            confirmButtonColor: '#007bff'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                window.location.href = '<?= base_url('login') ?>';
-            }
-        });
-    } else {
-        alert(`Debes iniciar sesión para ${accion}.`);
-        window.location.href = '<?= base_url('login') ?>';
-    }
-}
-
-// Funciones globales para favoritos
-function quitarFavorito(idfavorito, idrecurso) {
-    if (confirm('¿Estás seguro de que quieres quitar este libro de favoritos?')) {
-        fetch('<?= base_url('catalogo/quitar-favorito') ?>', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
-            },
-            body: JSON.stringify({idfavorito: idfavorito})
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert(data.message);
-                location.reload();
-            } else {
-                alert('Error: ' + (data.message || 'Error desconocido'));
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Error de conexión');
-        });
-    }
-}
-
 function solicitarPrestamo(idrecurso) {
-    // Primero verificar si el usuario tiene sanciones activas
+    // Verificar sanciones antes de solicitar préstamo
     fetch('<?= base_url('prestamo/verificar-sanciones') ?>', {
         method: 'POST',
         headers: {
@@ -472,8 +275,8 @@ function solicitarPrestamo(idrecurso) {
     .then(response => response.json())
     .then(data => {
         if (data.success && data.sancionado) {
-            // El usuario tiene sanciones activas, mostrar alerta
-            let sancionesHtml = '<div class="alert alert-danger"><strong>Sanciones activas:</strong><ul class="mb-0 mt-2">';
+            // Usuario con sanciones
+            let sancionesHtml = '<div class="alert alert-danger mb-0"><strong>Sanciones activas:</strong><ul class="mb-0 mt-2">';
             data.sanciones.forEach(sancion => {
                 sancionesHtml += `<li><strong>${sancion.tipo}:</strong> ${sancion.detalle}`;
                 if (sancion.fecha_vencimiento) {
@@ -486,57 +289,53 @@ function solicitarPrestamo(idrecurso) {
             
             Swal.fire({
                 title: 'No puede solicitar préstamos',
-                html: sancionesHtml + '<p class="mt-3">Usted tiene sanciones activas y no puede solicitar préstamos hasta que se resuelvan.</p>',
+                html: sancionesHtml + '<p class="mt-3 mb-0">Tiene sanciones activas y no puede solicitar préstamos hasta que se resuelvan.</p>',
                 icon: 'warning',
                 confirmButtonText: 'Entendido',
                 confirmButtonColor: '#dc3545'
             });
         } else if (data.success && !data.sancionado) {
-            // No tiene sanciones, continuar con el proceso normal
-            alert('Solicitar préstamo del libro ID: ' + idrecurso);
+            // Sin sanciones, redirigir al formulario de préstamo
+            window.location.href = `<?= base_url('catalogo/solicitar-prestamo/') ?>${idrecurso}`;
         } else {
-            // Error al verificar sanciones
             Swal.fire({
                 title: 'Error',
-                text: data.message || 'No se pudo verificar su estado de sanciones',
+                text: data.message || 'No se pudo verificar su estado',
                 icon: 'error'
             });
         }
     })
     .catch(error => {
-        console.error('Error al verificar sanciones:', error);
+        console.error('Error:', error);
         Swal.fire({
             title: 'Error',
-            text: 'Error al verificar sanciones. Por favor intente nuevamente.',
+            text: 'Error de conexión. Intente nuevamente.',
             icon: 'error'
         });
     });
 }
 
-function limpiarFiltros() {
-    document.getElementById('buscarFavoritos').value = '';
-    document.getElementById('filtroCategoria').value = '';
-    document.getElementById('ordenarPor').value = 'reciente';
-    
-    // Disparar evento para aplicar filtros
-    document.getElementById('buscarFavoritos').dispatchEvent(new Event('input'));
-}
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Vista de favoritos cargada correctamente');
+});
 </script>
 
 <!-- Modal para detalles del libro -->
 <div class="modal fade" id="libroModal" tabindex="-1" aria-labelledby="libroModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="libroModalLabel">Detalles del Recurso</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="libroModalLabel">
+                    <i class="fas fa-book-open me-2"></i>Detalles del Recurso
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body" id="libroModalBody">
-                <div class="text-center">
+                <div class="text-center py-4">
                     <div class="spinner-border text-primary" role="status">
                         <span class="visually-hidden">Cargando...</span>
                     </div>
-                    <p class="mt-2">Cargando detalles del recurso...</p>
+                    <p class="mt-3 text-muted">Cargando detalles del recurso...</p>
                 </div>
             </div>
         </div>
@@ -546,7 +345,15 @@ function limpiarFiltros() {
 <!-- Limpiar modal cuando se cierre -->
 <script>
 document.getElementById('libroModal').addEventListener('hidden.bs.modal', function() {
-    document.getElementById('libroModalBody').innerHTML = '';
+    const modalBody = document.getElementById('libroModalBody');
+    modalBody.innerHTML = `
+        <div class="text-center py-4">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Cargando...</span>
+            </div>
+            <p class="mt-3 text-muted">Cargando detalles del recurso...</p>
+        </div>
+    `;
 });
 </script>
 

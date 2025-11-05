@@ -362,7 +362,8 @@ function cargarDetallesPrestamo(idPrestamo) {
 }
 
 // Funciones globales para los botones de préstamo
-function renovarPrestamo(idPrestamo) {
+function 
+(idPrestamo) {
     // Cargar el formulario de renovación vía AJAX
     fetch(`<?= base_url('prestamo/formulario-renovacion/') ?>${idPrestamo}`)
         .then(response => {
