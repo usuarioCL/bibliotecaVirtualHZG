@@ -148,13 +148,6 @@ class Filters extends BaseFilters
                 'ejemplares-fisicos/*',
                 'reportes/*'
             ]
-        ],
-        'auth' => [
-            'before' => [
-                'recursos/buscarRecursos',
-                'recursos/filtrosBusqueda',
-                'recursos/buscar-disponibles-ajax'
-            ]
         ]
     ];
 }
