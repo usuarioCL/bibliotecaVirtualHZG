@@ -2648,17 +2648,31 @@ class PrestamoController extends Controller
             $db = \Config\Database::connect();
             
             if ($tipo === 'solicitud') {
-                // Eliminar solicitud rechazada
+                // Usar transacción para eliminar solicitud rechazada
+                $db->transStart();
+                
+                // 1. Primero eliminar las notificaciones vinculadas a esta solicitud
+                log_message('info', 'PrestamoController::eliminarHistorial - Eliminando notificaciones de solicitud ID: ' . $id);
+                $resultadoNotificaciones = $db->table('notificaciones')
+                    ->where('idsolicitud', $id)
+                    ->delete();
+                log_message('info', 'PrestamoController::eliminarHistorial - Resultado eliminación notificaciones: ' . ($resultadoNotificaciones ? 'OK' : 'ERROR'));
+                
+                // 2. Eliminar solicitud rechazada
                 $resultado = $db->table('solicitud')
                     ->where('idsolicitud', $id)
                     ->where('validado', true)
                     ->where('idprestamo IS NULL', null, false)
                     ->delete();
                 
-                if (!$resultado) {
+                $db->transComplete();
+                
+                if ($db->transStatus() === false || !$resultado) {
+                    $error = $db->error();
+                    log_message('error', 'PrestamoController::eliminarHistorial - Error al eliminar solicitud: ' . json_encode($error));
                     return $this->response->setJSON([
                         'success' => false,
-                        'message' => 'No se encontró la solicitud o no puede ser eliminada'
+                        'message' => 'No se encontró la solicitud o no puede ser eliminada: ' . ($error['message'] ?? 'Error desconocido')
                     ]);
                 }
                 
@@ -2724,7 +2738,27 @@ class PrestamoController extends Controller
                     }
                 }
                 
-                // 1. Marcar solicitudes vinculadas como "préstamo eliminado del historial"
+                // 1. Obtener IDs de solicitudes vinculadas para eliminar sus notificaciones
+                log_message('info', 'PrestamoController::eliminarHistorial - Obteniendo solicitudes vinculadas');
+                $solicitudesVinculadas = $db->table('solicitud')
+                    ->select('idsolicitud')
+                    ->where('idprestamo', $id)
+                    ->get()
+                    ->getResultArray();
+                
+                $idsSolicitudes = array_column($solicitudesVinculadas, 'idsolicitud');
+                log_message('info', 'PrestamoController::eliminarHistorial - Solicitudes vinculadas encontradas: ' . json_encode($idsSolicitudes));
+                
+                // Eliminar notificaciones de las solicitudes vinculadas
+                if (!empty($idsSolicitudes)) {
+                    log_message('info', 'PrestamoController::eliminarHistorial - Eliminando notificaciones de solicitudes');
+                    $resultadoNotifSolicitudes = $db->table('notificaciones')
+                        ->whereIn('idsolicitud', $idsSolicitudes)
+                        ->delete();
+                    log_message('info', 'PrestamoController::eliminarHistorial - Resultado eliminación notificaciones de solicitudes: ' . ($resultadoNotifSolicitudes ? 'OK' : 'ERROR'));
+                }
+                
+                // Marcar solicitudes vinculadas como "préstamo eliminado del historial"
                 //    Esto las distingue de las solicitudes realmente rechazadas
                 log_message('info', 'PrestamoController::eliminarHistorial - Actualizando solicitudes vinculadas');
                 $resultadoSolicitudes = $db->table('solicitud')
@@ -2879,25 +2913,78 @@ class PrestamoController extends Controller
             log_message('info', "Iniciando eliminación completa del historial - Admin: " . session()->get('nomuser'));
             log_message('info', "Registros a eliminar - Préstamos: {$countPrestamos}, Solicitudes: {$countSolicitudes}, Renovaciones: {$countRenovaciones}");
             
-            // 1. Marcar todas las solicitudes de préstamos devueltos como "eliminados del historial"
-            $db->table('solicitud')
-                ->set([
-                    'idprestamo' => null,
-                    'motivo_rechazo' => 'PRESTAMO_ELIMINADO_HISTORIAL: Préstamo eliminado durante limpieza masiva del historial por administrador.'
-                ])
-                ->where('idprestamo IN (SELECT idprestamo FROM prestamos WHERE fechahoraretorno IS NOT NULL)', null, false)
-                ->update();
+            // 1. Obtener IDs de préstamos devueltos y sus solicitudes vinculadas para eliminar notificaciones
+            $prestamosDevueltos = $db->table('prestamos')
+                ->select('idprestamo')
+                ->where('fechahoraretorno IS NOT NULL', null, false)
+                ->get()
+                ->getResultArray();
+            $idsPrestamosDevueltos = array_column($prestamosDevueltos, 'idprestamo');
             
-            // 2. Desvincular todas las sanciones de préstamos devueltos (mantener las sanciones)
-            $db->table('sanciones')
-                ->set('idprestamo', null)
-                ->where('idprestamo IN (SELECT idprestamo FROM prestamos WHERE fechahoraretorno IS NOT NULL)', null, false)
-                ->update();
+            // Obtener IDs de solicitudes vinculadas a esos préstamos
+            $solicitudesVinculadas = [];
+            if (!empty($idsPrestamosDevueltos)) {
+                $solicitudesVinculadas = $db->table('solicitud')
+                    ->select('idsolicitud')
+                    ->whereIn('idprestamo', $idsPrestamosDevueltos)
+                    ->get()
+                    ->getResultArray();
+            }
+            $idsSolicitudesVinculadas = array_column($solicitudesVinculadas, 'idsolicitud');
             
-            // 3. Eliminar todas las renovaciones (son registros administrativos)
+            // Obtener IDs de solicitudes rechazadas (sin préstamo asociado)
+            $solicitudesRechazadas = $db->table('solicitud')
+                ->select('idsolicitud')
+                ->where('validado', true)
+                ->where('idprestamo IS NULL', null, false)
+                ->get()
+                ->getResultArray();
+            $idsSolicitudesRechazadas = array_column($solicitudesRechazadas, 'idsolicitud');
+            
+            // Combinar todos los IDs de solicitudes
+            $todasSolicitudes = array_merge($idsSolicitudesVinculadas, $idsSolicitudesRechazadas);
+            
+            log_message('info', "IDs de solicitudes para eliminar notificaciones: " . json_encode($todasSolicitudes));
+            
+            // 2. Eliminar notificaciones de préstamos devueltos
+            if (!empty($idsPrestamosDevueltos)) {
+                log_message('info', 'Eliminando notificaciones de préstamos devueltos');
+                $db->table('notificaciones')
+                    ->whereIn('idprestamo', $idsPrestamosDevueltos)
+                    ->delete();
+            }
+            
+            // 3. Eliminar notificaciones de solicitudes (vinculadas y rechazadas)
+            if (!empty($todasSolicitudes)) {
+                log_message('info', 'Eliminando notificaciones de solicitudes');
+                $db->table('notificaciones')
+                    ->whereIn('idsolicitud', $todasSolicitudes)
+                    ->delete();
+            }
+            
+            // 4. Marcar todas las solicitudes de préstamos devueltos como "eliminados del historial"
+            if (!empty($idsPrestamosDevueltos)) {
+                $db->table('solicitud')
+                    ->set([
+                        'idprestamo' => null,
+                        'motivo_rechazo' => 'PRESTAMO_ELIMINADO_HISTORIAL: Préstamo eliminado durante limpieza masiva del historial por administrador.'
+                    ])
+                    ->whereIn('idprestamo', $idsPrestamosDevueltos)
+                    ->update();
+            }
+            
+            // 5. Desvincular todas las sanciones de préstamos devueltos (mantener las sanciones)
+            if (!empty($idsPrestamosDevueltos)) {
+                $db->table('sanciones')
+                    ->set('idprestamo', null)
+                    ->whereIn('idprestamo', $idsPrestamosDevueltos)
+                    ->update();
+            }
+            
+            // 6. Eliminar todas las renovaciones (son registros administrativos)
             $db->table('renovaciones_prestamo')->truncate();
             
-            // 4. Eliminar solo las solicitudes realmente rechazadas (no las que son préstamos eliminados)
+            // 7. Eliminar solo las solicitudes realmente rechazadas (no las que son préstamos eliminados)
             $db->table('solicitud')
                 ->where('validado', true)
                 ->where('idprestamo IS NULL', null, false)
@@ -2905,7 +2992,7 @@ class PrestamoController extends Controller
                 ->where('motivo_rechazo NOT LIKE', 'PRESTAMO_ELIMINADO_HISTORIAL:%')
                 ->delete();
             
-            // 5. Eliminar todos los préstamos devueltos
+            // 8. Eliminar todos los préstamos devueltos
             $db->table('prestamos')
                 ->where('fechahoraretorno IS NOT NULL', null, false)
                 ->delete();
