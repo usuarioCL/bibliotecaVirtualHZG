@@ -5,7 +5,6 @@
  * Variables esperadas: $prestamo
  */
 ?>
-
 <tr class="border-bottom">
     <td class="px-3 py-3">
         <div class="d-flex align-items-center">

@@ -1541,54 +1541,146 @@ class PrestamoModel extends Model
     {
         $db = \Config\Database::connect();
         
+        log_message('info', "Iniciando cancelación de préstamo ID: {$idprestamo}");
+        
         try {
-            $db->transStart();
+            // Obtener información del préstamo ANTES de la transacción
+            log_message('debug', "Buscando información del préstamo {$idprestamo}");
             
-            // Obtener información del préstamo
+            // Primero verificar que el préstamo existe
+            $prestamoExiste = $db->table('prestamos')
+                ->where('idprestamo', $idprestamo)
+                ->get()
+                ->getRow();
+            
+            if (!$prestamoExiste) {
+                log_message('error', "Préstamo {$idprestamo} no existe en la base de datos");
+                throw new \Exception('Préstamo no encontrado');
+            }
+            
+            // Verificar si ya está devuelto/cancelado
+            if ($prestamoExiste->fechahoraretorno !== null) {
+                log_message('warning', "Préstamo {$idprestamo} ya está finalizado");
+                throw new \Exception('El préstamo ya ha sido devuelto o cancelado');
+            }
+            
+            // Obtener información completa con join
             $prestamo = $db->table('prestamos p')
-                ->select('p.*, r.stock')
+                ->select('p.*, r.stock, r.estado as estado_recurso, r.titulo')
                 ->join('recursos r', 'r.idrecurso = p.idrecurso')
                 ->where('p.idprestamo', $idprestamo)
-                ->where('p.fechahoraretorno IS NULL', null, false) // Solo préstamos activos
                 ->get()
                 ->getRow();
             
             if (!$prestamo) {
-                throw new \Exception('Préstamo no encontrado o ya finalizado');
+                log_message('error', "Error en JOIN: Préstamo {$idprestamo} o recurso no encontrado");
+                throw new \Exception('Error al obtener información del préstamo y recurso');
             }
             
-            // Marcar el préstamo como devuelto/cancelado
-            $db->table('prestamos')
-                ->where('idprestamo', $idprestamo)
-                ->update([
-                    'fechahoraretorno' => date('Y-m-d H:i:s')
-                ]);
+            log_message('debug', "Préstamo encontrado. Recurso ID: {$prestamo->idrecurso}, Stock actual: {$prestamo->stock}");
             
-            // Restaurar stock del recurso
-            $cantidadCancelada = $prestamo->cantidad ?? 1;
-            $nuevoStock = $prestamo->stock + $cantidadCancelada;
-            $db->table('recursos')
-                ->where('idrecurso', $prestamo->idrecurso)
-                ->update([
-                    'stock' => $nuevoStock,
-                    'estado' => 'disponible'
-                ]);
+            // Validar datos críticos
+            if (empty($prestamo->idrecurso)) {
+                log_message('error', "Préstamo {$idprestamo} no tiene recurso asociado");
+                throw new \Exception('Préstamo sin recurso asociado');
+            }
             
-            log_message('info', "Préstamo cancelado: Préstamo #{$idprestamo}, devolviendo {$cantidadCancelada} ejemplares al stock del recurso #{$prestamo->idrecurso}");
+            if ($prestamo->stock === null || $prestamo->stock < 0) {
+                log_message('error', "Stock inválido para recurso {$prestamo->idrecurso}: {$prestamo->stock}");
+                throw new \Exception('Stock del recurso inválido');
+            }
             
-            // Eliminar solicitudes relacionadas si existen
-            $db->table('solicitud')
-                ->where('idprestamo', $idprestamo)
-                ->delete();
+            // Preparar datos antes de la transacción
+            $cantidadCancelada = max(1, (int)($prestamo->cantidad ?? 1)); // Asegurar que sea al menos 1
+            $nuevoStock = (int)$prestamo->stock + $cantidadCancelada;
+            $fechaRetorno = date('Y-m-d H:i:s');
+            $observaciones = !empty($motivo) ? "Cancelado por administrador. Motivo: {$motivo}" : 'Cancelado por administrador';
             
-            // Registrar el motivo en logs
-            log_message('info', "Préstamo {$idprestamo} cancelado. Motivo: {$motivo}");
+            log_message('debug', "Datos preparados - Cantidad: {$cantidadCancelada}, Stock actual: {$prestamo->stock}, Nuevo stock: {$nuevoStock}");
             
+            // Usar transacción automática de CodeIgniter
+            $db->transStart();
+            
+            // 1. Marcar el préstamo como devuelto/cancelado
+            try {
+                $resultadoPrestamo = $db->table('prestamos')
+                    ->where('idprestamo', $idprestamo)
+                    ->update([
+                        'fechahoraretorno' => $fechaRetorno,
+                        'observaciones_devolucion' => $observaciones
+                    ]);
+                
+                if (!$resultadoPrestamo) {
+                    log_message('error', "No se pudo actualizar el préstamo {$idprestamo}");
+                    throw new \Exception('No se pudo actualizar el préstamo');
+                }
+                
+                log_message('debug', "Préstamo actualizado correctamente");
+            } catch (\Exception $e) {
+                log_message('error', "Error al actualizar préstamo: " . $e->getMessage());
+                throw $e;
+            }
+            
+            // 2. Restaurar stock del recurso
+            try {
+                log_message('debug', "Restaurando stock: cantidad cancelada = {$cantidadCancelada}, nuevo stock = {$nuevoStock}");
+                
+                $resultadoRecurso = $db->table('recursos')
+                    ->where('idrecurso', $prestamo->idrecurso)
+                    ->update([
+                        'stock' => $nuevoStock,
+                        'estado' => $nuevoStock > 0 ? 'disponible' : $prestamo->estado_recurso
+                    ]);
+                
+                if (!$resultadoRecurso) {
+                    log_message('error', "No se pudo actualizar el stock del recurso {$prestamo->idrecurso}");
+                    throw new \Exception('No se pudo actualizar el stock del recurso');
+                }
+                
+                log_message('debug', "Stock actualizado correctamente");
+            } catch (\Exception $e) {
+                log_message('error', "Error al actualizar stock: " . $e->getMessage());
+                throw $e;
+            }
+            
+            // 3. Eliminar registros relacionados respetando las restricciones de clave foránea
+            try {
+                // Primero obtener las solicitudes relacionadas al préstamo
+                $solicitudes = $db->table('solicitud')
+                    ->where('idprestamo', $idprestamo)
+                    ->get()
+                    ->getResult();
+                
+                // Para cada solicitud, eliminar primero las notificaciones asociadas
+                foreach ($solicitudes as $solicitud) {
+                    $notificacionesEliminadas = $db->table('notificaciones')
+                        ->where('idsolicitud', $solicitud->idsolicitud)
+                        ->delete();
+                    
+                    log_message('debug', "Notificaciones eliminadas para solicitud {$solicitud->idsolicitud}: {$notificacionesEliminadas}");
+                }
+                
+                // Ahora eliminar las solicitudes
+                $solicitudesEliminadas = $db->table('solicitud')
+                    ->where('idprestamo', $idprestamo)
+                    ->delete();
+                
+                log_message('debug', "Solicitudes relacionadas eliminadas: {$solicitudesEliminadas}");
+            } catch (\Exception $e) {
+                log_message('error', "Error al eliminar solicitudes y notificaciones: " . $e->getMessage());
+                // No lanzamos excepción aquí porque las solicitudes pueden no existir
+            }
+            
+            // Completar transacción
             $db->transComplete();
             
+            // Verificar si la transacción fue exitosa
             if ($db->transStatus() === false) {
-                throw new \Exception('Error en la transacción');
+                log_message('error', "Transacción falló para préstamo {$idprestamo}");
+                throw new \Exception('Error al procesar la cancelación en base de datos');
             }
+            
+            log_message('info', "Préstamo {$idprestamo} cancelado exitosamente. Motivo: {$motivo}");
             
             return [
                 'success' => true,
@@ -1596,12 +1688,12 @@ class PrestamoModel extends Model
             ];
             
         } catch (\Exception $e) {
-            $db->transRollback();
-            log_message('error', 'Error al cancelar préstamo: ' . $e->getMessage());
+            log_message('error', 'Error al cancelar préstamo ' . $idprestamo . ': ' . $e->getMessage());
+            log_message('error', 'Stack trace: ' . $e->getTraceAsString());
             
             return [
                 'success' => false,
-                'message' => $e->getMessage()
+                'message' => 'Error al cancelar el préstamo: ' . $e->getMessage()
             ];
         }
     }
