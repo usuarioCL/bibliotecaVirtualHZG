@@ -137,6 +137,21 @@ var SolicitudesUI = SolicitudesUI || {
         if (modalExistente) {
             modalExistente.remove();
         }
+        
+        // Determinar el estado de la solicitud
+        let estadoBadgeClass = 'bg-warning';
+        let estadoTexto = 'Pendiente';
+        
+        if (detalle.validado === 1 || detalle.validado === '1' || detalle.validado === true) {
+            estadoBadgeClass = 'bg-success';
+            estadoTexto = 'Aprobado';
+        } else if (detalle.validado === 0 || detalle.validado === '0' || detalle.validado === false) {
+            // Solo si tiene motivo de rechazo, es realmente rechazado
+            if (detalle.motivo_rechazo) {
+                estadoBadgeClass = 'bg-danger';
+                estadoTexto = 'Rechazado';
+            }
+        }
 
         // Formatear datos
         const prioridadConfig = SolicitudesUtils.getPrioridadConfig(detalle.prioridad);
@@ -151,7 +166,7 @@ var SolicitudesUI = SolicitudesUI || {
                         <div class="modal-header bg-primary bg-gradient text-white">
                             <h5 class="modal-title">
                                 <i class="ti ti-file-info me-2"></i>
-                                Detalles de la Solicitud #${detalle.id}
+                                Detalles de la Solicitud #${detalle.idsolicitud || detalle.id}
                             </h5>
                             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                         </div>
@@ -170,24 +185,30 @@ var SolicitudesUI = SolicitudesUI || {
                                             <table class="table table-sm table-borderless mb-0">
                                                 <tr>
                                                     <td class="text-muted fw-medium" width="40%">Nombre:</td>
-                                                    <td>${detalle.nombre_usuario}</td>
+                                                    <td>${detalle.usuario_completo || (detalle.usuario_nombres + ' ' + detalle.usuario_apellidos)}</td>
                                                 </tr>
                                                 <tr>
                                                     <td class="text-muted fw-medium">Email:</td>
-                                                    <td>${detalle.email_usuario}</td>
+                                                    <td>${detalle.email || 'No especificado'}</td>
                                                 </tr>
                                                 <tr>
                                                     <td class="text-muted fw-medium">Teléfono:</td>
                                                     <td>${detalle.telefono || 'No especificado'}</td>
                                                 </tr>
                                                 <tr>
-                                                    <td class="text-muted fw-medium">Tipo:</td>
+                                                    <td class="text-muted fw-medium">Documento:</td>
                                                     <td>
                                                         <span class="badge bg-info-subtle text-info">
-                                                            ${detalle.tipo_usuario}
+                                                            ${detalle.tipo_documento || 'DNI'}: ${detalle.documento || 'No especificado'}
                                                         </span>
                                                     </td>
                                                 </tr>
+                                                ${detalle.grado || detalle.seccion ? `
+                                                <tr>
+                                                    <td class="text-muted fw-medium">Grado/Sección:</td>
+                                                    <td>${detalle.grado || ''} ${detalle.seccion || ''} - ${detalle.nivel_estudiante || ''}</td>
+                                                </tr>
+                                                ` : ''}
                                             </table>
                                         </div>
                                     </div>
@@ -206,27 +227,39 @@ var SolicitudesUI = SolicitudesUI || {
                                             <table class="table table-sm table-borderless mb-0">
                                                 <tr>
                                                     <td class="text-muted fw-medium" width="40%">Título:</td>
-                                                    <td class="fw-medium">${detalle.titulo}</td>
+                                                    <td class="fw-medium">${detalle.recurso_titulo || detalle.titulo}</td>
                                                 </tr>
                                                 <tr>
                                                     <td class="text-muted fw-medium">Autor(es):</td>
-                                                    <td>${autoresLista}</td>
+                                                    <td>${detalle.autor_principal || autoresLista}</td>
                                                 </tr>
                                                 <tr>
                                                     <td class="text-muted fw-medium">Editorial:</td>
                                                     <td>${detalle.editorial || 'No especificada'}</td>
                                                 </tr>
                                                 <tr>
+                                                    <td class="text-muted fw-medium">ISBN:</td>
+                                                    <td>${detalle.isbn || 'No especificado'}</td>
+                                                </tr>
+                                                <tr>
                                                     <td class="text-muted fw-medium">Tipo:</td>
                                                     <td>
                                                         <span class="badge bg-secondary-subtle text-secondary">
-                                                            ${detalle.tipo_recurso}
+                                                            ${detalle.tiporecurso || detalle.tipo_recurso}
                                                         </span>
                                                     </td>
                                                 </tr>
                                                 <tr>
+                                                    <td class="text-muted fw-medium">Código:</td>
+                                                    <td><code>${detalle.codigo_ejemplar || 'N/A'}</code></td>
+                                                </tr>
+                                                <tr>
                                                     <td class="text-muted fw-medium">Disponibilidad:</td>
                                                     <td>${disponibilidadBadge}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="text-muted fw-medium">Stock Disponible:</td>
+                                                    <td><strong>${detalle.stock || 0}</strong> unidades</td>
                                                 </tr>
                                             </table>
                                         </div>
@@ -254,7 +287,7 @@ var SolicitudesUI = SolicitudesUI || {
                                                 </div>
                                                 <div class="col-md-3">
                                                     <small class="text-muted d-block">Fecha de Devolución</small>
-                                                    <strong>${SolicitudesUtils.formatearFecha(detalle.fecha_devolucion)}</strong>
+                                                    <strong>${SolicitudesUtils.formatearFecha(detalle.fecha_devolucion_esperada || detalle.fecha_devolucion)}</strong>
                                                 </div>
                                                 <div class="col-md-3">
                                                     <small class="text-muted d-block">Prioridad</small>
@@ -264,11 +297,31 @@ var SolicitudesUI = SolicitudesUI || {
                                                     </span>
                                                 </div>
                                             </div>
-                                            ${detalle.motivo ? `
+                                            <div class="row mt-3">
+                                                <div class="col-md-3">
+                                                    <small class="text-muted d-block">Días desde solicitud</small>
+                                                    <strong>${detalle.dias_desde_solicitud || 0} días</strong>
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <small class="text-muted d-block">Estado</small>
+                                                    <span class="badge ${estadoBadgeClass}">
+                                                        ${estadoTexto}
+                                                    </span>
+                                                </div>
+                                                ${detalle.fecha_procesado ? `
+                                                <div class="col-md-6">
+                                                    <small class="text-muted d-block">Fecha de Procesamiento</small>
+                                                    <strong>${SolicitudesUtils.formatearFechaHora(detalle.fecha_procesado)}</strong>
+                                                </div>
+                                                ` : ''}
+                                            </div>
+                                            ${detalle.motivo_rechazo ? `
                                                 <div class="row mt-3">
                                                     <div class="col-12">
-                                                        <small class="text-muted d-block">Motivo de la Solicitud</small>
-                                                        <p class="mb-0 mt-1">${detalle.motivo}</p>
+                                                        <div class="alert alert-danger mb-0">
+                                                            <small class="text-muted d-block"><strong>Motivo de Rechazo</strong></small>
+                                                            <p class="mb-0 mt-1">${detalle.motivo_rechazo}</p>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             ` : ''}
