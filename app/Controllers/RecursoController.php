@@ -749,9 +749,9 @@ public function actualizar($idrecurso)
      */
     public function exportarPdf()
     {
-        // Preparar datos sin paginación
+        // Preparar datos sin paginación con información completa (incluye portada y encuadernación)
         $recurso = new RecursoModel();
-        $recursos = $recurso->orderBy('idrecurso', 'ASC')->findAll();
+        $recursos = $recurso->obtenerRecursosCompletos();
 
         // Cargar vista como HTML
         $html = view('recursos/pdf_list', [
@@ -765,14 +765,14 @@ public function actualizar($idrecurso)
         $options->set('defaultFont', 'DejaVu Sans');
         $dompdf = new Dompdf($options);
         $dompdf->loadHtml($html);
-        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->setPaper('A4', 'landscape'); // Cambiar a horizontal para que quepan todas las columnas
         $dompdf->render();
 
-        // Enviar al navegador en línea
+        // Enviar al navegador para descarga
         $filename = 'recursos-' . date('Ymd-His') . '.pdf';
         return $this->response
             ->setHeader('Content-Type', 'application/pdf')
-            ->setHeader('Content-Disposition', 'inline; filename="' . $filename . '"')
+            ->setHeader('Content-Disposition', 'attachment; filename="' . $filename . '"')
             ->setBody($dompdf->output());
     }
 

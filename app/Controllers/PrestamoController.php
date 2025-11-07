@@ -623,14 +623,6 @@ class PrestamoController extends Controller
         try {
             $historial = $this->prestamoModel->getHistorialCompleto();
             $estadisticas = $this->prestamoModel->getEstadisticasHistorial();
-            
-            // Debug temporal: log información del historial
-            log_message('info', 'Historial obtenido: ' . count($historial) . ' registros');
-            if (!empty($historial)) {
-                $primerRegistro = $historial[0];
-                log_message('info', 'Primer registro - ID: ' . ($primerRegistro['id'] ?? 'N/A') . 
-                           ', Observaciones: "' . ($primerRegistro['observaciones'] ?? 'NULL') . '"');
-            }
 
             $data = [
                 'title' => 'Historial de Préstamos',
@@ -644,7 +636,7 @@ class PrestamoController extends Controller
             
             $data = [
                 'title' => 'Historial de Préstamos',
-                'historial' => $this->getDatosPruebaHistorial(),
+                'historial' => [],
                 'estadisticas' => [
                     'total_registros' => 0,
                     'este_mes' => 0,
@@ -658,60 +650,92 @@ class PrestamoController extends Controller
     }
     
     /**
-     * Datos de prueba para devoluciones cuando hay error
+     * Exportar historial completo de préstamos a Excel (CSV)
      */
-    private function getDatosPruebaDevoluciones()
+    public function exportarHistorialExcel()
     {
-        return [];
+        try {
+            $historial = $this->prestamoModel->getHistorialCompleto();
+            
+            // Nombre del archivo
+            $filename = 'historial-prestamos-' . date('Ymd-His') . '.csv';
+            
+            header('Content-Type: text/csv; charset=utf-8');
+            header('Content-Disposition: attachment; filename="' . $filename . '"');
+            
+            // Abrir output stream
+            $output = fopen('php://output', 'w');
+            
+            // BOM para UTF-8
+            fprintf($output, chr(0xEF).chr(0xBB).chr(0xBF));
+            
+            // Encabezados (usando punto y coma como delimitador para Excel en español)
+            fputcsv($output, [
+                'ID',
+                'Usuario',
+                'Documento',
+                'Recurso',
+                'Código Ejemplar',
+                'Fecha Préstamo',
+                'Fecha Devolución',
+                'Días Duración',
+                'Cantidad',
+                'Estado Final',
+                'Horas Retraso',
+                'Días Retraso',
+                'Multa',
+                'Tiene Incidencia',
+                'Tipo Incidencia',
+                'Detalle Incidencia',
+                'Observaciones'
+            ], ';');
+            
+            // Datos
+            foreach ($historial as $registro) {
+                // Calcular duración
+                $duracion = '-';
+                if (!empty($registro['fecha_prestamo']) && !empty($registro['fecha_devolucion'])) {
+                    $fechaInicio = new \DateTime($registro['fecha_prestamo']);
+                    $fechaFin = new \DateTime($registro['fecha_devolucion']);
+                    $diff = $fechaInicio->diff($fechaFin);
+                    $duracion = $diff->days;
+                }
+                
+                // Limpiar observaciones para rechazados
+                $observaciones = $registro['observaciones'] ?? '';
+                if ($registro['estado_final'] === 'Rechazado' && !empty($observaciones)) {
+                    $observaciones = preg_replace('/^Cantidad solicitada:\s*\d+\s*ejemplares?\.\s*/', '', $observaciones);
+                }
+                
+                fputcsv($output, [
+                    $registro['id'] ?? '',
+                    $registro['usuario'] ?? '',
+                    $registro['documento'] ?? '',
+                    $registro['recurso'] ?? '',
+                    $registro['codigo_ejemplar'] ?? 'N/A',
+                    !empty($registro['fecha_prestamo']) ? date('d/m/Y', strtotime($registro['fecha_prestamo'])) : '',
+                    !empty($registro['fecha_devolucion']) ? date('d/m/Y', strtotime($registro['fecha_devolucion'])) : 'N/A',
+                    $duracion,
+                    $registro['cantidad'] ?? 1,
+                    $registro['estado_final'] ?? '',
+                    $registro['horas_retraso_total'] ?? 0,
+                    $registro['dias_retraso'] ?? 0,
+                    $registro['multa'] ?? 0,
+                    ($registro['tiene_incidencia'] ?? 0) == 1 ? 'Sí' : 'No',
+                    $registro['tipo_incidencia'] ?? '',
+                    $registro['detalle_incidencia'] ?? '',
+                    $observaciones
+                ], ';');
+            }
+            
+            fclose($output);
+            exit;
+            
+        } catch (\Exception $e) {
+            log_message('error', 'Error exportando historial a Excel: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Error al exportar el historial');
+        }
     }
-
-    /**
-     * Datos de prueba para historial cuando hay error
-     */
-    private function getDatosPruebaHistorial()
-    {
-        return [
-            [
-                'id' => 1,
-                'codigo_prestamo' => 'PREST-2025-001',
-                'usuario' => 'Juan Pérez',
-                'documento' => '12345678',
-                'recurso' => 'Cálculo Diferencial',
-                'codigo_ejemplar' => 'LIB-FIS-001',
-                'fecha_prestamo' => '2025-10-01 08:00:00',
-                'fecha_devolucion' => '2025-10-15 10:30:00',
-                'fecha_vencimiento' => '2025-10-15 13:00:00',
-                'cantidad' => 1,
-                'estado_final' => 'Devuelto',
-                'dias_prestamo' => 14,
-                'dias_retraso' => 0,
-                'horas_retraso_total' => 0,
-                'renovaciones' => 0,
-                'estado_ejemplar' => 'Bueno',
-                'observaciones' => 'Libro devuelto en excelente estado, sin daños visibles.'
-            ],
-            [
-                'id' => 2,
-                'codigo_prestamo' => 'PREST-2025-002',
-                'usuario' => 'María García',
-                'documento' => '87654321',
-                'recurso' => 'Álgebra Lineal',
-                'codigo_ejemplar' => 'LIB-FIS-002',
-                'fecha_prestamo' => '2025-10-05 09:00:00',
-                'fecha_devolucion' => '2025-10-20 14:00:00',
-                'fecha_vencimiento' => '2025-10-19 13:00:00',
-                'cantidad' => 2,
-                'estado_final' => 'Devuelto con retraso',
-                'dias_prestamo' => 15,
-                'dias_retraso' => 1,
-                'horas_retraso_total' => 25,
-                'renovaciones' => 1,
-                'estado_ejemplar' => 'Regular',
-                'observaciones' => null // Sin observaciones para probar ambos casos
-            ]
-        ];
-    }
-    
     
     /**
      * Aprobar una solicitud de préstamo
