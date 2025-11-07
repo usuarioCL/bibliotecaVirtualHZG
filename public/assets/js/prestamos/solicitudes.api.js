@@ -3,7 +3,7 @@
  * Centraliza todas las llamadas AJAX al servidor
  */
 
-const SolicitudesAPI = {
+var SolicitudesAPI = SolicitudesAPI || {
     /**
      * Configuración base para peticiones
      */
@@ -26,9 +26,11 @@ const SolicitudesAPI = {
      */
     async manejarRespuesta(response) {
         if (!response.ok) {
-            throw new Error(`Error HTTP: ${response.status}`);
+            const errorText = await response.text();
+            throw new Error(`Error HTTP ${response.status}: ${errorText}`);
         }
-        return response.json();
+        
+        return await response.json();
     },
 
     /**
@@ -37,8 +39,6 @@ const SolicitudesAPI = {
      * @returns {Promise} Promesa con respuesta
      */
     async aprobarSolicitud(solicitudId) {
-        SolicitudesUtils.log('API: Aprobar solicitud', solicitudId);
-        
         try {
             const response = await fetch(BASE_URL + 'prestamos/aprobar', {
                 method: 'POST',
@@ -48,7 +48,6 @@ const SolicitudesAPI = {
             
             return await this.manejarRespuesta(response);
         } catch (error) {
-            SolicitudesUtils.logError('Error al aprobar solicitud', error);
             throw error;
         }
     },
@@ -60,8 +59,6 @@ const SolicitudesAPI = {
      * @returns {Promise} Promesa con respuesta
      */
     async rechazarSolicitud(solicitudId, motivo = '') {
-        SolicitudesUtils.log('API: Rechazar solicitud', { solicitudId, motivo });
-        
         try {
             const response = await fetch(BASE_URL + 'prestamos/rechazar', {
                 method: 'POST',
@@ -71,7 +68,6 @@ const SolicitudesAPI = {
             
             return await this.manejarRespuesta(response);
         } catch (error) {
-            SolicitudesUtils.logError('Error al rechazar solicitud', error);
             throw error;
         }
     },
@@ -82,8 +78,6 @@ const SolicitudesAPI = {
      * @returns {Promise} Promesa con respuesta
      */
     async aprobarTodas(solicitudesIds) {
-        SolicitudesUtils.log('API: Aprobar múltiples solicitudes', solicitudesIds);
-        
         if (!Array.isArray(solicitudesIds) || solicitudesIds.length === 0) {
             throw new Error('No se proporcionaron solicitudes válidas');
         }
@@ -97,7 +91,6 @@ const SolicitudesAPI = {
             
             return await this.manejarRespuesta(response);
         } catch (error) {
-            SolicitudesUtils.logError('Error al aprobar todas las solicitudes', error);
             throw error;
         }
     },
@@ -109,8 +102,6 @@ const SolicitudesAPI = {
      * @returns {Promise} Promesa con respuesta
      */
     async rechazarTodas(solicitudesIds, motivo = '') {
-        SolicitudesUtils.log('API: Rechazar múltiples solicitudes', { solicitudesIds, motivo });
-        
         if (!Array.isArray(solicitudesIds) || solicitudesIds.length === 0) {
             throw new Error('No se proporcionaron solicitudes válidas');
         }
@@ -124,7 +115,6 @@ const SolicitudesAPI = {
             
             return await this.manejarRespuesta(response);
         } catch (error) {
-            SolicitudesUtils.logError('Error al rechazar todas las solicitudes', error);
             throw error;
         }
     },

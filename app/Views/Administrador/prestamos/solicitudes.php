@@ -57,7 +57,9 @@ helper('solicitudes');
 
 <!-- Variable global BASE_URL para JavaScript -->
 <script>
-    const BASE_URL = '<?= base_url() ?>';
+    if (typeof BASE_URL === 'undefined') {
+        var BASE_URL = '<?= base_url() ?>';
+    }
 </script>
 
 <!-- Módulos JavaScript -->
@@ -68,7 +70,11 @@ helper('solicitudes');
 
 <!-- Inicialización del módulo -->
 <script>
-    // Inicializar el controlador de solicitudes con los datos del servidor
-    const solicitudesData = <?= json_encode($solicitudes ?? []) ?>;
-    SolicitudesController.init(solicitudesData);
+    (function() {
+        const solicitudesData = <?= json_encode($solicitudes ?? []) ?>;
+        
+        if (typeof SolicitudesController !== 'undefined') {
+            SolicitudesController.init(solicitudesData);
+        }
+    })();
 </script>

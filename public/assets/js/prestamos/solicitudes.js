@@ -3,7 +3,7 @@
  * Coordina la interacción entre API, UI y lógica de negocio
  */
 
-const SolicitudesController = {
+var SolicitudesController = SolicitudesController || {
     /**
      * Datos de solicitudes (inyectados desde PHP)
      */
@@ -16,9 +16,6 @@ const SolicitudesController = {
     init(solicitudesData = []) {
         this.solicitudes = solicitudesData;
         this.inicializarEventos();
-        SolicitudesUtils.log('Módulo de solicitudes inicializado', {
-            total: this.solicitudes.length
-        });
     },
 
     /**
@@ -42,8 +39,6 @@ const SolicitudesController = {
      * @param {number} solicitudId - ID de la solicitud
      */
     async aprobarSolicitud(solicitudId) {
-        SolicitudesUtils.log('Aprobar solicitud', solicitudId);
-        
         const confirmacion = await SolicitudesUI.confirmar(
             '¿Aprobar Solicitud?',
             '¿Estás seguro de que deseas aprobar esta solicitud de préstamo?',
@@ -83,8 +78,6 @@ const SolicitudesController = {
      * @param {number} solicitudId - ID de la solicitud
      */
     async rechazarSolicitud(solicitudId) {
-        SolicitudesUtils.log('Rechazar solicitud', solicitudId);
-        
         const resultado = await SolicitudesUI.confirmarConInput(
             '¿Rechazar Solicitud?',
             'Motivo del rechazo (opcional)',
@@ -126,8 +119,6 @@ const SolicitudesController = {
      * @param {number} solicitudId - ID de la solicitud
      */
     async verDetalleSolicitud(solicitudId) {
-        SolicitudesUtils.log('Ver detalles de solicitud', solicitudId);
-        
         SolicitudesUI.mostrarLoader('Cargando...', 'Obteniendo detalles de la solicitud');
         
         try {
@@ -153,12 +144,7 @@ const SolicitudesController = {
      * Aprueba todas las solicitudes disponibles
      */
     async aprobarTodas() {
-        SolicitudesUtils.log('Aprobar todas las solicitudes', this.solicitudes);
-        
-        // Filtrar solicitudes disponibles
         const disponibles = SolicitudesUtils.filtrarDisponibles(this.solicitudes);
-        
-        SolicitudesUtils.log('Solicitudes disponibles encontradas', disponibles.length);
         
         if (disponibles.length === 0) {
             SolicitudesUI.mostrarInfo(
@@ -178,10 +164,7 @@ const SolicitudesController = {
         if (confirmacion.isConfirmed) {
             SolicitudesUI.mostrarLoader('Procesando...', 'Aprobando solicitudes disponibles');
             
-            // Extraer IDs válidos
             const solicitudesIds = SolicitudesUtils.extraerIds(disponibles);
-            
-            SolicitudesUtils.log('Solicitudes a aprobar', solicitudesIds);
 
             if (solicitudesIds.length === 0) {
                 SolicitudesUI.mostrarError(
@@ -227,8 +210,6 @@ const SolicitudesController = {
      * Rechaza todas las solicitudes pendientes
      */
     async rechazarTodas() {
-        SolicitudesUtils.log('Rechazar todas las solicitudes', this.solicitudes);
-        
         if (this.solicitudes.length === 0) {
             SolicitudesUI.mostrarInfo(
                 'Sin Solicitudes',
@@ -251,8 +232,6 @@ const SolicitudesController = {
             
             // Extraer IDs válidos
             const solicitudesIds = SolicitudesUtils.extraerIds(this.solicitudes);
-            
-            SolicitudesUtils.log('Solicitudes a rechazar', solicitudesIds);
 
             if (solicitudesIds.length === 0) {
                 SolicitudesUI.mostrarError(
@@ -294,8 +273,6 @@ const SolicitudesController = {
      * @param {number} idprestamo - ID del préstamo
      */
     async aprobarRenovacion(solicitudId, idprestamo) {
-        SolicitudesUtils.log('Aprobar renovación', { solicitudId, idprestamo });
-        
         const confirmacion = await SolicitudesUI.confirmar(
             '¿Aprobar Renovación?',
             '¿Estás seguro de que deseas aprobar esta solicitud de renovación?',
@@ -335,8 +312,6 @@ const SolicitudesController = {
      * @param {number} solicitudId - ID de la solicitud
      */
     async rechazarRenovacion(solicitudId) {
-        SolicitudesUtils.log('Rechazar renovación', solicitudId);
-        
         const resultado = await SolicitudesUI.confirmarConInput(
             '¿Rechazar Renovación?',
             'Motivo del rechazo',
