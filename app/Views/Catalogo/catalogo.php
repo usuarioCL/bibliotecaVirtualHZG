@@ -115,7 +115,4 @@ window.catalogoConfig = {
     </div>
 </div>
 
-<!-- Modal para visualizar PDFs -->
-<?= view('partials/modals/pdf_viewer_modal') ?>
-
 <?= $footer ?>

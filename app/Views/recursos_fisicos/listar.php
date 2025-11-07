@@ -270,15 +270,33 @@ function verEjemplares(idrecurso, titulo) {
 
 // Función para recargar el contenido del modal de ejemplares
 function recargarModalEjemplares() {
+    console.log('Recargando modal con idRecurso:', currentIdRecurso);
+    
     if (currentIdRecurso) {
+        // Mostrar un indicador de carga
+        document.getElementById('contenidoEjemplares').innerHTML = `
+            <div class="text-center">
+                <div class="spinner-border" role="status">
+                    <span class="visually-hidden">Cargando...</span>
+                </div>
+                <p class="mt-2">Actualizando ejemplares...</p>
+            </div>
+        `;
+        
         fetch('<?= base_url('ejemplares-fisicos/modal/') ?>' + currentIdRecurso)
             .then(response => response.text())
             .then(html => {
+                console.log('Contenido recibido, actualizando modal...');
                 document.getElementById('contenidoEjemplares').innerHTML = html;
             })
             .catch(error => {
-                console.error('Error:', error);
+                console.error('Error al recargar:', error);
+                document.getElementById('contenidoEjemplares').innerHTML = `
+                    <div class="alert alert-danger">Error al cargar los ejemplares. Por favor, inténtalo de nuevo.</div>
+                `;
             });
+    } else {
+        console.error('No hay idRecurso guardado');
     }
 }
 
@@ -453,6 +471,33 @@ document.addEventListener('abrirModalEditarEjemplar', function(e) {
     }, 300);
 });
 
+// Listener para mantener el modal de ejemplares abierto cuando se cierra el de edición
+document.getElementById('modalEditarEjemplar')?.addEventListener('hidden.bs.modal', function() {
+    console.log('Modal de edición cerrado, verificando modal de ejemplares...');
+    
+    // Limpiar backdrops duplicados
+    const backdrops = document.querySelectorAll('.modal-backdrop');
+    if (backdrops.length > 1) {
+        console.log('Limpiando backdrops duplicados...');
+        for (let i = 1; i < backdrops.length; i++) {
+            backdrops[i].remove();
+        }
+    }
+    
+    // Asegurar que el modal de ejemplares permanezca abierto
+    const modalEjemplares = document.getElementById('modalEjemplares');
+    if (modalEjemplares && !modalEjemplares.classList.contains('show')) {
+        console.log('Reabriendo modal de ejemplares...');
+        const modal = new bootstrap.Modal(modalEjemplares);
+        modal.show();
+    }
+    
+    // Asegurar que el body mantenga la clase modal-open
+    if (!document.body.classList.contains('modal-open')) {
+        document.body.classList.add('modal-open');
+    }
+});
+
 // Manejar el envío del formulario de edición de ejemplares con delegación de eventos
 document.addEventListener('submit', function(e) {
     if (e.target.id === 'formEditarEjemplar') {
@@ -468,16 +513,26 @@ document.addEventListener('submit', function(e) {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                Swal.fire('¡Éxito!', data.message, 'success').then(() => {
-                    // Cerrar el modal de edición
-                    var modalEditar = bootstrap.Modal.getInstance(document.getElementById('modalEditarEjemplar'));
-                    if (modalEditar) {
-                        modalEditar.hide();
-                    }
-                    
-                    // Recargar solo el contenido del modal de ejemplares sin cerrar
-                    recargarModalEjemplares();
-                });
+                // Cerrar el modal de edición primero
+                var modalEditar = bootstrap.Modal.getInstance(document.getElementById('modalEditarEjemplar'));
+                if (modalEditar) {
+                    modalEditar.hide();
+                }
+                
+                // Mostrar éxito después de cerrar el modal
+                setTimeout(() => {
+                    Swal.fire({
+                        title: '¡Éxito!',
+                        text: data.message,
+                        icon: 'success',
+                        timer: 1500,
+                        showConfirmButton: false
+                    }).then(() => {
+                        // Recargar el contenido del modal de ejemplares
+                        console.log('Llamando a recargarModalEjemplares...');
+                        recargarModalEjemplares();
+                    });
+                }, 100);
             } else {
                 Swal.fire('Error', data.message, 'error');
             }

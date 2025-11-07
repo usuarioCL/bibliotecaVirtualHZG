@@ -1,9 +1,11 @@
+<?php
+helper('prestamo');
+?>
 <?= $header ?>
 <?= $navbar ?>
 
-<!-- Estilos institucionales de la Biblioteca Virtual HZG -->
-<link rel="stylesheet" href="<?= base_url('assets/css/biblioteca-hzg.css') ?>">
-<link rel="stylesheet" href="<?= base_url('assets/css/libro-card.css') ?>">
+<!-- Estilos específicos para componentes de préstamos -->
+<link rel="stylesheet" href="<?= base_url('assets/css/components/prestamos-components.css') ?>">
 
 <div class="container mt-4">
     <!-- Header de la página -->
@@ -20,13 +22,15 @@
         </div>
         <div class="col-lg-4 col-md-5">
             <div class="d-flex justify-content-end align-items-center h-100">
-                <div class="card bg-primary bg-gradient text-white border-0 shadow-sm">
+                <div class="card prestamos-counter-card text-white border-0 shadow-sm">
                     <div class="card-body text-center py-3 px-4">
                         <div class="d-flex align-items-center justify-content-center">
                             <i class="fas fa-bookmark fa-2x me-3"></i>
                             <div>
                                 <small class="text-white-50 d-block">Préstamos Activos</small>
-                                <h3 class="text-white mb-0 fw-bold" id="contadorActivos"><?= $contadorActivos ?></h3>
+                                <h3 class="text-white mb-0 prestamos-counter-value" id="contadorActivos">
+                                    <?= $contadorActivos ?>
+                                </h3>
                             </div>
                         </div>
                     </div>
@@ -63,12 +67,11 @@
         <!-- Préstamos Activos -->
         <div class="tab-pane fade show active" id="activos" role="tabpanel">
             <?php if (!empty($prestamosActivos)): ?>
-                <!-- Vista Lista de préstamos activos -->
                 <div class="card border-0 shadow-sm">
                     <div class="card-body p-0">
                         <div class="table-responsive">
-                            <table class="table table-hover mb-0">
-                                <thead class="table-light">
+                            <table class="table table-hover table-prestamos mb-0">
+                                <thead>
                                     <tr>
                                         <th class="border-0 fw-semibold">Libro</th>
                                         <th class="border-0 fw-semibold">Autor</th>
@@ -80,70 +83,11 @@
                                 </thead>
                                 <tbody id="prestamosActivosLista">
                                     <?php foreach ($prestamosActivos as $prestamo): ?>
-                                        <tr class="align-middle">
-                                            <td>
-                                                <div class="d-flex align-items-center">
-                                                    <?php if (!empty($prestamo['portada'])): ?>
-                                                        <img src="<?= base_url($prestamo['portada']) ?>" class="rounded me-3" style="width: 40px; height: 50px; object-fit: cover;" alt="Portada">
-                                                    <?php else: ?>
-                                                        <div class="bg-light rounded me-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 50px;">
-                                                            <i class="fas fa-book text-muted"></i>
-                                                        </div>
-                                                    <?php endif; ?>
-                                                    <div>
-                                                        <h6 class="mb-0 fw-semibold"><?= esc($prestamo['titulo']) ?></h6>
-                                                        <?php if (!empty($prestamo['isbn'])): ?>
-                                                            <small class="text-muted">ISBN: <?= esc($prestamo['isbn']) ?></small>
-                                                        <?php endif; ?>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td class="text-muted"><?= esc($prestamo['nomautor'] ?: 'Sin autor') ?></td>
-                                            <td>
-                                                <small class="text-muted">
-                                                    <i class="fas fa-calendar-alt me-1"></i>
-                                                    <?= date('d/M/Y', strtotime($prestamo['fechaprestamo'])) ?>
-                                                </small>
-                                            </td>
-                                            <td>
-                                                <?php if (!empty($prestamo['fechadevolucion'])): ?>
-                                                    <?php 
-                                                    $fechaVencimiento = strtotime($prestamo['fechadevolucion']);
-                                                    $hoy = time();
-                                                    $esVencido = $fechaVencimiento < $hoy;
-                                                    ?>
-                                                    <small class="<?= $esVencido ? 'text-danger' : 'text-success' ?>">
-                                                        <i class="fas fa-clock me-1"></i>
-                                                        <?= date('d/M/Y', $fechaVencimiento) ?>
-                                                    </small>
-                                                <?php else: ?>
-                                                    <small class="text-muted">Sin fecha</small>
-                                                <?php endif; ?>
-                                            </td>
-                                            <td>
-                                                <?php if (!empty($prestamo['fechadevolucion']) && strtotime($prestamo['fechadevolucion']) < time()): ?>
-                                                    <span class="badge bg-danger">Vencido</span>
-                                                <?php else: ?>
-                                                    <span class="badge bg-success">Activo</span>
-                                                <?php endif; ?>
-                                            </td>
-                                            <td>
-                                                <div class="d-flex gap-2 justify-content-center">
-                                                    <button class="btn btn-sm btn-primary" 
-                                                            data-bs-toggle="modal" 
-                                                            data-bs-target="#prestamoModal"
-                                                            onclick="cargarDetallesPrestamo(<?= $prestamo['idprestamo'] ?>)" 
-                                                            title="Ver detalles">
-                                                        <i class="fas fa-eye"></i>
-                                                    </button>
-                                                    <button class="btn btn-sm btn-info text-white" 
-                                                            onclick="renovarPrestamo(<?= $prestamo['idprestamo'] ?>)" 
-                                                            title="Renovar">
-                                                        <i class="fas fa-redo"></i>
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
+                                        <?php 
+                                        $mostrarRenovar = true;
+                                        $mostrarDevolver = false;
+                                        echo view('partials/_prestamo_row', compact('prestamo', 'mostrarRenovar', 'mostrarDevolver'));
+                                        ?>
                                     <?php endforeach; ?>
                                 </tbody>
                             </table>
@@ -151,35 +95,32 @@
                     </div>
                 </div>
             <?php else: ?>
-                <!-- Mensaje cuando no hay préstamos activos -->
                 <div class="row" id="sinPrestamosActivos">
                     <div class="col-12">
-                        <div class="card border-0 shadow-sm">
-                            <div class="card-body text-center py-5">
-                                <div class="mb-4">
-                                    <i class="fas fa-book-open fa-4x text-primary opacity-50"></i>
-                                </div>
-                                <h4 class="text-muted mb-3">No tienes préstamos activos</h4>
-                                <p class="text-muted mb-4 lead">¡Explora nuestro catálogo y encuentra tu próximo libro!</p>
-                                
-                                <?php if (session()->get('nivel') === 'admin'): ?>
-                                    <div class="alert alert-info border-0 mb-4">
-                                        <i class="fas fa-user-shield me-2"></i>
-                                        <strong>Modo Admin:</strong> Para probar la funcionalidad, puedes 
-                                        <a href="<?= site_url('catalogo/insertar-datos-prueba') ?>" class="alert-link text-decoration-none">insertar datos de prueba</a>
-                                    </div>
-                                <?php endif; ?>
-                                
-                                <div class="d-flex flex-column flex-sm-row gap-3 justify-content-center">
-                                    <a href="<?= site_url('catalogo') ?>" class="btn btn-primary btn-lg">
-                                        <i class="fas fa-search me-2"></i>Explorar Catálogo
-                                    </a>
-                                    <a href="<?= site_url('catalogo') ?>?categoria=populares" class="btn btn-outline-primary btn-lg">
-                                        <i class="fas fa-star me-2"></i>Libros Populares
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
+                        <?php
+                        $titulo = 'No tienes préstamos activos';
+                        $mensaje = '¡Explora nuestro catálogo y encuentra tu próximo libro!';
+                        $icono = 'book-open';
+                        $botones = [
+                            [
+                                'texto' => 'Explorar Catálogo',
+                                'url' => site_url('catalogo'),
+                                'clase' => 'btn-primary',
+                                'icono' => 'search'
+                            ],
+                            [
+                                'texto' => 'Libros Populares',
+                                'url' => site_url('catalogo') . '?categoria=populares',
+                                'clase' => 'btn-outline-primary',
+                                'icono' => 'star'
+                            ]
+                        ];
+                        $alertaAdmin = session()->get('nivel') === 'admin' 
+                            ? '<strong>Modo Admin:</strong> Para probar la funcionalidad, puedes <a href="' . site_url('catalogo/insertar-datos-prueba') . '" class="alert-link text-decoration-none">insertar datos de prueba</a>'
+                            : null;
+
+                        echo view('partials/_empty_state_con_acciones', compact('titulo', 'mensaje', 'icono', 'botones', 'alertaAdmin'));
+                        ?>
                     </div>
                 </div>
             <?php endif; ?>
@@ -191,8 +132,8 @@
                 <div class="card border-0 shadow-sm">
                     <div class="card-body p-0">
                         <div class="table-responsive">
-                            <table class="table table-hover mb-0">
-                                <thead class="table-light">
+                            <table class="table table-hover table-prestamos mb-0">
+                                <thead>
                                     <tr>
                                         <th class="border-0 fw-semibold">Libro</th>
                                         <th class="border-0 fw-semibold">Autor</th>
@@ -204,71 +145,11 @@
                                 </thead>
                                 <tbody id="historialPrestamos">
                                     <?php foreach ($historialPrestamos as $prestamo): ?>
-                                        <tr class="align-middle">
-                                            <td>
-                                                <div class="d-flex align-items-center">
-                                                    <?php if (!empty($prestamo['portada'])): ?>
-                                                        <img src="<?= base_url($prestamo['portada']) ?>" class="rounded me-3" style="width: 40px; height: 50px; object-fit: cover;" alt="Portada">
-                                                    <?php else: ?>
-                                                        <div class="bg-light rounded me-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 50px;">
-                                                            <i class="fas fa-book text-muted"></i>
-                                                        </div>
-                                                    <?php endif; ?>
-                                                    <div>
-                                                        <h6 class="mb-0 fw-semibold"><?= esc($prestamo['titulo']) ?></h6>
-                                                        <?php if (!empty($prestamo['isbn'])): ?>
-                                                            <small class="text-muted">ISBN: <?= esc($prestamo['isbn']) ?></small>
-                                                        <?php endif; ?>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td class="text-muted"><?= esc($prestamo['nomautor'] ?: 'Sin autor') ?></td>
-                                            <td>
-                                                <small class="text-muted">
-                                                    <i class="fas fa-calendar-alt me-1"></i>
-                                                    <?= date('d/M/Y', strtotime($prestamo['fechaprestamo'])) ?>
-                                                </small>
-                                            </td>
-                                            <td>
-                                                <?php if (!empty($prestamo['fechahoraretorno'])): ?>
-                                                    <small class="text-success">
-                                                        <i class="fas fa-calendar-check me-1"></i>
-                                                        <?= date('d/M/Y', strtotime($prestamo['fechahoraretorno'])) ?>
-                                                    </small>
-                                                <?php elseif (!empty($prestamo['fechadevolucion'])): ?>
-                                                    <small class="text-warning">
-                                                        <i class="fas fa-clock me-1"></i>
-                                                        Vence: <?= date('d/M/Y', strtotime($prestamo['fechadevolucion'])) ?>
-                                                    </small>
-                                                <?php else: ?>
-                                                    <small class="text-muted">Sin fecha</small>
-                                                <?php endif; ?>
-                                            </td>
-                                            <td>
-                                                <?php if (!empty($prestamo['fechahoraretorno'])): ?>
-                                                    <span class="badge bg-success">
-                                                        <i class="fas fa-check me-1"></i>Devuelto
-                                                    </span>
-                                                <?php elseif (!empty($prestamo['fechadevolucion']) && strtotime($prestamo['fechadevolucion']) < time()): ?>
-                                                    <span class="badge bg-danger">
-                                                        <i class="fas fa-exclamation-triangle me-1"></i>Vencido
-                                                    </span>
-                                                <?php else: ?>
-                                                    <span class="badge bg-primary">
-                                                        <i class="fas fa-clock me-1"></i>Activo
-                                                    </span>
-                                                <?php endif; ?>
-                                            </td>
-                                            <td class="text-center">
-                                                <button class="btn btn-sm btn-primary" 
-                                                        data-bs-toggle="modal" 
-                                                        data-bs-target="#prestamoModal"
-                                                        onclick="cargarDetallesPrestamo(<?= $prestamo['idprestamo'] ?>)" 
-                                                        title="Ver detalles">
-                                                    <i class="fas fa-eye"></i>
-                                                </button>
-                                            </td>
-                                        </tr>
+                                        <?php 
+                                        $mostrarRenovar = false;
+                                        $mostrarDevolver = false;
+                                        echo view('partials/_prestamo_row', compact('prestamo', 'mostrarRenovar', 'mostrarDevolver'));
+                                        ?>
                                     <?php endforeach; ?>
                                 </tbody>
                             </table>
@@ -307,342 +188,33 @@
                 </div>
                 <?php endif; ?>
             <?php else: ?>
-                <!-- Mensaje cuando no hay historial -->
                 <div class="card border-0 shadow-sm">
-                    <div class="card-body text-center py-5">
-                        <div class="mb-4">
-                            <i class="fas fa-history fa-4x text-secondary opacity-50"></i>
-                        </div>
-                        <h4 class="text-muted mb-3">No hay historial de préstamos</h4>
-                        <p class="text-muted mb-4 lead">Cuando realices préstamos aparecerán aquí</p>
-                        <div class="d-flex flex-column flex-sm-row gap-3 justify-content-center">
-                            <a href="<?= site_url('catalogo') ?>" class="btn btn-primary btn-lg">
-                                <i class="fas fa-search me-2"></i>Explorar Catálogo
-                            </a>
-                            <a href="<?= site_url('catalogo') ?>?categoria=novedades" class="btn btn-outline-primary btn-lg">
-                                <i class="fas fa-sparkles me-2"></i>Ver Novedades
-                            </a>
-                        </div>
-                    </div>
+                    <?php
+                    $titulo = 'No hay historial de préstamos';
+                    $mensaje = 'Cuando realices préstamos aparecerán aquí';
+                    $icono = 'history';
+                    $botones = [
+                        [
+                            'texto' => 'Explorar Catálogo',
+                            'url' => site_url('catalogo'),
+                            'clase' => 'btn-primary',
+                            'icono' => 'search'
+                        ],
+                        [
+                            'texto' => 'Ver Novedades',
+                            'url' => site_url('catalogo') . '?categoria=novedades',
+                            'clase' => 'btn-outline-primary',
+                            'icono' => 'sparkles'
+                        ]
+                    ];
+
+                    echo view('partials/_empty_state_con_acciones', compact('titulo', 'mensaje', 'icono', 'botones'));
+                    ?>
                 </div>
             <?php endif; ?>
         </div>
     </div>
 </div>
-
-<script>
-// Función para cargar detalles del préstamo (debe estar fuera del DOMContentLoaded para ser accesible globalmente)
-function cargarDetallesPrestamo(idPrestamo) {
-    const modalBody = document.getElementById('prestamoModalBody');
-    
-    // Mostrar loading
-    modalBody.innerHTML = `
-        <div class="text-center">
-            <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">Cargando...</span>
-            </div>
-            <p class="mt-2">Cargando detalles del préstamo...</p>
-        </div>
-    `;
-    
-    // Cargar detalles via AJAX
-    fetch(`<?= base_url('prestamo/detalles/') ?>${idPrestamo}`)
-        .then(response => response.text())
-        .then(html => {
-            modalBody.innerHTML = html;
-        })
-        .catch(error => {
-            console.error('Error al cargar detalles:', error);
-            modalBody.innerHTML = `
-                <div class="alert alert-danger">
-                    <i class="fas fa-exclamation-triangle me-2"></i>
-                    Error al cargar los detalles del préstamo.
-                </div>
-            `;
-        });
-}
-
-// Funciones globales para los botones de préstamo
-function renovarPrestamo(idPrestamo) {
-    // Cargar el formulario de renovación vía AJAX
-    fetch(`<?= base_url('prestamo/formulario-renovacion/') ?>${idPrestamo}`)
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Error al cargar el formulario');
-            }
-            return response.text();
-        })
-        .then(html => {
-            // Mostrar el formulario en un modal de SweetAlert
-            Swal.fire({
-                title: '<i class="fas fa-redo me-2"></i>Renovar Préstamo',
-                html: html,
-                width: '800px',
-                showConfirmButton: false,
-                showCloseButton: true,
-                customClass: {
-                    popup: 'swal-wide',
-                    htmlContainer: 'swal-html-container-custom'
-                },
-                didOpen: () => {
-                    // El formulario ya tiene sus propios botones de acción
-                }
-            });
-        })
-        .catch(error => {
-            console.error('Error al cargar formulario de renovación:', error);
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: 'No se pudo cargar el formulario de renovación. Por favor, intente nuevamente.',
-                confirmButtonColor: '#dc3545'
-            });
-        });
-}
-
-/**
- * Validar que la fecha de devolución esté dentro del rango permitido
- */
-function validarFechaDevolucion() {
-    const fechaInicio = document.getElementById('nuevaFechaPrestamo');
-    const fechaDevolucion = document.getElementById('nuevaFechaDevolucion');
-    
-    if (!fechaInicio || !fechaDevolucion || !fechaInicio.value || !fechaDevolucion.value) {
-        return;
-    }
-    
-    const inicio = new Date(fechaInicio.value + 'T00:00:00');
-    const devolucion = new Date(fechaDevolucion.value + 'T00:00:00');
-    
-    // Calcular la diferencia en días
-    const diffTime = devolucion - inicio;
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
-    // Validar que esté entre 0 y 7 días
-    if (diffDays < 0) {
-        fechaDevolucion.setCustomValidity('La fecha de devolución no puede ser anterior a la fecha de inicio');
-        Swal.fire({
-            icon: 'warning',
-            title: 'Fecha inválida',
-            text: 'La fecha de devolución no puede ser anterior a la fecha de inicio',
-            confirmButtonColor: '#f39c12'
-        });
-        // Resetear a la fecha máxima permitida
-        const maxDate = new Date(inicio);
-        maxDate.setDate(maxDate.getDate() + 7);
-        fechaDevolucion.value = maxDate.toISOString().split('T')[0];
-    } else if (diffDays > 7) {
-        fechaDevolucion.setCustomValidity('No puede extender el préstamo por más de 7 días');
-        Swal.fire({
-            icon: 'warning',
-            title: 'Período máximo excedido',
-            text: 'La renovación no puede extender el préstamo por más de 7 días',
-            confirmButtonColor: '#f39c12'
-        });
-        // Resetear a la fecha máxima permitida
-        const maxDate = new Date(inicio);
-        maxDate.setDate(maxDate.getDate() + 7);
-        fechaDevolucion.value = maxDate.toISOString().split('T')[0];
-    } else {
-        fechaDevolucion.setCustomValidity('');
-    }
-}
-
-/**
- * Función para enviar la renovación del préstamo
- */
-function enviarRenovacionPrestamo() {
-    const form = document.getElementById('formRenovacionPrestamo');
-    if (!form) {
-        console.error('No se encontró el formulario de renovación');
-        return;
-    }
-    
-    // Recopilar datos del formulario manualmente para asegurar que todo se capture correctamente
-    const data = {
-        idprestamo: form.querySelector('input[name="idprestamo"]')?.value,
-        motivo: form.querySelector('textarea[name="motivo"]')?.value || '',
-        nueva_fecha_devolucion: form.querySelector('input[name="nueva_fecha_devolucion"]')?.value,
-        nueva_fecha_prestamo: form.querySelector('input[name="nueva_fecha_prestamo"]')?.value
-    };
-    
-    // Debug: Verificar datos recopilados
-    console.log('Datos del formulario:', data);
-    
-    // Validar que tenemos el idprestamo
-    if (!data.idprestamo) {
-        Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: 'No se encontró el ID del préstamo',
-            confirmButtonColor: '#dc3545'
-        });
-        return;
-    }
-    
-    // Calcular días de extensión reales
-    const fechaInicio = document.getElementById('nuevaFechaPrestamo');
-    const fechaDevolucion = document.getElementById('nuevaFechaDevolucion');
-    
-    let diasExtension = 7; // valor por defecto
-    let mensajeExtension = 'El préstamo se extenderá por 7 días más';
-    
-    if (fechaInicio && fechaDevolucion && fechaInicio.value && fechaDevolucion.value) {
-        const inicio = new Date(fechaInicio.value + 'T00:00:00');
-        const fin = new Date(fechaDevolucion.value + 'T00:00:00');
-        const diffTime = fin - inicio;
-        diasExtension = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        
-        if (diasExtension === 1) {
-            mensajeExtension = 'El préstamo se extenderá por 1 día más';
-        } else {
-            mensajeExtension = `El préstamo se extenderá por ${diasExtension} días más`;
-        }
-    }
-    
-    // Esta vista es SOLO para estudiantes - siempre enviar solicitud de renovación
-    const urlRenovacion = '<?= base_url('prestamo/solicitar-renovacion') ?>';
-    
-    // Mensaje de confirmación para solicitud de renovación
-    const tituloConfirmacion = '¿Enviar solicitud de renovación?';
-    const textoConfirmacion = mensajeExtension + '. Tu solicitud será revisada por un administrador.';
-    const botonConfirmar = 'Sí, enviar solicitud';
-    
-    Swal.fire({
-        title: tituloConfirmacion,
-        text: textoConfirmacion,
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonText: botonConfirmar,
-        cancelButtonText: 'Cancelar',
-        confirmButtonColor: '#28a745',
-        cancelButtonColor: '#6c757d',
-        showLoaderOnConfirm: true,
-        preConfirm: () => {
-            return fetch(urlRenovacion, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                body: JSON.stringify(data)
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (!data.success) {
-                    throw new Error(data.message || 'Error desconocido');
-                }
-                return data;
-            })
-            .catch(error => {
-                Swal.showValidationMessage(`Error: ${error.message}`);
-            });
-        },
-        allowOutsideClick: () => !Swal.isLoading()
-    }).then((result) => {
-        if (result.isConfirmed && result.value) {
-            // Como esta vista es solo para estudiantes, siempre es una solicitud
-            Swal.fire({
-                icon: 'info',
-                title: '¡Solicitud Enviada!',
-                html: `
-                    <div class="text-start">
-                        <p class="mb-2"><strong>Tu solicitud de renovación ha sido enviada exitosamente.</strong></p>
-                        <p class="mb-2">Un administrador o docente revisará tu solicitud pronto.</p>
-                        <div class="alert alert-info mt-3 mb-0">
-                            <i class="fas fa-info-circle me-2"></i>
-                            <small>Recibirás una notificación cuando tu solicitud sea procesada.</small>
-                        </div>
-                    </div>
-                `,
-                confirmButtonText: 'Entendido',
-                confirmButtonColor: '#28a745'
-            }).then(() => {
-                window.location.reload();
-            });
-        }
-    });
-}
-
-function devolverPrestamo(idPrestamo) {
-    if (typeof Swal !== 'undefined') {
-        Swal.fire({
-            title: '¿Devolver libro?',
-            text: 'Confirma que vas a devolver este libro.',
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonText: 'Sí, devolver',
-            cancelButtonText: 'Cancelar',
-            confirmButtonColor: '#28a745'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                procesarDevolucion(idPrestamo);
-            }
-        });
-    } else {
-        if (confirm('¿Confirmas la devolución de este libro?')) {
-            procesarDevolucion(idPrestamo);
-        }
-    }
-}
-
-function procesarDevolucion(idPrestamo) {
-    fetch('<?= base_url('catalogo/devolver-prestamo') ?>', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest'
-        },
-        body: JSON.stringify({idprestamo: idPrestamo})
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            if (typeof Swal !== 'undefined') {
-                Swal.fire({
-                    title: 'Libro Devuelto',
-                    text: data.message,
-                    icon: 'success',
-                    timer: 2000,
-                    showConfirmButton: false
-                }).then(() => {
-                    location.reload();
-                });
-            } else {
-                alert('Libro devuelto exitosamente');
-                location.reload();
-            }
-        } else {
-            if (typeof Swal !== 'undefined') {
-                Swal.fire({
-                    title: 'Error',
-                    text: data.message || 'Error al devolver el libro',
-                    icon: 'error'
-                });
-            } else {
-                alert('Error al devolver: ' + (data.message || 'Error desconocido'));
-            }
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        if (typeof Swal !== 'undefined') {
-            Swal.fire({
-                title: 'Error',
-                text: 'Error de conexión',
-                icon: 'error'
-            });
-        } else {
-            alert('Error de conexión');
-        }
-    });
-}
-
-document.addEventListener('DOMContentLoaded', function() {
-    // No se necesitan filtros ni búsqueda para solo 2 préstamos activos máximo
-    console.log('Vista de préstamos cargada correctamente');
-});
-</script>
 
 <!-- Modal para detalles del préstamo -->
 <div class="modal fade" id="prestamoModal" tabindex="-1" aria-labelledby="prestamoModalLabel" aria-hidden="true">
@@ -666,19 +238,7 @@ document.addEventListener('DOMContentLoaded', function() {
     </div>
 </div>
 
-<!-- Limpiar modal cuando se cierre -->
-<script>
-document.getElementById('prestamoModal').addEventListener('hidden.bs.modal', function() {
-    const modalBody = document.getElementById('prestamoModalBody');
-    modalBody.innerHTML = `
-        <div class="text-center py-4">
-            <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">Cargando...</span>
-            </div>
-            <p class="mt-3 text-muted">Cargando detalles del préstamo...</p>
-        </div>
-    `;
-});
-</script>
+<!-- JavaScript externo para gestión de préstamos -->
+<script src="<?= base_url('assets/js/mis-prestamos.js') ?>"></script>
 
 <?= $footer ?>
