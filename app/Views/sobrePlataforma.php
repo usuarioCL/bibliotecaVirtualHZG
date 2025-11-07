@@ -9,7 +9,7 @@
     <div class="row justify-content-center">
         <div class="col-lg-10">
             <!-- Hero Section -->
-            <div class="hero-section text-center mb-5">
+            <div class=" text-center mb-5">
                 <h1 class="display-4 fw-bold text-primary mb-3">Biblioteca Virtual HZG</h1>
                 <p class="lead text-muted">Tu acceso digital al conocimiento</p>
             </div>
