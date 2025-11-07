@@ -423,6 +423,7 @@ class PrestamoModel extends Model
                     NULL as motivo_cancelacion,
                     CASE 
                         WHEN p.fechahoraretorno IS NULL THEN 'Activo'
+                        WHEN p.observaciones_devolucion LIKE '%Cancelado por administrador%' THEN 'Cancelado'
                         WHEN p.fechahoraretorno <= COALESCE(p.fechadevolucion, DATE_ADD(p.fechaprestamo, INTERVAL 14 DAY)) THEN 'Devuelto'
                         ELSE 'Devuelto con retraso'
                     END as estado_final,
