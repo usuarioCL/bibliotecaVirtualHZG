@@ -425,23 +425,9 @@ class PrestamoController extends Controller
                 ]);
             }
             
-            // Asegurar que existe una matrícula básica para usar
-            $matriculaBasica = $db->table('matriculas')
-                ->orderBy('idmatricula', 'ASC')
-                ->get()->getRow();
-                
-            if (!$matriculaBasica) {
-                return $this->response->setJSON([
-                    'success' => false,
-                    'message' => 'No hay matrículas disponibles en el sistema. Por favor contacte al administrador.'
-                ]);
-            }
-            
-            // Para administradores y docentes, usar la primera matrícula disponible
-            if ($nivelAcceso === 'admin' || $nivelAcceso === 'docente') {
-                $idMatricula = $matriculaBasica->idmatricula;
-            } else if ($nivelAcceso === 'estudiante') {
-                // Obtener matrícula del estudiante
+            // Obtener la matrícula correcta según el tipo de usuario
+            if ($nivelAcceso === 'estudiante') {
+                // Para estudiantes, obtener su matrícula activa
                 $prestamoModel = new PrestamoModel();
                 $idMatricula = $prestamoModel->getMatriculaByUsuario($idUsuario);
                 
@@ -450,6 +436,56 @@ class PrestamoController extends Controller
                         'success' => false,
                         'message' => 'No se encontró matrícula activa asociada a su usuario.'
                     ]);
+                }
+            } else if ($nivelAcceso === 'admin' || $nivelAcceso === 'docente') {
+                // Para administradores y docentes, obtener o crear su matrícula
+                // Primero obtener el idpersona del usuario
+                $usuario = $db->table('usuarios')
+                    ->select('idpersona')
+                    ->where('idusuario', $idUsuario)
+                    ->get()->getRow();
+                
+                if (!$usuario || !$usuario->idpersona) {
+                    return $this->response->setJSON([
+                        'success' => false,
+                        'message' => 'No se encontraron datos de persona asociados al usuario.'
+                    ]);
+                }
+                
+                // Buscar si existe una matrícula para este docente/admin
+                $matriculaExistente = $db->table('matriculas')
+                    ->where('idpersona', $usuario->idpersona)
+                    ->where('estadomatricula', true)
+                    ->get()->getRow();
+                
+                if ($matriculaExistente) {
+                    $idMatricula = $matriculaExistente->idmatricula;
+                } else {
+                    // Si no existe, crear una matrícula para el docente/admin
+                    // Necesitamos un grupo, usar el grupo por defecto (id=1) o crear uno especial
+                    $grupoDefault = $db->table('grupos')
+                        ->orderBy('idgrupo', 'ASC')
+                        ->limit(1)
+                        ->get()->getRow();
+                    
+                    if (!$grupoDefault) {
+                        return $this->response->setJSON([
+                            'success' => false,
+                            'message' => 'No hay grupos disponibles en el sistema. Contacte al administrador.'
+                        ]);
+                    }
+                    
+                    $nuevaMatricula = [
+                        'idpersona' => $usuario->idpersona,
+                        'idgrupo' => $grupoDefault->idgrupo,
+                        'fechamatricula' => date('Y-m-d'),
+                        'estadomatricula' => true
+                    ];
+                    
+                    $db->table('matriculas')->insert($nuevaMatricula);
+                    $idMatricula = $db->insertID();
+                    
+                    log_message('info', "Matrícula automática creada para {$nivelAcceso} (idusuario: {$idUsuario}, idmatricula: {$idMatricula})");
                 }
             } else {
                 return $this->response->setJSON([
