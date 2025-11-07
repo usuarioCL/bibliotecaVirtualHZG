@@ -1,0 +1,28 @@
+/* Estilos para modales de recursos */
+
+/* Asegurar z-index correcto para modales */
+#modalCrearRecurso,
+#modalCrearRecurso.modal {
+    z-index: 99999 !important;
+}
+
+#modalCrearRecurso .modal-dialog {
+    z-index: 100000 !important;
+}
+
+#modalCrearRecurso .modal-content {
+    z-index: 100001 !important;
+}
+
+/* Backdrop con z-index inferior */
+.modal-backdrop {
+    z-index: 99998 !important;
+}
+
+/* Estilo para campos deshabilitados */
+.form-control-disabled,
+.form-select-disabled {
+    background-color: #e9ecef;
+    opacity: 0.7;
+    cursor: not-allowed;
+}
