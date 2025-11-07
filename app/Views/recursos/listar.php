@@ -6,12 +6,69 @@
             <p class="text-muted mb-0">Recursos bibliográficos del sistema</p>
         </div>
         <div class="d-flex gap-2">
-            <a href="<?= base_url('/recursos/pdf') ?>" class="btn btn-outline-secondary">
+            <button type="button" id="btnExportarPdf" class="btn btn-outline-secondary">
                 <i class="ti ti-file-type-pdf"></i> Exportar PDF
-            </a>
+            </button>
             <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalCrearRecurso">
                 <i class="ti ti-plus"></i> Nuevo Recurso
             </button>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card mt-3">
+        <div class="card-body">
+            <form id="formFiltros">
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Estado</label>
+                        <select name="estado" id="filtroEstado" class="form-select">
+                            <option value="">Todos los estados</option>
+                            <option value="disponible" <?= ($filtros['estado'] ?? '') === 'disponible' ? 'selected' : '' ?>>Disponible</option>
+                            <option value="prestado" <?= ($filtros['estado'] ?? '') === 'prestado' ? 'selected' : '' ?>>Prestado</option>
+                            <option value="perdido" <?= ($filtros['estado'] ?? '') === 'perdido' ? 'selected' : '' ?>>No disponible</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-bold">Año Desde</label>
+                        <input type="text" 
+                               name="anio_desde" 
+                               id="filtroAnioDesde" 
+                               class="form-control" 
+                               placeholder="Ej: 1986"
+                               maxlength="4"
+                               pattern="\d{4}"
+                               value="<?= esc($filtros['anio_desde'] ?? '') ?>">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-bold">Año Hasta</label>
+                        <input type="text" 
+                               name="anio_hasta" 
+                               id="filtroAnioHasta" 
+                               class="form-control" 
+                               placeholder="Ej: 2006"
+                               maxlength="4"
+                               pattern="\d{4}"
+                               value="<?= esc($filtros['anio_hasta'] ?? '') ?>">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Tipo</label>
+                        <select name="tipo" id="filtroTipo" class="form-select">
+                            <option value="">Todos los tipos</option>
+                            <?php foreach($tiposrecurso as $tipo): ?>
+                                <option value="<?= $tipo['idtiporecurso'] ?>" <?= ($filtros['tipo'] ?? '') == $tipo['idtiporecurso'] ? 'selected' : '' ?>>
+                                    <?= esc($tipo['tiporecurso']) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <button type="button" id="btnLimpiar" class="btn btn-outline-secondary w-100">
+                            <i class="ti ti-x"></i> Limpiar Filtros
+                        </button>
+                    </div>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -492,5 +549,156 @@ $(document).ready(function() {
             });
         });
     });
+
+    // ========================================
+    // FILTROS CON AJAX (sin recargar página)
+    // ========================================
+    
+    // Función para aplicar filtros
+    function aplicarFiltros() {
+        var estado = $('#filtroEstado').val();
+        var anioDesde = $('#filtroAnioDesde').val();
+        var anioHasta = $('#filtroAnioHasta').val();
+        var tipo = $('#filtroTipo').val();
+        
+        // Construir URL con parámetros
+        var params = [];
+        if (estado) params.push('estado=' + encodeURIComponent(estado));
+        if (anioDesde) params.push('anio_desde=' + encodeURIComponent(anioDesde));
+        if (anioHasta) params.push('anio_hasta=' + encodeURIComponent(anioHasta));
+        if (tipo) params.push('tipo=' + encodeURIComponent(tipo));
+        
+        var url = '<?= base_url("recursos") ?>' + (params.length > 0 ? '?' + params.join('&') : '');
+        
+        // Mostrar indicador de carga solo en la tabla
+        $('.table-responsive').html(`
+            <div class="text-center py-5">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Cargando...</span>
+                </div>
+                <p class="mt-3">Filtrando recursos...</p>
+            </div>
+        `);
+        
+        // Hacer petición AJAX
+        $.ajax({
+            url: url,
+            type: 'GET',
+            success: function(response) {
+                // Extraer solo la tabla del HTML recibido
+                var tempDiv = $('<div>').html(response);
+                var nuevaTabla = tempDiv.find('.table-responsive').html();
+                
+                if (nuevaTabla) {
+                    $('.table-responsive').html(nuevaTabla);
+                } else {
+                    $('.table-responsive').html(`
+                        <div class="text-center py-4">
+                            <i class="ti ti-inbox fs-1 mb-3"></i>
+                            <h5>No se encontraron recursos</h5>
+                            <p>Intenta con otros filtros</p>
+                        </div>
+                    `);
+                }
+            },
+            error: function() {
+                $('.table-responsive').html(`
+                    <div class="text-danger text-center py-4">
+                        <i class="ti ti-alert-circle fs-1 mb-3"></i>
+                        <h5>Error al filtrar recursos</h5>
+                        <button class="btn btn-primary" onclick="aplicarFiltros()">
+                            <i class="ti ti-refresh"></i> Reintentar
+                        </button>
+                    </div>
+                `);
+            }
+        });
+    }
+    
+    // Evento click en botón Limpiar
+    $('#btnLimpiar').on('click', function() {
+        // Limpiar selects
+        $('#filtroEstado').val('');
+        $('#filtroAnioDesde').val('');
+        $('#filtroAnioHasta').val('');
+        $('#filtroTipo').val('');
+        
+        // Aplicar filtros (sin filtros = mostrar todos)
+        aplicarFiltros();
+    });
+    
+    // Aplicar filtros al cambiar cualquier select
+    $('#filtroEstado, #filtroTipo').on('change', function() {
+        aplicarFiltros();
+    });
+    
+    // ========================================
+    // VALIDACIÓN Y FILTRADO PARA INPUTS DE AÑO
+    // ========================================
+    
+    // Validar que solo se ingresen números en los campos de año
+    $('#filtroAnioDesde, #filtroAnioHasta').on('keypress', function(e) {
+        // Permitir solo números (0-9)
+        var charCode = (e.which) ? e.which : e.keyCode;
+        if (charCode > 31 && (charCode < 48 || charCode > 57)) {
+            e.preventDefault();
+            return false;
+        }
+        return true;
+    });
+    
+    // Aplicar filtros al presionar Enter en los campos de año
+    $('#filtroAnioDesde, #filtroAnioHasta').on('keyup', function(e) {
+        if (e.key === 'Enter') {
+            aplicarFiltros();
+        }
+    });
+    
+    // Aplicar filtros al perder el foco (blur) si hay 4 dígitos o está vacío
+    $('#filtroAnioDesde, #filtroAnioHasta').on('blur', function() {
+        var valor = $(this).val().trim();
+        // Solo aplicar si está vacío o tiene exactamente 4 dígitos
+        if (valor === '' || valor.length === 4) {
+            aplicarFiltros();
+        } else if (valor.length > 0 && valor.length < 4) {
+            // Mostrar advertencia si tiene menos de 4 dígitos
+            $(this).addClass('is-invalid');
+            setTimeout(() => {
+                $(this).removeClass('is-invalid');
+            }, 2000);
+        }
+    });
+    
+    // Limpiar validación al escribir
+    $('#filtroAnioDesde, #filtroAnioHasta').on('input', function() {
+        $(this).removeClass('is-invalid');
+    });
+    
+    // ========================================
+    // EXPORTAR PDF CON FILTROS
+    // ========================================
+    
+    $('#btnExportarPdf').on('click', function() {
+        // Obtener valores de filtros activos
+        var estado = $('#filtroEstado').val();
+        var anioDesde = $('#filtroAnioDesde').val();
+        var anioHasta = $('#filtroAnioHasta').val();
+        var tipo = $('#filtroTipo').val();
+        
+        // Construir URL con parámetros
+        var params = [];
+        if (estado) params.push('estado=' + encodeURIComponent(estado));
+        if (anioDesde) params.push('anio_desde=' + encodeURIComponent(anioDesde));
+        if (anioHasta) params.push('anio_hasta=' + encodeURIComponent(anioHasta));
+        if (tipo) params.push('tipo=' + encodeURIComponent(tipo));
+        
+        var url = '<?= base_url("recursos/pdf") ?>' + (params.length > 0 ? '?' + params.join('&') : '');
+        
+        // Abrir en nueva ventana para descargar
+        window.open(url, '_blank');
+    });
+    
+    // Hacer función disponible globalmente
+    window.aplicarFiltros = aplicarFiltros;
 });
 </script>

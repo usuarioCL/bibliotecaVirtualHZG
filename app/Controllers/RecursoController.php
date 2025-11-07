@@ -26,8 +26,58 @@ class RecursoController extends Controller
         $recurso = new RecursoModel();
         $autorModel = new AutorModel();
 
-        // Obtener todos los recursos con información completa (incluyendo datos físicos/digitales)
-        $datos['recursos'] = $recurso->obtenerRecursosCompletos();
+        // Obtener filtros de la petición
+        $filtros = [
+            'estado' => $this->request->getGet('estado'),
+            'tipo' => $this->request->getGet('tipo'),
+            'anio_desde' => $this->request->getGet('anio_desde'),
+            'anio_hasta' => $this->request->getGet('anio_hasta'),
+            'busqueda' => $this->request->getGet('busqueda')
+        ];
+
+        // Obtener todos los recursos con información completa
+        $recursos = $recurso->obtenerRecursosCompletos();
+
+        // Aplicar filtros
+        if (!empty($filtros['estado'])) {
+            $recursos = array_filter($recursos, function($r) use ($filtros) {
+                return $r['estado'] === $filtros['estado'];
+            });
+        }
+
+        if (!empty($filtros['tipo'])) {
+            $recursos = array_filter($recursos, function($r) use ($filtros) {
+                return $r['idtiporecurso'] == $filtros['tipo'];
+            });
+        }
+
+        // Filtro por rango de años
+        if (!empty($filtros['anio_desde']) || !empty($filtros['anio_hasta'])) {
+            $recursos = array_filter($recursos, function($r) use ($filtros) {
+                $anioRecurso = (int)$r['anio'];
+                $anioDesde = !empty($filtros['anio_desde']) ? (int)$filtros['anio_desde'] : 0;
+                $anioHasta = !empty($filtros['anio_hasta']) ? (int)$filtros['anio_hasta'] : 9999;
+                
+                return $anioRecurso >= $anioDesde && $anioRecurso <= $anioHasta;
+            });
+        }
+
+        if (!empty($filtros['busqueda'])) {
+            $busqueda = strtolower($filtros['busqueda']);
+            $recursos = array_filter($recursos, function($r) use ($busqueda) {
+                return stripos($r['titulo'], $busqueda) !== false || 
+                       stripos($r['isbn'], $busqueda) !== false ||
+                       stripos($r['autor'], $busqueda) !== false;
+            });
+        }
+
+        $datos['recursos'] = array_values($recursos); // Reindexar array
+        $datos['filtros'] = $filtros;
+        
+        // Obtener años únicos para el filtro
+        $aniosUnicos = array_unique(array_column($recurso->obtenerRecursosCompletos(), 'anio'));
+        sort($aniosUnicos);
+        $datos['anios'] = array_filter($aniosUnicos); // Eliminar valores vacíos
 
         // Agregar datos necesarios para el modal de crear
         // Obtener valores ENUM de estado
@@ -42,7 +92,7 @@ class RecursoController extends Controller
         $niveles = str_replace(["enum('", "')"], "", $row->Type);
         $datos['niveles'] = explode("','", $niveles);
 
-        // Obtener datos para los selects del modal
+        // Obtener datos para los selects del modal y filtros
         $datos['autores'] = $autorModel->findAll();
         $datos['categorias'] = model('CategoriaModel')->findAll();
         $datos['subcategorias'] = model('SubcategoriaModel')->findAll();
@@ -749,14 +799,79 @@ public function actualizar($idrecurso)
      */
     public function exportarPdf()
     {
-        // Preparar datos sin paginación con información completa (incluye portada y encuadernación)
+        // Obtener filtros de la petición
+        $filtros = [
+            'estado' => $this->request->getGet('estado'),
+            'tipo' => $this->request->getGet('tipo'),
+            'anio_desde' => $this->request->getGet('anio_desde'),
+            'anio_hasta' => $this->request->getGet('anio_hasta'),
+            'busqueda' => $this->request->getGet('busqueda')
+        ];
+
+        // Preparar datos sin paginación con información completa
         $recurso = new RecursoModel();
         $recursos = $recurso->obtenerRecursosCompletos();
+
+        // Aplicar filtros (misma lógica que en index())
+        if (!empty($filtros['estado'])) {
+            $recursos = array_filter($recursos, function($r) use ($filtros) {
+                return $r['estado'] === $filtros['estado'];
+            });
+        }
+
+        if (!empty($filtros['tipo'])) {
+            $recursos = array_filter($recursos, function($r) use ($filtros) {
+                return $r['idtiporecurso'] == $filtros['tipo'];
+            });
+        }
+
+        // Filtro por rango de años
+        if (!empty($filtros['anio_desde']) || !empty($filtros['anio_hasta'])) {
+            $recursos = array_filter($recursos, function($r) use ($filtros) {
+                $anioRecurso = (int)$r['anio'];
+                $anioDesde = !empty($filtros['anio_desde']) ? (int)$filtros['anio_desde'] : 0;
+                $anioHasta = !empty($filtros['anio_hasta']) ? (int)$filtros['anio_hasta'] : 9999;
+                
+                return $anioRecurso >= $anioDesde && $anioRecurso <= $anioHasta;
+            });
+        }
+
+        if (!empty($filtros['busqueda'])) {
+            $busqueda = strtolower($filtros['busqueda']);
+            $recursos = array_filter($recursos, function($r) use ($busqueda) {
+                return stripos($r['titulo'], $busqueda) !== false || 
+                       stripos($r['isbn'], $busqueda) !== false ||
+                       stripos($r['nomautor'], $busqueda) !== false;
+            });
+        }
+
+        // Reindexar array
+        $recursos = array_values($recursos);
+
+        // Construir título dinámico según filtros
+        $titulo = 'Listado de Recursos';
+        $filtrosAplicados = [];
+        if (!empty($filtros['estado'])) $filtrosAplicados[] = 'Estado: ' . ucfirst($filtros['estado']);
+        if (!empty($filtros['anio_desde']) && !empty($filtros['anio_hasta'])) {
+            $filtrosAplicados[] = 'Años: ' . $filtros['anio_desde'] . ' a ' . $filtros['anio_hasta'];
+        } elseif (!empty($filtros['anio_desde'])) {
+            $filtrosAplicados[] = 'Desde año: ' . $filtros['anio_desde'];
+        } elseif (!empty($filtros['anio_hasta'])) {
+            $filtrosAplicados[] = 'Hasta año: ' . $filtros['anio_hasta'];
+        }
+        if (!empty($filtros['tipo'])) {
+            $tipoModel = new TiporecursoModel();
+            $tipo = $tipoModel->find($filtros['tipo']);
+            if ($tipo) $filtrosAplicados[] = 'Tipo: ' . $tipo['tiporecurso'];
+        }
+        if (!empty($filtrosAplicados)) {
+            $titulo .= ' (' . implode(', ', $filtrosAplicados) . ')';
+        }
 
         // Cargar vista como HTML
         $html = view('recursos/pdf_list', [
             'recursos' => $recursos,
-            'titulo'   => 'Listado de Recursos'
+            'titulo'   => $titulo
         ]);
 
         // Configurar Dompdf
@@ -765,7 +880,7 @@ public function actualizar($idrecurso)
         $options->set('defaultFont', 'DejaVu Sans');
         $dompdf = new Dompdf($options);
         $dompdf->loadHtml($html);
-        $dompdf->setPaper('A4', 'landscape'); // Cambiar a horizontal para que quepan todas las columnas
+        $dompdf->setPaper('A4', 'landscape');
         $dompdf->render();
 
         // Enviar al navegador para descarga
