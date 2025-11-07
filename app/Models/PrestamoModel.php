@@ -562,7 +562,20 @@ class PrestamoModel extends Model
                         0
                     ) as renovaciones_count,
                     'Activo' as estado_ejemplar,
-                    CONCAT('Préstamo aprobado el ', DATE_FORMAT(p.fechahoravalidacion, '%d/%m/%Y %H:%i')) as observaciones,
+                    CASE 
+                        WHEN (SELECT COUNT(*) FROM renovaciones_prestamo rp WHERE rp.idprestamo = p.idprestamo) > 0 THEN 
+                            CONCAT(
+                                'Préstamo renovado ', 
+                                (SELECT COUNT(*) FROM renovaciones_prestamo rp WHERE rp.idprestamo = p.idprestamo),
+                                ' vez', 
+                                CASE WHEN (SELECT COUNT(*) FROM renovaciones_prestamo rp WHERE rp.idprestamo = p.idprestamo) > 1 THEN 'es' ELSE '' END,
+                                '. Última renovación: ',
+                                (SELECT DATE_FORMAT(MAX(rp.fecha_renovacion), '%d/%m/%Y %H:%i') 
+                                 FROM renovaciones_prestamo rp 
+                                 WHERE rp.idprestamo = p.idprestamo)
+                            )
+                        ELSE CONCAT('Préstamo aprobado el ', DATE_FORMAT(p.fechahoravalidacion, '%d/%m/%Y %H:%i'))
+                    END as observaciones,
                     p.fechahoravalidacion as fecha_registro,
                     NULL as tipo_incidencia,
                     NULL as detalle_incidencia,
