@@ -1,0 +1,265 @@
+/**
+ * Estilos del Catálogo de Recursos
+ * Biblioteca Virtual HZG
+ */
+
+/* ============================================
+   TARJETAS DE LIBROS
+   ============================================ */
+
+.libro-card {
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.libro-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15) !important;
+}
+
+.libro-card__badge {
+    position: absolute;
+    top: 0;
+    left: 0;
+    margin: 0.5rem;
+    z-index: 10;
+}
+
+.libro-card__image-container {
+    position: relative;
+    height: 300px;
+    overflow: hidden;
+}
+
+.libro-card__image {
+    object-fit: cover;
+    border-top-left-radius: 0.375rem;
+    border-top-right-radius: 0.375rem;
+}
+
+.libro-card__placeholder {
+    background-color: #f8f9fa;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-top-left-radius: 0.375rem;
+    border-top-right-radius: 0.375rem;
+}
+
+.libro-card__overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 1rem;
+    background: linear-gradient(
+        to top,
+        rgba(0, 0, 0, 0.9) 0%,
+        rgba(0, 0, 0, 0.7) 80%,
+        transparent 100%
+    );
+}
+
+.libro-card__titulo {
+    color: white;
+    font-weight: bold;
+    margin-bottom: 0.25rem;
+    font-size: 0.95rem;
+    line-height: 1.3;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.9);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.libro-card__autor {
+    color: white;
+    font-size: 0.875rem;
+    margin-bottom: 0;
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.8);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.libro-card__anio {
+    color: white;
+    font-size: 0.875rem;
+    margin-bottom: 0;
+    opacity: 0.9;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7);
+}
+
+/* ============================================
+   SUBCATEGORÍAS
+   ============================================ */
+
+.subcategoria-section {
+    margin-bottom: 3rem;
+}
+
+.subcategoria-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.subcategoria-header h3 {
+    margin: 0;
+}
+
+.subcategoria-header .flex-grow-1 {
+    flex-grow: 1;
+}
+
+/* ============================================
+   ANIMACIONES
+   ============================================ */
+
+.animate-ready {
+    opacity: 0;
+    transform: translateY(20px);
+}
+
+.animate-in {
+    opacity: 1;
+    transform: translateY(0);
+    transition: all 0.3s ease;
+}
+
+/* ============================================
+   ESTADOS
+   ============================================ */
+
+.min-vh-50 {
+    min-height: 50vh;
+}
+
+/* Loading spinner mejorado */
+#loading {
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 768px) {
+    .libro-card__image-container {
+        height: 250px;
+    }
+
+    .libro-card__titulo {
+        font-size: 0.875rem;
+    }
+
+    .libro-card__autor,
+    .libro-card__anio {
+        font-size: 0.75rem;
+    }
+
+    .subcategoria-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .subcategoria-header h3 {
+        font-size: 1.25rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .subcategoria-header .badge {
+        margin-top: 0.5rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .libro-card__image-container {
+        height: 200px;
+    }
+
+    .libro-card__overlay {
+        padding: 0.75rem;
+    }
+}
+
+/* ============================================
+   BOTONES DE CATEGORÍA
+   ============================================ */
+
+.btn-categoria {
+    transition: all 0.2s ease;
+}
+
+.btn-categoria:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.btn-categoria:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.btn-categoria.active {
+    font-weight: 600;
+}
+
+/* ============================================
+   BADGES
+   ============================================ */
+
+.libro-card__badge .badge {
+    font-size: 0.75rem;
+    font-weight: 500;
+    padding: 0.35rem 0.65rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* ============================================
+   MEJORAS DE ACCESIBILIDAD
+   ============================================ */
+
+.libro-card:focus-visible {
+    outline: 2px solid #0d6efd;
+    outline-offset: 2px;
+}
+
+/* Mejorar contraste en modo oscuro (si se implementa) */
+@media (prefers-color-scheme: dark) {
+    .libro-card__placeholder {
+        background-color: #343a40;
+        color: #adb5bd;
+    }
+}
+
+/* ============================================
+   UTILIDADES
+   ============================================ */
+
+/* Prevenir scroll horizontal en mobile */
+.container {
+    overflow-x: hidden;
+}
+
+/* Ajuste de espaciado para rows */
+.row {
+    margin-left: -0.5rem;
+    margin-right: -0.5rem;
+}
+
+.row > [class*='col-'] {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+    margin-bottom: 1rem;
+}

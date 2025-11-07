@@ -356,10 +356,7 @@ $(document).ready(function() {
             'docente': '<span class="badge bg-warning text-dark">Docente</span>',
             'estudiante': '<span class="badge bg-success">Estudiante</span>'
         };
-        
-        // Debug: mostrar en consola qué valor está llegando
-        console.log('Tipo recibido:', tipo, 'Normalizado:', tipoNormalizado);
-        
+
         return badges[tipoNormalizado] || '<span class="badge bg-secondary">Desconocido (' + tipo + ')</span>';
     }
 
@@ -401,24 +398,11 @@ $(document).ready(function() {
     }
 
     function exportarHistorial() {
-        // Implementar exportación
         Swal.fire({
             title: 'Exportar Historial',
-            text: '¿En qué formato deseas exportar el historial?',
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonText: 'Excel',
-            cancelButtonText: 'PDF',
-            showDenyButton: true,
-            denyButtonText: 'Cancelar'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                // Exportar a Excel
-                console.log('Exportar a Excel');
-            } else if (result.isDenied) {
-                // Exportar a PDF
-                console.log('Exportar a PDF');
-            }
+            text: 'La exportación estará disponible próximamente.',
+            icon: 'info',
+            confirmButtonText: 'Entendido'
         });
     }
 

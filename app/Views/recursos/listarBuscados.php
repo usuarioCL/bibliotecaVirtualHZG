@@ -4,6 +4,7 @@
 
 <!-- Estilos institucionales de la Biblioteca Virtual HZG -->
 <link rel="stylesheet" href="<?= base_url('assets/css/biblioteca-hzg.css') ?>">
+<link rel="stylesheet" href="<?= base_url('assets/css/libro-card.css') ?>">
 
 <div class="container">
     <!-- Hero section con buscador -->
@@ -119,5 +120,7 @@
     </div>
 </div>
 
+<!-- Cargar módulo de búsqueda -->
+<script src="<?= base_url('assets/js/modules/busquedaHandler.js') ?>"></script>
 
 <?= $footer; ?>

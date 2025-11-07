@@ -1,0 +1,118 @@
+/**
+ * Estilos para las tarjetas de recursos en búsqueda
+ */
+
+/* Tarjeta de recurso base */
+.libro-item {
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+/* Efecto hover en tarjeta */
+.libro-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1) !important;
+}
+
+/* Contenedor de icono de libro */
+.libro-item .libro-icon-container {
+    width: 80px;
+}
+
+.libro-item .libro-icon-wrapper {
+    width: 70px;
+    height: 100px;
+    background-color: #f8f9fa;
+    border-radius: 0.25rem;
+    box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Título del recurso */
+.libro-item .libro-titulo {
+    margin-bottom: 0.5rem;
+    color: var(--bs-primary);
+    font-weight: 700;
+}
+
+/* Metadatos del recurso */
+.libro-item .libro-metadata {
+    margin-bottom: 0.25rem;
+    color: #6c757d;
+    font-size: 0.9rem;
+}
+
+.libro-item .libro-metadata i {
+    margin-right: 0.25rem;
+}
+
+.libro-item .libro-metadata .fw-bold {
+    font-weight: 600;
+}
+
+/* Mensaje de sin resultados */
+.no-results-card {
+    border: 0;
+    box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075);
+}
+
+.no-results-card .card-body {
+    text-align: center;
+    padding: 3rem 1rem;
+}
+
+.no-results-icon {
+    font-size: 3rem;
+    color: #6c757d;
+    margin-bottom: 1rem;
+}
+
+.no-results-title {
+    color: var(--bs-primary);
+    margin-bottom: 0.5rem;
+    font-size: 1.25rem;
+}
+
+.no-results-message {
+    color: #6c757d;
+    margin-bottom: 0;
+}
+
+/* Responsividad */
+@media (max-width: 768px) {
+    .libro-item .libro-metadata {
+        font-size: 0.85rem;
+    }
+    
+    .libro-item .libro-icon-container {
+        width: 60px;
+    }
+    
+    .libro-item .libro-icon-wrapper {
+        width: 55px;
+        height: 80px;
+    }
+    
+    .libro-item .libro-icon-wrapper i {
+        font-size: 1.5rem !important;
+    }
+}
+
+/* Estados de carga y error */
+.loading-state,
+.error-state {
+    text-align: center;
+    padding: 3rem 0;
+}
+
+.loading-spinner {
+    color: var(--bs-primary);
+}
+
+.loading-text,
+.error-text {
+    color: #6c757d;
+    margin-top: 1rem;
+}

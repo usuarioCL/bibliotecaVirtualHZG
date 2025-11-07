@@ -82,7 +82,7 @@ class RecursoController extends Controller
 
         // Si la petición es para modal, devolver solo la vista sin layouts
         if ($this->request->getGet('modal') === 'true') {
-            return view('recursos/crear', $datos);
+            return view('recursos/formulario_crear', $datos);
         }
 
 
@@ -90,7 +90,7 @@ class RecursoController extends Controller
         $datos['header'] = view('layouts/header');
         $datos['footer'] = view('layouts/footer');
 
-        return view('recursos/crear', $datos);
+        return view('recursos/formulario_crear', $datos);
     }
     
     // Guardar datos del Formulario
@@ -358,7 +358,6 @@ public function actualizar($idrecurso)
 {
     $recursoModel = new RecursoModel();
     $detAutorModel = new DetAutorModel();
-    
 
     // Determinar si es recurso digital o físico
     $idTipo = $this->request->getVar('idtiporecurso');
@@ -404,46 +403,43 @@ public function actualizar($idrecurso)
         
         
         if ($portada && $portada->isValid() && !$portada->hasMoved()) {
-            $mime = $portada->getMimeType();
-            if (strpos($mime, 'image/') === 0) {
-                helper('text');
-                
-                
-                // IMPORTANTE: Eliminar imagen anterior ANTES de subir la nueva
-                $this->eliminarImagenAnterior($idrecurso);
-                
-                $recursoExistente = $recursoModel->find($idrecurso);
-                
-                $tituloSlug = url_title(($recursoExistente['titulo'] ?? 'portada'), '-', true);
-                $ext = strtolower($portada->getExtension());
-                $nombreArchivo = $tituloSlug . '-' . $idrecurso . '.' . $ext;
-                
-                // Determinar carpeta según tipo de recurso
-                $tipoRecurso = $this->request->getVar('idtiporecurso');
-                $esDigitalPortada = false;
-                if ($tipoRecurso) {
-                    $tipo = model('TiporecursoModel')->find($tipoRecurso);
-                    if ($tipo && isset($tipo['tiporecurso']) && stripos($tipo['tiporecurso'], 'digital') !== false) {
-                        $esDigitalPortada = true;
-                    }
+            helper('text');
+            
+            
+            // IMPORTANTE: Eliminar imagen anterior ANTES de subir la nueva
+            $this->eliminarImagenAnterior($idrecurso);
+            
+            $recursoExistente = $recursoModel->find($idrecurso);
+            
+            $tituloSlug = url_title(($recursoExistente['titulo'] ?? 'portada'), '-', true);
+            $ext = strtolower($portada->getExtension());
+            $nombreArchivo = $tituloSlug . '-' . $idrecurso . '.' . $ext;
+            
+            // Determinar carpeta según tipo de recurso
+            $tipoRecurso = $this->request->getVar('idtiporecurso');
+            $esDigitalPortada = false;
+            if ($tipoRecurso) {
+                $tipo = model('TiporecursoModel')->find($tipoRecurso);
+                if ($tipo && isset($tipo['tiporecurso']) && stripos($tipo['tiporecurso'], 'digital') !== false) {
+                    $esDigitalPortada = true;
                 }
-                
-                $subcarpeta = $esDigitalPortada ? 'digital' : 'fisico';
-                $carpetaPublica = FCPATH . 'uploads' . DIRECTORY_SEPARATOR . 'portadas' . DIRECTORY_SEPARATOR . $subcarpeta . DIRECTORY_SEPARATOR;
+            }
+            
+            $subcarpeta = $esDigitalPortada ? 'digital' : 'fisico';
+            $carpetaPublica = FCPATH . 'uploads' . DIRECTORY_SEPARATOR . 'portadas' . DIRECTORY_SEPARATOR . $subcarpeta . DIRECTORY_SEPARATOR;
 
-                if (!is_dir($carpetaPublica)) {
-                    @mkdir($carpetaPublica, 0775, true);
-                }
+            if (!is_dir($carpetaPublica)) {
+                @mkdir($carpetaPublica, 0775, true);
+            }
 
-                $portada->move($carpetaPublica, $nombreArchivo, true);
-                $rutaRelativaPortada = 'uploads/portadas/' . $subcarpeta . '/' . $nombreArchivo;
-                
-                // Verificar que el archivo se guardó correctamente
-                if (file_exists($carpetaPublica . $nombreArchivo)) {
-                    $rutaPortadaActualizada = $rutaRelativaPortada;
-                } else {
-                    log_message('error', "Error: Archivo no se guardó correctamente: " . $carpetaPublica . $nombreArchivo);
-                }
+            $portada->move($carpetaPublica, $nombreArchivo, true);
+            $rutaRelativaPortada = 'uploads/portadas/' . $subcarpeta . '/' . $nombreArchivo;
+            
+            // Verificar que el archivo se guardó correctamente
+            if (file_exists($carpetaPublica . $nombreArchivo)) {
+                $rutaPortadaActualizada = $rutaRelativaPortada;
+            } else {
+                log_message('error', "Error: Archivo no se guardó correctamente: " . $carpetaPublica . $nombreArchivo);
             }
         }
     } catch (\Throwable $e) {
@@ -753,9 +749,9 @@ public function actualizar($idrecurso)
      */
     public function exportarPdf()
     {
-        // Preparar datos sin paginación
+        // Preparar datos sin paginación con información completa (incluye portada y encuadernación)
         $recurso = new RecursoModel();
-        $recursos = $recurso->orderBy('idrecurso', 'ASC')->findAll();
+        $recursos = $recurso->obtenerRecursosCompletos();
 
         // Cargar vista como HTML
         $html = view('recursos/pdf_list', [
@@ -769,14 +765,14 @@ public function actualizar($idrecurso)
         $options->set('defaultFont', 'DejaVu Sans');
         $dompdf = new Dompdf($options);
         $dompdf->loadHtml($html);
-        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->setPaper('A4', 'landscape'); // Cambiar a horizontal para que quepan todas las columnas
         $dompdf->render();
 
-        // Enviar al navegador en línea
+        // Enviar al navegador para descarga
         $filename = 'recursos-' . date('Ymd-His') . '.pdf';
         return $this->response
             ->setHeader('Content-Type', 'application/pdf')
-            ->setHeader('Content-Disposition', 'inline; filename="' . $filename . '"')
+            ->setHeader('Content-Disposition', 'attachment; filename="' . $filename . '"')
             ->setBody($dompdf->output());
     }
 
@@ -852,7 +848,7 @@ public function actualizar($idrecurso)
             // Forzar que sea tratado como modal
             $_GET['modal'] = 'true';
 
-            return view('recursos/crear', $datos);
+            return view('recursos/formulario_crear', $datos);
             
         } catch (\Exception $e) {
             return json_encode([

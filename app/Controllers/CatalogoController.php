@@ -311,33 +311,8 @@ class CatalogoController extends BaseController
         $contadorFavoritos = 0;
         
         if ($idusuario) {
-            // Obtener favoritos del usuario
             $favoritos = $favoritoModel->getFavoritosByUsuario($idusuario);
             $contadorFavoritos = count($favoritos);
-            
-            // Debug
-            log_message('info', "Usuario: $nomuser, ID: $idusuario, Favoritos: $contadorFavoritos");
-        } else {
-            log_message('info', "No se encontró usuario: $nomuser");
-        }
-
-        // Si no hay favoritos, crear datos de ejemplo para testing (solo para admin)
-        if (empty($favoritos) && session()->get('nivel') === 'admin') {
-            $favoritos = [
-                [
-                    'idfavorito' => 999,
-                    'idrecurso' => 1,
-                    'titulo' => 'Libro Favorito de Prueba',
-                    'nomautor' => 'Autor Test',
-                    'anio' => 2023,
-                    'categoria' => 'Literatura',
-                    'subcategoria' => 'Novela',
-                    'editorial' => 'Editorial Test',
-                    'estado' => 'disponible',
-                    'portada' => null
-                ]
-            ];
-            $contadorFavoritos = 1;
         }
 
         $datos = [

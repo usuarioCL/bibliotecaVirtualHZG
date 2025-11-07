@@ -1,0 +1,179 @@
+/**
+ * Estilos para componentes de préstamos reutilizables
+ */
+
+/* === Portadas de Libros === */
+.book-thumbnail {
+    object-fit: cover;
+    border: 1px solid #dee2e6;
+}
+
+.book-thumbnail-small {
+    width: 40px;
+    height: 50px;
+}
+
+.book-thumbnail-medium {
+    width: 80px;
+    height: 100px;
+}
+
+.book-thumbnail-large {
+    width: 120px;
+    height: 150px;
+}
+
+.book-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+}
+
+.book-placeholder i {
+    font-size: 1.2rem;
+    color: #6c757d;
+}
+
+/* === Badges de Estado === */
+.badge {
+    font-weight: 500;
+    padding: 0.375rem 0.75rem;
+}
+
+.badge i {
+    font-size: 0.85rem;
+}
+
+/* === Tablas de Préstamos === */
+.table-prestamos {
+    font-size: 0.95rem;
+}
+
+.table-prestamos thead {
+    background-color: #f8f9fa;
+}
+
+.table-prestamos th {
+    font-weight: 600;
+    color: #495057;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+}
+
+.table-prestamos tbody tr {
+    transition: background-color 0.2s ease;
+}
+
+.table-prestamos tbody tr:hover {
+    background-color: rgba(0, 123, 255, 0.05);
+}
+
+/* === Cards de Estado Vacío === */
+.empty-state-card {
+    border: 2px dashed #dee2e6;
+    background-color: #f8f9fa;
+    transition: all 0.3s ease;
+}
+
+.empty-state-card:hover {
+    border-color: #adb5bd;
+    background-color: #e9ecef;
+}
+
+.empty-state-icon {
+    font-size: 4rem;
+    opacity: 0.5;
+    color: var(--bs-primary);
+}
+
+/* === Botones de Acción === */
+.btn-action-group {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+}
+
+.btn-action-group .btn {
+    min-width: 36px;
+    padding: 0.375rem 0.75rem;
+}
+
+/* === Pestañas === */
+.nav-tabs .nav-link {
+    border-radius: 0;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.nav-tabs .nav-link:hover {
+    background-color: rgba(0, 123, 255, 0.1);
+}
+
+.nav-tabs .nav-link.active {
+    border-bottom: 3px solid var(--bs-primary);
+    font-weight: 600;
+}
+
+.nav-tabs .badge {
+    font-size: 0.75rem;
+    vertical-align: middle;
+}
+
+/* === Contador de Préstamos === */
+.prestamos-counter-card {
+    background: linear-gradient(135deg, var(--bs-primary) 0%, #0056b3 100%);
+}
+
+.prestamos-counter-value {
+    font-size: 2rem;
+    font-weight: 700;
+}
+
+/* === Responsive === */
+@media (max-width: 768px) {
+    .book-thumbnail-small {
+        width: 35px;
+        height: 45px;
+    }
+
+    .table-prestamos {
+        font-size: 0.85rem;
+    }
+
+    .btn-action-group {
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .btn-action-group .btn {
+        width: 100%;
+    }
+}
+
+/* === Animaciones === */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.fade-in {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+/* === SweetAlert Personalización === */
+.swal-wide {
+    max-width: 800px !important;
+}
+
+.swal-html-container-custom {
+    padding: 1.5rem !important;
+}

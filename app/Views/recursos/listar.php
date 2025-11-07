@@ -138,7 +138,7 @@
 </div>
 
 <!-- Incluir directamente el modal de crear recurso -->
-<?= view('recursos/crear') ?>
+<?= view('recursos/formulario_crear') ?>
 
 <script>
 $(document).ready(function() {

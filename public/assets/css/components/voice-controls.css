@@ -1,0 +1,218 @@
+/**
+ * Estilos para los controles de voz del lector de PDF
+ */
+
+.voice-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+/* Estilos minimalistas para controles */
+.child-friendly {
+    background: white;
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    border: 1px solid #e9ecef;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.voice-buttons {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.voice-btn {
+    border-radius: 6px !important;
+    font-weight: 500;
+    font-size: 0.875rem;
+    padding: 0.5rem 0.75rem !important;
+    border: 1px solid transparent;
+    transition: all 0.2s ease;
+    box-shadow: none;
+}
+
+.voice-btn:hover {
+    transform: none;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.voice-btn:active {
+    transform: none;
+}
+
+/* Botón de reproducir/leer */
+.btn-success.voice-btn {
+    background-color: #198754;
+    border-color: #198754;
+    color: white;
+}
+
+.btn-success.voice-btn:hover {
+    background-color: #157347;
+    border-color: #146c43;
+}
+
+/* Botón de pausa */
+.btn-warning.voice-btn {
+    background-color: #ffc107;
+    border-color: #ffc107;
+    color: #212529;
+}
+
+.btn-warning.voice-btn:hover {
+    background-color: #ffca2c;
+    border-color: #ffc720;
+}
+
+/* Botón de detener */
+.btn-danger.voice-btn {
+    background-color: #dc3545;
+    border-color: #dc3545;
+    color: white;
+}
+
+.btn-danger.voice-btn:hover {
+    background-color: #bb2d3b;
+    border-color: #b02a37;
+}
+
+.speed-container {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0;
+}
+
+.speed-label {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #6c757d;
+}
+
+.speed-slider {
+    flex: 1;
+    height: 4px;
+    border-radius: 2px;
+    background: #e9ecef;
+    outline: none;
+    appearance: none;
+}
+
+.speed-slider::-webkit-slider-thumb {
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #6c757d;
+    cursor: pointer;
+    border: 2px solid white;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.speed-slider::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #6c757d;
+    cursor: pointer;
+    border: 2px solid white;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.speed-value {
+    font-weight: 500;
+    color: #495057;
+    font-size: 0.75rem;
+    background: #f8f9fa;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    border: 1px solid #e9ecef;
+    min-width: 35px;
+    text-align: center;
+}
+
+.voice-speed-control {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-left: 0.75rem;
+}
+
+.voice-speed-control label {
+    margin: 0;
+    font-size: 0.75rem;
+    color: #6c757d;
+    font-weight: 500;
+}
+
+.voice-speed-control input[type="range"] {
+    width: 80px;
+}
+
+.voice-speed-control span {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #495057;
+    min-width: 35px;
+}
+
+.main-controls {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.main-controls .btn {
+    font-size: 0.875rem;
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    transition: all 0.2s ease;
+}
+
+.main-controls .btn-primary {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+    color: white;
+}
+
+.main-controls .btn-primary:hover {
+    background-color: #0b5ed7;
+    border-color: #0a58ca;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.main-controls .btn-secondary {
+    background-color: #6c757d;
+    border-color: #6c757d;
+    color: white;
+}
+
+.main-controls .btn-secondary:hover {
+    background-color: #5c636a;
+    border-color: #565e64;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .voice-controls {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .main-controls {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .voice-speed-control {
+        margin-left: 0;
+        margin-top: 0.5rem;
+        width: 100%;
+        justify-content: center;
+    }
+}

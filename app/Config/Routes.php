@@ -95,8 +95,6 @@ $routes->get('Administrador/vistas/UsuariosRoles', 'AdminController::VistaUsuari
 $routes->get('admin/importar-datos', 'AdminController::importarDatos');
 $routes->get('admin/descargar-plantilla/(:segment)', 'AdminController::descargarPlantilla/$1');
 $routes->post('admin/preview-excel', 'AdminController::previewExcel');
-$routes->post('admin/preview-csv', 'AdminController::previewCsv');
-$routes->post('admin/procesar-importacion', 'AdminController::procesarImportacion');
 $routes->post('admin/procesar-importacion-excel', 'AdminController::procesarImportacionExcel');
 
 // Administración de datos - Respaldos
@@ -228,6 +226,7 @@ $routes->get('/prestamos', 'PrestamoController::index');                      //
 $routes->get('/solicitudes', 'PrestamoController::solicitudes');              // Solicitudes Pendientes
 $routes->get('/devoluciones', 'PrestamoController::devoluciones');            // Devoluciones
 $routes->get('/historial-prestamos', 'PrestamoController::historial');        // Historial Completo
+$routes->get('/historial-prestamos/exportar-excel', 'PrestamoController::exportarHistorialExcel'); // Exportar historial a Excel
 $routes->get('/prestamo/detalles/(:num)', 'PrestamoController::detalles/$1'); // Detalles de préstamo
 
 // Formulario de préstamos (para usuarios)

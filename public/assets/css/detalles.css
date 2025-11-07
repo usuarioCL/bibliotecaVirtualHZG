@@ -1,0 +1,40 @@
+/* Estilos para la vista de detalles de recursos */
+
+/* Portada del libro */
+.detalles-portada {
+    max-height: 400px;
+    width: auto;
+}
+
+/* Botón de favoritos */
+.btn-toggle-favorito {
+    padding: 0.5rem 1.5rem !important;
+    border-radius: 25px !important;
+    border-width: 2px !important;
+    font-weight: 500 !important;
+    transition: all 0.3s ease !important;
+}
+
+.btn-toggle-favorito.btn-danger {
+    border: 2px solid #dc3545 !important;
+}
+
+.btn-toggle-favorito.btn-outline-primary {
+    border: 2px solid var(--institutional-gold, #D4AF37) !important;
+}
+
+/* Tarjetas de estado y disponibilidad */
+.detalles-estado-card {
+    transition: transform 0.2s ease;
+}
+
+.detalles-estado-card:hover {
+    transform: translateY(-2px);
+}
+
+/* Espaciado y diseño responsive */
+@media (max-width: 768px) {
+    .detalles-portada {
+        max-height: 300px;
+    }
+}

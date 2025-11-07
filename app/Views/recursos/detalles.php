@@ -1,9 +1,11 @@
 <?php if (isset($header)): ?>
 <?= $header ?>
 <?= $navbar ?>
+<link rel="stylesheet" href="<?= base_url('assets/css/detalles.css') ?>">
 <div class="container mt-4">
 <?php else: ?>
 <!-- Vista para modal - sin header/footer -->
+<link rel="stylesheet" href="<?= base_url('assets/css/detalles.css') ?>">
 <div class="container-fluid p-0">
 <?php endif; ?>
     <?php if (isset($header)): ?>
@@ -29,15 +31,13 @@
                     <?php if (!empty($recurso['portada'])): ?>
                         <img src="<?= base_url(esc($recurso['portada'])) ?>?v=<?= time() ?>" 
                              alt="Portada de <?= esc($recurso['titulo']) ?>" 
-                             class="img-fluid rounded shadow-sm"
-                             style="max-height: 400px; width: auto;"
+                             class="img-fluid rounded shadow-sm detalles-portada"
                              onerror="console.error('Error cargando imagen:', this.src); this.src='<?= base_url('img/portada_default.png') ?>'"
                              onload="console.log('Imagen cargada correctamente:', this.src)">
                     <?php else: ?>
                         <img src="<?= base_url('img/portada_default.png') ?>" 
                              alt="Sin portada" 
-                             class="img-fluid rounded shadow-sm"
-                             style="max-height: 400px; width: auto;">
+                             class="img-fluid rounded shadow-sm detalles-portada">
                     <?php endif; ?>
                 </div>
             </div>
@@ -129,7 +129,7 @@
                             <h6 class="text-primary mb-3">Estado y Disponibilidad</h6>
                             <div class="row">
                                 <div class="col-md-4">
-                                    <div class="card border-0 bg-light">
+                                    <div class="card border-0 bg-light detalles-estado-card">
                                         <div class="card-body text-center">
                                             <h5 class="card-title text-<?= $recurso['estado'] === 'disponible' ? 'success' : 'warning' ?>">
                                                 <i class="fas fa-<?= $recurso['estado'] === 'disponible' ? 'check-circle' : 'exclamation-triangle' ?>"></i>
@@ -144,7 +144,7 @@
                                     </div>
                                 </div>
                                 <div class="col-md-4">
-                                    <div class="card border-0 bg-light">
+                                    <div class="card border-0 bg-light detalles-estado-card">
                                         <div class="card-body text-center">
                                             <h5 class="card-title text-info">
                                                 <i class="fas fa-boxes"></i>
@@ -159,7 +159,7 @@
                                     </div>
                                 </div>
                                 <div class="col-md-4">
-                                    <div class="card border-0 bg-light">
+                                    <div class="card border-0 bg-light detalles-estado-card">
                                         <div class="card-body text-center">
                                             <h5 class="card-title text-primary">
                                                 <i class="fas fa-id-card"></i>
@@ -242,15 +242,16 @@
                                     $idusuario = $usuario ? $usuario['idusuario'] : null;
                                     $esFavorito = $idusuario ? $favoritoModel->esFavorito($idusuario, $recurso['idrecurso']) : false;
                                     ?>
-                                    <button class="btn <?= $esFavorito ? 'btn-danger' : 'btn-outline-primary' ?>" 
-                                            id="btnFavorito" 
-                                            onclick="toggleFavorito(<?= $recurso['idrecurso'] ?>)">
-                                        <i class="fas fa-heart<?= $esFavorito ? '' : '-o' ?>"></i> 
+                                    <button class="btn <?= $esFavorito ? 'btn-danger' : 'btn-outline-primary' ?> btn-toggle-favorito" 
+                                            id="btnFavorito"
+                                            data-recurso-id="<?= isset($recurso['idrecurso']) ? $recurso['idrecurso'] : '0' ?>"
+                                            type="button">
+                                        <i class="<?= $esFavorito ? 'fas' : 'far' ?> fa-heart"></i> 
                                         <?= $esFavorito ? 'Quitar de Favoritos' : 'Agregar a Favoritos' ?>
                                     </button>
                                 <?php else: ?>
                                     <button class="btn btn-outline-primary" onclick="mostrarAlertaLogin('agregar a favoritos')">
-                                        <i class="fas fa-heart"></i> Agregar a Favoritos
+                                        <i class="far fa-heart"></i> Agregar a Favoritos
                                     </button>
                                 <?php endif; ?>
                                 
@@ -264,9 +265,17 @@
                                     </button>
                                 <?php endif; ?>
                                 
-                                <a href="<?= base_url('recursos') ?>" class="btn btn-outline-dark">
-                                    <i class="fas fa-arrow-left"></i> Volver a Recursos
-                                </a>
+                                <?php if (isset($header)): ?>
+                                    <!-- Vista normal - botón para ir a recursos -->
+                                    <a href="<?= base_url('recursos') ?>" class="btn btn-outline-dark">
+                                        <i class="fas fa-arrow-left"></i> Volver a Recursos
+                                    </a>
+                                <?php else: ?>
+                                    <!-- Vista modal - botón para cerrar modal -->
+                                    <button type="button" class="btn btn-outline-dark" data-bs-dismiss="modal">
+                                        <i class="fas fa-times"></i> Cerrar
+                                    </button>
+                                <?php endif; ?>
                             </div>
                         </div>
                     </div>
@@ -276,6 +285,17 @@
     </div>
 
 </div>
+
+<!-- Incluir módulo de favoritos -->
+<script src="<?= base_url('assets/js/modules/favoritosHandler.js') ?>"></script>
+<script>
+// Inicializar el handler de favoritos
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof FavoritosHandler !== 'undefined') {
+        window.favoritosHandler = new FavoritosHandler();
+    }
+});
+</script>
 
 <!-- Incluir modal-fix.js para SweetAlert2 z-index -->
 <script src="<?= base_url('assets/js/modal-fix.js') ?>"></script>
@@ -291,162 +311,11 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// Función para solicitar préstamo de un recurso
-function solicitarPrestamo(idRecurso) {
-    // Cerrar el modal de detalles del libro si está abierto
-    const libroModal = document.getElementById('libroModal');
-    if (libroModal) {
-        const modalInstance = bootstrap.Modal.getInstance(libroModal);
-        if (modalInstance) {
-            modalInstance.hide();
-        }
-    }
-    
-    // Primero verificar si el usuario tiene sanciones activas
-    fetch('<?= base_url('prestamo/verificar-sanciones') ?>', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest'
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success && data.sancionado) {
-            // El usuario tiene sanciones activas, mostrar alerta
-            let sancionesHtml = '<div class="alert alert-danger"><strong>Sanciones activas:</strong><ul class="mb-0 mt-2">';
-            data.sanciones.forEach(sancion => {
-                sancionesHtml += `<li><strong>${sancion.tipo}:</strong> ${sancion.detalle}`;
-                if (sancion.fecha_vencimiento) {
-                    const fechaVenc = new Date(sancion.fecha_vencimiento);
-                    sancionesHtml += `<br><small>Vence: ${fechaVenc.toLocaleDateString('es-ES')}</small>`;
-                }
-                sancionesHtml += '</li>';
-            });
-            sancionesHtml += '</ul></div>';
-            
-            Swal.fire({
-                title: 'No puede solicitar préstamos',
-                html: sancionesHtml + '<p class="mt-3">Usted tiene sanciones activas y no puede solicitar préstamos hasta que se resuelvan.</p>',
-                icon: 'warning',
-                confirmButtonText: 'Entendido',
-                confirmButtonColor: '#dc3545'
-            });
-        } else if (data.success && !data.sancionado) {
-            // No tiene sanciones, continuar con el proceso normal
-            setTimeout(() => {
-                // Cargar el formulario de solicitud de préstamo
-                fetch(`<?= base_url('prestamo/formulario/') ?>${idRecurso}`)
-                    .then(response => response.text())
-                    .then(html => {
-                        // Mostrar el formulario en un modal
-                        Swal.fire({
-                            title: 'Solicitud de Préstamo',
-                            html: html,
-                            width: '600px',
-                            showConfirmButton: false,
-                            showCloseButton: true
-                        });
-                    })
-                    .catch(error => {
-                        console.error('Error al cargar el formulario:', error);
-                        Swal.fire({
-                            title: 'Error',
-                            text: 'No se pudo cargar el formulario de solicitud.',
-                            icon: 'error'
-                        });
-                    });
-            }, 300);
-        } else {
-            // Error al verificar sanciones
-            Swal.fire({
-                title: 'Error',
-                text: data.message || 'No se pudo verificar su estado de sanciones',
-                icon: 'error'
-            });
-        }
-    })
-    .catch(error => {
-        console.error('Error al verificar sanciones:', error);
-        Swal.fire({
-            title: 'Error',
-            text: 'Error al verificar sanciones. Por favor intente nuevamente.',
-            icon: 'error'
-        });
-    });
-}
+// Nota: La función solicitarPrestamo() se usa desde el módulo global PrestamoForm.js
+// No se define aquí para evitar duplicación
 
-// Función para alternar favorito (agregar/quitar)
-function toggleFavorito(idRecurso) {
-    const btnFavorito = document.getElementById('btnFavorito');
-    const originalText = btnFavorito.innerHTML;
-    
-    // Mostrar loading en el botón
-    btnFavorito.disabled = true;
-    btnFavorito.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
-    
-    fetch('<?= base_url('catalogo/toggle-favorito') ?>', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest'
-        },
-        body: JSON.stringify({idrecurso: idRecurso})
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Actualizar el botón según el nuevo estado
-            const esFavorito = data.agregado;
-            
-            btnFavorito.className = esFavorito ? 'btn btn-danger' : 'btn btn-outline-primary';
-            btnFavorito.innerHTML = `<i class="fas fa-heart${esFavorito ? '' : '-o'}"></i> ${esFavorito ? 'Quitar de Favoritos' : 'Agregar a Favoritos'}`;
-            
-            // Mostrar mensaje de éxito
-            if (typeof Swal !== 'undefined') {
-                Swal.fire({
-                    title: data.agregado ? 'Agregado a Favoritos' : 'Quitado de Favoritos',
-                    text: data.message,
-                    icon: 'success',
-                    timer: 2000,
-                    showConfirmButton: false
-                });
-            } else {
-                alert(data.message);
-            }
-        } else {
-            // Restaurar botón en caso de error
-            btnFavorito.innerHTML = originalText;
-            
-            if (typeof Swal !== 'undefined') {
-                Swal.fire({
-                    title: 'Error',
-                    text: data.message || 'Error al procesar la solicitud',
-                    icon: 'error'
-                });
-            } else {
-                alert('Error: ' + (data.message || 'Error desconocido'));
-            }
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        btnFavorito.innerHTML = originalText;
-        
-        if (typeof Swal !== 'undefined') {
-            Swal.fire({
-                title: 'Error',
-                text: 'Error de conexión',
-                icon: 'error'
-            });
-        } else {
-            alert('Error de conexión');
-        }
-    })
-    .finally(() => {
-        btnFavorito.disabled = false;
-    });
-}
+// Nota: La función toggleFavorito() se usa desde el módulo global FavoritosHandler.js
+// No se define aquí para evitar duplicación
 
 // Función para mostrar alerta de login
 function mostrarAlertaLogin(accion) {

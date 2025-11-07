@@ -107,11 +107,10 @@
             </h6>
             <p class="mb-2">Puedes importar datos desde archivos Excel (.xlsx, .xls) para las siguientes entidades:</p>
             <ul class="mb-2">
-              <li><strong>Personas:</strong> nombres, apellidos, tipodoc, numerodoc (obligatorios), telefono, direccion, email, genero (opcionales)</li>
-              <li><strong>Usuarios:</strong> nomuser, nombres, apellidos, email, nivelacceso (obligatorios), telefono, direccion (opcionales)</li>
-              <li><strong>Recursos:</strong> titulo, autor, editorial, categoria (obligatorios), subtitulo, isbn, subcategoria, tipo_recurso, anio_publicacion (opcionales)</li>
-              <li><strong>Autores:</strong> nombre_completo (obligatorio), biografia, nacionalidad, fecha_nacimiento (opcionales)</li>
-              <li><strong>Categorías:</strong> nombre_categoria (obligatorio), descripcion (opcional)</li>
+              <li><strong>Usuarios:</strong> nombres, apellidos, tipodoc, numerodoc, genero, nivelacceso (obligatorios), telefono, direccion (opcionales). <span class="text-muted">Incluye datos de persona automáticamente.</span></li>
+              <li><strong>Recursos:</strong> titulo (obligatorio), isbn, autor, editorial, categoria, subcategoria, tipo_recurso, anio_publicacion (opcionales)</li>
+              <li><strong>Autores:</strong> nombre_completo (obligatorio), nacionalidad (opcional)</li>
+              <li><strong>Editoriales:</strong> nombre_editorial (obligatorio), pais, contacto (opcionales)</li>
             </ul>
             <p class="mb-0 text-muted"><small><strong>Nota:</strong> Los nombres de las columnas NO son sensibles a mayúsculas/minúsculas. Puedes usar "Nombres", "nombres", "NOMBRES", etc.</small></p>
           </div>
@@ -129,11 +128,9 @@
                   </label>
                   <select class="form-select" id="tipo_entidad" name="tipo_entidad" required>
                     <option value="">Selecciona el tipo de datos</option>
-                    <option value="personas">Personas</option>
-                    <option value="usuarios">Usuarios</option>
+                    <option value="usuarios">Usuarios (incluye datos personales)</option>
                     <option value="recursos">Recursos</option>
                     <option value="autores">Autores</option>
-                    <option value="categorias">Categorías</option>
                     <option value="editoriales">Editoriales</option>
                   </select>
                 </div>
@@ -228,66 +225,7 @@
 
 <script type="text/javascript">
 $(document).ready(function() {
-    console.log('Página cargada y jQuery listo');
-    
-    // Prueba de funcionamiento de botones
-    console.log('Botón descargar plantilla:', $('#btn-descargar-plantilla').length);
-    console.log('Botón vista previa:', $('#btn-preview').length);
-    console.log('Formulario importar:', $('#form-importar').length);
-    
-    // Agregar eventos de prueba
-    $('#btn-descargar-plantilla').on('click', function() {
-        console.log('¡CLICK DETECTADO EN DESCARGAR PLANTILLA!');
-    });
-    
-    $('#btn-preview').on('click', function() {
-        console.log('¡CLICK DETECTADO EN VISTA PREVIA!');
-    });
-    
-    // Test de SweetAlert
-    if (typeof Swal !== 'undefined') {
-        console.log('SweetAlert2 está disponible');
-    } else {
-        console.error('SweetAlert2 NO está disponible');
-    }
-    
-    // Descargar plantilla
-    $('#btn-descargar-plantilla').on('click', function() {
-        console.log('Botón descargar plantilla clickeado');
-        const tipoEntidad = $('#tipo_entidad').val();
-        
-        if (!tipoEntidad) {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Selecciona el tipo de datos',
-                text: 'Primero debes seleccionar qué tipo de datos quieres importar.'
-            });
-            return;
-        }
-        
-        console.log('Tipo entidad seleccionado:', tipoEntidad);
-        
-        // Crear URL para descarga
-        const downloadUrl = '<?= base_url('admin/descargar-plantilla') ?>/' + tipoEntidad;
-        console.log('URL de descarga:', downloadUrl);
-        
-        // Mostrar mensaje de inicio de descarga
-        Swal.fire({
-            icon: 'info',
-            title: 'Descargando plantilla...',
-            text: 'La descarga iniciará en un momento.',
-            timer: 2000,
-            showConfirmButton: false
-        });
-        
-        // Crear un enlace temporal y activarlo para forzar la descarga
-        const tempLink = document.createElement('a');
-        tempLink.href = downloadUrl;
-        tempLink.download = 'plantilla_' + tipoEntidad + '.xlsx';
-        document.body.appendChild(tempLink);
-        tempLink.click();
-        document.body.removeChild(tempLink);
-    });
+    console.log('Sistema de importación inicializado');
 
     // Vista previa del archivo
     $('#btn-preview').on('click', function() {

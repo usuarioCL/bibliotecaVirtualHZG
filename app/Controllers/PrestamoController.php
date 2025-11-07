@@ -425,23 +425,9 @@ class PrestamoController extends Controller
                 ]);
             }
             
-            // Asegurar que existe una matrícula básica para usar
-            $matriculaBasica = $db->table('matriculas')
-                ->orderBy('idmatricula', 'ASC')
-                ->get()->getRow();
-                
-            if (!$matriculaBasica) {
-                return $this->response->setJSON([
-                    'success' => false,
-                    'message' => 'No hay matrículas disponibles en el sistema. Por favor contacte al administrador.'
-                ]);
-            }
-            
-            // Para administradores y docentes, usar la primera matrícula disponible
-            if ($nivelAcceso === 'admin' || $nivelAcceso === 'docente') {
-                $idMatricula = $matriculaBasica->idmatricula;
-            } else if ($nivelAcceso === 'estudiante') {
-                // Obtener matrícula del estudiante
+            // Obtener la matrícula correcta según el tipo de usuario
+            if ($nivelAcceso === 'estudiante') {
+                // Para estudiantes, obtener su matrícula activa
                 $prestamoModel = new PrestamoModel();
                 $idMatricula = $prestamoModel->getMatriculaByUsuario($idUsuario);
                 
@@ -450,6 +436,56 @@ class PrestamoController extends Controller
                         'success' => false,
                         'message' => 'No se encontró matrícula activa asociada a su usuario.'
                     ]);
+                }
+            } else if ($nivelAcceso === 'admin' || $nivelAcceso === 'docente') {
+                // Para administradores y docentes, obtener o crear su matrícula
+                // Primero obtener el idpersona del usuario
+                $usuario = $db->table('usuarios')
+                    ->select('idpersona')
+                    ->where('idusuario', $idUsuario)
+                    ->get()->getRow();
+                
+                if (!$usuario || !$usuario->idpersona) {
+                    return $this->response->setJSON([
+                        'success' => false,
+                        'message' => 'No se encontraron datos de persona asociados al usuario.'
+                    ]);
+                }
+                
+                // Buscar si existe una matrícula para este docente/admin
+                $matriculaExistente = $db->table('matriculas')
+                    ->where('idpersona', $usuario->idpersona)
+                    ->where('estadomatricula', true)
+                    ->get()->getRow();
+                
+                if ($matriculaExistente) {
+                    $idMatricula = $matriculaExistente->idmatricula;
+                } else {
+                    // Si no existe, crear una matrícula para el docente/admin
+                    // Necesitamos un grupo, usar el grupo por defecto (id=1) o crear uno especial
+                    $grupoDefault = $db->table('grupos')
+                        ->orderBy('idgrupo', 'ASC')
+                        ->limit(1)
+                        ->get()->getRow();
+                    
+                    if (!$grupoDefault) {
+                        return $this->response->setJSON([
+                            'success' => false,
+                            'message' => 'No hay grupos disponibles en el sistema. Contacte al administrador.'
+                        ]);
+                    }
+                    
+                    $nuevaMatricula = [
+                        'idpersona' => $usuario->idpersona,
+                        'idgrupo' => $grupoDefault->idgrupo,
+                        'fechamatricula' => date('Y-m-d'),
+                        'estadomatricula' => true
+                    ];
+                    
+                    $db->table('matriculas')->insert($nuevaMatricula);
+                    $idMatricula = $db->insertID();
+                    
+                    log_message('info', "Matrícula automática creada para {$nivelAcceso} (idusuario: {$idUsuario}, idmatricula: {$idMatricula})");
                 }
             } else {
                 return $this->response->setJSON([
@@ -587,14 +623,6 @@ class PrestamoController extends Controller
         try {
             $historial = $this->prestamoModel->getHistorialCompleto();
             $estadisticas = $this->prestamoModel->getEstadisticasHistorial();
-            
-            // Debug temporal: log información del historial
-            log_message('info', 'Historial obtenido: ' . count($historial) . ' registros');
-            if (!empty($historial)) {
-                $primerRegistro = $historial[0];
-                log_message('info', 'Primer registro - ID: ' . ($primerRegistro['id'] ?? 'N/A') . 
-                           ', Observaciones: "' . ($primerRegistro['observaciones'] ?? 'NULL') . '"');
-            }
 
             $data = [
                 'title' => 'Historial de Préstamos',
@@ -608,7 +636,7 @@ class PrestamoController extends Controller
             
             $data = [
                 'title' => 'Historial de Préstamos',
-                'historial' => $this->getDatosPruebaHistorial(),
+                'historial' => [],
                 'estadisticas' => [
                     'total_registros' => 0,
                     'este_mes' => 0,
@@ -622,60 +650,92 @@ class PrestamoController extends Controller
     }
     
     /**
-     * Datos de prueba para devoluciones cuando hay error
+     * Exportar historial completo de préstamos a Excel (CSV)
      */
-    private function getDatosPruebaDevoluciones()
+    public function exportarHistorialExcel()
     {
-        return [];
+        try {
+            $historial = $this->prestamoModel->getHistorialCompleto();
+            
+            // Nombre del archivo
+            $filename = 'historial-prestamos-' . date('Ymd-His') . '.csv';
+            
+            header('Content-Type: text/csv; charset=utf-8');
+            header('Content-Disposition: attachment; filename="' . $filename . '"');
+            
+            // Abrir output stream
+            $output = fopen('php://output', 'w');
+            
+            // BOM para UTF-8
+            fprintf($output, chr(0xEF).chr(0xBB).chr(0xBF));
+            
+            // Encabezados (usando punto y coma como delimitador para Excel en español)
+            fputcsv($output, [
+                'ID',
+                'Usuario',
+                'Documento',
+                'Recurso',
+                'Código Ejemplar',
+                'Fecha Préstamo',
+                'Fecha Devolución',
+                'Días Duración',
+                'Cantidad',
+                'Estado Final',
+                'Horas Retraso',
+                'Días Retraso',
+                'Multa',
+                'Tiene Incidencia',
+                'Tipo Incidencia',
+                'Detalle Incidencia',
+                'Observaciones'
+            ], ';');
+            
+            // Datos
+            foreach ($historial as $registro) {
+                // Calcular duración
+                $duracion = '-';
+                if (!empty($registro['fecha_prestamo']) && !empty($registro['fecha_devolucion'])) {
+                    $fechaInicio = new \DateTime($registro['fecha_prestamo']);
+                    $fechaFin = new \DateTime($registro['fecha_devolucion']);
+                    $diff = $fechaInicio->diff($fechaFin);
+                    $duracion = $diff->days;
+                }
+                
+                // Limpiar observaciones para rechazados
+                $observaciones = $registro['observaciones'] ?? '';
+                if ($registro['estado_final'] === 'Rechazado' && !empty($observaciones)) {
+                    $observaciones = preg_replace('/^Cantidad solicitada:\s*\d+\s*ejemplares?\.\s*/', '', $observaciones);
+                }
+                
+                fputcsv($output, [
+                    $registro['id'] ?? '',
+                    $registro['usuario'] ?? '',
+                    $registro['documento'] ?? '',
+                    $registro['recurso'] ?? '',
+                    $registro['codigo_ejemplar'] ?? 'N/A',
+                    !empty($registro['fecha_prestamo']) ? date('d/m/Y', strtotime($registro['fecha_prestamo'])) : '',
+                    !empty($registro['fecha_devolucion']) ? date('d/m/Y', strtotime($registro['fecha_devolucion'])) : 'N/A',
+                    $duracion,
+                    $registro['cantidad'] ?? 1,
+                    $registro['estado_final'] ?? '',
+                    $registro['horas_retraso_total'] ?? 0,
+                    $registro['dias_retraso'] ?? 0,
+                    $registro['multa'] ?? 0,
+                    ($registro['tiene_incidencia'] ?? 0) == 1 ? 'Sí' : 'No',
+                    $registro['tipo_incidencia'] ?? '',
+                    $registro['detalle_incidencia'] ?? '',
+                    $observaciones
+                ], ';');
+            }
+            
+            fclose($output);
+            exit;
+            
+        } catch (\Exception $e) {
+            log_message('error', 'Error exportando historial a Excel: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Error al exportar el historial');
+        }
     }
-
-    /**
-     * Datos de prueba para historial cuando hay error
-     */
-    private function getDatosPruebaHistorial()
-    {
-        return [
-            [
-                'id' => 1,
-                'codigo_prestamo' => 'PREST-2025-001',
-                'usuario' => 'Juan Pérez',
-                'documento' => '12345678',
-                'recurso' => 'Cálculo Diferencial',
-                'codigo_ejemplar' => 'LIB-FIS-001',
-                'fecha_prestamo' => '2025-10-01 08:00:00',
-                'fecha_devolucion' => '2025-10-15 10:30:00',
-                'fecha_vencimiento' => '2025-10-15 13:00:00',
-                'cantidad' => 1,
-                'estado_final' => 'Devuelto',
-                'dias_prestamo' => 14,
-                'dias_retraso' => 0,
-                'horas_retraso_total' => 0,
-                'renovaciones' => 0,
-                'estado_ejemplar' => 'Bueno',
-                'observaciones' => 'Libro devuelto en excelente estado, sin daños visibles.'
-            ],
-            [
-                'id' => 2,
-                'codigo_prestamo' => 'PREST-2025-002',
-                'usuario' => 'María García',
-                'documento' => '87654321',
-                'recurso' => 'Álgebra Lineal',
-                'codigo_ejemplar' => 'LIB-FIS-002',
-                'fecha_prestamo' => '2025-10-05 09:00:00',
-                'fecha_devolucion' => '2025-10-20 14:00:00',
-                'fecha_vencimiento' => '2025-10-19 13:00:00',
-                'cantidad' => 2,
-                'estado_final' => 'Devuelto con retraso',
-                'dias_prestamo' => 15,
-                'dias_retraso' => 1,
-                'horas_retraso_total' => 25,
-                'renovaciones' => 1,
-                'estado_ejemplar' => 'Regular',
-                'observaciones' => null // Sin observaciones para probar ambos casos
-            ]
-        ];
-    }
-    
     
     /**
      * Aprobar una solicitud de préstamo
@@ -1417,32 +1477,44 @@ class PrestamoController extends Controller
         // Obtener datos del formulario - Los datos vienen como JSON
         $json = $this->request->getJSON(true); // true para obtener como array
         
-        // Si no viene como JSON, intentar con POST normal
-        if (empty($json)) {
+        // Log del contenido RAW para debugging
+        $rawInput = file_get_contents('php://input');
+        log_message('info', 'RAW Input en solicitarRenovacion: ' . $rawInput);
+        log_message('info', 'JSON parseado: ' . json_encode($json));
+        
+        // Intentar obtener datos de diferentes fuentes
+        $idprestamo = null;
+        $motivo = '';
+        $nuevaFechaDevolucion = null;
+        $nuevaFechaPrestamo = null;
+        
+        // Prioridad 1: JSON del body
+        if (!empty($json) && isset($json['idprestamo'])) {
+            $idprestamo = $json['idprestamo'];
+            $motivo = $json['motivo'] ?? '';
+            $nuevaFechaDevolucion = $json['nueva_fecha_devolucion'] ?? null;
+            $nuevaFechaPrestamo = $json['nueva_fecha_prestamo'] ?? null;
+        } 
+        // Prioridad 2: POST normal
+        else {
             $idprestamo = $this->request->getPost('idprestamo');
             $motivo = $this->request->getPost('motivo') ?? '';
             $nuevaFechaDevolucion = $this->request->getPost('nueva_fecha_devolucion');
             $nuevaFechaPrestamo = $this->request->getPost('nueva_fecha_prestamo');
-        } else {
-            $idprestamo = $json['idprestamo'] ?? null;
-            $motivo = $json['motivo'] ?? '';
-            $nuevaFechaDevolucion = $json['nueva_fecha_devolucion'] ?? null;
-            $nuevaFechaPrestamo = $json['nueva_fecha_prestamo'] ?? null;
         }
         
         // Log para debugging
-        log_message('info', 'Datos recibidos en solicitarRenovacion: ' . json_encode([
+        log_message('info', 'Datos procesados en solicitarRenovacion: ' . json_encode([
             'idprestamo' => $idprestamo,
             'nueva_fecha_prestamo' => $nuevaFechaPrestamo,
             'nueva_fecha_devolucion' => $nuevaFechaDevolucion,
-            'motivo' => $motivo,
-            'json_recibido' => $json
+            'motivo' => $motivo
         ]));
         
-        if (!$idprestamo) {
+        if (empty($idprestamo)) {
             return $this->response->setJSON([
                 'success' => false,
-                'message' => 'ID de préstamo requerido. Datos recibidos: ' . json_encode($json)
+                'message' => 'ID de préstamo requerido. Raw input: ' . $rawInput
             ]);
         }
         
@@ -1865,21 +1937,43 @@ class PrestamoController extends Controller
             ]);
         }
 
-        // Obtener datos del formulario
-        $idprestamo = $this->request->getPost('idprestamo');
-        $motivo = $this->request->getPost('motivo') ?? '';
-        $nuevaFechaDevolucion = $this->request->getPost('nueva_fecha_devolucion');
-        $nuevaFechaPrestamo = $this->request->getPost('nueva_fecha_prestamo');
+        // Obtener datos del formulario - Los datos vienen como JSON
+        $json = $this->request->getJSON(true);
+        
+        // Log del contenido RAW para debugging
+        $rawInput = file_get_contents('php://input');
+        log_message('info', 'RAW Input en renovarPrestamo: ' . $rawInput);
+        
+        // Intentar obtener datos de diferentes fuentes
+        $idprestamo = null;
+        $motivo = '';
+        $nuevaFechaDevolucion = null;
+        $nuevaFechaPrestamo = null;
+        
+        // Prioridad 1: JSON del body
+        if (!empty($json) && isset($json['idprestamo'])) {
+            $idprestamo = $json['idprestamo'];
+            $motivo = $json['motivo'] ?? '';
+            $nuevaFechaDevolucion = $json['nueva_fecha_devolucion'] ?? null;
+            $nuevaFechaPrestamo = $json['nueva_fecha_prestamo'] ?? null;
+        } 
+        // Prioridad 2: POST normal
+        else {
+            $idprestamo = $this->request->getPost('idprestamo');
+            $motivo = $this->request->getPost('motivo') ?? '';
+            $nuevaFechaDevolucion = $this->request->getPost('nueva_fecha_devolucion');
+            $nuevaFechaPrestamo = $this->request->getPost('nueva_fecha_prestamo');
+        }
         
         // Log para debugging
-        log_message('info', 'Datos recibidos para renovación: ' . json_encode([
+        log_message('info', 'Datos procesados en renovarPrestamo: ' . json_encode([
             'idprestamo' => $idprestamo,
             'nueva_fecha_prestamo' => $nuevaFechaPrestamo,
             'nueva_fecha_devolucion' => $nuevaFechaDevolucion,
             'motivo' => $motivo
         ]));
         
-        if (!$idprestamo) {
+        if (empty($idprestamo)) {
             return $this->response->setJSON([
                 'success' => false,
                 'message' => 'ID de préstamo requerido'
@@ -2578,17 +2672,31 @@ class PrestamoController extends Controller
             $db = \Config\Database::connect();
             
             if ($tipo === 'solicitud') {
-                // Eliminar solicitud rechazada
+                // Usar transacción para eliminar solicitud rechazada
+                $db->transStart();
+                
+                // 1. Primero eliminar las notificaciones vinculadas a esta solicitud
+                log_message('info', 'PrestamoController::eliminarHistorial - Eliminando notificaciones de solicitud ID: ' . $id);
+                $resultadoNotificaciones = $db->table('notificaciones')
+                    ->where('idsolicitud', $id)
+                    ->delete();
+                log_message('info', 'PrestamoController::eliminarHistorial - Resultado eliminación notificaciones: ' . ($resultadoNotificaciones ? 'OK' : 'ERROR'));
+                
+                // 2. Eliminar solicitud rechazada
                 $resultado = $db->table('solicitud')
                     ->where('idsolicitud', $id)
                     ->where('validado', true)
                     ->where('idprestamo IS NULL', null, false)
                     ->delete();
                 
-                if (!$resultado) {
+                $db->transComplete();
+                
+                if ($db->transStatus() === false || !$resultado) {
+                    $error = $db->error();
+                    log_message('error', 'PrestamoController::eliminarHistorial - Error al eliminar solicitud: ' . json_encode($error));
                     return $this->response->setJSON([
                         'success' => false,
-                        'message' => 'No se encontró la solicitud o no puede ser eliminada'
+                        'message' => 'No se encontró la solicitud o no puede ser eliminada: ' . ($error['message'] ?? 'Error desconocido')
                     ]);
                 }
                 
@@ -2654,7 +2762,27 @@ class PrestamoController extends Controller
                     }
                 }
                 
-                // 1. Marcar solicitudes vinculadas como "préstamo eliminado del historial"
+                // 1. Obtener IDs de solicitudes vinculadas para eliminar sus notificaciones
+                log_message('info', 'PrestamoController::eliminarHistorial - Obteniendo solicitudes vinculadas');
+                $solicitudesVinculadas = $db->table('solicitud')
+                    ->select('idsolicitud')
+                    ->where('idprestamo', $id)
+                    ->get()
+                    ->getResultArray();
+                
+                $idsSolicitudes = array_column($solicitudesVinculadas, 'idsolicitud');
+                log_message('info', 'PrestamoController::eliminarHistorial - Solicitudes vinculadas encontradas: ' . json_encode($idsSolicitudes));
+                
+                // Eliminar notificaciones de las solicitudes vinculadas
+                if (!empty($idsSolicitudes)) {
+                    log_message('info', 'PrestamoController::eliminarHistorial - Eliminando notificaciones de solicitudes');
+                    $resultadoNotifSolicitudes = $db->table('notificaciones')
+                        ->whereIn('idsolicitud', $idsSolicitudes)
+                        ->delete();
+                    log_message('info', 'PrestamoController::eliminarHistorial - Resultado eliminación notificaciones de solicitudes: ' . ($resultadoNotifSolicitudes ? 'OK' : 'ERROR'));
+                }
+                
+                // Marcar solicitudes vinculadas como "préstamo eliminado del historial"
                 //    Esto las distingue de las solicitudes realmente rechazadas
                 log_message('info', 'PrestamoController::eliminarHistorial - Actualizando solicitudes vinculadas');
                 $resultadoSolicitudes = $db->table('solicitud')
@@ -2809,25 +2937,78 @@ class PrestamoController extends Controller
             log_message('info', "Iniciando eliminación completa del historial - Admin: " . session()->get('nomuser'));
             log_message('info', "Registros a eliminar - Préstamos: {$countPrestamos}, Solicitudes: {$countSolicitudes}, Renovaciones: {$countRenovaciones}");
             
-            // 1. Marcar todas las solicitudes de préstamos devueltos como "eliminados del historial"
-            $db->table('solicitud')
-                ->set([
-                    'idprestamo' => null,
-                    'motivo_rechazo' => 'PRESTAMO_ELIMINADO_HISTORIAL: Préstamo eliminado durante limpieza masiva del historial por administrador.'
-                ])
-                ->where('idprestamo IN (SELECT idprestamo FROM prestamos WHERE fechahoraretorno IS NOT NULL)', null, false)
-                ->update();
+            // 1. Obtener IDs de préstamos devueltos y sus solicitudes vinculadas para eliminar notificaciones
+            $prestamosDevueltos = $db->table('prestamos')
+                ->select('idprestamo')
+                ->where('fechahoraretorno IS NOT NULL', null, false)
+                ->get()
+                ->getResultArray();
+            $idsPrestamosDevueltos = array_column($prestamosDevueltos, 'idprestamo');
             
-            // 2. Desvincular todas las sanciones de préstamos devueltos (mantener las sanciones)
-            $db->table('sanciones')
-                ->set('idprestamo', null)
-                ->where('idprestamo IN (SELECT idprestamo FROM prestamos WHERE fechahoraretorno IS NOT NULL)', null, false)
-                ->update();
+            // Obtener IDs de solicitudes vinculadas a esos préstamos
+            $solicitudesVinculadas = [];
+            if (!empty($idsPrestamosDevueltos)) {
+                $solicitudesVinculadas = $db->table('solicitud')
+                    ->select('idsolicitud')
+                    ->whereIn('idprestamo', $idsPrestamosDevueltos)
+                    ->get()
+                    ->getResultArray();
+            }
+            $idsSolicitudesVinculadas = array_column($solicitudesVinculadas, 'idsolicitud');
             
-            // 3. Eliminar todas las renovaciones (son registros administrativos)
+            // Obtener IDs de solicitudes rechazadas (sin préstamo asociado)
+            $solicitudesRechazadas = $db->table('solicitud')
+                ->select('idsolicitud')
+                ->where('validado', true)
+                ->where('idprestamo IS NULL', null, false)
+                ->get()
+                ->getResultArray();
+            $idsSolicitudesRechazadas = array_column($solicitudesRechazadas, 'idsolicitud');
+            
+            // Combinar todos los IDs de solicitudes
+            $todasSolicitudes = array_merge($idsSolicitudesVinculadas, $idsSolicitudesRechazadas);
+            
+            log_message('info', "IDs de solicitudes para eliminar notificaciones: " . json_encode($todasSolicitudes));
+            
+            // 2. Eliminar notificaciones de préstamos devueltos
+            if (!empty($idsPrestamosDevueltos)) {
+                log_message('info', 'Eliminando notificaciones de préstamos devueltos');
+                $db->table('notificaciones')
+                    ->whereIn('idprestamo', $idsPrestamosDevueltos)
+                    ->delete();
+            }
+            
+            // 3. Eliminar notificaciones de solicitudes (vinculadas y rechazadas)
+            if (!empty($todasSolicitudes)) {
+                log_message('info', 'Eliminando notificaciones de solicitudes');
+                $db->table('notificaciones')
+                    ->whereIn('idsolicitud', $todasSolicitudes)
+                    ->delete();
+            }
+            
+            // 4. Marcar todas las solicitudes de préstamos devueltos como "eliminados del historial"
+            if (!empty($idsPrestamosDevueltos)) {
+                $db->table('solicitud')
+                    ->set([
+                        'idprestamo' => null,
+                        'motivo_rechazo' => 'PRESTAMO_ELIMINADO_HISTORIAL: Préstamo eliminado durante limpieza masiva del historial por administrador.'
+                    ])
+                    ->whereIn('idprestamo', $idsPrestamosDevueltos)
+                    ->update();
+            }
+            
+            // 5. Desvincular todas las sanciones de préstamos devueltos (mantener las sanciones)
+            if (!empty($idsPrestamosDevueltos)) {
+                $db->table('sanciones')
+                    ->set('idprestamo', null)
+                    ->whereIn('idprestamo', $idsPrestamosDevueltos)
+                    ->update();
+            }
+            
+            // 6. Eliminar todas las renovaciones (son registros administrativos)
             $db->table('renovaciones_prestamo')->truncate();
             
-            // 4. Eliminar solo las solicitudes realmente rechazadas (no las que son préstamos eliminados)
+            // 7. Eliminar solo las solicitudes realmente rechazadas (no las que son préstamos eliminados)
             $db->table('solicitud')
                 ->where('validado', true)
                 ->where('idprestamo IS NULL', null, false)
@@ -2835,7 +3016,7 @@ class PrestamoController extends Controller
                 ->where('motivo_rechazo NOT LIKE', 'PRESTAMO_ELIMINADO_HISTORIAL:%')
                 ->delete();
             
-            // 5. Eliminar todos los préstamos devueltos
+            // 8. Eliminar todos los préstamos devueltos
             $db->table('prestamos')
                 ->where('fechahoraretorno IS NOT NULL', null, false)
                 ->delete();

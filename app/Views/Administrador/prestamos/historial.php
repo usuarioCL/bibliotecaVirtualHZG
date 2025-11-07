@@ -21,9 +21,9 @@
                     <p class="text-muted mb-0 mt-1">Consulta el historial completo de todos los préstamos del sistema</p>
                 </div>
                 <div class="d-flex gap-2 flex-wrap">
-                    <button type="button" class="btn btn-success btn-sm">
+                    <a href="<?= base_url('historial-prestamos/exportar-excel') ?>" class="btn btn-success btn-sm">
                         <i class="ti ti-file-excel"></i> Exportar Excel
-                    </button>
+                    </a>
                     <button type="button" class="btn btn-danger btn-sm" onclick="confirmarEliminarTodoHistorial()">
                         <i class="ti ti-trash"></i> Limpiar Historial
                     </button>
@@ -363,9 +363,6 @@
         const estado = document.getElementById('estadoFiltro').value;
         const busqueda = document.getElementById('busquedaRapida').value;
         
-        console.log('Aplicando filtros:', { periodo, estado, busqueda });
-        
-        // TODO: Implementar filtrado en tiempo real
         if (busqueda || periodo || estado) {
             Swal.fire({
                 title: 'Filtros Aplicados',
@@ -379,19 +376,9 @@
 
     // Función para mostrar observaciones de devolución
     function mostrarObservaciones(observaciones, usuario) {
-        // Debug: verificar qué datos están llegando
-        console.log('mostrarObservaciones llamada con:', {
-            observaciones: observaciones,
-            usuario: usuario,
-            tipoObservaciones: typeof observaciones,
-            tipoUsuario: typeof usuario
-        });
-        
-        // Validar y limpiar los datos
         const observacionesLimpias = observaciones || 'No hay observaciones disponibles';
         const usuarioLimpio = usuario || 'Usuario desconocido';
         
-        // Escapar HTML para seguridad
         const observacionesHTML = observacionesLimpias.toString().replace(/</g, '&lt;').replace(/>/g, '&gt;');
         const usuarioHTML = usuarioLimpio.toString().replace(/</g, '&lt;').replace(/>/g, '&gt;');
         
@@ -418,16 +405,6 @@
                             Observaciones registradas al momento de la devolución
                         </small>
                     </div>
-                    ${window.location.search.includes('debug') ? `
-                    <div class="mt-2 p-2 bg-light border rounded">
-                        <small class="text-muted">
-                            <strong>Debug:</strong><br>
-                            Tipo: ${typeof observaciones}<br>
-                            Longitud: ${observaciones ? observaciones.length : 0}<br>
-                            Valor crudo: "${observaciones}"
-                        </small>
-                    </div>
-                    ` : ''}
                 </div>
             `,
             icon: 'info',
@@ -439,11 +416,7 @@
 
     // Función para mostrar detalles de incidencia
     function mostrarDetalleIncidencia(incidencia) {
-        console.log('mostrarDetalleIncidencia llamada con:', incidencia);
-        
-        // Validar que tengamos datos
         if (!incidencia || typeof incidencia !== 'object') {
-            console.error('Datos de incidencia inválidos:', incidencia);
             Swal.fire({
                 title: 'Error',
                 text: 'No se pudieron cargar los detalles de la incidencia',
@@ -452,7 +425,6 @@
             return;
         }
         
-        // Escapar HTML y preparar datos
         const tipoHTML = String(incidencia.tipo || 'Incidencia').replace(/</g, '&lt;').replace(/>/g, '&gt;');
         const detalleHTML = String(incidencia.detalle || 'Sin detalles específicos').replace(/</g, '&lt;').replace(/>/g, '&gt;');
         const observacionesHTML = String(incidencia.observaciones || 'Sin observaciones adicionales').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -472,7 +444,7 @@
                     });
                 }
             } catch (e) {
-                console.warn('Error al formatear fecha:', e);
+                
             }
         }
         
@@ -528,9 +500,6 @@
 
     // Función para ver detalles completos del historial
     function verDetalleHistorial(registroId) {
-        console.log('Ver detalles de préstamo:', registroId);
-        
-        // Validar el ID del préstamo
         if (!registroId || registroId === undefined || registroId === null) {
             Swal.fire({
                 title: 'Error',
@@ -555,9 +524,6 @@
         const url = '<?= base_url('prestamos/obtenerDetalleDevolucion') ?>';
         const formData = new FormData();
         formData.append('idprestamo', registroId);
-        
-        console.log('Enviando solicitud a:', url);
-        console.log('Con ID de préstamo:', registroId);
 
         // Enviar solicitud AJAX para obtener detalles
         fetch(url, {
@@ -568,19 +534,13 @@
             body: formData
         })
         .then(response => {
-            console.log('Respuesta recibida:', response);
-            console.log('Status:', response.status);
-            console.log('Status Text:', response.statusText);
-            
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`);
             }
             
             const contentType = response.headers.get('content-type');
             if (!contentType || !contentType.includes('application/json')) {
-                console.warn('Respuesta no es JSON:', contentType);
                 return response.text().then(text => {
-                    console.log('Contenido de la respuesta:', text);
                     throw new Error('La respuesta del servidor no es JSON válido');
                 });
             }
@@ -588,17 +548,10 @@
             return response.json();
         })
         .then(data => {
-            console.log('Datos recibidos:', data);
-            console.log('Tipo de data:', typeof data);
-            console.log('data.success:', data?.success);
-            console.log('data.data:', data?.data);
-            
             if (data && data.success) {
                 mostrarModalDetallesHistorial(data.data, registroId);
             } else {
                 const errorMsg = data?.message || 'No se pudieron cargar los detalles del préstamo';
-                console.error('Error en respuesta:', errorMsg);
-                console.error('Datos completos:', data);
                 Swal.fire({
                     title: 'Error del Servidor',
                     text: errorMsg,
@@ -608,9 +561,6 @@
             }
         })
         .catch(error => {
-            console.error('Error completo:', error);
-            console.error('Stack trace:', error.stack);
-            
             let errorMessage = 'Ha ocurrido un error de conexión';
             
             if (error.message.includes('HTTP error')) {
@@ -644,7 +594,6 @@
     function mostrarModalDetallesHistorial(detalle, registroId) {
         // Validar que tenemos los datos necesarios
         if (!detalle) {
-            console.error('No se recibieron datos del préstamo');
             Swal.fire({
                 title: 'Error',
                 text: 'No se pudieron obtener los datos del préstamo',
@@ -655,9 +604,6 @@
 
         // Asegurar que tenemos un ID válido (usar el del detalle si existe, sino el parámetro)
         const idPrestamo = detalle.id || detalle.idprestamo || registroId;
-        
-        console.log('Mostrando modal para préstamo ID:', idPrestamo);
-        console.log('Datos del préstamo:', detalle);
 
         // Crear o actualizar el modal existente
         let modalExistente = document.getElementById('modalDetalleHistorial');
@@ -685,16 +631,6 @@
             mostrarHoras = false;
             diasRetraso = Math.floor(horasRetrasoTotal / 24);
         }
-        
-        console.log('Datos de retraso del servidor:', {
-            fechaDevolucion: detalle.fecha_devolucion_real,
-            fechaLimite: detalle.fecha_limite,
-            horasRetrasoTotal: horasRetrasoTotal,
-            diasRetrasoOriginal: detalle.dias_retraso,
-            mostrarHoras: mostrarHoras,
-            horasRetraso: horasRetraso,
-            diasRetrasoFinal: diasRetraso
-        });
         
         // Determinar el estado del préstamo
         let estadoBadge = '';

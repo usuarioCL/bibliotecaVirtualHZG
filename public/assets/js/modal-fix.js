@@ -13,8 +13,6 @@
 
 // Función universal para aplicar fix de z-index a cualquier modal
 function fixModalZIndex(modalId, modalName) {
-    console.log(`🔧 Aplicando fix de z-index para ${modalName}`);
-    
     const modal = document.getElementById(modalId);
     
     if (modal) {
@@ -39,15 +37,12 @@ function fixModalZIndex(modalId, modalName) {
         // Mover al body si no está ahí
         if (modal.parentElement.id !== 'body' && modal.parentElement !== document.body) {
             document.body.appendChild(modal);
-            console.log(`Modal ${modalName} movido al body`);
         }
         
-        console.log(`Z-index del modal ${modalName} forzado a 99999`);
         return true;
-    } else {
-        console.warn(`⚠️ Modal ${modalName} (${modalId}) no encontrado`);
-        return false;
     }
+    
+    return false;
 }
 
 // Función para crear CSS dinámico para un modal específico
@@ -116,12 +111,18 @@ function createModalCSS(modalId) {
     style.id = styleId;
     style.textContent = css;
     document.head.appendChild(style);
-    
-    console.log(`✅ CSS creado para modal ${modalId}`);
 }
 
 // Función para configurar completamente un modal
 function setupModalFix(modalId, modalName) {
+    // Primero verificar si el modal existe en el DOM
+    const modalExists = document.getElementById(modalId);
+    
+    if (!modalExists) {
+        // Si el modal no existe, no hacer nada (sin logs)
+        return false;
+    }
+    
     const functionName = `reinicializarModal${modalName}`;
     
     // Crear función global de reinicialización
@@ -147,33 +148,33 @@ function setupModalFix(modalId, modalName) {
                 fixModalZIndex(modalId, modalName);
             });
             
-            console.log(`✅ Eventos configurados para modal ${modalName}`);
-        } else {
-            console.warn(`⚠️ Modal ${modalName} no encontrado para configurar eventos`);
+            console.log(`✅ Modal ${modalName} configurado`);
         }
     }
     
-    // Configurar inmediatamente y observar cambios
+    // Configurar inmediatamente
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', configureModal);
     } else {
         configureModal();
     }
     
-    // Observador de mutaciones
+    // Observador de mutaciones solo para este modal específico
     const observer = new MutationObserver(function() {
         const modal = document.getElementById(modalId);
-        if (modal) {
+        if (modal && modal.classList.contains('show')) {
             fixModalZIndex(modalId, modalName);
         }
     });
     
     observer.observe(document.body, {
         childList: true,
-        subtree: true
+        subtree: true,
+        attributes: true,
+        attributeFilter: ['class']
     });
     
-    console.log(`🚀 Modal ${modalName} configurado completamente`);
+    return true;
 }
 
 // Lista de modales comunes en el sistema
@@ -251,7 +252,6 @@ function fixSweetAlertZIndex() {
         style.id = styleId;
         style.textContent = sweetAlertCSS;
         document.head.appendChild(style);
-        console.log('✅ CSS de SweetAlert2 aplicado');
     }
 }
 
@@ -277,10 +277,6 @@ function setupSweetAlert2() {
             
             return result;
         };
-        
-        console.log('✅ SweetAlert2 configurado con z-index correcto');
-    } else {
-        console.log('⚠️ SweetAlert2 no encontrado, aplicando solo CSS');
     }
 }
 
@@ -292,7 +288,6 @@ function observeSweetAlert2() {
                 if (node.nodeType === 1) { // Element node
                     // Verificar si es un contenedor de SweetAlert2
                     if (node.classList && node.classList.contains('swal2-container')) {
-                        console.log('🍭 SweetAlert2 detectado, aplicando z-index');
                         node.style.zIndex = '999999';
                         
                         // También aplicar a popup interno
@@ -306,7 +301,6 @@ function observeSweetAlert2() {
                     const sweetAlerts = node.querySelectorAll && node.querySelectorAll('.swal2-container');
                     if (sweetAlerts && sweetAlerts.length > 0) {
                         sweetAlerts.forEach(function(sweetAlert) {
-                            console.log('🍭 SweetAlert2 encontrado en nodo, aplicando z-index');
                             sweetAlert.style.zIndex = '999999';
                             
                             const popup = sweetAlert.querySelector('.swal2-popup');
@@ -324,26 +318,27 @@ function observeSweetAlert2() {
         childList: true,
         subtree: true
     });
-    
-    console.log('👀 Observador de SweetAlert2 activado');
 }
 
 // Función mejorada para aplicar fix a todos los modales comunes
 function fixAllCommonModalsEnhanced() {
-    console.log('🔧 Aplicando fix mejorado a todos los modales comunes...');
-    
     // Configurar SweetAlert2 primero
     setupSweetAlert2();
     
     // Activar observador de SweetAlert2
     observeSweetAlert2();
     
-    // Configurar modales
+    // Configurar solo los modales que existen en el DOM
+    let configuredCount = 0;
     commonModals.forEach(modal => {
-        setupModalFix(modal.id, modal.name);
+        if (setupModalFix(modal.id, modal.name)) {
+            configuredCount++;
+        }
     });
     
-    console.log('✅ Fix mejorado aplicado a todos los modales comunes y SweetAlert2');
+    if (configuredCount > 0) {
+        console.log(`✅ ${configuredCount} modal(es) configurado(s) correctamente`);
+    }
 }
 
 // Exportar funciones para uso manual
