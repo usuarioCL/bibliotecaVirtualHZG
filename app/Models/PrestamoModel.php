@@ -653,7 +653,7 @@ class PrestamoModel extends Model
             'devoluciones_hoy' => $devolucionesHoy,
             'con_retraso' => $conRetraso,
             'danos_reportados' => 0, // Por implementar
-            'multas_generadas' => $conRetraso
+            'sanciones_generadas' => $conRetraso
         ];
     }
 
@@ -2032,12 +2032,10 @@ class PrestamoModel extends Model
             $fechaLimite = new \DateTime($prestamo['fechadevolucion']);
             
             $diasRetraso = 0;
-            $multaGenerada = 0;
             $sancionCreada = false;
             
             if ($fechaDevolucion > $fechaLimite) {
                 $diasRetraso = $fechaDevolucion->diff($fechaLimite)->days;
-                $multaGenerada = $diasRetraso * 2500; // $2500 por día de retraso
                 
                 // Obtener la persona asociada al préstamo
                 $matricula = $db->table('matriculas')
@@ -2062,7 +2060,7 @@ class PrestamoModel extends Model
                     }
                     
                     // Crear la sanción
-                    $detalleSancion = "Retraso de {$diasRetraso} días. Multa: $" . number_format($multaGenerada);
+                    $detalleSancion = "Retraso de {$diasRetraso} día" . ($diasRetraso != 1 ? 's' : '');
                     if (!empty($observaciones)) {
                         $detalleSancion .= ". Obs: " . $observaciones;
                     }
@@ -2085,7 +2083,7 @@ class PrestamoModel extends Model
             
             $mensaje = 'Devolución procesada correctamente';
             if ($sancionCreada) {
-                $mensaje .= ". Se generó una sanción por {$diasRetraso} días de retraso (Multa: $" . number_format($multaGenerada) . ")";
+                $mensaje .= ". Se registró una sanción por {$diasRetraso} día" . ($diasRetraso != 1 ? 's' : '') . " de retraso";
             }
             
             return [
@@ -2093,7 +2091,6 @@ class PrestamoModel extends Model
                 'message' => $mensaje,
                 'con_retraso' => $diasRetraso > 0,
                 'dias_retraso' => $diasRetraso,
-                'multa' => $multaGenerada,
                 'sancion_creada' => $sancionCreada,
                 'fecha_devolucion' => $fechaRetorno
             ];
@@ -2137,12 +2134,7 @@ class PrestamoModel extends Model
                         p.observaciones_devolucion as observaciones,
                         DATEDIFF(p.fechahoraretorno, COALESCE(p.fechadevolucion, DATE_ADD(p.fechaprestamo, INTERVAL 14 DAY))) as dias_retraso,
                         TIMESTAMPDIFF(HOUR, COALESCE(p.fechadevolucion, DATE_ADD(p.fechaprestamo, INTERVAL 14 DAY)), p.fechahoraretorno) as horas_retraso_total,
-                        DATEDIFF(p.fechahoraretorno, p.fechaprestamo) as dias_prestamo,
-                        CASE 
-                            WHEN DATEDIFF(p.fechahoraretorno, COALESCE(p.fechadevolucion, DATE_ADD(p.fechaprestamo, INTERVAL 14 DAY))) > 0 
-                            THEN DATEDIFF(p.fechahoraretorno, COALESCE(p.fechadevolucion, DATE_ADD(p.fechaprestamo, INTERVAL 14 DAY))) * 2500 
-                            ELSE 0 
-                        END as multa
+                        DATEDIFF(p.fechahoraretorno, p.fechaprestamo) as dias_prestamo
                     FROM prestamos p
                     JOIN matriculas m ON m.idmatricula = p.idmatricula
                     JOIN personas per ON per.idpersona = m.idpersona

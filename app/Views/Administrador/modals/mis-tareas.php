@@ -273,8 +273,8 @@
                             <div class="list-group-item border-danger">
                                 <div class="d-flex justify-content-between align-items-start">
                                     <div>
-                                        <h6 class="mb-1 text-danger">Revisión de multas pendientes</h6>
-                                        <p class="mb-1 text-muted small">Revisar y gestionar las multas acumuladas del mes</p>
+                                        <h6 class="mb-1 text-danger">Revisión de sanciones pendientes</h6>
+                                        <p class="mb-1 text-muted small">Revisar y gestionar las sanciones acumuladas del mes</p>
                                         <small class="text-danger">
                                             <i class="ti ti-alert-circle me-1"></i>Venció el: 03/10/2025 (4 días de retraso)
                                         </small>

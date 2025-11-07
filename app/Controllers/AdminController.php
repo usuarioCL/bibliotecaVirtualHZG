@@ -1426,37 +1426,29 @@ class AdminController extends BaseController
                     ]
                 ]
             ],
-            'multas' => [
-                'nombre' => 'Configuración de Multas',
-                'icono' => 'ti-currency-dollar',
+            'sanciones' => [
+                'nombre' => 'Configuración de Sanciones',
+                'icono' => 'ti-alert-triangle',
                 'configuraciones' => [
-                    [
-                        'clave' => 'multa_por_dia',
-                        'nombre' => 'Multa por Día de Retraso',
-                        'valor' => '2500',
-                        'tipo' => 'number',
-                        'descripcion' => 'Valor en pesos por día de retraso',
-                        'requerido' => true,
-                        'min' => 0
-                    ],
-                    [
-                        'clave' => 'multa_maxima',
-                        'nombre' => 'Multa Máxima',
-                        'valor' => '50000',
-                        'tipo' => 'number',
-                        'descripcion' => 'Valor máximo de multa por préstamo',
-                        'requerido' => true,
-                        'min' => 0
-                    ],
                     [
                         'clave' => 'dias_gracia',
                         'nombre' => 'Días de Gracia',
                         'valor' => '3',
                         'tipo' => 'number',
-                        'descripcion' => 'Días sin multa después del vencimiento',
+                        'descripcion' => 'Días sin sanción después del vencimiento',
                         'requerido' => true,
                         'min' => 0,
                         'max' => 7
+                    ],
+                    [
+                        'clave' => 'dias_suspension_retraso',
+                        'nombre' => 'Días de Suspensión por Retraso',
+                        'valor' => '7',
+                        'tipo' => 'number',
+                        'descripcion' => 'Días de suspensión por cada día de retraso',
+                        'requerido' => true,
+                        'min' => 0,
+                        'max' => 30
                     ]
                 ]
             ],
@@ -1638,8 +1630,8 @@ class AdminController extends BaseController
         $data['tareas_vencidas'] = [
             [
                 'id' => 9,
-                'titulo' => 'Revisión de multas pendientes',
-                'descripcion' => 'Revisar y gestionar las multas acumuladas del mes',
+                'titulo' => 'Revisión de sanciones pendientes',
+                'descripcion' => 'Revisar y gestionar las sanciones acumuladas del mes',
                 'fecha_vencimiento' => '2025-10-03',
                 'dias_retraso' => 4,
                 'prioridad' => 'critica'

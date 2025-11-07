@@ -714,7 +714,6 @@ class PrestamoController extends Controller
                 'Estado Final',
                 'Horas Retraso',
                 'Días Retraso',
-                'Multa',
                 'Tiene Incidencia',
                 'Tipo Incidencia',
                 'Detalle Incidencia',
@@ -761,7 +760,6 @@ class PrestamoController extends Controller
                     $registro['estado_final'] ?? '',
                     $registro['horas_retraso_total'] ?? 0,
                     $registro['dias_retraso'] ?? 0,
-                    $registro['multa'] ?? 0,
                     ($registro['tiene_incidencia'] ?? 0) == 1 ? 'Sí' : 'No',
                     $registro['tipo_incidencia'] ?? '',
                     $registro['detalle_incidencia'] ?? '',
@@ -774,7 +772,7 @@ class PrestamoController extends Controller
             }
             
             // Ajustar ancho de columnas automáticamente
-            foreach (range('A', 'Q') as $col) {
+            foreach (range('A', 'P') as $col) {
                 $sheet->getColumnDimension($col)->setAutoSize(true);
             }
             
@@ -2473,7 +2471,7 @@ class PrestamoController extends Controller
                     if (function_exists('registrar_accion')) {
                         $detalle = "Préstamo #{$idprestamo} devuelto. Estado: {$estadoRecurso}";
                         if ($resultado['con_retraso']) {
-                            $detalle .= ". Retraso: {$resultado['dias_retraso']} días. Multa: $" . number_format($resultado['multa']);
+                            $detalle .= ". Retraso: {$resultado['dias_retraso']} día" . ($resultado['dias_retraso'] != 1 ? 's' : '');
                         }
                         registrar_accion($detalle);
                     }

@@ -34,7 +34,6 @@
     <?php 
         $horasTotal = $registro['horas_retraso_total'] ?? 0;
         $diasRetraso = $registro['dias_retraso'] ?? 0;
-        $multa = $registro['multa'] ?? 0;
         $tieneIncidencia = isset($registro['tiene_incidencia']) && $registro['tiene_incidencia'] == 1;
     ?>
     
@@ -51,7 +50,7 @@
             <i class="ti ti-check-circle me-1"></i>Devuelto a Tiempo
         </span>
         <small class="d-block text-muted mt-1">
-            Sin penalización
+            Sin retraso
             <?php if (isset($registro['fue_renovado']) && $registro['fue_renovado'] == 1): ?>
                 <br><i class="ti ti-refresh me-1"></i>Fue renovado <?= $registro['renovaciones_count'] ?? 1 ?> vez<?= ($registro['renovaciones_count'] ?? 1) != 1 ? 'es' : '' ?>
             <?php endif; ?>
@@ -64,11 +63,6 @@
             <small class="d-block text-warning fw-semibold mt-1"><?= $horasTotal ?> hora<?= $horasTotal != 1 ? 's' : '' ?></small>
         <?php else: ?>
             <small class="d-block text-warning fw-semibold mt-1"><?= $diasRetraso ?> día<?= $diasRetraso != 1 ? 's' : '' ?></small>
-        <?php endif; ?>
-        <?php if ($multa > 0): ?>
-            <small class="d-block text-danger mt-1">
-                <i class="ti ti-cash me-1"></i>Multa: $<?= number_format($multa) ?>
-            </small>
         <?php endif; ?>
         <?php if (isset($registro['fue_renovado']) && $registro['fue_renovado'] == 1): ?>
             <small class="d-block text-info mt-1">
