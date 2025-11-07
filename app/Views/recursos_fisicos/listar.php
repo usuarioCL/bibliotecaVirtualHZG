@@ -270,24 +270,35 @@ function verEjemplares(idrecurso, titulo) {
 
 // Función para recargar el contenido del modal de ejemplares
 function recargarModalEjemplares() {
-    console.log('Recargando modal con idRecurso:', currentIdRecurso);
+    console.log('==== INICIO RECARGA ====');
+    console.log('currentIdRecurso:', currentIdRecurso);
+    console.log('currentTitulo:', currentTitulo);
     
     if (currentIdRecurso) {
+        const url = '<?= base_url('ejemplares-fisicos/modal/') ?>' + currentIdRecurso;
+        console.log('URL de recarga:', url);
+        
         // Mostrar un indicador de carga
         document.getElementById('contenidoEjemplares').innerHTML = `
-            <div class="text-center">
-                <div class="spinner-border" role="status">
+            <div class="text-center py-5">
+                <div class="spinner-border text-primary" role="status">
                     <span class="visually-hidden">Cargando...</span>
                 </div>
-                <p class="mt-2">Actualizando ejemplares...</p>
+                <p class="mt-3">Actualizando ejemplares...</p>
             </div>
         `;
         
-        fetch('<?= base_url('ejemplares-fisicos/modal/') ?>' + currentIdRecurso)
-            .then(response => response.text())
+        fetch(url)
+            .then(response => {
+                console.log('Response status:', response.status);
+                console.log('Response OK:', response.ok);
+                return response.text();
+            })
             .then(html => {
-                console.log('Contenido recibido, actualizando modal...');
+                console.log('HTML recibido, longitud:', html.length);
+                console.log('Primeros 200 caracteres:', html.substring(0, 200));
                 document.getElementById('contenidoEjemplares').innerHTML = html;
+                console.log('==== FIN RECARGA ====');
             })
             .catch(error => {
                 console.error('Error al recargar:', error);
@@ -296,7 +307,8 @@ function recargarModalEjemplares() {
                 `;
             });
     } else {
-        console.error('No hay idRecurso guardado');
+        console.error('❌ No hay idRecurso guardado. currentIdRecurso es:', currentIdRecurso);
+        alert('Error: No se pudo identificar el recurso. Por favor, cierra y abre el modal nuevamente.');
     }
 }
 
@@ -396,34 +408,19 @@ window.guardarEdicionEjemplar = function() {
                 allowOutsideClick: false,
                 allowEscapeKey: false
             }).then(() => {
+                console.log('SweetAlert cerrado, procediendo a cerrar modal y recargar...');
+                
                 // Solo cerrar el modal de edición
                 const modalEditar = bootstrap.Modal.getInstance(document.getElementById('modalEditarEjemplarInterno'));
                 if (modalEditar) {
                     modalEditar.hide();
                 }
                 
-                // Recargar el contenido del modal de ejemplares SIN cerrarlo
-                // Buscar el botón "Ver Ejemplares" para obtener el ID del recurso
-                const verEjemplaresBtn = document.querySelector('[onclick*="verEjemplares"]');
-                if (verEjemplaresBtn) {
-                    const onclickAttr = verEjemplaresBtn.getAttribute('onclick');
-                    const match = onclickAttr.match(/verEjemplares\((\d+)/);
-                    if (match) {
-                        const idrecurso = match[1];
-                        // Recargar el contenido del modal manteniéndolo abierto
-                        fetch('<?= base_url('ejemplares-fisicos/modal/') ?>' + idrecurso)
-                            .then(response => response.text())
-                            .then(html => {
-                                document.getElementById('contenidoEjemplares').innerHTML = html;
-                                // El modal de ejemplares permanece abierto
-                            })
-                            .catch(error => {
-                                console.error('Error al recargar ejemplares:', error);
-                                // Fallback: recargar solo la página actual
-                                window.location.href = window.location.href;
-                            });
-                    }
-                }
+                // Esperar un momento y recargar usando la función global
+                setTimeout(() => {
+                    console.log('Llamando a recargarModalEjemplares desde guardarEdicionEjemplar...');
+                    recargarModalEjemplares();
+                }, 300);
             });
         } else {
             Swal.fire({
