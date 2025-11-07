@@ -120,5 +120,7 @@
     </div>
 </div>
 
+<!-- Cargar módulo de búsqueda -->
+<script src="<?= base_url('assets/js/modules/busquedaHandler.js') ?>"></script>
 
 <?= $footer; ?>

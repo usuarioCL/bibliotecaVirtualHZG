@@ -29,6 +29,13 @@
             solicitarPrestamo: '<?= base_url('prestamo/solicitar') ?>'
         }
     };
+    
+    // Inicializar controlador de página principal
+    document.addEventListener('DOMContentLoaded', function() {
+        if (!window.paginaPrincipal && typeof PaginaPrincipalController !== 'undefined') {
+            window.paginaPrincipal = new PaginaPrincipalController();
+        }
+    });
     </script>
     </body>
 </html>

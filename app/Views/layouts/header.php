@@ -37,3 +37,26 @@
     <link rel="stylesheet" href="<?= base_url('assets/css/components/voice-controls.css') ?>">
 </head>
 <body class="d-flex flex-column min-vh-100">
+
+<!-- Modal de PDF (disponible globalmente) -->
+<?php include(APPPATH . 'Views/partials/modals/pdf_viewer_modal.php'); ?>
+
+<!-- Modal para detalles del libro (disponible globalmente) -->
+<div class="modal fade" id="libroModal" tabindex="-1" aria-labelledby="libroModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="libroModalLabel">Detalles del Libro</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="libroModalBody">
+                <div class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                    <p class="text-muted mt-2">Cargando detalles del libro...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
