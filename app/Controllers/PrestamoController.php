@@ -650,7 +650,7 @@ class PrestamoController extends Controller
     }
     
     /**
-     * Exportar historial completo de préstamos a Excel (CSV)
+     * Exportar historial completo de préstamos a Excel (XLSX)
      */
     public function exportarHistorialExcel()
     {
@@ -708,24 +708,29 @@ class PrestamoController extends Controller
                     $observaciones = preg_replace('/^Cantidad solicitada:\s*\d+\s*ejemplares?\.\s*/', '', $observaciones);
                 }
                 
-                $sheet->setCellValue('A' . $fila, $registro['id'] ?? '');
-                $sheet->setCellValue('B' . $fila, $registro['usuario'] ?? '');
-                $sheet->setCellValue('C' . $fila, $registro['documento'] ?? '');
-                $sheet->setCellValue('D' . $fila, $registro['recurso'] ?? '');
-                $sheet->setCellValue('E' . $fila, $registro['codigo_ejemplar'] ?? 'N/A');
-                $sheet->setCellValue('F' . $fila, !empty($registro['fecha_prestamo']) ? date('d/m/Y', strtotime($registro['fecha_prestamo'])) : '');
-                $sheet->setCellValue('G' . $fila, !empty($registro['fecha_devolucion']) ? date('d/m/Y', strtotime($registro['fecha_devolucion'])) : 'N/A');
-                $sheet->setCellValue('H' . $fila, $duracion);
-                $sheet->setCellValue('I' . $fila, $registro['cantidad'] ?? 1);
-                $sheet->setCellValue('J' . $fila, $registro['estado_final'] ?? '');
-                $sheet->setCellValue('K' . $fila, $registro['horas_retraso_total'] ?? 0);
-                $sheet->setCellValue('L' . $fila, $registro['dias_retraso'] ?? 0);
-                $sheet->setCellValue('M' . $fila, $registro['multa'] ?? 0);
-                $sheet->setCellValue('N' . $fila, ($registro['tiene_incidencia'] ?? 0) == 1 ? 'Sí' : 'No');
-                $sheet->setCellValue('O' . $fila, $registro['tipo_incidencia'] ?? '');
-                $sheet->setCellValue('P' . $fila, $registro['detalle_incidencia'] ?? '');
-                $sheet->setCellValue('Q' . $fila, $observaciones);
+                // Preparar fila de datos
+                $rowData = [
+                    $registro['id'] ?? '',
+                    $registro['usuario'] ?? '',
+                    $registro['documento'] ?? '',
+                    $registro['recurso'] ?? '',
+                    $registro['codigo_ejemplar'] ?? 'N/A',
+                    !empty($registro['fecha_prestamo']) ? date('d/m/Y', strtotime($registro['fecha_prestamo'])) : '',
+                    !empty($registro['fecha_devolucion']) ? date('d/m/Y', strtotime($registro['fecha_devolucion'])) : 'N/A',
+                    $duracion,
+                    $registro['cantidad'] ?? 1,
+                    $registro['estado_final'] ?? '',
+                    $registro['horas_retraso_total'] ?? 0,
+                    $registro['dias_retraso'] ?? 0,
+                    $registro['multa'] ?? 0,
+                    ($registro['tiene_incidencia'] ?? 0) == 1 ? 'Sí' : 'No',
+                    $registro['tipo_incidencia'] ?? '',
+                    $registro['detalle_incidencia'] ?? '',
+                    $observaciones
+                ];
                 
+                // Escribir toda la fila de una vez
+                $sheet->fromArray($rowData, null, 'A' . $fila);
                 $fila++;
             }
             
