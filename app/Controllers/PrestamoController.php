@@ -657,20 +657,12 @@ class PrestamoController extends Controller
         try {
             $historial = $this->prestamoModel->getHistorialCompleto();
             
-            // Nombre del archivo
-            $filename = 'historial-prestamos-' . date('Ymd-His') . '.csv';
+            // Crear nuevo objeto Spreadsheet
+            $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+            $sheet = $spreadsheet->getActiveSheet();
             
-            header('Content-Type: text/csv; charset=utf-8');
-            header('Content-Disposition: attachment; filename="' . $filename . '"');
-            
-            // Abrir output stream
-            $output = fopen('php://output', 'w');
-            
-            // BOM para UTF-8
-            fprintf($output, chr(0xEF).chr(0xBB).chr(0xBF));
-            
-            // Encabezados (usando punto y coma como delimitador para Excel en español)
-            fputcsv($output, [
+            // Configurar encabezados
+            $encabezados = [
                 'ID',
                 'Usuario',
                 'Documento',
@@ -688,9 +680,18 @@ class PrestamoController extends Controller
                 'Tipo Incidencia',
                 'Detalle Incidencia',
                 'Observaciones'
-            ], ';');
+            ];
             
-            // Datos
+            // Escribir encabezados en la primera fila
+            $columna = 'A';
+            foreach ($encabezados as $encabezado) {
+                $sheet->setCellValue($columna . '1', $encabezado);
+                $sheet->getStyle($columna . '1')->getFont()->setBold(true);
+                $columna++;
+            }
+            
+            // Escribir datos
+            $fila = 2;
             foreach ($historial as $registro) {
                 // Calcular duración
                 $duracion = '-';
@@ -707,28 +708,43 @@ class PrestamoController extends Controller
                     $observaciones = preg_replace('/^Cantidad solicitada:\s*\d+\s*ejemplares?\.\s*/', '', $observaciones);
                 }
                 
-                fputcsv($output, [
-                    $registro['id'] ?? '',
-                    $registro['usuario'] ?? '',
-                    $registro['documento'] ?? '',
-                    $registro['recurso'] ?? '',
-                    $registro['codigo_ejemplar'] ?? 'N/A',
-                    !empty($registro['fecha_prestamo']) ? date('d/m/Y', strtotime($registro['fecha_prestamo'])) : '',
-                    !empty($registro['fecha_devolucion']) ? date('d/m/Y', strtotime($registro['fecha_devolucion'])) : 'N/A',
-                    $duracion,
-                    $registro['cantidad'] ?? 1,
-                    $registro['estado_final'] ?? '',
-                    $registro['horas_retraso_total'] ?? 0,
-                    $registro['dias_retraso'] ?? 0,
-                    $registro['multa'] ?? 0,
-                    ($registro['tiene_incidencia'] ?? 0) == 1 ? 'Sí' : 'No',
-                    $registro['tipo_incidencia'] ?? '',
-                    $registro['detalle_incidencia'] ?? '',
-                    $observaciones
-                ], ';');
+                $sheet->setCellValue('A' . $fila, $registro['id'] ?? '');
+                $sheet->setCellValue('B' . $fila, $registro['usuario'] ?? '');
+                $sheet->setCellValue('C' . $fila, $registro['documento'] ?? '');
+                $sheet->setCellValue('D' . $fila, $registro['recurso'] ?? '');
+                $sheet->setCellValue('E' . $fila, $registro['codigo_ejemplar'] ?? 'N/A');
+                $sheet->setCellValue('F' . $fila, !empty($registro['fecha_prestamo']) ? date('d/m/Y', strtotime($registro['fecha_prestamo'])) : '');
+                $sheet->setCellValue('G' . $fila, !empty($registro['fecha_devolucion']) ? date('d/m/Y', strtotime($registro['fecha_devolucion'])) : 'N/A');
+                $sheet->setCellValue('H' . $fila, $duracion);
+                $sheet->setCellValue('I' . $fila, $registro['cantidad'] ?? 1);
+                $sheet->setCellValue('J' . $fila, $registro['estado_final'] ?? '');
+                $sheet->setCellValue('K' . $fila, $registro['horas_retraso_total'] ?? 0);
+                $sheet->setCellValue('L' . $fila, $registro['dias_retraso'] ?? 0);
+                $sheet->setCellValue('M' . $fila, $registro['multa'] ?? 0);
+                $sheet->setCellValue('N' . $fila, ($registro['tiene_incidencia'] ?? 0) == 1 ? 'Sí' : 'No');
+                $sheet->setCellValue('O' . $fila, $registro['tipo_incidencia'] ?? '');
+                $sheet->setCellValue('P' . $fila, $registro['detalle_incidencia'] ?? '');
+                $sheet->setCellValue('Q' . $fila, $observaciones);
+                
+                $fila++;
             }
             
-            fclose($output);
+            // Ajustar ancho de columnas automáticamente
+            foreach (range('A', 'Q') as $col) {
+                $sheet->getColumnDimension($col)->setAutoSize(true);
+            }
+            
+            // Nombre del archivo
+            $filename = 'historial-prestamos-' . date('Ymd-His') . '.xlsx';
+            
+            // Configurar headers para descarga
+            header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            header('Content-Disposition: attachment; filename="' . $filename . '"');
+            header('Cache-Control: max-age=0');
+            
+            // Escribir archivo
+            $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+            $writer->save('php://output');
             exit;
             
         } catch (\Exception $e) {
