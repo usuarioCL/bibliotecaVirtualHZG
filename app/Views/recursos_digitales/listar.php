@@ -1,4 +1,9 @@
+<?php if (isset($header)): ?>
 <?= $header ?>
+<?php endif; ?>
+
+<!-- Estilos específicos para recursos digitales -->
+<link rel="stylesheet" href="<?= base_url('assets/css/recursos-digitales-styles.css') ?>">
 
 <div class="container">
     <!-- Encabezado de la página -->
@@ -6,112 +11,109 @@
         <div>
             <h4 class="mb-0">Recursos Digitales</h4>
             <p class="text-muted mb-0">Lista de recursos digitales disponibles en la biblioteca</p>
-        </div>
-        <div class="d-flex gap-2">
-            <a href="<?= base_url('/recurso-digital/pdf') ?>" class="btn btn-outline-secondary">
-                <i class="ti ti-file-type-pdf"></i> Exportar PDF
-            </a>
-        </div>
+        <a href="<?= base_url('/recurso-digital/pdf') ?>" class="btn btn-outline-secondary">
+            <i class="ti ti-file-type-pdf"></i> Exportar PDF
+        </a>
     </div>
+</div>
 
-    <!-- Tabla de recursos digitales -->
-    <div class="card mt-1">
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-hover">
-                    <thead class="table-light">
+<!-- Tabla de recursos digitales -->
+<div class="card mt-1">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>Portada</th>
+                        <th>Título</th>
+                        <th>Año</th>
+                        <th>Editorial</th>
+                        <th>Categoría</th>
+                        <th>Subcategoría</th>
+                        <th>Tipo de Recurso</th>
+                        <th>Archivo</th>
+                        <th>Ver</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php if (!empty($recursos_digitales)): ?>
+                        <?php foreach($recursos_digitales as $recurso): ?>
                         <tr>
-                            <th>ID</th>
-                            <th>Portada</th>
-                            <th>Título</th>
-                            <th>Año</th>
-                            <th>Editorial</th>
-                            <th>Categoría</th>
-                            <th>Subcategoría</th>
-                            <th>Tipo de Recurso</th>
-                            <th>Archivo</th>
-                            <th>Ver</th>
-                            <th>Acciones</th>
+                            <td><?= $recurso->idrecurso ?></td>
+                            <td>
+                                <?php if (!empty($recurso->portada)): ?>
+                                    <img src="<?= base_url(esc($recurso->portada)) ?>" 
+                                         alt="Portada" 
+                                         style="height:60px;width:auto;border-radius:4px;border:1px solid #e5e5e5;object-fit:cover;"
+                                         onerror="this.onerror=null;this.src='<?= base_url('img/portada_default.png') ?>';">
+                                <?php else: ?>
+                                    <img src="<?= base_url('img/portada_default.png') ?>" 
+                                         alt="Sin portada" 
+                                         style="height:60px;width:auto;border-radius:4px;border:1px solid #e5e5e5;object-fit:cover;">
+                                <?php endif; ?>
+                            </td>
+                            <td>
+                                <strong><?= esc($recurso->titulo) ?></strong>
+                            </td>
+                            <td><?= $recurso->anio ?></td>
+                            <td><?= esc($recurso->editorial) ?></td>
+                            <td>
+                                <span class="badge bg-primary"><?= esc($recurso->categoria) ?></span>
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary"><?= esc($recurso->subcategoria) ?></span>
+                            </td>
+                            <td>
+                                <span class="badge bg-info"><?= esc($recurso->tiporecurso) ?></span>
+                            </td>
+                            <td>
+                                <?php if (!empty($recurso->archivo)): ?>
+                                    <a href="<?= base_url($recurso->archivo) ?>" 
+                                       target="_blank" 
+                                       class="btn btn-sm btn-outline-primary">
+                                        <i class="ti ti-download"></i> Descargar
+                                    </a>
+                                <?php else: ?>
+                                    <span class="text-muted">Sin archivo</span>
+                                <?php endif; ?>
+                            </td>
+                            <td>
+                                <?php if (!empty($recurso->archivo)): ?>
+                                    <button type="button" 
+                                            class="btn btn-sm btn-outline-info" 
+                                            onclick="verPDF('<?= base_url($recurso->archivo) ?>', '<?= esc($recurso->titulo) ?>')">
+                                        <i class="ti ti-eye"></i>
+                                    </button>
+                                <?php else: ?>
+                                    <span class="text-muted">-</span>
+                                <?php endif; ?>
+                            </td>
+                            <td>
+                                <div class="btn-group" role="group">
+                                    <button type="button" class="btn btn-sm btn-outline-warning" 
+                                            onclick="editarRecurso(<?= $recurso->idrecurso ?>)">
+                                        <i class="ti ti-edit"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-danger" 
+                                            onclick="eliminarRecurso(<?= $recurso->idrecurso ?>)">
+                                        <i class="ti ti-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
                         </tr>
-                    </thead>
-                    <tbody>
-                        <?php if (!empty($recursos_digitales)): ?>
-                            <?php foreach($recursos_digitales as $recurso): ?>
-                            <tr>
-                                <td><?= $recurso->idrecurso ?></td>
-                                <td>
-                                    <?php if (!empty($recurso->portada)): ?>
-                                        <img src="<?= base_url(esc($recurso->portada)) ?>" 
-                                             alt="Portada" 
-                                             style="height:60px;width:auto;border-radius:4px;border:1px solid #e5e5e5;object-fit:cover;"
-                                             onerror="this.onerror=null;this.src='<?= base_url('img/portada_default.png') ?>';">
-                                    <?php else: ?>
-                                        <img src="<?= base_url('img/portada_default.png') ?>" 
-                                             alt="Sin portada" 
-                                             style="height:60px;width:auto;border-radius:4px;border:1px solid #e5e5e5;object-fit:cover;">
-                                    <?php endif; ?>
-                                </td>
-                                <td>
-                                    <strong><?= esc($recurso->titulo) ?></strong>
-                                </td>
-                                <td><?= $recurso->anio ?></td>
-                                <td><?= esc($recurso->editorial) ?></td>
-                                <td>
-                                    <span class="badge bg-primary"><?= esc($recurso->categoria) ?></span>
-                                </td>
-                                <td>
-                                    <span class="badge bg-secondary"><?= esc($recurso->subcategoria) ?></span>
-                                </td>
-                                <td>
-                                    <span class="badge bg-info"><?= esc($recurso->tiporecurso) ?></span>
-                                </td>
-                                <td>
-                                    <?php if (!empty($recurso->archivo)): ?>
-                                        <a href="<?= base_url($recurso->archivo) ?>" 
-                                           target="_blank" 
-                                           class="btn btn-sm btn-outline-primary">
-                                            <i class="ti ti-download"></i> Descargar
-                                        </a>
-                                    <?php else: ?>
-                                        <span class="text-muted">Sin archivo</span>
-                                    <?php endif; ?>
-                                </td>
-                                <td>
-                                    <?php if (!empty($recurso->archivo)): ?>
-                                        <button type="button" 
-                                                class="btn btn-sm btn-outline-info" 
-                                                onclick="verPDF('<?= base_url($recurso->archivo) ?>', '<?= esc($recurso->titulo) ?>')">
-                                            <i class="ti ti-eye"></i>
-                                        </button>
-                                    <?php else: ?>
-                                        <span class="text-muted">-</span>
-                                    <?php endif; ?>
-                                </td>
-                                <td>
-                                    <div class="btn-group" role="group">
-                                        <button type="button" class="btn btn-sm btn-outline-warning" 
-                                                onclick="editarRecurso(<?= $recurso->idrecurso ?>)">
-                                            <i class="ti ti-edit"></i>
-                                        </button>
-                                        <button type="button" class="btn btn-sm btn-outline-danger" 
-                                                onclick="eliminarRecurso(<?= $recurso->idrecurso ?>)">
-                                            <i class="ti ti-trash"></i>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                            <?php endforeach; ?>
-                        <?php else: ?>
+                        <?php endforeach; ?>
+                    <?php else: ?>
                         <tr>
                             <td colspan="11" class="text-center text-muted py-4">
                                 <i class="ti ti-inbox fs-1 d-block mb-2"></i>
                                 No hay recursos digitales registrados
                             </td>
                         </tr>
-                        <?php endif; ?>
-                    </tbody>
-                </table>
-            </div>
+                    <?php endif; ?>
+                </tbody>
+            </table>
         </div>
     </div>
 </div>
@@ -127,22 +129,16 @@
             </button>
         </div>
         <div class="custom-modal-body">
-            <div id="pdfContainer" style="height: 600px; position: relative;">
-                <div id="pdfLoading" style="display: none; text-align: center; padding: 50px;">
+            <div id="pdfContainer">
+                <div id="pdfLoading" style="display: none;">
                     <div class="spinner-border text-primary" role="status">
                         <span class="visually-hidden">Cargando PDF...</span>
                     </div>
                     <p class="mt-3 text-muted">Cargando PDF...</p>
                 </div>
-                <iframe id="pdfViewer" 
-                        src="" 
-                        width="100%" 
-                        height="100%" 
-                        style="border: none; display: none;"
-                        title="Visor de PDF"
-                        allowfullscreen>
+                <iframe id="pdfViewer" src="" width="100%" height="100%" style="border: none;" title="Visor de PDF" allowfullscreen>
                 </iframe>
-                <div id="pdfError" style="display: none; text-align: center; padding: 50px;">
+                <div id="pdfError" style="display: none;">
                     <i class="ti ti-file-text fs-1 text-muted mb-3" aria-hidden="true"></i>
                     <h5>No se puede mostrar el PDF en el visor</h5>
                     <p class="text-muted">El archivo se abrirá en una nueva pestaña</p>
@@ -155,27 +151,21 @@
             </div>
         </div>
         <div class="custom-modal-footer">
-            <!-- Controles de voz amigables para niños -->
-            <div class="voice-controls child-friendly">
-                <div class="voice-buttons">
-                    <button id="btnVoicePlay" type="button" class="btn btn-success btn-lg voice-btn" onclick="toggleVoiceReading()" aria-label="Reproducir voz">
-                        <i class="ti ti-speakerphone" aria-hidden="true"></i> <span id="voiceText">🎤 Leer Cuento</span>
-                    </button>
-                    <button id="btnVoicePause" type="button" class="btn btn-warning btn-lg voice-btn" onclick="pauseVoiceReading()" style="display: none;" aria-label="Pausar voz">
-                        <i class="ti ti-player-pause" aria-hidden="true"></i> ⏸️ Pausar
-                    </button>
-                    <button id="btnVoiceStop" type="button" class="btn btn-danger btn-lg voice-btn" onclick="stopVoiceReading()" style="display: none;" aria-label="Detener voz">
-                        <i class="ti ti-player-stop" aria-hidden="true"></i> ⏹️ Detener
-                    </button>
-                </div>
+            <!-- Controles de voz -->
+            <div class="voice-controls">
+                <button id="btnVoicePlay" type="button" class="btn btn-success btn-sm" onclick="toggleVoiceReading()" aria-label="Reproducir voz">
+                    <i class="ti ti-speakerphone" aria-hidden="true"></i> <span id="voiceText">Leer PDF</span>
+                </button>
+                <button id="btnVoicePause" type="button" class="btn btn-warning btn-sm" onclick="pauseVoiceReading()" style="display: none;" aria-label="Pausar voz">
+                    <i class="ti ti-player-pause" aria-hidden="true"></i> Pausar
+                </button>
+                <button id="btnVoiceStop" type="button" class="btn btn-danger btn-sm" onclick="stopVoiceReading()" style="display: none;" aria-label="Detener voz">
+                    <i class="ti ti-player-stop" aria-hidden="true"></i> Detener
+                </button>
                 <div class="voice-speed-control">
-                    <label for="voiceSpeed" class="form-label">🐌 Velocidad de lectura:</label>
-                    <div class="speed-container">
-                        <span class="speed-label">Lento</span>
-                        <input type="range" id="voiceSpeed" class="form-range speed-slider" min="0.5" max="1.5" step="0.1" value="0.8" onchange="changeVoiceSpeed(this.value)">
-                        <span class="speed-label">Rápido</span>
-                    </div>
-                    <span id="speedValue" class="speed-value">0.8x</span>
+                    <label for="voiceSpeed" class="form-label">Velocidad:</label>
+                    <input type="range" id="voiceSpeed" class="form-range" min="0.5" max="1.5" step="0.1" value="0.8" onchange="changeVoiceSpeed(this.value)">
+                    <span id="speedValue">0.8x</span>
                 </div>
             </div>
             
@@ -185,246 +175,6 @@
                     <i class="ti ti-download" aria-hidden="true"></i> Descargar PDF
                 </a>
                 <button type="button" class="btn btn-secondary" onclick="cerrarModalPDF()" aria-label="Cerrar modal">Cerrar</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<style>
-.custom-modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 1050;
-}
-
-.custom-modal-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
-}
-
-.custom-modal-content {
-    position: relative;
-    background: white;
-    margin: 2% auto;
-    width: 95%;
-    max-width: 1200px;
-    max-height: 90vh;
-    border-radius: 8px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-    display: flex;
-    flex-direction: column;
-}
-
-.custom-modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1rem;
-    border-bottom: 1px solid #dee2e6;
-}
-
-.custom-modal-header h5 {
-    margin: 0;
-    font-size: 1.25rem;
-}
-
-.custom-modal-header .btn-close {
-    background: none;
-    border: none;
-    font-size: 1.5rem;
-    cursor: pointer;
-    padding: 0.5rem;
-    color: #6c757d;
-}
-
-.custom-modal-header .btn-close:hover {
-    color: #000;
-}
-
-.custom-modal-body {
-    padding: 0;
-    flex: 1;
-    overflow: hidden;
-}
-
-.custom-modal-footer {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 1.5rem;
-    padding: 1.5rem;
-    border-top: 3px solid #ff6b6b;
-    background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fecfef 100%);
-    border-radius: 0 0 15px 15px;
-}
-
-.voice-controls {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-}
-
-/* Estilos amigables para niños */
-.child-friendly {
-    background: rgba(255, 255, 255, 0.9);
-    border-radius: 20px;
-    padding: 1rem;
-    box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
-}
-
-.voice-buttons {
-    display: flex;
-    gap: 0.5rem;
-    margin-bottom: 1rem;
-}
-
-.voice-btn {
-    border-radius: 25px !important;
-    font-weight: bold;
-    text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-}
-
-.voice-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 12px rgba(0,0,0,0.3);
-}
-
-.voice-btn:active {
-    transform: translateY(0);
-}
-
-.speed-container {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin: 0.5rem 0;
-}
-
-.speed-label {
-    font-size: 0.9rem;
-    font-weight: bold;
-    color: #ff6b6b;
-}
-
-.speed-slider {
-    flex: 1;
-    height: 8px;
-    border-radius: 5px;
-    background: linear-gradient(to right, #ff6b6b, #4ecdc4);
-    outline: none;
-}
-
-.speed-slider::-webkit-slider-thumb {
-    appearance: none;
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    background: #ff6b6b;
-    cursor: pointer;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-}
-
-.speed-value {
-    font-weight: bold;
-    color: #ff6b6b;
-    font-size: 1.1rem;
-    background: rgba(255, 255, 255, 0.8);
-    padding: 0.3rem 0.8rem;
-    border-radius: 15px;
-    border: 2px solid #ff6b6b;
-}
-
-.voice-speed-control {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin-left: 1rem;
-}
-
-.voice-speed-control label {
-    margin: 0;
-    font-size: 0.875rem;
-    color: #6c757d;
-}
-
-.voice-speed-control input[type="range"] {
-    width: 80px;
-}
-
-.voice-speed-control span {
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: #495057;
-    min-width: 30px;
-}
-
-.main-controls {
-    display: flex;
-    gap: 0.5rem;
-}
-
-@media (max-width: 768px) {
-    .custom-modal-content {
-        width: 98%;
-        margin: 1% auto;
-        max-height: 95vh;
-    }
-}
-
-/* Mejoras para el visor de PDF */
-#pdfContainer {
-    position: relative;
-    overflow: hidden;
-}
-
-#pdfViewer {
-    transition: opacity 0.3s ease-in-out;
-}
-
-#pdfViewer.loading {
-    opacity: 0.5;
-}
-
-#pdfLoading {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 10;
-}
-
-#pdfError {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 10;
-}
-</style>
-
-<!-- Modal para ver detalles -->
-<div class="modal fade" id="modalDetalles" tabindex="-1" aria-labelledby="modalDetallesLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="modalDetallesLabel">Detalles del Recurso Digital</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body" id="contenidoDetalles">
-                <!-- Contenido se carga dinámicamente -->
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
             </div>
         </div>
     </div>
@@ -476,6 +226,7 @@ function loadPDFJSLibrary() {
             
             script.onload = function() {
                 pdfjsLibLoaded = true;
+                // Configurar PDF.js worker con el mismo índice
                 pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrls[currentIndex];
                 resolve();
             };
@@ -526,10 +277,11 @@ function verPDF(url, titulo) {
         firstButton.focus();
     }
     
+    // Cargar PDF.js dinámicamente y luego extraer texto
     loadPDFJSLibrary().then(function() {
         loadPDFForTextExtraction(secureUrl);
     }).catch(function(error) {
-        pdfTextContent = 'No se pudo cargar la librería PDF.js. La funcionalidad de voz no está disponible.';
+        pdfTextContent = 'No se pudo cargar la librería PDF.js desde ningún CDN.';
         isPdfLoaded = true;
     });
     
@@ -542,12 +294,13 @@ function verPDF(url, titulo) {
         // Verificar si realmente se cargó el PDF
         setTimeout(function() {
             try {
+                // Intentar acceder al contenido del iframe
                 var iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
                 if (!iframeDoc || iframeDoc.body === null || iframeDoc.body.innerHTML.trim() === '') {
                     mostrarErrorPDF();
                 }
             } catch (e) {
-                // Error de CORS esperado
+                // PDF cargado (CORS bloqueado)
             }
         }, 1000);
     };
@@ -565,21 +318,24 @@ function verPDF(url, titulo) {
 }
 
 function cerrarModalPDF() {
-    stopVoiceReading();
-    
     var modal = document.getElementById('modalPDF');
     modal.style.display = 'none';
+    
+    // Restaurar scroll del body
     document.body.style.overflow = 'auto';
     
+    // Limpiar el iframe y resetear estados
     var iframe = document.getElementById('pdfViewer');
     iframe.src = '';
     iframe.onload = null;
     iframe.onerror = null;
     
+    // Ocultar todos los elementos del modal
     document.getElementById('pdfViewer').style.display = 'none';
     document.getElementById('pdfError').style.display = 'none';
     document.getElementById('pdfLoading').style.display = 'none';
     
+    // Limpiar URL actual
     currentPDFUrl = '';
 }
 
@@ -605,62 +361,23 @@ document.addEventListener('keydown', function(event) {
     }
 });
 
+function verDetalles(id) {
+    // Aquí puedes implementar la lógica para cargar los detalles
+    document.getElementById('contenidoDetalles').innerHTML = '<p>Cargando detalles del recurso #' + id + '...</p>';
+    var modal = new bootstrap.Modal(document.getElementById('modalDetalles'));
+    modal.show();
+}
+
 function editarRecurso(id) {
-    window.location.href = '<?= base_url('recursos/editar') ?>/' + id;
+    // Aquí puedes implementar la lógica para editar
+    alert('Editar recurso #' + id);
 }
 
 function eliminarRecurso(id) {
-    Swal.fire({
-        title: '¿Estás seguro?',
-        text: "¡No podrás revertir esta acción!",
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#d33',
-        cancelButtonColor: '#3085d6',
-        confirmButtonText: 'Sí, eliminar',
-        cancelButtonText: 'Cancelar'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            // Realizar petición AJAX para eliminar
-            fetch('<?= base_url('recursos/eliminar') ?>/' + id, {
-                method: 'DELETE',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    Swal.fire({
-                        icon: 'success',
-                        title: '¡Eliminado!',
-                        text: data.message || 'El recurso digital ha sido eliminado correctamente.',
-                        timer: 1500,
-                        showConfirmButton: false,
-                        timerProgressBar: true
-                    }).then(function() {
-                        // Recargar la página para actualizar la lista
-                        location.reload();
-                    });
-                } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error al eliminar',
-                        text: data.message || 'No se pudo eliminar el recurso digital.'
-                    });
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error al eliminar',
-                    text: 'No se pudo eliminar el recurso digital. Por favor, inténtalo de nuevo.'
-                });
-            });
-        }
-    });
+    if (confirm('¿Estás seguro de que deseas eliminar este recurso digital?')) {
+        // Aquí puedes implementar la lógica para eliminar
+        alert('Eliminar recurso #' + id);
+    }
 }
 
 // ===== FUNCIONES DE VOZ =====
@@ -711,6 +428,7 @@ function startVoiceReading() {
     // Intentar seleccionar una voz más amigable para niños
     selectChildFriendlyVoice();
     
+    // Eventos
     currentUtterance.onstart = function() {
         isVoiceReading = true;
         isVoicePaused = false;
@@ -727,7 +445,7 @@ function startVoiceReading() {
         isVoiceReading = false;
         isVoicePaused = false;
         updateVoiceButtons();
-        alert('Error al reproducir la voz.');
+        alert('Error al reproducir la voz: ' + event.error);
     };
     
     // Iniciar lectura
@@ -768,33 +486,57 @@ function changeVoiceSpeed(speed) {
 function selectChildFriendlyVoice() {
     if (!currentUtterance) return;
     
+    // Obtener todas las voces disponibles
     const voices = speechSynthesis.getVoices();
+    
+    // Voces preferidas para niños (más amigables)
+    const childFriendlyVoices = [
+        'Microsoft Sabina Desktop - Spanish (Mexico)',
+        'Microsoft Helena Desktop - Spanish (Spain)', 
+        'Google español',
+        'Microsoft Laura Desktop - Spanish (Spain)',
+        'Microsoft Monica Desktop - Spanish (Spain)',
+        'Microsoft Paulina Desktop - Spanish (Mexico)',
+        'Microsoft Teresa Desktop - Spanish (Spain)'
+    ];
+    
+    // Buscar una voz amigable para niños
     let selectedVoice = null;
     
-    selectedVoice = voices.find(voice => 
-        voice.name.includes('Sabina') || 
-        voice.name.includes('Helena') ||
-        voice.name.includes('Laura') ||
-        voice.name.includes('Monica') ||
-        voice.name.includes('Paulina') ||
-        voice.name.includes('Teresa') ||
-        (voice.name.toLowerCase().includes('google') && voice.lang.startsWith('es'))
-    );
+    // Primero intentar con las voces preferidas
+    for (const preferredVoice of childFriendlyVoices) {
+        selectedVoice = voices.find(voice => 
+            voice.name.includes('Sabina') || 
+            voice.name.includes('Helena') ||
+            voice.name.includes('Laura') ||
+            voice.name.includes('Monica') ||
+            voice.name.includes('Paulina') ||
+            voice.name.includes('Teresa') ||
+            (voice.name.toLowerCase().includes('google') && voice.lang.startsWith('es'))
+        );
+        if (selectedVoice) break;
+    }
     
+    // Si no se encuentra una voz preferida, buscar cualquier voz femenina en español
     if (!selectedVoice) {
         selectedVoice = voices.find(voice => 
             voice.lang.startsWith('es') && 
             (voice.name.toLowerCase().includes('female') || 
-             voice.name.toLowerCase().includes('mujer'))
+             voice.name.toLowerCase().includes('woman') ||
+             voice.name.toLowerCase().includes('mujer') ||
+             voice.name.toLowerCase().includes('femenina'))
         );
     }
     
+    // Si aún no se encuentra, usar cualquier voz en español
     if (!selectedVoice) {
         selectedVoice = voices.find(voice => voice.lang.startsWith('es'));
     }
     
+    // Aplicar la voz seleccionada
     if (selectedVoice) {
         currentUtterance.voice = selectedVoice;
+        console.log('Voz seleccionada para niños:', selectedVoice.name);
     }
 }
 
@@ -820,40 +562,62 @@ function updateVoiceButtons() {
 // ===== FUNCIONES DE PDF.js =====
 
 function loadPDFForTextExtraction(url) {
+    // Verificar que PDF.js esté cargado
     if (!pdfjsLibLoaded || typeof pdfjsLib === 'undefined') {
-        pdfTextContent = 'PDF.js no está disponible.';
+        console.error('PDF.js no está cargado');
+        pdfTextContent = 'PDF.js no está disponible. Usando texto de ejemplo para demostrar la funcionalidad de voz.';
         isPdfLoaded = true;
         return;
     }
     
+    // Resetear estado
     pdfDoc = null;
     pdfTextContent = '';
     isPdfLoaded = false;
     
+    console.log('Iniciando carga de PDF con PDF.js...');
+    
+    // Cargar PDF con PDF.js
     pdfjsLib.getDocument(url).promise.then(function(pdf) {
         pdfDoc = pdf;
+        console.log('PDF cargado con PDF.js:', pdf.numPages, 'páginas');
+        
+        // Extraer texto de todas las páginas
         extractTextFromAllPages();
+        
     }).catch(function(error) {
+        console.error('Error cargando PDF con PDF.js:', error);
+        
+        // Verificar si es un error de CORS
         if (error.name === 'UnknownErrorException' || error.message.includes('CORS') || error.message.includes('fetch')) {
-            pdfTextContent = 'No se pudo acceder al PDF debido a restricciones de CORS.';
+            pdfTextContent = 'No se pudo acceder al PDF debido a restricciones de CORS. Esto es normal en algunos servidores. La funcionalidad de voz está disponible con texto de ejemplo. Para una experiencia completa, el administrador debe configurar los headers CORS en el servidor.';
         } else {
-            pdfTextContent = 'No se pudo extraer texto del PDF.';
+            pdfTextContent = 'No se pudo extraer texto del PDF. Usando texto de ejemplo para demostrar la funcionalidad de voz.';
         }
+        
         isPdfLoaded = true;
+        console.log('Usando texto de ejemplo debido a error:', error.name || error.message);
     });
 }
 
 function extractTextFromAllPages() {
-    if (!pdfDoc) return;
+    if (!pdfDoc) {
+        console.error('PDF no cargado');
+        return;
+    }
     
     var totalPages = pdfDoc.numPages;
     var allText = '';
     var pagesProcessed = 0;
     
+    console.log('Extrayendo texto de', totalPages, 'páginas...');
+    
+    // Procesar cada página
     for (var pageNum = 1; pageNum <= totalPages; pageNum++) {
         pdfDoc.getPage(pageNum).then(function(page) {
             return page.getTextContent();
         }).then(function(textContent) {
+            // Extraer texto de la página
             var pageText = '';
             for (var i = 0; i < textContent.items.length; i++) {
                 pageText += textContent.items[i].str + ' ';
@@ -862,16 +626,23 @@ function extractTextFromAllPages() {
             allText += pageText + '\n\n';
             pagesProcessed++;
             
+            // Si hemos procesado todas las páginas
             if (pagesProcessed === totalPages) {
-                pdfTextContent = allText.replace(/\s+/g, ' ').trim();
+                pdfTextContent = allText.trim();
                 isPdfLoaded = true;
+                console.log('Texto extraído del PDF:', pdfTextContent.length, 'caracteres');
+                
+                // Limpiar texto (remover espacios excesivos, saltos de línea múltiples)
+                pdfTextContent = pdfTextContent.replace(/\s+/g, ' ').trim();
                 
                 if (pdfTextContent.length === 0) {
-                    pdfTextContent = 'Este PDF no contiene texto extraíble.';
+                    pdfTextContent = 'Este PDF no contiene texto extraíble o está protegido.';
                 }
             }
         }).catch(function(error) {
+            console.error('Error extrayendo texto de página:', error);
             pagesProcessed++;
+            
             if (pagesProcessed === totalPages) {
                 pdfTextContent = 'Error extrayendo texto del PDF.';
                 isPdfLoaded = true;
@@ -890,6 +661,34 @@ function extractTextFromPDF() {
     }
 }
 
+// Detener la voz cuando se cierra el modal
+function cerrarModalPDF() {
+    stopVoiceReading();
+    
+    var modal = document.getElementById('modalPDF');
+    modal.style.display = 'none';
+    
+    // Restaurar scroll del body
+    document.body.style.overflow = 'auto';
+    
+    // Limpiar el iframe y resetear estados
+    var iframe = document.getElementById('pdfViewer');
+    iframe.src = '';
+    iframe.onload = null;
+    iframe.onerror = null;
+    
+    // Ocultar todos los elementos del modal
+    document.getElementById('pdfViewer').style.display = 'none';
+    document.getElementById('pdfError').style.display = 'none';
+    document.getElementById('pdfLoading').style.display = 'none';
+    
+    // Limpiar URL actual
+    currentPDFUrl = '';
+}
 </script>
 
+</div>
+
+<?php if (isset($footer)): ?>
 <?= $footer ?>
+<?php endif; ?>
