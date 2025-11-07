@@ -648,7 +648,41 @@ class PrestamoController extends Controller
             return view('Administrador/prestamos/historial', $data);
         }
     }
-    
+
+    /**
+     * Historial Completo - Versión AJAX para el panel de administración
+     */
+    public function historialAjax()
+    {
+        try {
+            $historial = $this->prestamoModel->getHistorialCompleto();
+            $estadisticas = $this->prestamoModel->getEstadisticasHistorial();
+
+            $data = [
+                'title' => 'Historial de Préstamos',
+                'historial' => $historial,
+                'estadisticas' => $estadisticas
+            ];
+
+            return view('Administrador/prestamos/historial_ajax', $data);
+        } catch (\Exception $e) {
+            log_message('error', 'Error en PrestamoController::historialAjax(): ' . $e->getMessage());
+            
+            $data = [
+                'title' => 'Historial de Préstamos',
+                'historial' => [],
+                'estadisticas' => [
+                    'total_registros' => 0,
+                    'este_mes' => 0,
+                    'promedio_mensual' => 0,
+                    'tasa_devolucion' => 0
+                ]
+            ];
+
+            return view('Administrador/prestamos/historial_ajax', $data);
+        }
+    }
+
     /**
      * Exportar historial completo de préstamos a Excel (XLSX)
      */
