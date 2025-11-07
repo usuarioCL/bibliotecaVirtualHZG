@@ -48,6 +48,7 @@ class PaginaPrincipalController {
         window.leerPDFDirecto = (url, title) => this.pdfViewer.open(url, title);
         window.cerrarModalPDF = () => this.pdfViewer.close();
         window.abrirPDFNuevaTab = () => this.pdfViewer.openInNewTab();
+        window.abrirPDFEnNuevaPestana = () => this.pdfViewer.openInNewTab();
         
         // Funciones de voz
         window.toggleVoiceReading = () => this.voiceReader.toggle();

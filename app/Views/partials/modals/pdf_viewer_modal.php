@@ -31,6 +31,15 @@
                     <button class="btn btn-primary" onclick="abrirPDFEnNuevaPestana()" aria-label="Abrir PDF en nueva pestaña">
                         <i class="fas fa-external-link-alt" aria-hidden="true"></i> Abrir PDF
                     </button>
+                    <script>
+                    // Función global para abrir PDF en nueva pestaña como fallback
+                    function abrirPDFEnNuevaPestana() {
+                        const descargarBtn = document.getElementById('descargarPDF');
+                        if (descargarBtn && descargarBtn.href) {
+                            window.open(descargarBtn.href, '_blank');
+                        }
+                    }
+                    </script>
                 </div>
                 <!-- Canvas oculto para PDF.js -->
                 <canvas id="pdfCanvas" style="display: none;"></canvas>

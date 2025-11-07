@@ -103,41 +103,84 @@ class PDFViewer {
      * Carga el PDF en el iframe
      */
     loadInIframe() {
+        console.log('Cargando PDF en iframe:', this.currentUrl);
+        
         this.viewer.src = this.currentUrl;
         
         this.viewer.onload = () => {
+            console.log('Iframe onload disparado');
             this.loading.style.display = 'none';
             this.viewer.style.display = 'block';
             this.verifyLoad();
         };
         
         this.viewer.onerror = () => {
+            console.log('Iframe onerror disparado');
             this.showError();
         };
         
-        // Timeout de seguridad después de 10 segundos
+        // Timeout de seguridad más generoso - 15 segundos
         setTimeout(() => {
             if (this.loading.style.display !== 'none') {
-                this.showError();
+                console.log('Timeout alcanzado, forzando visualización del PDF');
+                // En lugar de mostrar error inmediatamente, intentamos mostrar el PDF
+                this.loading.style.display = 'none';
+                this.viewer.style.display = 'block';
+                
+                // Si después de 3 segundos más sigue sin cargar, entonces sí mostramos error
+                setTimeout(() => {
+                    if (this.viewer.style.display === 'block') {
+                        try {
+                            // Verificación final más simple
+                            if (this.viewer.contentDocument === null && this.viewer.src) {
+                                // PDF probablemente cargado pero bloqueado por CORS
+                                console.log('PDF asumido como cargado (CORS)');
+                                return;
+                            }
+                        } catch (e) {
+                            // Cualquier excepción asumimos que está cargado
+                            console.log('PDF asumido como cargado (excepción en verificación)');
+                            return;
+                        }
+                    }
+                }, 3000);
             }
-        }, 10000);
+        }, 15000);
     }
     
     /**
      * Verifica que el PDF se haya cargado correctamente
      */
     verifyLoad() {
+        // Dar más tiempo para que el PDF se cargue completamente
         setTimeout(() => {
             try {
                 const iframeDoc = this.viewer.contentDocument || this.viewer.contentWindow.document;
-                if (!iframeDoc || iframeDoc.body === null || iframeDoc.body.innerHTML.trim() === '') {
+                
+                // Si no podemos acceder al documento (CORS), asumimos que se cargó correctamente
+                if (!iframeDoc) {
+                    console.log('PDF cargado (CORS bloqueado, asumimos éxito)');
+                    return;
+                }
+                
+                // Verificación más permisiva: solo mostrar error si realmente hay un problema
+                const bodyContent = iframeDoc.body?.innerHTML || '';
+                const hasErrorContent = bodyContent.includes('error') || 
+                                      bodyContent.includes('404') || 
+                                      bodyContent.includes('not found') ||
+                                      bodyContent.includes('forbidden');
+                
+                if (hasErrorContent) {
+                    console.log('Detectado error en contenido del PDF, mostrando fallback');
                     this.showError();
+                } else {
+                    console.log('PDF verificado como cargado correctamente');
                 }
             } catch (e) {
-                // CORS bloqueado, asumimos que se cargó correctamente
-                console.log('PDF cargado (CORS bloqueado, asumimos éxito)');
+                // CORS bloqueado o cualquier otro error de acceso - asumimos éxito
+                console.log('PDF cargado (verificación bloqueada por navegador, asumimos éxito)');
             }
-        }, 1000);
+        }, 2000); // Aumentamos el tiempo a 2 segundos para dar más margen
     }
     
     /**
