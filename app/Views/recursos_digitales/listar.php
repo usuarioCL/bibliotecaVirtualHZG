@@ -129,22 +129,16 @@
             </button>
         </div>
         <div class="custom-modal-body">
-            <div id="pdfContainer" style="height: 600px; position: relative;">
-                <div id="pdfLoading" style="display: none; text-align: center; padding: 50px;">
+            <div id="pdfContainer">
+                <div id="pdfLoading" style="display: none;">
                     <div class="spinner-border text-primary" role="status">
                         <span class="visually-hidden">Cargando PDF...</span>
                     </div>
                     <p class="mt-3 text-muted">Cargando PDF...</p>
                 </div>
-                <iframe id="pdfViewer" 
-                        src="" 
-                        width="100%" 
-                        height="100%" 
-                        style="border: none; display: none;"
-                        title="Visor de PDF"
-                        allowfullscreen>
+                <iframe id="pdfViewer" src="" width="100%" height="100%" style="border: none;" title="Visor de PDF" allowfullscreen>
                 </iframe>
-                <div id="pdfError" style="display: none; text-align: center; padding: 50px;">
+                <div id="pdfError" style="display: none;">
                     <i class="ti ti-file-text fs-1 text-muted mb-3" aria-hidden="true"></i>
                     <h5>No se puede mostrar el PDF en el visor</h5>
                     <p class="text-muted">El archivo se abrirá en una nueva pestaña</p>
@@ -209,21 +203,14 @@ function loadPDFJSLibrary() {
             return;
         }
         
-        // Lista de CDNs alternativos (incluyendo versiones más estables)
         var cdnUrls = [
             'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js',
-            'https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.min.js',
-            'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.min.js',
-            'https://unpkg.com/pdfjs-dist@4.4.168/build/pdf.min.js',
-            'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.4.168/build/pdf.min.js'
+            'https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.min.js'
         ];
         
         var workerUrls = [
             'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js',
-            'https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js',
-            'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.worker.min.js',
-            'https://unpkg.com/pdfjs-dist@4.4.168/build/pdf.worker.min.js',
-            'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.4.168/build/pdf.worker.min.js'
+            'https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js'
         ];
         
         var currentIndex = 0;
@@ -241,12 +228,10 @@ function loadPDFJSLibrary() {
                 pdfjsLibLoaded = true;
                 // Configurar PDF.js worker con el mismo índice
                 pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrls[currentIndex];
-                console.log('PDF.js cargado desde:', cdnUrls[currentIndex]);
                 resolve();
             };
             
             script.onerror = function() {
-                console.warn('Error cargando PDF.js desde:', cdnUrls[currentIndex]);
                 currentIndex++;
                 tryLoadScript();
             };
@@ -294,14 +279,10 @@ function verPDF(url, titulo) {
     
     // Cargar PDF.js dinámicamente y luego extraer texto
     loadPDFJSLibrary().then(function() {
-        console.log('PDF.js cargado exitosamente, iniciando extracción de texto...');
         loadPDFForTextExtraction(secureUrl);
     }).catch(function(error) {
-        console.error('Error cargando PDF.js:', error);
-        // Usar texto de ejemplo si falla la carga de PDF.js
-        pdfTextContent = 'No se pudo cargar la librería PDF.js desde ningún CDN. Esto puede deberse a restricciones de red o CORS. La funcionalidad de voz está disponible con texto de ejemplo.';
+        pdfTextContent = 'No se pudo cargar la librería PDF.js desde ningún CDN.';
         isPdfLoaded = true;
-        console.log('Usando texto de ejemplo para la funcionalidad de voz');
     });
     
     // Manejar la carga del iframe
@@ -319,8 +300,7 @@ function verPDF(url, titulo) {
                     mostrarErrorPDF();
                 }
             } catch (e) {
-                // Si hay error de CORS, asumir que se cargó correctamente
-                console.log('PDF cargado (CORS bloqueado, pero asumimos éxito)');
+                // PDF cargado (CORS bloqueado)
             }
         }, 1000);
     };
@@ -453,18 +433,15 @@ function startVoiceReading() {
         isVoiceReading = true;
         isVoicePaused = false;
         updateVoiceButtons();
-        console.log('Iniciando lectura de voz del PDF...');
     };
     
     currentUtterance.onend = function() {
         isVoiceReading = false;
         isVoicePaused = false;
         updateVoiceButtons();
-        console.log('Lectura de voz completada.');
     };
     
     currentUtterance.onerror = function(event) {
-        console.error('Error en speech synthesis:', event.error);
         isVoiceReading = false;
         isVoicePaused = false;
         updateVoiceButtons();
