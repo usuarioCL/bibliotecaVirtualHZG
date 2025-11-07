@@ -1,9 +1,11 @@
 <?php if (isset($header)): ?>
 <?= $header ?>
 <?= $navbar ?>
+<link rel="stylesheet" href="<?= base_url('assets/css/detalles.css') ?>">
 <div class="container mt-4">
 <?php else: ?>
 <!-- Vista para modal - sin header/footer -->
+<link rel="stylesheet" href="<?= base_url('assets/css/detalles.css') ?>">
 <div class="container-fluid p-0">
 <?php endif; ?>
     <?php if (isset($header)): ?>
@@ -29,15 +31,13 @@
                     <?php if (!empty($recurso['portada'])): ?>
                         <img src="<?= base_url(esc($recurso['portada'])) ?>?v=<?= time() ?>" 
                              alt="Portada de <?= esc($recurso['titulo']) ?>" 
-                             class="img-fluid rounded shadow-sm"
-                             style="max-height: 400px; width: auto;"
+                             class="img-fluid rounded shadow-sm detalles-portada"
                              onerror="console.error('Error cargando imagen:', this.src); this.src='<?= base_url('img/portada_default.png') ?>'"
                              onload="console.log('Imagen cargada correctamente:', this.src)">
                     <?php else: ?>
                         <img src="<?= base_url('img/portada_default.png') ?>" 
                              alt="Sin portada" 
-                             class="img-fluid rounded shadow-sm"
-                             style="max-height: 400px; width: auto;">
+                             class="img-fluid rounded shadow-sm detalles-portada">
                     <?php endif; ?>
                 </div>
             </div>
@@ -129,7 +129,7 @@
                             <h6 class="text-primary mb-3">Estado y Disponibilidad</h6>
                             <div class="row">
                                 <div class="col-md-4">
-                                    <div class="card border-0 bg-light">
+                                    <div class="card border-0 bg-light detalles-estado-card">
                                         <div class="card-body text-center">
                                             <h5 class="card-title text-<?= $recurso['estado'] === 'disponible' ? 'success' : 'warning' ?>">
                                                 <i class="fas fa-<?= $recurso['estado'] === 'disponible' ? 'check-circle' : 'exclamation-triangle' ?>"></i>
@@ -144,7 +144,7 @@
                                     </div>
                                 </div>
                                 <div class="col-md-4">
-                                    <div class="card border-0 bg-light">
+                                    <div class="card border-0 bg-light detalles-estado-card">
                                         <div class="card-body text-center">
                                             <h5 class="card-title text-info">
                                                 <i class="fas fa-boxes"></i>
@@ -159,7 +159,7 @@
                                     </div>
                                 </div>
                                 <div class="col-md-4">
-                                    <div class="card border-0 bg-light">
+                                    <div class="card border-0 bg-light detalles-estado-card">
                                         <div class="card-body text-center">
                                             <h5 class="card-title text-primary">
                                                 <i class="fas fa-id-card"></i>
@@ -242,15 +242,16 @@
                                     $idusuario = $usuario ? $usuario['idusuario'] : null;
                                     $esFavorito = $idusuario ? $favoritoModel->esFavorito($idusuario, $recurso['idrecurso']) : false;
                                     ?>
-                                    <button class="btn <?= $esFavorito ? 'btn-danger' : 'btn-outline-primary' ?>" 
-                                            id="btnFavorito" 
-                                            onclick="toggleFavorito(<?= $recurso['idrecurso'] ?>)">
-                                        <i class="fas fa-heart<?= $esFavorito ? '' : '-o' ?>"></i> 
+                                    <button class="btn <?= $esFavorito ? 'btn-danger' : 'btn-outline-primary' ?> btn-toggle-favorito" 
+                                            id="btnFavorito"
+                                            data-recurso-id="<?= isset($recurso['idrecurso']) ? $recurso['idrecurso'] : '0' ?>"
+                                            type="button">
+                                        <i class="<?= $esFavorito ? 'fas' : 'far' ?> fa-heart"></i> 
                                         <?= $esFavorito ? 'Quitar de Favoritos' : 'Agregar a Favoritos' ?>
                                     </button>
                                 <?php else: ?>
                                     <button class="btn btn-outline-primary" onclick="mostrarAlertaLogin('agregar a favoritos')">
-                                        <i class="fas fa-heart"></i> Agregar a Favoritos
+                                        <i class="far fa-heart"></i> Agregar a Favoritos
                                     </button>
                                 <?php endif; ?>
                                 
@@ -264,9 +265,17 @@
                                     </button>
                                 <?php endif; ?>
                                 
-                                <a href="<?= base_url('recursos') ?>" class="btn btn-outline-dark">
-                                    <i class="fas fa-arrow-left"></i> Volver a Recursos
-                                </a>
+                                <?php if (isset($header)): ?>
+                                    <!-- Vista normal - botón para ir a recursos -->
+                                    <a href="<?= base_url('recursos') ?>" class="btn btn-outline-dark">
+                                        <i class="fas fa-arrow-left"></i> Volver a Recursos
+                                    </a>
+                                <?php else: ?>
+                                    <!-- Vista modal - botón para cerrar modal -->
+                                    <button type="button" class="btn btn-outline-dark" data-bs-dismiss="modal">
+                                        <i class="fas fa-times"></i> Cerrar
+                                    </button>
+                                <?php endif; ?>
                             </div>
                         </div>
                     </div>
@@ -276,6 +285,17 @@
     </div>
 
 </div>
+
+<!-- Incluir módulo de favoritos -->
+<script src="<?= base_url('assets/js/modules/favoritosHandler.js') ?>"></script>
+<script>
+// Inicializar el handler de favoritos
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof FavoritosHandler !== 'undefined') {
+        window.favoritosHandler = new FavoritosHandler();
+    }
+});
+</script>
 
 <!-- Incluir modal-fix.js para SweetAlert2 z-index -->
 <script src="<?= base_url('assets/js/modal-fix.js') ?>"></script>
