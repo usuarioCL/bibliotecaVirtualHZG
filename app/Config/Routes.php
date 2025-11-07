@@ -95,8 +95,6 @@ $routes->get('Administrador/vistas/UsuariosRoles', 'AdminController::VistaUsuari
 $routes->get('admin/importar-datos', 'AdminController::importarDatos');
 $routes->get('admin/descargar-plantilla/(:segment)', 'AdminController::descargarPlantilla/$1');
 $routes->post('admin/preview-excel', 'AdminController::previewExcel');
-$routes->post('admin/preview-csv', 'AdminController::previewCsv');
-$routes->post('admin/procesar-importacion', 'AdminController::procesarImportacion');
 $routes->post('admin/procesar-importacion-excel', 'AdminController::procesarImportacionExcel');
 
 // Administración de datos - Respaldos
