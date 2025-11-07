@@ -17,7 +17,7 @@
                 <p class="text-muted mb-0 mt-1">Consulta el historial completo de todos los préstamos del sistema</p>
             </div>
             <div class="d-flex gap-2 flex-wrap">
-                <button type="button" class="btn btn-success btn-sm">
+                <button type="button" id="btnExportarExcel" class="btn btn-success btn-sm">
                     <i class="ti ti-file-excel"></i> Exportar Excel
                 </button>
                 <button type="button" class="btn btn-danger btn-sm" onclick="Historial.confirmarEliminarTodoHistorial()">
