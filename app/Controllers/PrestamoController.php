@@ -2777,13 +2777,27 @@ class PrestamoController extends Controller
                     ]);
                 }
                 
-                // Verificar si el préstamo está validado (aprobado)
-                if ($prestamo['fechahoravalidacion'] === null || $prestamo['fechahoravalidacion'] === '') {
-                    log_message('warning', 'PrestamoController::eliminarHistorial - Intento de eliminar préstamo no validado. ID: ' . $id . ', fechahoravalidacion: ' . ($prestamo['fechahoravalidacion'] ?? 'NULL'));
+                // Verificar si el préstamo está validado (aprobado) O cancelado
+                // Los préstamos cancelados no tienen fechahoravalidacion pero sí fechahoraretorno
+                $esPrestamoAprobado = ($prestamo['fechahoravalidacion'] !== null && $prestamo['fechahoravalidacion'] !== '');
+                $esPrestamoCancelado = ($prestamo['fechahoraretorno'] !== null && $prestamo['fechahoraretorno'] !== '' && 
+                                      ($prestamo['fechahoravalidacion'] === null || $prestamo['fechahoravalidacion'] === ''));
+                
+                if (!$esPrestamoAprobado && !$esPrestamoCancelado) {
+                    log_message('warning', 'PrestamoController::eliminarHistorial - Intento de eliminar préstamo no validado ni cancelado. ID: ' . $id . 
+                               ', fechahoravalidacion: ' . ($prestamo['fechahoravalidacion'] ?? 'NULL') . 
+                               ', fechahoraretorno: ' . ($prestamo['fechahoraretorno'] ?? 'NULL'));
                     return $this->response->setJSON([
                         'success' => false,
-                        'message' => 'No se puede eliminar un préstamo que no ha sido validado. Solo se pueden eliminar préstamos aprobados.'
+                        'message' => 'No se puede eliminar un préstamo que no ha sido validado o cancelado. Solo se pueden eliminar préstamos procesados.'
                     ]);
+                }
+                
+                // Log adicional para identificar el tipo de préstamo
+                if ($esPrestamoCancelado) {
+                    log_message('info', 'PrestamoController::eliminarHistorial - Eliminando préstamo cancelado. ID: ' . $id);
+                } else {
+                    log_message('info', 'PrestamoController::eliminarHistorial - Eliminando préstamo aprobado y devuelto. ID: ' . $id);
                 }
                 
                 // Usar transacción para eliminar todo relacionado
