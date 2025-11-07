@@ -3,7 +3,7 @@
  * Maneja la interacción con el usuario (modales, alertas, UI updates)
  */
 
-const SolicitudesUI = {
+var SolicitudesUI = SolicitudesUI || {
     /**
      * Muestra un loader con SweetAlert2
      * @param {string} titulo - Título del loader

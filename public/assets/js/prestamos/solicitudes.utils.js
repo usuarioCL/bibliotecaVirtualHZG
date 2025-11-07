@@ -3,7 +3,7 @@
  * Contiene funciones helper para formateo y manipulación de datos
  */
 
-const SolicitudesUtils = {
+var SolicitudesUtils = SolicitudesUtils || {
     /**
      * Formatea una fecha en formato dd/mm/yyyy
      * @param {string|Date} fecha - Fecha a formatear
@@ -98,10 +98,15 @@ const SolicitudesUtils = {
      * @returns {Array} Solicitudes disponibles
      */
     filtrarDisponibles(solicitudes) {
-        if (!Array.isArray(solicitudes)) return [];
+        if (!Array.isArray(solicitudes)) {
+            return [];
+        }
         
         return solicitudes.filter(s => {
-            return s.disponible == 1 || s.disponible === true || s.disponible === 'true';
+            return s.disponible == 1 || 
+                   s.disponible === true || 
+                   s.disponible === 'true' ||
+                   s.disponible === '1';
         });
     },
 
