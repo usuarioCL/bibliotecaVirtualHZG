@@ -1,4 +1,12 @@
-<!-- Encabezado de la página -->
+<?php if (isset($header)): ?>
+<?= $header ?>
+<?php endif; ?>
+
+<!-- Estilos específicos para recursos digitales -->
+<link rel="stylesheet" href="<?= base_url('assets/css/recursos-digitales-styles.css') ?>">
+
+<div class="container">
+    <!-- Encabezado de la página -->
 <div class="d-flex justify-content-between align-items-center">
     <div>
         <h4 class="mb-0">Recursos Digitales</h4>
@@ -852,3 +860,9 @@ function cerrarModalPDF() {
     currentPDFUrl = '';
 }
 </script>
+
+</div>
+
+<?php if (isset($footer)): ?>
+<?= $footer ?>
+<?php endif; ?>

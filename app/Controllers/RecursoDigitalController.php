@@ -38,17 +38,14 @@ class RecursoDigitalController extends BaseController
 
         $data['recursos_digitales'] = $query->getResult();
 
-        // Si es una petición AJAX (desde el sidebar), devolver solo el contenido sin layouts
-        if ($this->request->isAJAX()) {
-            return view('recursos_digitales/listar_ajax', $data);
+        // Si NO es AJAX, agregar layouts
+        if (!$this->request->isAJAX()) {
+            $data['navbar'] = view('layouts/navbar');
+            $data['header'] = view('layouts/header');
+            $data['footer'] = view('layouts/footer');
         }
 
-        // Si es una petición normal, devolver con layouts completos
-        $data['navbar'] = view('layouts/navbar');
-        $data['header'] = view('layouts/header');
-        $data['footer'] = view('layouts/footer');
-
-        return view('recursos_digitales/listar', $data);
+        return view('recursos_digitales/listar_ajax', $data);
     }
 
     public function eliminar($idrecurso = null)
