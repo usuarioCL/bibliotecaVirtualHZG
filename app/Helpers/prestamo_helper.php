@@ -9,13 +9,27 @@ if (!function_exists('calcularEstadoPrestamo')) {
      */
     function calcularEstadoPrestamo($prestamo)
     {
-        // Préstamo devuelto
+        // Verificar si fue renovado
+        $fueRenovado = !empty($prestamo['fue_renovado']) && $prestamo['fue_renovado'] == 1;
+        $renovaciones = $prestamo['renovaciones_count'] ?? $prestamo['renovaciones'] ?? 0;
+        
+        // Préstamo devuelto - SIEMPRE mostrar como devuelto independientemente de si fue renovado
         if (!empty($prestamo['fechahoraretorno'])) {
             return [
                 'estado' => 'devuelto',
                 'clase' => 'success',
                 'icono' => 'check',
                 'texto' => 'Devuelto'
+            ];
+        }
+
+        // Préstamo activo que fue renovado - SOLO mostrar renovado si está activo
+        if ($fueRenovado && $renovaciones > 0) {
+            return [
+                'estado' => 'renovado_activo',
+                'clase' => 'info',
+                'icono' => 'refresh',
+                'texto' => 'Renovado (' . $renovaciones . ')'
             ];
         }
 

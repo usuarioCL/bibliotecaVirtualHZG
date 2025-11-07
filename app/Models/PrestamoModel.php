@@ -69,7 +69,39 @@ class PrestamoModel extends Model
         
         $sql = "SELECT p.*, r.titulo, r.anio, r.isbn,
                        CONCAT(COALESCE(a.nomautor, ''), ' ', COALESCE(a.apeautor, '')) as nomautor,
-                       COALESCE(rf.portada, rd.portada) as portada
+                       COALESCE(rf.portada, rd.portada) as portada,
+                       COALESCE(
+                           (SELECT COUNT(*) 
+                            FROM renovaciones_prestamo rp 
+                            WHERE rp.idprestamo = p.idprestamo), 
+                           0
+                       ) as renovaciones,
+                       CASE 
+                           WHEN (SELECT COUNT(*) FROM renovaciones_prestamo rp WHERE rp.idprestamo = p.idprestamo) > 0 THEN 1
+                           ELSE 0
+                       END as fue_renovado,
+                       COALESCE(
+                           (SELECT COUNT(*) 
+                            FROM renovaciones_prestamo rp 
+                            WHERE rp.idprestamo = p.idprestamo), 
+                           0
+                       ) as renovaciones_count,
+                       CASE 
+                           WHEN p.fechahoraretorno IS NULL THEN 'Activo'
+                           WHEN p.fechahoraretorno IS NOT NULL AND p.fechahoravalidacion IS NOT NULL THEN 'Devuelto'
+                           WHEN p.fechahoravalidacion IS NULL THEN 'Pendiente'
+                           ELSE 'Completado'
+                       END as estado_final,
+                       CASE 
+                           WHEN p.fechahoraretorno IS NULL THEN 0
+                           WHEN p.fechahoraretorno <= COALESCE(p.fechadevolucion, DATE_ADD(p.fechaprestamo, INTERVAL 14 DAY)) THEN 0
+                           ELSE FLOOR(TIMESTAMPDIFF(HOUR, COALESCE(p.fechadevolucion, DATE_ADD(p.fechaprestamo, INTERVAL 14 DAY)), p.fechahoraretorno) / 24)
+                       END as dias_retraso,
+                       CASE 
+                           WHEN p.fechahoraretorno IS NULL THEN 0
+                           WHEN p.fechahoraretorno <= COALESCE(p.fechadevolucion, DATE_ADD(p.fechaprestamo, INTERVAL 14 DAY)) THEN 0
+                           ELSE TIMESTAMPDIFF(HOUR, COALESCE(p.fechadevolucion, DATE_ADD(p.fechaprestamo, INTERVAL 14 DAY)), p.fechahoraretorno)
+                       END as horas_retraso_total
                 FROM prestamos p
                 JOIN recursos r ON r.idrecurso = p.idrecurso
                 LEFT JOIN detautores da ON da.idrecurso = r.idrecurso
@@ -370,6 +402,8 @@ class PrestamoModel extends Model
     {
         $db = \Config\Database::connect();
         
+        log_message('info', 'PrestamoModel::getHistorialCompleto - Iniciando consulta');
+        
         // Consulta para préstamos devueltos (con información de sanciones/incidencias)
         $sqlDevueltos = "SELECT 
                     p.idprestamo as id,
@@ -385,6 +419,8 @@ class PrestamoModel extends Model
                     p.fechahoraretorno as fecha_devolucion,
                     p.fechadevolucion as fecha_vencimiento,
                     p.cantidad,
+                    p.fechahoravalidacion,
+                    NULL as motivo_cancelacion,
                     CASE 
                         WHEN p.fechahoraretorno IS NULL THEN 'Activo'
                         WHEN p.fechahoraretorno <= COALESCE(p.fechadevolucion, DATE_ADD(p.fechaprestamo, INTERVAL 14 DAY)) THEN 'Devuelto'
@@ -407,6 +443,16 @@ class PrestamoModel extends Model
                          WHERE rp.idprestamo = p.idprestamo), 
                         0
                     ) as renovaciones,
+                    CASE 
+                        WHEN (SELECT COUNT(*) FROM renovaciones_prestamo rp WHERE rp.idprestamo = p.idprestamo) > 0 THEN 1
+                        ELSE 0
+                    END as fue_renovado,
+                    COALESCE(
+                        (SELECT COUNT(*) 
+                         FROM renovaciones_prestamo rp 
+                         WHERE rp.idprestamo = p.idprestamo), 
+                        0
+                    ) as renovaciones_count,
                     'Bueno' as estado_ejemplar,
                     p.observaciones_devolucion as observaciones,
                     p.fechahoraretorno as fecha_registro,
@@ -448,11 +494,15 @@ class PrestamoModel extends Model
                             CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(s.motivo_rechazo, ': ', -1), ' ', 1) AS UNSIGNED)
                         ELSE 1 
                     END as cantidad,
+                    NULL as fechahoravalidacion,
+                    NULL as motivo_cancelacion,
                     'Rechazado' as estado_final,
                     0 as dias_prestamo,
                     0 as dias_retraso,
                     0 as horas_retraso_total,
                     0 as renovaciones,
+                    0 as fue_renovado,
+                    0 as renovaciones_count,
                     'N/A' as estado_ejemplar,
                     s.motivo_rechazo as observaciones,
                     s.fecha_procesado as fecha_registro,
@@ -471,11 +521,73 @@ class PrestamoModel extends Model
                     AND s.idprestamo IS NULL 
                     AND (s.motivo_rechazo IS NOT NULL AND s.motivo_rechazo NOT LIKE 'PRESTAMO_ELIMINADO_HISTORIAL:%')";
         
-        // Unir ambas consultas
-        $sql = "({$sqlDevueltos}) UNION ALL ({$sqlRechazadas}) ORDER BY fecha_registro DESC LIMIT 100";
+        // Consulta para préstamos aprobados que están activos
+        $sqlAprobados = "SELECT 
+                    p.idprestamo as id,
+                    CONCAT('PREST-', YEAR(p.fechaprestamo), '-', LPAD(p.idprestamo, 3, '0')) as codigo_prestamo,
+                    CONCAT(per.nombres, ' ', per.apellidos) as usuario,
+                    per.numerodoc as documento,
+                    r.titulo as recurso,
+                    CASE 
+                        WHEN rf.idrecurso IS NOT NULL THEN CONCAT('LIB-FIS-', LPAD(r.idrecurso, 3, '0'))
+                        ELSE CONCAT('LIB-DIG-', LPAD(r.idrecurso, 3, '0'))
+                    END as codigo_ejemplar,
+                    p.fechaprestamo as fecha_prestamo,
+                    NULL as fecha_devolucion,
+                    p.fechadevolucion as fecha_vencimiento,
+                    p.cantidad,
+                    p.fechahoravalidacion,
+                    NULL as motivo_cancelacion,
+                    CASE 
+                        WHEN (SELECT COUNT(*) FROM renovaciones_prestamo rp WHERE rp.idprestamo = p.idprestamo) > 0 THEN 'Renovado'
+                        ELSE 'Aprobado'
+                    END as estado_final,
+                    DATEDIFF(CURDATE(), DATE(p.fechaprestamo)) as dias_prestamo,
+                    0 as dias_retraso,
+                    0 as horas_retraso_total,
+                    COALESCE(
+                        (SELECT COUNT(*) 
+                         FROM renovaciones_prestamo rp 
+                         WHERE rp.idprestamo = p.idprestamo), 
+                        0
+                    ) as renovaciones,
+                    CASE 
+                        WHEN (SELECT COUNT(*) FROM renovaciones_prestamo rp WHERE rp.idprestamo = p.idprestamo) > 0 THEN 1
+                        ELSE 0
+                    END as fue_renovado,
+                    COALESCE(
+                        (SELECT COUNT(*) 
+                         FROM renovaciones_prestamo rp 
+                         WHERE rp.idprestamo = p.idprestamo), 
+                        0
+                    ) as renovaciones_count,
+                    'Activo' as estado_ejemplar,
+                    CONCAT('Préstamo aprobado el ', DATE_FORMAT(p.fechahoravalidacion, '%d/%m/%Y %H:%i')) as observaciones,
+                    p.fechahoravalidacion as fecha_registro,
+                    NULL as tipo_incidencia,
+                    NULL as detalle_incidencia,
+                    NULL as observaciones_incidencia,
+                    NULL as fecha_sancion,
+                    NULL as estado_sancion,
+                    0 as tiene_incidencia
+                FROM prestamos p
+                JOIN matriculas m ON m.idmatricula = p.idmatricula
+                JOIN personas per ON per.idpersona = m.idpersona
+                JOIN recursos r ON r.idrecurso = p.idrecurso
+                LEFT JOIN recursos_fisicos rf ON rf.idrecurso = r.idrecurso
+                WHERE p.fechahoraretorno IS NULL 
+                    AND p.fechahoravalidacion IS NOT NULL";
+        
+        // Unir las tres consultas
+        $sql = "({$sqlDevueltos}) UNION ALL ({$sqlRechazadas}) UNION ALL ({$sqlAprobados}) ORDER BY fecha_registro DESC LIMIT 100";
+        
+        log_message('info', 'PrestamoModel::getHistorialCompleto - Ejecutando consulta SQL');
+        log_message('debug', 'SQL: ' . $sql);
         
         $query = $db->query($sql);
         $historial = $query->getResultArray();
+        
+        log_message('info', 'PrestamoModel::getHistorialCompleto - Consulta ejecutada, registros: ' . count($historial));
         
         // Procesar observaciones del historial
         foreach ($historial as &$registro) {

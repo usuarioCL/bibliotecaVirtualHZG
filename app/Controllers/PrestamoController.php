@@ -621,8 +621,13 @@ class PrestamoController extends Controller
     public function historial()
     {
         try {
+            log_message('info', 'PrestamoController::historial - Iniciando consulta de historial');
+            
             $historial = $this->prestamoModel->getHistorialCompleto();
+            log_message('info', 'PrestamoController::historial - Registros obtenidos: ' . count($historial));
+            
             $estadisticas = $this->prestamoModel->getEstadisticasHistorial();
+            log_message('info', 'PrestamoController::historial - Estadísticas obtenidas');
 
             $data = [
                 'title' => 'Historial de Préstamos',
