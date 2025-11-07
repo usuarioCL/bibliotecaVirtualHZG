@@ -69,10 +69,5 @@
                 <i class="ti ti-refresh me-1"></i>Fue renovado <?= $registro['renovaciones_count'] ?? 1 ?> vez<?= ($registro['renovaciones_count'] ?? 1) != 1 ? 'es' : '' ?>
             </small>
         <?php endif; ?>
-    <?php else: ?>
-        <span class="badge bg-info-subtle text-info">
-            <i class="ti ti-clock me-1"></i>Anticipado
-        </span>
-        <small class="d-block text-muted mt-1"><?= abs($diasRetraso) ?> día<?= abs($diasRetraso) != 1 ? 's' : '' ?> antes</small>
     <?php endif; ?>
 <?php endif; ?>
