@@ -63,18 +63,18 @@ $imagenPrefix = $imagenPrefix ?? '';
         </div>
         
         <!-- Imagen del libro con texto overlay -->
-        <div class="position-relative card" style="height: 300px; overflow: hidden;">
+        <div class="position-relative" style="height: 300px; overflow: hidden;">
             <?php if (!empty($libro['portada'])): ?>
                 <?php 
                 $rutaCompleta = $imagenPrefix . $libro['portada'];
                 ?>
                 <img src="<?= $rutaCompleta ?>" 
                      class="card-img-top h-100 w-100" 
-                     style="object-fit: cover; border-top-left-radius: 0.375rem; border-top-right-radius: 0.375rem;" 
+                     style="object-fit: cover;" 
                      alt="<?= esc($libro['titulo']) ?>"
                      data-recurso-id="<?= $libro['idrecurso'] ?>">
             <?php else: ?>
-                <div class="bg-light h-100 d-flex align-items-center justify-content-center" style="border-top-left-radius: 0.375rem; border-top-right-radius: 0.375rem;">
+                <div class="bg-light h-100 d-flex align-items-center justify-content-center">
                     <div class="text-center text-muted">
                         <?php if ($esDigital): ?>
                             <i class="fas fa-file-pdf fa-2x mb-2 text-info"></i>

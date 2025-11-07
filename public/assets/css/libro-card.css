@@ -1,0 +1,152 @@
+/* 
+ * Estilos para las Tarjetas de Libros (Libro Card)
+ * Biblioteca Virtual HZG
+ */
+
+/* ========================================
+   TARJETAS DE LIBROS (CARDS)
+======================================== */
+.card {
+    border: none;
+    border-radius: 16px;
+    background: var(--soft-white, #FEFEFE);
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+}
+
+.card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(185, 28, 28, 0.15);
+}
+
+.card-title {
+    color: var(--institutional-red, #B91C1C);
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.card-text {
+    color: var(--text-dark, #374151);
+    font-size: 0.9rem;
+    line-height: 1.6;
+}
+
+.card:hover .card-title {
+    color: var(--dark-red, #7F1D1D);
+}
+
+/* Imagen del card */
+.card-img-top {
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+}
+
+/* Card body */
+.card-body {
+    padding: 1.25rem;
+    border-bottom-left-radius: 16px;
+    border-bottom-right-radius: 16px;
+}
+
+/* ========================================
+   BADGES Y ETIQUETAS EN CARDS
+======================================== */
+.card .badge {
+    font-size: 0.75rem;
+    padding: 0.4rem 0.75rem;
+    border-radius: 8px;
+    font-weight: 600;
+}
+
+.card .badge.bg-info {
+    background-color: #0ea5e9 !important;
+}
+
+.card .badge.bg-primary {
+    background-color: var(--institutional-red, #B91C1C) !important;
+}
+
+/* ========================================
+   OVERLAY Y POSICIONAMIENTO
+======================================== */
+.card .position-absolute {
+    z-index: 10;
+}
+
+.card .position-relative {
+    position: relative;
+}
+
+/* ========================================
+   SOMBRAS PARA CARDS
+======================================== */
+.card.shadow-sm {
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05) !important;
+}
+
+.card.shadow {
+    box-shadow: 0 4px 20px rgba(185, 28, 28, 0.08) !important;
+}
+
+.card.shadow-lg {
+    box-shadow: 0 8px 25px rgba(185, 28, 28, 0.15) !important;
+}
+
+/* ========================================
+   RESPONSIVE DESIGN PARA CARDS
+======================================== */
+@media (max-width: 768px) {
+    .card {
+        margin-bottom: 1rem;
+    }
+    
+    .card-body {
+        padding: 1rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .card-title {
+        font-size: 1rem;
+    }
+    
+    .card-text {
+        font-size: 0.85rem;
+    }
+}
+
+/* ========================================
+   ESTILOS ESPECÍFICOS PARA GRID DE LIBROS
+======================================== */
+.row .col-xl-2,
+.row .col-lg-3,
+.row .col-md-4,
+.row .col-sm-6 {
+    margin-bottom: 1.5rem;
+}
+
+/* Ajuste de altura completa para cards en grid */
+.card.h-100 {
+    height: 100% !important;
+}
+
+/* ========================================
+   CURSOR Y INTERACTIVIDAD
+======================================== */
+.card[style*="cursor: pointer"],
+.card[data-bs-toggle="modal"] {
+    cursor: pointer !important;
+}
+
+.card[data-bs-toggle="modal"]:hover {
+    cursor: pointer;
+}
+
+/* ========================================
+   ACCESIBILIDAD
+======================================== */
+.card:focus {
+    outline: 2px solid var(--institutional-gold, #D4AF37);
+    outline-offset: 2px;
+}

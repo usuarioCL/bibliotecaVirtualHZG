@@ -396,31 +396,8 @@ body {
 
 /* ========================================
    TARJETAS (CARDS)
+   Los estilos de las tarjetas de libros han sido movidos a libro-card.css
 ======================================== */
-.card {
-    border: none;
-    border-radius: 16px;
-    background: var(--soft-white);
-    transition: all 0.3s ease;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
-}
-
-.card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 8px 25px rgba(185, 28, 28, 0.15);
-}
-
-.card-title {
-    color: var(--institutional-red);
-    font-weight: 600;
-    margin-bottom: 1rem;
-}
-
-.card-text {
-    color: var(--text-dark);
-    font-size: 0.9rem;
-    line-height: 1.6;
-}
 
 /* ========================================
    COLORES INSTITUCIONALES
@@ -597,10 +574,6 @@ body {
 }
 
 /* Estados de hover mejorados */
-.card:hover .card-title {
-    color: var(--dark-red);
-}
-
 .nav-link:hover {
     text-decoration: none;
 }
