@@ -7,12 +7,10 @@
 
 <div class="container">
     <!-- Encabezado de la página -->
-<div class="d-flex justify-content-between align-items-center">
-    <div>
-        <h4 class="mb-0">Recursos Digitales</h4>
-        <p class="text-muted mb-0">Lista de recursos digitales disponibles en la biblioteca</p>
-    </div>
-    <div class="d-flex gap-2">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h4 class="mb-0">Recursos Digitales</h4>
+            <p class="text-muted mb-0">Lista de recursos digitales disponibles en la biblioteca</p>
         <a href="<?= base_url('/recurso-digital/pdf') ?>" class="btn btn-outline-secondary">
             <i class="ti ti-file-type-pdf"></i> Exportar PDF
         </a>
@@ -187,155 +185,6 @@
         </div>
     </div>
 </div>
-
-<style>
-.custom-modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 1050;
-}
-
-.custom-modal-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
-}
-
-.custom-modal-content {
-    position: relative;
-    background: white;
-    margin: 2% auto;
-    width: 95%;
-    max-width: 1200px;
-    max-height: 90vh;
-    border-radius: 8px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-    display: flex;
-    flex-direction: column;
-}
-
-.custom-modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1rem;
-    border-bottom: 1px solid #dee2e6;
-}
-
-.custom-modal-header h5 {
-    margin: 0;
-    font-size: 1.25rem;
-}
-
-.custom-modal-header .btn-close {
-    background: none;
-    border: none;
-    font-size: 1.5rem;
-    cursor: pointer;
-    padding: 0.5rem;
-    color: #6c757d;
-}
-
-.custom-modal-header .btn-close:hover {
-    color: #000;
-}
-
-.custom-modal-body {
-    padding: 0;
-    flex: 1;
-    overflow: hidden;
-}
-
-.custom-modal-footer {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 1rem;
-    padding: 1rem;
-    border-top: 1px solid #dee2e6;
-    background-color: #f8f9fa;
-}
-
-.voice-controls {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-}
-
-.voice-speed-control {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin-left: 1rem;
-}
-
-.voice-speed-control label {
-    margin: 0;
-    font-size: 0.875rem;
-    color: #6c757d;
-}
-
-.voice-speed-control input[type="range"] {
-    width: 80px;
-}
-
-.voice-speed-control span {
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: #495057;
-    min-width: 30px;
-}
-
-.main-controls {
-    display: flex;
-    gap: 0.5rem;
-}
-
-@media (max-width: 768px) {
-    .custom-modal-content {
-        width: 98%;
-        margin: 1% auto;
-        max-height: 95vh;
-    }
-}
-
-/* Mejoras para el visor de PDF */
-#pdfContainer {
-    position: relative;
-    overflow: hidden;
-}
-
-#pdfViewer {
-    transition: opacity 0.3s ease-in-out;
-}
-
-#pdfViewer.loading {
-    opacity: 0.5;
-}
-
-#pdfLoading {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 10;
-}
-
-#pdfError {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 10;
-}
-</style>
 
 <script>
 var currentPDFUrl = '';

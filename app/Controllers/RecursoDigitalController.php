@@ -45,7 +45,7 @@ class RecursoDigitalController extends BaseController
             $data['footer'] = view('layouts/footer');
         }
 
-        return view('recursos_digitales/listar_ajax', $data);
+        return view('recursos_digitales/listar', $data);
     }
 
     public function eliminar($idrecurso = null)
