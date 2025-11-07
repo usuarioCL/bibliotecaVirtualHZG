@@ -370,48 +370,7 @@ class PrestamoModel extends Model
     {
         $db = \Config\Database::connect();
         
-        // 1. Consulta para préstamos ACTIVOS (en curso)
-        $sqlActivos = "SELECT 
-                    p.idprestamo as id,
-                    CONCAT('PREST-', YEAR(p.fechaprestamo), '-', LPAD(p.idprestamo, 3, '0')) as codigo_prestamo,
-                    CONCAT(per.nombres, ' ', per.apellidos) as usuario,
-                    per.numerodoc as documento,
-                    r.titulo as recurso,
-                    CASE 
-                        WHEN rf.idrecurso IS NOT NULL THEN CONCAT('LIB-FIS-', LPAD(r.idrecurso, 3, '0'))
-                        ELSE CONCAT('LIB-DIG-', LPAD(r.idrecurso, 3, '0'))
-                    END as codigo_ejemplar,
-                    p.fechaprestamo as fecha_prestamo,
-                    NULL as fecha_devolucion,
-                    p.fechadevolucion as fecha_vencimiento,
-                    p.cantidad,
-                    'Activo' as estado_final,
-                    DATEDIFF(CURDATE(), DATE(p.fechaprestamo)) as dias_prestamo,
-                    0 as dias_retraso,
-                    0 as horas_retraso_total,
-                    COALESCE(
-                        (SELECT COUNT(*) 
-                         FROM renovaciones_prestamo rp 
-                         WHERE rp.idprestamo = p.idprestamo), 
-                        0
-                    ) as renovaciones,
-                    'En uso' as estado_ejemplar,
-                    NULL as observaciones,
-                    p.fechaprestamo as fecha_registro,
-                    NULL as tipo_incidencia,
-                    NULL as detalle_incidencia,
-                    NULL as observaciones_incidencia,
-                    NULL as fecha_sancion,
-                    NULL as estado_sancion,
-                    0 as tiene_incidencia
-                FROM prestamos p
-                JOIN matriculas m ON m.idmatricula = p.idmatricula
-                JOIN personas per ON per.idpersona = m.idpersona
-                JOIN recursos r ON r.idrecurso = p.idrecurso
-                LEFT JOIN recursos_fisicos rf ON rf.idrecurso = r.idrecurso
-                WHERE p.fechahoraretorno IS NULL";
-
-        // 2. Consulta para préstamos DEVUELTOS (con información de sanciones/incidencias)
+        // Consulta para préstamos devueltos (con información de sanciones/incidencias)
         $sqlDevueltos = "SELECT 
                     p.idprestamo as id,
                     CONCAT('PREST-', YEAR(p.fechaprestamo), '-', LPAD(p.idprestamo, 3, '0')) as codigo_prestamo,
@@ -427,15 +386,18 @@ class PrestamoModel extends Model
                     p.fechadevolucion as fecha_vencimiento,
                     p.cantidad,
                     CASE 
+                        WHEN p.fechahoraretorno IS NULL THEN 'Activo'
                         WHEN p.fechahoraretorno <= COALESCE(p.fechadevolucion, DATE_ADD(p.fechaprestamo, INTERVAL 14 DAY)) THEN 'Devuelto'
                         ELSE 'Devuelto con retraso'
                     END as estado_final,
-                    DATEDIFF(DATE(p.fechahoraretorno), DATE(p.fechaprestamo)) as dias_prestamo,
+                    DATEDIFF(COALESCE(DATE(p.fechahoraretorno), CURDATE()), DATE(p.fechaprestamo)) as dias_prestamo,
                     CASE 
+                        WHEN p.fechahoraretorno IS NULL THEN 0
                         WHEN p.fechahoraretorno <= COALESCE(p.fechadevolucion, DATE_ADD(p.fechaprestamo, INTERVAL 14 DAY)) THEN 0
                         ELSE FLOOR(TIMESTAMPDIFF(HOUR, COALESCE(p.fechadevolucion, DATE_ADD(p.fechaprestamo, INTERVAL 14 DAY)), p.fechahoraretorno) / 24)
                     END as dias_retraso,
                     CASE 
+                        WHEN p.fechahoraretorno IS NULL THEN 0
                         WHEN p.fechahoraretorno <= COALESCE(p.fechadevolucion, DATE_ADD(p.fechaprestamo, INTERVAL 14 DAY)) THEN 0
                         ELSE TIMESTAMPDIFF(HOUR, COALESCE(p.fechadevolucion, DATE_ADD(p.fechaprestamo, INTERVAL 14 DAY)), p.fechahoraretorno)
                     END as horas_retraso_total,
@@ -445,7 +407,7 @@ class PrestamoModel extends Model
                          WHERE rp.idprestamo = p.idprestamo), 
                         0
                     ) as renovaciones,
-                    'Devuelto' as estado_ejemplar,
+                    'Bueno' as estado_ejemplar,
                     p.observaciones_devolucion as observaciones,
                     p.fechahoraretorno as fecha_registro,
                     ts.tiposancion as tipo_incidencia,
@@ -466,83 +428,8 @@ class PrestamoModel extends Model
                     AND s.idtiposancion IN (2, 3)
                 LEFT JOIN tiposancion ts ON ts.idtiposancion = s.idtiposancion
                 WHERE p.fechahoraretorno IS NOT NULL";
-
-        // 3. Consulta para solicitudes PENDIENTES (sin procesar)
-        $sqlPendientes = "SELECT 
-                    s.idsolicitud as id,
-                    CONCAT('SOL-', YEAR(s.fecha_solicitud), '-', LPAD(s.idsolicitud, 3, '0')) as codigo_prestamo,
-                    CONCAT(per.nombres, ' ', per.apellidos) as usuario,
-                    per.numerodoc as documento,
-                    r.titulo as recurso,
-                    CASE 
-                        WHEN rf.idrecurso IS NOT NULL THEN CONCAT('LIB-FIS-', LPAD(r.idrecurso, 3, '0'))
-                        ELSE CONCAT('LIB-DIG-', LPAD(r.idrecurso, 3, '0'))
-                    END as codigo_ejemplar,
-                    s.fechaprestamo as fecha_prestamo,
-                    NULL as fecha_devolucion,
-                    s.fechadevolucion as fecha_vencimiento,
-                    1 as cantidad,
-                    'Pendiente' as estado_final,
-                    0 as dias_prestamo,
-                    0 as dias_retraso,
-                    0 as horas_retraso_total,
-                    0 as renovaciones,
-                    'Pendiente' as estado_ejemplar,
-                    NULL as observaciones,
-                    s.fecha_solicitud as fecha_registro,
-                    NULL as tipo_incidencia,
-                    NULL as detalle_incidencia,
-                    NULL as observaciones_incidencia,
-                    NULL as fecha_sancion,
-                    NULL as estado_sancion,
-                    0 as tiene_incidencia
-                FROM solicitud s
-                JOIN matriculas m ON m.idmatricula = s.idmatricula
-                JOIN personas per ON per.idpersona = m.idpersona
-                JOIN recursos r ON r.idrecurso = s.idrecurso
-                LEFT JOIN recursos_fisicos rf ON rf.idrecurso = r.idrecurso
-                WHERE s.validado = FALSE 
-                    AND s.idprestamo IS NULL";
-
-        // 4. Consulta para solicitudes APROBADAS (sin préstamo aún creado)
-        $sqlAprobadas = "SELECT 
-                    s.idsolicitud as id,
-                    CONCAT('SOL-', YEAR(s.fecha_solicitud), '-', LPAD(s.idsolicitud, 3, '0')) as codigo_prestamo,
-                    CONCAT(per.nombres, ' ', per.apellidos) as usuario,
-                    per.numerodoc as documento,
-                    r.titulo as recurso,
-                    CASE 
-                        WHEN rf.idrecurso IS NOT NULL THEN CONCAT('LIB-FIS-', LPAD(r.idrecurso, 3, '0'))
-                        ELSE CONCAT('LIB-DIG-', LPAD(r.idrecurso, 3, '0'))
-                    END as codigo_ejemplar,
-                    s.fechaprestamo as fecha_prestamo,
-                    NULL as fecha_devolucion,
-                    s.fechadevolucion as fecha_vencimiento,
-                    1 as cantidad,
-                    'Aprobado' as estado_final,
-                    0 as dias_prestamo,
-                    0 as dias_retraso,
-                    0 as horas_retraso_total,
-                    0 as renovaciones,
-                    'Aprobado' as estado_ejemplar,
-                    NULL as observaciones,
-                    s.fecha_procesado as fecha_registro,
-                    NULL as tipo_incidencia,
-                    NULL as detalle_incidencia,
-                    NULL as observaciones_incidencia,
-                    NULL as fecha_sancion,
-                    NULL as estado_sancion,
-                    0 as tiene_incidencia
-                FROM solicitud s
-                JOIN matriculas m ON m.idmatricula = s.idmatricula
-                JOIN personas per ON per.idpersona = m.idpersona
-                JOIN recursos r ON r.idrecurso = s.idrecurso
-                LEFT JOIN recursos_fisicos rf ON rf.idrecurso = r.idrecurso
-                WHERE s.validado = TRUE 
-                    AND s.idprestamo IS NULL 
-                    AND (s.motivo_rechazo IS NULL OR s.motivo_rechazo = '')";
         
-        // 5. Consulta para solicitudes RECHAZADAS
+        // Consulta para solicitudes rechazadas
         $sqlRechazadas = "SELECT 
                     s.idsolicitud as id,
                     CONCAT('SOL-', YEAR(s.fecha_solicitud), '-', LPAD(s.idsolicitud, 3, '0')) as codigo_prestamo,
@@ -580,32 +467,15 @@ class PrestamoModel extends Model
                 JOIN personas per ON per.idpersona = m.idpersona
                 JOIN recursos r ON r.idrecurso = s.idrecurso
                 LEFT JOIN recursos_fisicos rf ON rf.idrecurso = r.idrecurso
-                WHERE s.validado = TRUE 
+                WHERE s.validado = true 
                     AND s.idprestamo IS NULL 
                     AND (s.motivo_rechazo IS NOT NULL AND s.motivo_rechazo NOT LIKE 'PRESTAMO_ELIMINADO_HISTORIAL:%')";
         
-        // Unir todas las consultas ordenadas por prioridad y fecha
-        // IMPORTANTE: El orden importa para evitar duplicados
-        $sql = "({$sqlActivos}) 
-                UNION ALL ({$sqlPendientes}) 
-                UNION ALL ({$sqlAprobadas}) 
-                UNION ALL ({$sqlDevueltos}) 
-                UNION ALL ({$sqlRechazadas}) 
-                ORDER BY 
-                    CASE 
-                        WHEN estado_final = 'Activo' THEN 1 
-                        WHEN estado_final = 'Pendiente' THEN 2 
-                        WHEN estado_final = 'Aprobado' THEN 3 
-                        ELSE 4 
-                    END, 
-                    fecha_registro DESC 
-                LIMIT 150";
+        // Unir ambas consultas
+        $sql = "({$sqlDevueltos}) UNION ALL ({$sqlRechazadas}) ORDER BY fecha_registro DESC LIMIT 100";
         
         $query = $db->query($sql);
         $historial = $query->getResultArray();
-        
-        // DEBUG: Logging para monitoreo
-        log_message('debug', "Total registros en historial completo: " . count($historial));
         
         // Procesar observaciones del historial
         foreach ($historial as &$registro) {
@@ -668,49 +538,18 @@ class PrestamoModel extends Model
     {
         $db = \Config\Database::connect();
         
-        // Total de préstamos (todos los estados)
+        // Total de préstamos
         $totalPrestamos = $this->countAllResults();
         
-        // Estadísticas por estado
-        $activos = $db->query("
-            SELECT COUNT(*) as total 
-            FROM prestamos 
-            WHERE fechahoraretorno IS NULL
-        ")->getRow()->total;
-        
-        $devueltos = $db->query("
-            SELECT COUNT(*) as total 
-            FROM prestamos 
-            WHERE fechahoraretorno IS NOT NULL
-        ")->getRow()->total;
-        
-        $pendientes = $db->query("
+        // Total de solicitudes rechazadas
+        $totalRechazadas = $db->query("
             SELECT COUNT(*) as total 
             FROM solicitud 
-            WHERE validado = FALSE
+            WHERE validado = true AND idprestamo IS NULL
         ")->getRow()->total;
         
-        $aprobadas = $db->query("
-            SELECT COUNT(*) as total 
-            FROM solicitud 
-            WHERE validado = TRUE AND idprestamo IS NULL AND motivo_rechazo IS NULL
-        ")->getRow()->total;
-        
-        $rechazadas = $db->query("
-            SELECT COUNT(*) as total 
-            FROM solicitud 
-            WHERE validado = TRUE AND idprestamo IS NULL AND motivo_rechazo IS NOT NULL
-        ")->getRow()->total;
-        
-        $vencidos = $db->query("
-            SELECT COUNT(*) as total 
-            FROM prestamos 
-            WHERE fechahoraretorno IS NULL 
-            AND fechadevolucion < CURDATE()
-        ")->getRow()->total;
-        
-        // Total de registros (todos los estados)
-        $totalRegistros = $totalPrestamos + $pendientes + $aprobadas + $rechazadas;
+        // Total de registros (préstamos + rechazados)
+        $totalRegistros = $totalPrestamos + $totalRechazadas;
         
         // Préstamos de este mes (incluye rechazados)
         $esteMes = $db->query("
@@ -741,47 +580,21 @@ class PrestamoModel extends Model
             ) as monthly_stats
         ")->getRow()->promedio ?? 0;
         
-        // Préstamos de este mes (solo préstamos efectivos)
-        $esteMes = $db->query("
+        // Tasa de devolución (de los préstamos aprobados)
+        $totalDevueltos = $db->query("
             SELECT COUNT(*) as total 
             FROM prestamos 
-            WHERE MONTH(fechaprestamo) = MONTH(CURDATE()) 
-            AND YEAR(fechaprestamo) = YEAR(CURDATE())
+            WHERE fechahoraretorno IS NOT NULL
         ")->getRow()->total;
         
-        // Promedio mensual (últimos 6 meses) - solo préstamos
-        $promedioMensual = $db->query("
-            SELECT AVG(monthly_count) as promedio
-            FROM (
-                SELECT COUNT(*) as monthly_count
-                FROM prestamos
-                WHERE fechaprestamo >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
-                GROUP BY YEAR(fechaprestamo), MONTH(fechaprestamo)
-            ) as monthly_stats
-        ")->getRow()->promedio ?? 0;
-        
-        // Tasa de devolución (de los préstamos aprobados)
-        $tasaDevolucion = $totalPrestamos > 0 ? ($devueltos / $totalPrestamos) * 100 : 0;
-        
-        // Tasa de aprobación (solicitudes aprobadas vs rechazadas)
-        $totalSolicitudesProcesadas = $aprobadas + $rechazadas + $totalPrestamos;
-        $tasaAprobacion = $totalSolicitudesProcesadas > 0 ? 
-            (($aprobadas + $totalPrestamos) / $totalSolicitudesProcesadas) * 100 : 0;
+        $tasaDevolucion = $totalPrestamos > 0 ? ($totalDevueltos / $totalPrestamos) * 100 : 0;
         
         return [
             'total_registros' => $totalRegistros,
-            'activos' => $activos,
-            'devueltos' => $devueltos,
-            'pendientes' => $pendientes,
-            'aprobadas' => $aprobadas,
-            'rechazadas' => $rechazadas,
-            'vencidos' => $vencidos,
-            'este_mes' => $esteMes,
+            'este_mes' => $esteMesTotal,
             'promedio_mensual' => round($promedioMensual),
             'tasa_devolucion' => round($tasaDevolucion, 1),
-            'tasa_aprobacion' => round($tasaAprobacion, 1),
-            // Mantener compatibilidad con código existente
-            'total_rechazados' => $rechazadas
+            'total_rechazados' => $totalRechazadas
         ];
     }
 
