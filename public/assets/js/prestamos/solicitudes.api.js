@@ -155,7 +155,7 @@ var SolicitudesAPI = SolicitudesAPI || {
                 method: 'POST',
                 headers: this.config.headersJSON,
                 body: JSON.stringify({
-                    idsolicitud: solicitudId,
+                    idsolicitud_renovacion: solicitudId,
                     idprestamo: idprestamo
                 })
             });
@@ -185,7 +185,7 @@ var SolicitudesAPI = SolicitudesAPI || {
                 method: 'POST',
                 headers: this.config.headersJSON,
                 body: JSON.stringify({
-                    idsolicitud: solicitudId,
+                    idsolicitud_renovacion: solicitudId,
                     motivo_rechazo: motivo
                 })
             });
