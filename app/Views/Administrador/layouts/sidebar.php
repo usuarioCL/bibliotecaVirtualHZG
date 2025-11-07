@@ -136,7 +136,7 @@
         </li>
         <li class="sidebar-item">
           <a class="sidebar-link ajax-link" 
-             href="<?= base_url('historial-prestamos'); ?>"
+             href="<?= base_url('historial-prestamos/ajax'); ?>"
              title="Ver historial completo">
             <div class="d-flex align-items-center gap-3">
               <i class="ti ti-history fs-5"></i>

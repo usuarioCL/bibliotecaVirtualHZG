@@ -226,6 +226,7 @@ $routes->get('/prestamos', 'PrestamoController::index');                      //
 $routes->get('/solicitudes', 'PrestamoController::solicitudes');              // Solicitudes Pendientes
 $routes->get('/devoluciones', 'PrestamoController::devoluciones');            // Devoluciones
 $routes->get('/historial-prestamos', 'PrestamoController::historial');        // Historial Completo
+$routes->get('/historial-prestamos/ajax', 'PrestamoController::historialAjax'); // Historial Completo AJAX
 $routes->get('/historial-prestamos/exportar-excel', 'PrestamoController::exportarHistorialExcel'); // Exportar historial a Excel
 $routes->get('/prestamo/detalles/(:num)', 'PrestamoController::detalles/$1'); // Detalles de préstamo
 
