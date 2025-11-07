@@ -168,7 +168,9 @@ body {
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
     border-bottom: 1px solid var(--border-light);
     min-height: 70px;
+    max-height: none;
     padding: 0.75rem 0;
+    overflow: visible !important;
 }
 
 .navbar-brand {
@@ -223,10 +225,13 @@ body {
 /* Dropdown del usuario */
 .dropdown-toggle {
     border-radius: 25px !important;
-    max-width: 200px;
-    min-width: auto;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    min-width: 150px;
+    max-width: none !important;
+    overflow: visible !important;
+    text-overflow: clip;
+    white-space: nowrap;
+    height: auto !important;
+    padding: 0.5rem 1rem !important;
 }
 
 .dropdown-toggle::after {
@@ -235,8 +240,8 @@ body {
 }
 
 .dropdown-toggle span {
-    overflow: hidden;
-    text-overflow: ellipsis;
+    overflow: visible !important;
+    text-overflow: clip;
     white-space: nowrap;
 }
 
@@ -244,9 +249,10 @@ body {
     border: none;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
     border-radius: 12px;
-    overflow: hidden;
+    overflow: visible !important;
     min-width: 200px;
     margin-top: 0.5rem;
+    z-index: 1050;
 }
 
 .dropdown-item {
@@ -268,6 +274,25 @@ body {
 
 .dropdown-item:hover i {
     color: var(--institutional-red);
+}
+
+/* Área de usuario en navbar */
+.navbar-nav.ms-auto {
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.navbar-nav.ms-auto .nav-item {
+    height: auto;
+}
+
+/* Asegurar que el contenedor del navbar no corte contenido */
+.navbar .container {
+    overflow: visible !important;
+}
+
+.navbar-collapse {
+    overflow: visible !important;
 }
 
 /* Responsividad del navbar */
