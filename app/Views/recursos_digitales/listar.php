@@ -453,21 +453,14 @@ function loadPDFJSLibrary() {
             return;
         }
         
-        // Lista de CDNs alternativos (incluyendo versiones más estables)
         var cdnUrls = [
             'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js',
-            'https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.min.js',
-            'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.min.js',
-            'https://unpkg.com/pdfjs-dist@4.4.168/build/pdf.min.js',
-            'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.4.168/build/pdf.min.js'
+            'https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.min.js'
         ];
         
         var workerUrls = [
             'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js',
-            'https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js',
-            'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.worker.min.js',
-            'https://unpkg.com/pdfjs-dist@4.4.168/build/pdf.worker.min.js',
-            'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.4.168/build/pdf.worker.min.js'
+            'https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js'
         ];
         
         var currentIndex = 0;
@@ -483,14 +476,11 @@ function loadPDFJSLibrary() {
             
             script.onload = function() {
                 pdfjsLibLoaded = true;
-                // Configurar PDF.js worker con el mismo índice
                 pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrls[currentIndex];
-                console.log('PDF.js cargado desde:', cdnUrls[currentIndex]);
                 resolve();
             };
             
             script.onerror = function() {
-                console.warn('Error cargando PDF.js desde:', cdnUrls[currentIndex]);
                 currentIndex++;
                 tryLoadScript();
             };
@@ -536,16 +526,11 @@ function verPDF(url, titulo) {
         firstButton.focus();
     }
     
-    // Cargar PDF.js dinámicamente y luego extraer texto
     loadPDFJSLibrary().then(function() {
-        console.log('PDF.js cargado exitosamente, iniciando extracción de texto...');
         loadPDFForTextExtraction(secureUrl);
     }).catch(function(error) {
-        console.error('Error cargando PDF.js:', error);
-        // Usar texto de ejemplo si falla la carga de PDF.js
-        pdfTextContent = 'No se pudo cargar la librería PDF.js desde ningún CDN. Esto puede deberse a restricciones de red o CORS. La funcionalidad de voz está disponible con texto de ejemplo.';
+        pdfTextContent = 'No se pudo cargar la librería PDF.js. La funcionalidad de voz no está disponible.';
         isPdfLoaded = true;
-        console.log('Usando texto de ejemplo para la funcionalidad de voz');
     });
     
     // Manejar la carga del iframe
@@ -557,14 +542,12 @@ function verPDF(url, titulo) {
         // Verificar si realmente se cargó el PDF
         setTimeout(function() {
             try {
-                // Intentar acceder al contenido del iframe
                 var iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
                 if (!iframeDoc || iframeDoc.body === null || iframeDoc.body.innerHTML.trim() === '') {
                     mostrarErrorPDF();
                 }
             } catch (e) {
-                // Si hay error de CORS, asumir que se cargó correctamente
-                console.log('PDF cargado (CORS bloqueado, pero asumimos éxito)');
+                // Error de CORS esperado
             }
         }, 1000);
     };
@@ -582,24 +565,21 @@ function verPDF(url, titulo) {
 }
 
 function cerrarModalPDF() {
+    stopVoiceReading();
+    
     var modal = document.getElementById('modalPDF');
     modal.style.display = 'none';
-    
-    // Restaurar scroll del body
     document.body.style.overflow = 'auto';
     
-    // Limpiar el iframe y resetear estados
     var iframe = document.getElementById('pdfViewer');
     iframe.src = '';
     iframe.onload = null;
     iframe.onerror = null;
     
-    // Ocultar todos los elementos del modal
     document.getElementById('pdfViewer').style.display = 'none';
     document.getElementById('pdfError').style.display = 'none';
     document.getElementById('pdfLoading').style.display = 'none';
     
-    // Limpiar URL actual
     currentPDFUrl = '';
 }
 
@@ -625,16 +605,8 @@ document.addEventListener('keydown', function(event) {
     }
 });
 
-function verDetalles(id) {
-    // Aquí puedes implementar la lógica para cargar los detalles
-    document.getElementById('contenidoDetalles').innerHTML = '<p>Cargando detalles del recurso #' + id + '...</p>';
-    var modal = new bootstrap.Modal(document.getElementById('modalDetalles'));
-    modal.show();
-}
-
 function editarRecurso(id) {
-    // Aquí puedes implementar la lógica para editar
-    alert('Editar recurso #' + id);
+    window.location.href = '<?= base_url('recursos/editar') ?>/' + id;
 }
 
 function eliminarRecurso(id) {
@@ -739,27 +711,23 @@ function startVoiceReading() {
     // Intentar seleccionar una voz más amigable para niños
     selectChildFriendlyVoice();
     
-    // Eventos
     currentUtterance.onstart = function() {
         isVoiceReading = true;
         isVoicePaused = false;
         updateVoiceButtons();
-        console.log('Iniciando lectura de voz del PDF...');
     };
     
     currentUtterance.onend = function() {
         isVoiceReading = false;
         isVoicePaused = false;
         updateVoiceButtons();
-        console.log('Lectura de voz completada.');
     };
     
     currentUtterance.onerror = function(event) {
-        console.error('Error en speech synthesis:', event.error);
         isVoiceReading = false;
         isVoicePaused = false;
         updateVoiceButtons();
-        alert('Error al reproducir la voz: ' + event.error);
+        alert('Error al reproducir la voz.');
     };
     
     // Iniciar lectura
@@ -800,57 +768,33 @@ function changeVoiceSpeed(speed) {
 function selectChildFriendlyVoice() {
     if (!currentUtterance) return;
     
-    // Obtener todas las voces disponibles
     const voices = speechSynthesis.getVoices();
-    
-    // Voces preferidas para niños (más amigables)
-    const childFriendlyVoices = [
-        'Microsoft Sabina Desktop - Spanish (Mexico)',
-        'Microsoft Helena Desktop - Spanish (Spain)', 
-        'Google español',
-        'Microsoft Laura Desktop - Spanish (Spain)',
-        'Microsoft Monica Desktop - Spanish (Spain)',
-        'Microsoft Paulina Desktop - Spanish (Mexico)',
-        'Microsoft Teresa Desktop - Spanish (Spain)'
-    ];
-    
-    // Buscar una voz amigable para niños
     let selectedVoice = null;
     
-    // Primero intentar con las voces preferidas
-    for (const preferredVoice of childFriendlyVoices) {
-        selectedVoice = voices.find(voice => 
-            voice.name.includes('Sabina') || 
-            voice.name.includes('Helena') ||
-            voice.name.includes('Laura') ||
-            voice.name.includes('Monica') ||
-            voice.name.includes('Paulina') ||
-            voice.name.includes('Teresa') ||
-            (voice.name.toLowerCase().includes('google') && voice.lang.startsWith('es'))
-        );
-        if (selectedVoice) break;
-    }
+    selectedVoice = voices.find(voice => 
+        voice.name.includes('Sabina') || 
+        voice.name.includes('Helena') ||
+        voice.name.includes('Laura') ||
+        voice.name.includes('Monica') ||
+        voice.name.includes('Paulina') ||
+        voice.name.includes('Teresa') ||
+        (voice.name.toLowerCase().includes('google') && voice.lang.startsWith('es'))
+    );
     
-    // Si no se encuentra una voz preferida, buscar cualquier voz femenina en español
     if (!selectedVoice) {
         selectedVoice = voices.find(voice => 
             voice.lang.startsWith('es') && 
             (voice.name.toLowerCase().includes('female') || 
-             voice.name.toLowerCase().includes('woman') ||
-             voice.name.toLowerCase().includes('mujer') ||
-             voice.name.toLowerCase().includes('femenina'))
+             voice.name.toLowerCase().includes('mujer'))
         );
     }
     
-    // Si aún no se encuentra, usar cualquier voz en español
     if (!selectedVoice) {
         selectedVoice = voices.find(voice => voice.lang.startsWith('es'));
     }
     
-    // Aplicar la voz seleccionada
     if (selectedVoice) {
         currentUtterance.voice = selectedVoice;
-        console.log('Voz seleccionada para niños:', selectedVoice.name);
     }
 }
 
@@ -876,62 +820,40 @@ function updateVoiceButtons() {
 // ===== FUNCIONES DE PDF.js =====
 
 function loadPDFForTextExtraction(url) {
-    // Verificar que PDF.js esté cargado
     if (!pdfjsLibLoaded || typeof pdfjsLib === 'undefined') {
-        console.error('PDF.js no está cargado');
-        pdfTextContent = 'PDF.js no está disponible. Usando texto de ejemplo para demostrar la funcionalidad de voz.';
+        pdfTextContent = 'PDF.js no está disponible.';
         isPdfLoaded = true;
         return;
     }
     
-    // Resetear estado
     pdfDoc = null;
     pdfTextContent = '';
     isPdfLoaded = false;
     
-    console.log('Iniciando carga de PDF con PDF.js...');
-    
-    // Cargar PDF con PDF.js
     pdfjsLib.getDocument(url).promise.then(function(pdf) {
         pdfDoc = pdf;
-        console.log('PDF cargado con PDF.js:', pdf.numPages, 'páginas');
-        
-        // Extraer texto de todas las páginas
         extractTextFromAllPages();
-        
     }).catch(function(error) {
-        console.error('Error cargando PDF con PDF.js:', error);
-        
-        // Verificar si es un error de CORS
         if (error.name === 'UnknownErrorException' || error.message.includes('CORS') || error.message.includes('fetch')) {
-            pdfTextContent = 'No se pudo acceder al PDF debido a restricciones de CORS. Esto es normal en algunos servidores. La funcionalidad de voz está disponible con texto de ejemplo. Para una experiencia completa, el administrador debe configurar los headers CORS en el servidor.';
+            pdfTextContent = 'No se pudo acceder al PDF debido a restricciones de CORS.';
         } else {
-            pdfTextContent = 'No se pudo extraer texto del PDF. Usando texto de ejemplo para demostrar la funcionalidad de voz.';
+            pdfTextContent = 'No se pudo extraer texto del PDF.';
         }
-        
         isPdfLoaded = true;
-        console.log('Usando texto de ejemplo debido a error:', error.name || error.message);
     });
 }
 
 function extractTextFromAllPages() {
-    if (!pdfDoc) {
-        console.error('PDF no cargado');
-        return;
-    }
+    if (!pdfDoc) return;
     
     var totalPages = pdfDoc.numPages;
     var allText = '';
     var pagesProcessed = 0;
     
-    console.log('Extrayendo texto de', totalPages, 'páginas...');
-    
-    // Procesar cada página
     for (var pageNum = 1; pageNum <= totalPages; pageNum++) {
         pdfDoc.getPage(pageNum).then(function(page) {
             return page.getTextContent();
         }).then(function(textContent) {
-            // Extraer texto de la página
             var pageText = '';
             for (var i = 0; i < textContent.items.length; i++) {
                 pageText += textContent.items[i].str + ' ';
@@ -940,23 +862,16 @@ function extractTextFromAllPages() {
             allText += pageText + '\n\n';
             pagesProcessed++;
             
-            // Si hemos procesado todas las páginas
             if (pagesProcessed === totalPages) {
-                pdfTextContent = allText.trim();
+                pdfTextContent = allText.replace(/\s+/g, ' ').trim();
                 isPdfLoaded = true;
-                console.log('Texto extraído del PDF:', pdfTextContent.length, 'caracteres');
-                
-                // Limpiar texto (remover espacios excesivos, saltos de línea múltiples)
-                pdfTextContent = pdfTextContent.replace(/\s+/g, ' ').trim();
                 
                 if (pdfTextContent.length === 0) {
-                    pdfTextContent = 'Este PDF no contiene texto extraíble o está protegido.';
+                    pdfTextContent = 'Este PDF no contiene texto extraíble.';
                 }
             }
         }).catch(function(error) {
-            console.error('Error extrayendo texto de página:', error);
             pagesProcessed++;
-            
             if (pagesProcessed === totalPages) {
                 pdfTextContent = 'Error extrayendo texto del PDF.';
                 isPdfLoaded = true;
@@ -975,30 +890,6 @@ function extractTextFromPDF() {
     }
 }
 
-// Detener la voz cuando se cierra el modal
-function cerrarModalPDF() {
-    stopVoiceReading();
-    
-    var modal = document.getElementById('modalPDF');
-    modal.style.display = 'none';
-    
-    // Restaurar scroll del body
-    document.body.style.overflow = 'auto';
-    
-    // Limpiar el iframe y resetear estados
-    var iframe = document.getElementById('pdfViewer');
-    iframe.src = '';
-    iframe.onload = null;
-    iframe.onerror = null;
-    
-    // Ocultar todos los elementos del modal
-    document.getElementById('pdfViewer').style.display = 'none';
-    document.getElementById('pdfError').style.display = 'none';
-    document.getElementById('pdfLoading').style.display = 'none';
-    
-    // Limpiar URL actual
-    currentPDFUrl = '';
-}
 </script>
 
 <?= $footer ?>
