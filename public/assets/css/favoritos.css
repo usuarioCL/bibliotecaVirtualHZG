@@ -1,0 +1,217 @@
+/**
+ * favoritos.css
+ * Estilos específicos para la vista de favoritos
+ */
+
+/* Mejoras de responsividad para móviles */
+@media (max-width: 768px) {
+    /* Ocultar tabla en móviles */
+    .favoritos-table {
+        display: none;
+    }
+    
+    /* Mostrar vista de tarjetas en móviles */
+    .favoritos-mobile-cards {
+        display: block;
+    }
+    
+    /* Ajustar header de favoritos */
+    .favoritos-header-title {
+        font-size: 1.5rem;
+    }
+    
+    /* Tarjeta de estadísticas más compacta */
+    .favoritos-stats-card .card-body {
+        padding: 0.75rem 1rem !important;
+    }
+    
+    .favoritos-stats-card h3 {
+        font-size: 1.5rem !important;
+    }
+}
+
+/* Vista de tarjetas móvil */
+.favoritos-mobile-cards {
+    display: none;
+}
+
+.favorito-mobile-card {
+    margin-bottom: 1rem;
+    border: 1px solid #e0e0e0;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    background: white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.favorito-mobile-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.favorito-mobile-header {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.favorito-mobile-info h6 {
+    font-size: 1rem;
+    margin-bottom: 0.25rem;
+    font-weight: 600;
+}
+
+.favorito-mobile-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.favorito-mobile-detail {
+    display: flex;
+    align-items: center;
+}
+
+.favorito-mobile-detail-label {
+    font-weight: 600;
+    color: #6c757d;
+    min-width: 80px;
+    font-size: 0.875rem;
+}
+
+.favorito-mobile-detail-value {
+    flex: 1;
+}
+
+.favorito-mobile-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.favorito-mobile-actions .btn {
+    flex: 1;
+    min-width: calc(50% - 0.25rem);
+}
+
+/* Animación de salida para favoritos eliminados */
+@keyframes fadeOutLeft {
+    from {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+}
+
+.favorito-removing {
+    animation: fadeOutLeft 0.3s ease-out forwards;
+}
+
+/* Mejoras de accesibilidad */
+.btn:focus-visible {
+    outline: 2px solid #0d6efd;
+    outline-offset: 2px;
+}
+
+/* Loading states */
+.favorito-loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+/* Estado vacío responsive */
+@media (max-width: 576px) {
+    .favoritos-empty-state .btn-lg {
+        font-size: 0.9rem;
+        padding: 0.5rem 1rem;
+    }
+    
+    .favoritos-empty-state h4 {
+        font-size: 1.25rem;
+    }
+    
+    .favoritos-empty-state .lead {
+        font-size: 1rem;
+    }
+}
+
+/* Contador de favoritos animado */
+#contadorFavoritos {
+    transition: all 0.3s ease;
+}
+
+#contadorFavoritos.actualizado {
+    animation: pulseNumber 0.5s ease;
+}
+
+@keyframes pulseNumber {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.2);
+    }
+}
+
+/* Mejoras visuales para badges */
+.badge {
+    font-weight: 500;
+    padding: 0.35em 0.65em;
+}
+
+/* Botones de acción con mejor espaciado */
+.d-flex.gap-2 {
+    gap: 0.5rem !important;
+}
+
+/* Portada de libro con mejor aspect ratio */
+.favorito-portada {
+    border-radius: 0.25rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Hover effect en filas de tabla */
+.table-hover tbody tr:hover {
+    background-color: #f8f9fa;
+    cursor: pointer;
+}
+
+/* Modal mejorado */
+.modal-content {
+    border-radius: 0.5rem;
+}
+
+.modal-header {
+    border-top-left-radius: 0.5rem;
+    border-top-right-radius: 0.5rem;
+}
+
+/* Spinner personalizado */
+.spinner-border {
+    width: 3rem;
+    height: 3rem;
+    border-width: 0.3rem;
+}
+
+/* Responsive font sizes */
+@media (max-width: 576px) {
+    body {
+        font-size: 0.9rem;
+    }
+    
+    .table {
+        font-size: 0.85rem;
+    }
+    
+    .btn-sm {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+    }
+}
