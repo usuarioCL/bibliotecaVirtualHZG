@@ -6,6 +6,29 @@ class FavoritosHandler {
     constructor() {
         this.favorites = new Set();
         this.loadFavorites();
+        this.initEventListeners();
+    }
+    
+    /**
+     * Inicializa los event listeners
+     */
+    initEventListeners() {
+        // Event delegation para botones de favoritos
+        document.addEventListener('click', (e) => {
+            const button = e.target.closest('.btn-toggle-favorito, [onclick*="toggleFavorito"]');
+            if (button) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                const recursoId = button.getAttribute('data-recurso-id');
+                
+                if (recursoId && recursoId !== '0') {
+                    this.toggle(parseInt(recursoId));
+                } else {
+                    console.error('Botón de favorito sin data-recurso-id válido');
+                }
+            }
+        });
     }
     
     /**
@@ -28,6 +51,13 @@ class FavoritosHandler {
      * @param {number} recursoId ID del recurso
      */
     async toggle(recursoId) {
+        // Validar que se reciba el ID
+        if (!recursoId) {
+            console.error('Error: ID de recurso requerido');
+            this.showToast('Error: ID de recurso no válido', 'error');
+            return;
+        }
+        
         const button = this.getButtonByRecursoId(recursoId);
         
         if (!button) {
@@ -47,7 +77,7 @@ class FavoritosHandler {
                     'Content-Type': 'application/json',
                     'X-Requested-With': 'XMLHttpRequest'
                 },
-                body: JSON.stringify({ recurso_id: recursoId })
+                body: JSON.stringify({ idrecurso: recursoId })
             });
             
             if (!response.ok) {
@@ -57,19 +87,21 @@ class FavoritosHandler {
             const result = await response.json();
             
             if (result.success) {
-                // Actualizar estado
-                if (result.favorito) {
+                // Actualizar estado (el servidor devuelve 'agregado')
+                const esFavorito = result.agregado || result.favorito;
+                
+                if (esFavorito) {
                     this.add(recursoId);
                 } else {
                     this.remove(recursoId);
                 }
                 
-                // Actualizar UI
-                this.updateButton(button, result.favorito);
+                // Actualizar UI de TODOS los botones con este recurso-id
+                this.updateAllButtons(recursoId, esFavorito);
                 
                 // Mostrar toast de confirmación
                 this.showToast(
-                    result.favorito ? 'Agregado a favoritos' : 'Removido de favoritos',
+                    result.message || (esFavorito ? 'Agregado a favoritos' : 'Removido de favoritos'),
                     'success'
                 );
             } else {
@@ -161,16 +193,32 @@ class FavoritosHandler {
         button.disabled = false;
         
         if (isFavorite) {
-            button.innerHTML = '<i class="fas fa-heart"></i>';
-            button.classList.remove('btn-outline-danger');
+            button.innerHTML = '<i class="fas fa-heart"></i> Quitar de Favoritos';
+            button.classList.remove('btn-outline-primary', 'btn-outline-danger');
             button.classList.add('btn-danger');
             button.setAttribute('title', 'Quitar de favoritos');
         } else {
-            button.innerHTML = '<i class="far fa-heart"></i>';
-            button.classList.remove('btn-danger');
-            button.classList.add('btn-outline-danger');
+            button.innerHTML = '<i class="far fa-heart"></i> Agregar a Favoritos';
+            button.classList.remove('btn-danger', 'btn-outline-danger');
+            button.classList.add('btn-outline-primary');
             button.setAttribute('title', 'Agregar a favoritos');
         }
+    }
+    
+    /**
+     * Actualiza todos los botones de favorito para un recurso específico
+     * Esto asegura que todos los botones en la página se actualicen,
+     * incluyendo los que están en modales o duplicados
+     * @param {number} recursoId ID del recurso
+     * @param {boolean} isFavorite Si es favorito o no
+     */
+    updateAllButtons(recursoId, isFavorite) {
+        // Buscar solo BOTONES con este recurso-id (no otros elementos como imágenes)
+        const buttons = document.querySelectorAll(`button[data-recurso-id="${recursoId}"], button.btn-toggle-favorito[data-recurso-id="${recursoId}"]`);
+        
+        buttons.forEach(button => {
+            this.updateButton(button, isFavorite);
+        });
     }
     
     /**

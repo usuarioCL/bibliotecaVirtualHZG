@@ -232,6 +232,10 @@
 </div>
 
 <script>
+// Variables globales para mantener el contexto del modal
+let currentIdRecurso = null;
+let currentTitulo = null;
+
 function verDetalles(id) {
     // Aquí puedes implementar la lógica para cargar los detalles
     document.getElementById('contenidoDetalles').innerHTML = '<p>Cargando detalles del recurso #' + id + '...</p>';
@@ -240,6 +244,10 @@ function verDetalles(id) {
 }
 
 function verEjemplares(idrecurso, titulo) {
+    // Guardar el contexto actual
+    currentIdRecurso = idrecurso;
+    currentTitulo = titulo;
+    
     // Actualizar el título del modal
     document.getElementById('modalEjemplaresLabel').textContent = 'Ejemplares de: ' + titulo;
     
@@ -258,6 +266,20 @@ function verEjemplares(idrecurso, titulo) {
             document.getElementById('contenidoEjemplares').innerHTML = 
                 '<div class="alert alert-danger">Error al cargar los ejemplares. Por favor, inténtalo de nuevo.</div>';
         });
+}
+
+// Función para recargar el contenido del modal de ejemplares
+function recargarModalEjemplares() {
+    if (currentIdRecurso) {
+        fetch('<?= base_url('ejemplares-fisicos/modal/') ?>' + currentIdRecurso)
+            .then(response => response.text())
+            .then(html => {
+                document.getElementById('contenidoEjemplares').innerHTML = html;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+    }
 }
 
 function editarRecurso(id) {
@@ -453,10 +475,8 @@ document.addEventListener('submit', function(e) {
                         modalEditar.hide();
                     }
                     
-                    // Recargar la página para mostrar los cambios actualizados
-                    setTimeout(function() {
-                        location.reload();
-                    }, 300);
+                    // Recargar solo el contenido del modal de ejemplares sin cerrar
+                    recargarModalEjemplares();
                 });
             } else {
                 Swal.fire('Error', data.message, 'error');

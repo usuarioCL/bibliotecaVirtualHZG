@@ -30,25 +30,10 @@
     <?php if (session()->get('logged_in')): ?>
     <link rel="stylesheet" href="<?= base_url('assets/css/notificaciones.css') ?>">
     <?php endif; ?>
-    <style>
-        .sidebar {
-            position: fixed;
-            top: 0;
-            bottom: 0;
-            left: 0;
-            z-index: 100;
-            padding: 0;
-            box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
-        }
-        .main-content {
-            margin-left: 16.666667%;
-        }
-        .table {
-            margin-bottom: 0;
-        }
-        .table-responsive {
-            margin-bottom: 1rem;
-        }
-    </style>
+    <!-- Estilos institucionales de la Biblioteca Virtual HZG -->
+    <link rel="stylesheet" href="<?= base_url('assets/css/biblioteca-hzg.css') ?>">
+    <link rel="stylesheet" href="<?= base_url('assets/css/libro-card.css') ?>">
+    <link rel="stylesheet" href="<?= base_url('assets/css/components/pdf-viewer-modal.css') ?>">
+    <link rel="stylesheet" href="<?= base_url('assets/css/components/voice-controls.css') ?>">
 </head>
 <body class="d-flex flex-column min-vh-100">
