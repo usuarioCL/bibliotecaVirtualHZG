@@ -16,23 +16,17 @@ class HistorialUsuarioController extends BaseController
 
     /**
      * Vista principal del historial de usuarios
+     * Redirige a la versión AJAX (única vista usada)
      */
     public function index()
     {
-        // Verificar si es una petición AJAX
-        if ($this->request->isAJAX()) {
-            return $this->ajaxIndex();
-        }
-
-        $data = [
-            'title' => 'Historial de Usuarios'
-        ];
-
-        return view('Administrador/historial/index', $data);
+        // Redirigir a la versión AJAX que es la única que se usa
+        return redirect()->to(base_url('historial-usuarios/ajax'));
     }
 
     /**
      * Vista AJAX para el panel de administración
+     * Esta es la vista principal que se carga desde el dashboard
      */
     public function ajaxIndex()
     {
