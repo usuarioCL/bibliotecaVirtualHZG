@@ -27,6 +27,9 @@ class CatalogoController extends BaseController
         $categorias = $categoriaModel->findAll();
         $subcategorias = $subcategoriaModel->findAll();
 
+        // Niveles educativos disponibles
+        $niveles = ['Inicial', 'Primaria', 'Secundaria'];
+
         // Traemos libros para cada subcategoría
         $datosSub = [];
         foreach ($subcategorias as $sub) {
@@ -54,6 +57,7 @@ class CatalogoController extends BaseController
         $datos = [
             'categorias' => $categorias,
             'subcategorias' => $datosSub,
+            'niveles' => $niveles,
             'header' => view('layouts/header'),
             'footer' => view('layouts/footer'),
             'navbar' => view('layouts/navbar')
@@ -195,6 +199,63 @@ class CatalogoController extends BaseController
             
         } catch (\Exception $e) {
             log_message('error', 'Error en getSubcategoriasPorCategoria: ' . $e->getMessage());
+            $this->response->setContentType('application/json');
+            return $this->response->setJSON([
+                'error' => true,
+                'message' => 'Error interno del servidor'
+            ])->setStatusCode(500);
+        }
+    }
+
+    // Para AJAX: traer subcategorías + libros por nivel educativo
+    public function getSubcategoriasPorNivel($nivel)
+    {
+        try {
+            log_message('info', "getSubcategoriasPorNivel llamado con nivel: {$nivel}");
+            
+            // Configurar headers para JSON
+            $this->response->setContentType('application/json');
+            
+            $subcategoriaModel = new SubcategoriaModel();
+            $recursoModel = new RecursoModel();
+
+            // Obtener todas las subcategorías
+            $subcategorias = $subcategoriaModel->findAll();
+            $resultado = [];
+
+            foreach ($subcategorias as $sub) {
+                // Obtener recursos completos filtrados por nivel
+                $libros = $recursoModel->obtenerRecursosCompletos();
+                $libros = array_filter($libros, function($libro) use ($sub, $nivel) {
+                    return $libro['idsubcategoria'] == $sub['idsubcategoria'] && 
+                           isset($libro['nivel']) && 
+                           $libro['nivel'] == $nivel;
+                });
+
+                // Solo agregar subcategoría si tiene libros del nivel
+                if (count($libros) > 0) {
+                    // agregar autores a cada libro
+                    foreach ($libros as &$libro) {
+                        $libro['autores'] = $this->obtenerAutoresLibro($libro['idrecurso']);
+                    }
+                    
+                    // Asegurar que $libros sea un array indexado numéricamente
+                    $libros = array_values($libros);
+
+                    $resultado[] = [
+                        'subcategoria' => $sub['subcategoria'],
+                        'libros' => $libros
+                    ];
+                    
+                    log_message('info', "Subcategoría {$sub['subcategoria']}: " . count($libros) . " libros de nivel {$nivel}");
+                }
+            }
+
+            log_message('info', 'Resultado enviado con ' . count($resultado) . ' subcategorías para nivel ' . $nivel);
+            return $this->response->setJSON($resultado);
+            
+        } catch (\Exception $e) {
+            log_message('error', 'Error en getSubcategoriasPorNivel: ' . $e->getMessage());
             $this->response->setContentType('application/json');
             return $this->response->setJSON([
                 'error' => true,

@@ -148,6 +148,7 @@ $routes->post('/recursos/buscar-disponibles-ajax', 'RecursoController::buscarDis
 // Catalogo
 $routes->get('/catalogo', 'CatalogoController::index');
 $routes->get('catalogo/subcategorias/(:num)', 'CatalogoController::getSubcategoriasPorCategoria/$1');
+$routes->get('catalogo/nivel/(:alpha)', 'CatalogoController::getSubcategoriasPorNivel/$1');
 $routes->get('catalogo/mis-prestamos', 'CatalogoController::misPrestamos');
 $routes->get('catalogo/favoritos', 'CatalogoController::favoritos');
 $routes->get('catalogo/insertar-datos-prueba', 'CatalogoController::insertarDatosPrueba');

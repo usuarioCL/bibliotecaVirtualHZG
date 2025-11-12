@@ -24,7 +24,7 @@
                     <button type="button" class="btn btn-outline-info btn-sm" onclick="mostrarGuiaImportacion()">
                         <i class="ti ti-help"></i> Guía de Importación
                     </button>
-                    <button type="button" class="btn btn-success btn-sm" id="btn-descargar-plantilla">
+                    <button type="button" class="btn btn-success btn-sm" id="btn-descargar-plantilla-header">
                         <i class="ti ti-download"></i> Descargar Plantillas
                     </button>
                 </div>
@@ -343,6 +343,24 @@ $(document).ready(function() {
         });
     });
 
+    // Manejo de botones de descarga de plantillas con jQuery
+    $('#btn-descargar-plantilla, #btn-descargar-plantilla-header').on('click', function() {
+        console.log('jQuery: Botón descargar plantilla clickeado');
+        const tipoEntidad = $('#tipo_entidad').val();
+        
+        if (!tipoEntidad) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Selecciona el tipo de datos',
+                text: 'Primero debes seleccionar qué tipo de datos quieres importar.'
+            });
+            return;
+        }
+        
+        console.log('Descargando plantilla para:', tipoEntidad);
+        window.location.href = '<?= base_url('admin/descargar-plantilla') ?>/' + tipoEntidad;
+    });
+
     function mostrarPreview(data) {
         console.log('Mostrando vista previa con datos:', data);
         const tabla = $('#preview-table');
@@ -545,29 +563,38 @@ $(document).ready(function() {
 document.addEventListener('DOMContentLoaded', function() {
     console.log('=== DOM CONTENT LOADED ===');
     
-    // Backup para descargar plantilla
+    // Función común para descargar plantillas
+    function descargarPlantilla() {
+        console.log('Función descargar plantilla llamada');
+        const tipoEntidad = document.getElementById('tipo_entidad').value;
+        
+        if (!tipoEntidad) {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Selecciona el tipo de datos',
+                    text: 'Primero debes seleccionar qué tipo de datos quieres importar.'
+                });
+            } else {
+                alert('Primero debes seleccionar qué tipo de datos quieres importar.');
+            }
+            return;
+        }
+        
+        console.log('Descargando plantilla para:', tipoEntidad);
+        window.location.href = '<?= base_url('admin/descargar-plantilla') ?>/' + tipoEntidad;
+    }
+    
+    // Botón de descarga en el formulario
     const btnDescargar = document.getElementById('btn-descargar-plantilla');
     if (btnDescargar) {
-        btnDescargar.addEventListener('click', function() {
-            console.log('VANILLA JS: Botón descargar plantilla clickeado');
-            const tipoEntidad = document.getElementById('tipo_entidad').value;
-            
-            if (!tipoEntidad) {
-                if (typeof Swal !== 'undefined') {
-                    Swal.fire({
-                        icon: 'warning',
-                        title: 'Selecciona el tipo de datos',
-                        text: 'Primero debes seleccionar qué tipo de datos quieres importar.'
-                    });
-                } else {
-                    alert('Primero debes seleccionar qué tipo de datos quieres importar.');
-                }
-                return;
-            }
-            
-            console.log('Descargando:', tipoEntidad);
-            window.location.href = '<?= base_url('admin/descargar-plantilla') ?>/' + tipoEntidad;
-        });
+        btnDescargar.addEventListener('click', descargarPlantilla);
+    }
+    
+    // Botón de descarga en el header
+    const btnDescargarHeader = document.getElementById('btn-descargar-plantilla-header');
+    if (btnDescargarHeader) {
+        btnDescargarHeader.addEventListener('click', descargarPlantilla);
     }
     
     // Backup para vista previa

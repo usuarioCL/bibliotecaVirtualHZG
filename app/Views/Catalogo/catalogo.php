@@ -6,7 +6,7 @@
 
 <div class="container mt-4">
     <!-- Header de la página -->
-    <div class="row mb-4">
+    <div class="row ">
         <div class="col-12">
             <div class="text-start">
                 <h1 class="text-primary mb-2">
@@ -17,16 +17,36 @@
         </div>
     </div>
 
-    <!-- Filtros de categoría mejorados -->
+    <!-- Filtros de categoría y nivel -->
     <div class="row mb-4">
         <div class="col-12">
+            <div class="d-flex align-items-center mb-3">
+                <h5 class="text-secondary mb-0 me-3">
+                    <i class="fas fa-filter me-2"></i>Filtrar por:
+                </h5>
+            </div>
+            
             <div class="categorias-filtros">
-                <button class="btn-categoria active" data-id="0">
+                <button class="btn-categoria active" data-id="0" data-tipo="categoria">
                     <i class="fas fa-th-large me-2"></i>Todos
                 </button>
                 <?php foreach ($categorias as $cat): ?>
-                    <button class="btn-categoria" data-id="<?= $cat['idcategoria'] ?>">
+                    <button class="btn-categoria" data-id="<?= $cat['idcategoria'] ?>" data-tipo="categoria">
                         <i class="fas fa-folder me-2"></i><?= $cat['categoria'] ?>
+                    </button>
+                <?php endforeach; ?>
+                
+                <!-- Botones de Nivel Educativo -->
+                <?php 
+                $iconosNivel = [
+                    'Inicial' => 'fa-baby',
+                    'Primaria' => 'fa-child',
+                    'Secundaria' => 'fa-user-graduate'
+                ];
+                foreach ($niveles as $nivel): 
+                ?>
+                    <button class="btn-nivel" data-nivel="<?= $nivel ?>" data-tipo="nivel">
+                        <i class="fas <?= $iconosNivel[$nivel] ?> me-2"></i><?= $nivel ?>
                     </button>
                 <?php endforeach; ?>
             </div>
@@ -90,6 +110,7 @@
 window.catalogoConfig = {
     urls: {
         subcategorias: '<?= site_url('catalogo/subcategorias') ?>',
+        nivel: '<?= site_url('catalogo/nivel') ?>',
         detallesRecurso: '<?= base_url('recursos/detalles/') ?>'
     }
 };
