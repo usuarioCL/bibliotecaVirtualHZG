@@ -68,15 +68,48 @@
     $.get(url, function(html){ $('#contenedor-principal').html(html); });
   });
 
-  // Eliminar autor vía AJAX POST
+  // Eliminar autor vía AJAX POST con SweetAlert
   $(document).on('click', '.btn-eliminar-autor', function(){
     var id = $(this).data('id');
-    if (!confirm('¿Seguro que deseas eliminar este autor?')) return;
-    $.post('<?= base_url('autores/eliminar') ?>/' + id, function(){
-      // Recargar listado
-      $.get('<?= base_url('autores') ?>', function(html){ $('#contenedor-principal').html(html); });
-    }).fail(function(xhr){
-      alert(xhr.responseText || 'No se pudo eliminar el autor');
+
+    Swal.fire({
+      title: '¿Eliminar autor?',
+      text: 'Esta acción no se puede deshacer.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#6c757d',
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar'
+    }).then(function(result){
+      if (!result.isConfirmed) return;
+
+      Swal.fire({
+        title: 'Eliminando autor...',
+        allowOutsideClick: false,
+        didOpen: function(){
+          Swal.showLoading();
+        }
+      });
+
+      $.post('<?= base_url('autores/eliminar') ?>/' + id)
+        .done(function(){
+          Swal.fire({
+            icon: 'success',
+            title: 'Autor eliminado',
+            text: 'El autor se eliminó correctamente.'
+          }).then(function(){
+            $('#contenedor-principal').html('<div class="text-center py-5">Actualizando listado...</div>');
+            $.get('<?= base_url('autores') ?>', function(html){ $('#contenedor-principal').html(html); });
+          });
+        })
+        .fail(function(xhr){
+          Swal.fire({
+            icon: 'error',
+            title: 'No se pudo eliminar',
+            text: xhr.responseText || 'No se pudo eliminar el autor'
+          });
+        });
     });
   });
 

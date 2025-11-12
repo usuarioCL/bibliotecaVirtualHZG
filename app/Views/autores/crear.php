@@ -34,12 +34,32 @@
   $('#form-crear-autor').on('submit', function(e){
     e.preventDefault();
     var $form = $(this);
+
+    Swal.fire({
+      title: 'Guardando autor...',
+      allowOutsideClick: false,
+      didOpen: function(){
+        Swal.showLoading();
+      }
+    });
+
     $.post($form.attr('action'), $form.serialize())
       .done(function(){
-        $.get('<?= base_url('autores') ?>', function(html){ $('#contenedor-principal').html(html); });
+        Swal.fire({
+          icon: 'success',
+          title: 'Autor creado',
+          text: 'El autor se registró correctamente.'
+        }).then(function(){
+          $('#contenedor-principal').html('<div class="text-center py-5">Cargando autores...</div>');
+          $.get('<?= base_url('autores') ?>', function(html){ $('#contenedor-principal').html(html); });
+        });
       })
       .fail(function(xhr){
-        alert(xhr.responseText || 'No se pudo guardar');
+        Swal.fire({
+          icon: 'error',
+          title: 'No se pudo guardar',
+          text: xhr.responseText || 'Ocurrió un error al guardar el autor.'
+        });
       });
   });
 })();
