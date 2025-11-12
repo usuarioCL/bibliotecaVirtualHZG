@@ -46,7 +46,7 @@
                                     <i class="<?= $icon ?> fa-2x mb-3"></i>
                                     <h5 class="card-title"><?= esc($nivel) ?></h5>
                                     <p class="card-text flex-grow-1"><?= $descripcion ?></p>
-                                    <a href="<?= base_url('catalogo?nivel=' . urlencode($nivel)) ?>" class="btn btn-outline-primary">
+                                    <a href="<?= base_url('catalogo#nivel=' . urlencode($nivel)) ?>" class="btn btn-outline-primary">
                                         Explorar
                                     </a>
                                 </div>
@@ -74,7 +74,7 @@
                                 <div class="card-body text-center d-flex flex-column p-3">
                                     <i class="fas fa-bookmark fa-lg mb-2"></i>
                                     <h6 class="card-title flex-grow-1"><?= esc($categoria['categoria']) ?></h6>
-                                    <a href="<?= base_url('catalogo?categoria=' . urlencode($categoria['categoria'])) ?>" class="btn btn-sm btn-outline-primary">
+                                    <a href="<?= base_url('catalogo#categoria=' . $categoria['idcategoria']) ?>" class="btn btn-sm btn-outline-primary">
                                         Ver
                                     </a>
                                 </div>

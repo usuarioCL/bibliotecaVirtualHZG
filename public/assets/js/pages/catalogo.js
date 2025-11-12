@@ -8,6 +8,7 @@
 const CatalogoConfig = {
     urls: {
         subcategorias: null, // Se inicializa desde PHP
+        nivel: null, // Se inicializa desde PHP
         detallesRecurso: null // Se inicializa desde PHP
     },
     classes: {
@@ -19,6 +20,7 @@ const CatalogoConfig = {
         loading: '#loading',
         contenidoInicial: '#contenido-inicial',
         btnCategoria: '.btn-categoria',
+        btnNivel: '.btn-nivel',
         modalBody: '#libroModalBody',
         modal: '#libroModal'
     },
@@ -128,7 +130,7 @@ const CardGenerator = {
                 : '<i class="fas fa-book fa-2x mb-2"></i>';
             
             return `
-                <div class="libro-card__placeholder">
+                <div class="libro-card__placeholder bg-light">
                     <div class="text-center text-muted">
                         ${icono}
                         <small>Sin portada</small>
@@ -249,6 +251,11 @@ const CatalogoManager = {
             btn.addEventListener("click", (e) => this.handleCategoriaClick(e));
         });
         
+        // Eventos de botones de nivel educativo
+        document.querySelectorAll(CatalogoConfig.selectors.btnNivel).forEach(btn => {
+            btn.addEventListener("click", (e) => this.handleNivelClick(e));
+        });
+        
         // Limpiar modal al cerrar
         const modal = document.querySelector(CatalogoConfig.selectors.modal);
         if (modal) {
@@ -270,11 +277,32 @@ const CatalogoManager = {
         this.toggleBotones(false);
         
         // Actualizar estado visual
-        this.actualizarEstadoBotones(btn);
+        this.actualizarEstadoBotones(btn, 'categoria');
         
         // Cargar subcategorías
         const idCategoria = btn.dataset.id;
         this.cargarSubcategorias(idCategoria).finally(() => {
+            this.toggleBotones(true);
+        });
+    },
+
+    /**
+     * Maneja el click en botón de nivel educativo
+     */
+    handleNivelClick(event) {
+        const btn = event.currentTarget;
+        
+        if (btn.disabled) return;
+        
+        // Deshabilitar todos los botones
+        this.toggleBotones(false);
+        
+        // Actualizar estado visual
+        this.actualizarEstadoBotones(btn, 'nivel');
+        
+        // Cargar por nivel
+        const nivel = btn.dataset.nivel;
+        this.cargarPorNivel(nivel).finally(() => {
             this.toggleBotones(true);
         });
     },
@@ -286,17 +314,28 @@ const CatalogoManager = {
         document.querySelectorAll(CatalogoConfig.selectors.btnCategoria).forEach(b => {
             b.disabled = !habilitar;
         });
+        document.querySelectorAll(CatalogoConfig.selectors.btnNivel).forEach(b => {
+            b.disabled = !habilitar;
+        });
     },
     
     /**
      * Actualiza estado visual de botones
      */
-    actualizarEstadoBotones(btnActivo) {
+    actualizarEstadoBotones(btnActivo, tipo) {
+        // Desactivar todos los botones de categoría
         document.querySelectorAll(CatalogoConfig.selectors.btnCategoria).forEach(b => {
             b.classList.remove('btn-primary', 'btn-secondary', 'active');
             b.classList.add('btn-outline-primary');
         });
         
+        // Desactivar todos los botones de nivel
+        document.querySelectorAll(CatalogoConfig.selectors.btnNivel).forEach(b => {
+            b.classList.remove('btn-primary', 'btn-secondary', 'active');
+            b.classList.add('btn-outline-primary');
+        });
+        
+        // Activar el botón clickeado
         btnActivo.classList.remove('btn-outline-primary');
         const esInicio = btnActivo.dataset.id == '0';
         btnActivo.classList.add(esInicio ? 'btn-secondary' : 'btn-primary', 'active');
@@ -342,6 +381,42 @@ const CatalogoManager = {
             this.mostrarError(contenido, loading, error);
         });
     },
+
+    /**
+     * Carga subcategorías por nivel educativo
+     */
+    cargarPorNivel(nivel) {
+        const contenido = document.querySelector(CatalogoConfig.selectors.contenido);
+        const loading = document.querySelector(CatalogoConfig.selectors.loading);
+        const contenidoInicial = document.querySelector(CatalogoConfig.selectors.contenidoInicial);
+        
+        // Mostrar loading
+        this.mostrarLoading(contenido, loading, contenidoInicial);
+        
+        const url = `${CatalogoConfig.urls.nivel}/${nivel}`;
+        
+        return fetch(url, {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            const html = this.generarHTMLSubcategorias(data, nivel);
+            this.actualizarContenido(contenido, loading, contenidoInicial, html);
+        })
+        .catch(error => {
+            ErrorHandler.registrar(error, 'cargarPorNivel');
+            this.mostrarError(contenido, loading, error);
+        });
+    },
     
     /**
      * Muestra el contenido inicial
@@ -375,9 +450,10 @@ const CatalogoManager = {
     /**
      * Genera HTML de subcategorías
      */
-    generarHTMLSubcategorias(data) {
+    generarHTMLSubcategorias(data, nivelFiltro = null) {
         if (!data || data.length === 0) {
-            return ErrorHandler.estadoVacio('No se encontraron subcategorías');
+            const mensajeFiltro = nivelFiltro ? ` para el nivel ${nivelFiltro}` : '';
+            return ErrorHandler.estadoVacio(`No se encontraron recursos${mensajeFiltro}`);
         }
         
         let html = '';
@@ -479,6 +555,25 @@ document.addEventListener('DOMContentLoaded', function() {
     // La configuración de URLs se pasa desde PHP
     if (typeof window.catalogoConfig !== 'undefined') {
         CatalogoManager.init(window.catalogoConfig);
+        
+        // Verificar si hay un filtro en el hash de la URL
+        if (window.location.hash) {
+            const hash = window.location.hash.substring(1); // Remover el #
+            
+            if (hash.startsWith('nivel=')) {
+                const nivel = decodeURIComponent(hash.split('=')[1]);
+                const btnNivel = document.querySelector(`[data-nivel="${nivel}"]`);
+                if (btnNivel) {
+                    setTimeout(() => btnNivel.click(), 100);
+                }
+            } else if (hash.startsWith('categoria=')) {
+                const idCategoria = hash.split('=')[1];
+                const btnCategoria = document.querySelector(`[data-id="${idCategoria}"][data-tipo="categoria"]`);
+                if (btnCategoria) {
+                    setTimeout(() => btnCategoria.click(), 100);
+                }
+            }
+        }
     } else {
         console.warn('No se encontró configuración del catálogo');
     }
