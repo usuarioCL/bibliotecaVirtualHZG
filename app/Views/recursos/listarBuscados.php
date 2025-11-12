@@ -6,7 +6,7 @@
     <!-- Hero section con buscador -->
     <div class="py-4 border-bottom">
         <form action="<?= base_url('recursos/buscarRecursos') ?>" method="get" class="d-flex justify-content-end align-items-center">
-            <div class="input-group input-group-lg w-50 ">
+            <div class="input-group input-group-lg w-75">
                 <input 
                     type="search" 
                     name="query" 
