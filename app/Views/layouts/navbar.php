@@ -27,7 +27,7 @@
                 <?php if (session()->get('logged_in')): ?>
                 <li class="nav-item">
                     <a class="nav-link" href="<?= site_url('catalogo/mis-prestamos') ?>">
-                        <i class="fas fa-book"></i> Mis Préstamos
+                        <i class="fas fa-book"></i> Préstamos
                     </a>
                 </li>
                 <li class="nav-item">
@@ -38,7 +38,7 @@
                 <?php endif; ?>
                 <li class="nav-item">
                     <a class="nav-link" href="/sobre-plataforma">
-                        <i class="fas fa-info-circle"></i> Sobre La Plataforma
+                        <i class="fas fa-info-circle"></i> Acerca de
                     </a>
                 </li>
             </ul>
@@ -47,16 +47,16 @@
             <div class="navbar-nav ms-auto">
                 <?php if (session()->get('logged_in')): ?>
                 <!-- Campanita de Notificaciones -->
-                <div class="nav-item dropdown me-3">
+                <div class="nav-item dropdown me-2">
                     <a class="nav-link position-relative" href="#" role="button" id="notificacionesDropdown" 
                        data-bs-toggle="dropdown" aria-expanded="false" 
                        title="Notificaciones">
-                        <i class="fas fa-bell" style="font-size: 1.3rem; color: var(--primary-color, #d9534f);"></i>
-                        <span id="badge-notificaciones" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="display: none; font-size: 0.65rem;">
+                        <i class="fas fa-bell"></i>
+                        <span id="badge-notificaciones" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
                             0
                         </span>
                     </a>
-                    <div class="dropdown-menu dropdown-menu-end notificaciones-dropdown" aria-labelledby="notificacionesDropdown" style="width: 350px; max-height: 500px; overflow-y: auto;">
+                    <div class="dropdown-menu dropdown-menu-end notificaciones-dropdown" aria-labelledby="notificacionesDropdown">
                         <div class="dropdown-header d-flex justify-content-between align-items-center border-bottom pb-2">
                             <h6 class="mb-0"><i class="fas fa-bell me-2"></i>Notificaciones</h6>
                             <div>
@@ -79,12 +79,10 @@
                 </div>
                 
                 <div class="nav-item dropdown">
-                    <a class="btn btn-outline-primary dropdown-toggle d-flex align-items-center" 
+                    <a class="nav-link"
                        href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                         <i class="fas fa-user-circle me-2"></i>
-                        <span class="d-inline-block text-truncate" style="max-width: 120px;">
-                            <?= esc(session()->get('usuario')); ?>
-                        </span>
+                        <?= esc(session()->get('usuario')); ?>
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end">
                         <li>
