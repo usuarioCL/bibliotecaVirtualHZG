@@ -2,10 +2,6 @@
 <?= $header; ?>
 <?= $navbar; ?>
 
-<!-- Estilos institucionales de la Biblioteca Virtual HZG -->
-<link rel="stylesheet" href="<?= base_url('assets/css/biblioteca-hzg.css') ?>">
-<link rel="stylesheet" href="<?= base_url('assets/css/libro-card.css') ?>">
-
 <div class="container">
     <!-- Hero section con buscador -->
     <div class="py-4 border-bottom">
@@ -49,12 +45,16 @@
                 </div>
                 <div class="mb-3">
                     <?= form_label('Subcategoría', 'subcategoria', ['class' => 'form-label']) ?>
-                    <?= form_dropdown(
-                        'subcategoria',
-                        ['' => 'Todas'] + array_column($subcategorias, 'subcategoria', 'idsubcategoria'),
-                        $filtros['subcategoria'] ?? '',
-                        ['class' => 'form-select', 'id' => 'subcategoria']
-                    ) ?>
+                    <select name="subcategoria" id="subcategoria" class="form-select">
+                        <option value="">Todas</option>
+                        <?php foreach ($subcategorias as $sub): ?>
+                            <option value="<?= $sub['idsubcategoria'] ?>" 
+                                    data-categoria="<?= $sub['idcategoria'] ?>"
+                                    <?= (isset($filtros['subcategoria']) && $filtros['subcategoria'] == $sub['idsubcategoria']) ? 'selected' : '' ?>>
+                                <?= esc($sub['subcategoria']) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
                 </div>
                 <div class="mb-3">
                     <?= form_label('Editorial', 'editorial', ['class' => 'form-label']) ?>
@@ -84,20 +84,6 @@
                         ['' => 'Todos'] + array_column($tiposrecurso, 'tiporecurso', 'idtiporecurso'),
                         $filtros['tiporecurso'] ?? '',
                         ['class' => 'form-select', 'id' => 'tiporecurso']
-                    ) ?>
-                </div>
-                <div class="mb-3">
-                    <?= form_label('Estado', 'estado', ['class' => 'form-label']) ?>
-                    <?= form_dropdown(
-                        'estado',
-                        [
-                            '' => 'Todos',
-                            'disponible' => 'Disponible',
-                            'prestado' => 'Prestado',
-                            'perdido' => 'Perdido'
-                        ],
-                        $filtros['estado'] ?? '',
-                        ['class' => 'form-select', 'id' => 'estado']
                     ) ?>
                 </div>
                 <?= form_submit('filtrar', 'Filtrar', ['class' => 'btn btn-primary w-100']) ?>

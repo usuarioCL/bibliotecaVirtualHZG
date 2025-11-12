@@ -143,6 +143,7 @@ $routes->group('autores', function($routes) {
 // Buscar recursos
 $routes->get('/recursos/buscarRecursos', 'RecursoController::buscarRecursos');
 $routes->get('/recursos/filtrosBusqueda', 'RecursoController::filtrosBusqueda');
+$routes->get('/recursos/subcategorias-por-categoria', 'RecursoController::getSubcategoriasPorCategoria');
 $routes->post('/recursos/buscar-disponibles-ajax', 'RecursoController::buscarDisponiblesAjax'); // Buscar recursos disponibles para préstamos (AJAX)
 
 // Catalogo

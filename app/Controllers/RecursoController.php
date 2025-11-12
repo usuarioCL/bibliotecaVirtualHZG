@@ -994,6 +994,36 @@ public function actualizar($idrecurso)
     }
 
     /**
+     * Obtener subcategorías por categoría (para filtros en cascada)
+     */
+    public function getSubcategoriasPorCategoria()
+    {
+        $idcategoria = $this->request->getGet('idcategoria');
+        
+        if (!$idcategoria) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'ID de categoría requerido'
+            ]);
+        }
+
+        try {
+            $subcategoriaModel = new SubcategoriaModel();
+            $subcategorias = $subcategoriaModel->where('idcategoria', $idcategoria)->findAll();
+            
+            return $this->response->setJSON([
+                'success' => true,
+                'subcategorias' => $subcategorias
+            ]);
+        } catch (\Exception $e) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Error al obtener subcategorías: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
      * Método temporal para limpiar rutas de imágenes incorrectas
      */
     public function limpiarRutasImagenes()

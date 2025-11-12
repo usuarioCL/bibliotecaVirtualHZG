@@ -50,6 +50,7 @@ class BusquedaHandler {
         this.setupResetButton();
         this.setupLibroClick();
         this.setupModalCleanup();
+        this.setupCategoriaFilter();
     }
     
     /**
@@ -97,8 +98,115 @@ class BusquedaHandler {
                 if (!this.filtersForm) return;
                 
                 this.filtersForm.reset();
+                // Resetear subcategorías al valor por defecto (todas)
+                this.resetSubcategorias();
                 this.loadResults(this.filtersForm.action);
             }, 50);
+        });
+    }
+
+    /**
+     * Configura el filtro en cascada de categoría -> subcategoría
+     */
+    setupCategoriaFilter() {
+        const categoriaSelect = document.getElementById('categoria');
+        const subcategoriaSelect = document.getElementById('subcategoria');
+        
+        if (!categoriaSelect || !subcategoriaSelect) return;
+        
+        // Guardar las subcategorías originales
+        this.todasSubcategorias = Array.from(subcategoriaSelect.options).map(option => ({
+            value: option.value,
+            text: option.text,
+            categoria: option.getAttribute('data-categoria')
+        }));
+        
+        categoriaSelect.addEventListener('change', async (e) => {
+            const idcategoria = e.target.value;
+            
+            if (!idcategoria) {
+                // Si no hay categoría seleccionada, mostrar todas las subcategorías
+                this.resetSubcategorias();
+                return;
+            }
+            
+            // Cargar subcategorías de la categoría seleccionada
+            await this.loadSubcategorias(idcategoria);
+        });
+    }
+
+    /**
+     * Carga las subcategorías de una categoría específica
+     */
+    async loadSubcategorias(idcategoria) {
+        const subcategoriaSelect = document.getElementById('subcategoria');
+        if (!subcategoriaSelect) return;
+        
+        try {
+            // Mostrar loading
+            subcategoriaSelect.disabled = true;
+            subcategoriaSelect.innerHTML = '<option value="">Cargando...</option>';
+            
+            const baseUrl = window.APP_CONFIG?.baseUrl || '/';
+            const url = `${baseUrl}recursos/subcategorias-por-categoria?idcategoria=${idcategoria}`;
+            
+            const response = await fetch(url, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            
+            if (!response.ok) {
+                throw new Error('Error al cargar subcategorías');
+            }
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                // Limpiar el select
+                subcategoriaSelect.innerHTML = '<option value="">Todas</option>';
+                
+                // Agregar las subcategorías de la categoría seleccionada
+                data.subcategorias.forEach(sub => {
+                    const option = document.createElement('option');
+                    option.value = sub.idsubcategoria;
+                    option.text = sub.subcategoria;
+                    subcategoriaSelect.appendChild(option);
+                });
+            } else {
+                this.resetSubcategorias();
+                console.error('Error:', data.message);
+            }
+            
+        } catch (error) {
+            console.error('Error al cargar subcategorías:', error);
+            this.resetSubcategorias();
+        } finally {
+            subcategoriaSelect.disabled = false;
+        }
+    }
+
+    /**
+     * Resetea el select de subcategorías a su estado original
+     */
+    resetSubcategorias() {
+        const subcategoriaSelect = document.getElementById('subcategoria');
+        if (!subcategoriaSelect) return;
+        
+        // Si no tenemos las subcategorías guardadas, solo reseteamos
+        if (!this.todasSubcategorias || this.todasSubcategorias.length === 0) {
+            subcategoriaSelect.selectedIndex = 0;
+            return;
+        }
+        
+        // Restaurar todas las subcategorías
+        subcategoriaSelect.innerHTML = '';
+        this.todasSubcategorias.forEach(sub => {
+            const option = document.createElement('option');
+            option.value = sub.value;
+            option.text = sub.text;
+            if (sub.categoria) {
+                option.setAttribute('data-categoria', sub.categoria);
+            }
+            subcategoriaSelect.appendChild(option);
         });
     }
     
