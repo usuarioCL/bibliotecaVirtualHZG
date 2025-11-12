@@ -20,17 +20,15 @@
     <!-- Filtros de categoría mejorados -->
     <div class="row mb-4">
         <div class="col-12">
-            <div class="d-flex justify-content-start">
-                <div class="btn-group flex-wrap" role="group" aria-label="Filtros de categoría">
-                    <button class="btn btn-secondary btn-categoria active" data-id="0">
-                        <i class="fas fa-th-large me-2"></i>Todos
+            <div class="categorias-filtros">
+                <button class="btn-categoria active" data-id="0">
+                    <i class="fas fa-th-large me-2"></i>Todos
+                </button>
+                <?php foreach ($categorias as $cat): ?>
+                    <button class="btn-categoria" data-id="<?= $cat['idcategoria'] ?>">
+                        <i class="fas fa-folder me-2"></i><?= $cat['categoria'] ?>
                     </button>
-                    <?php foreach ($categorias as $cat): ?>
-                        <button class="btn btn-outline-primary btn-categoria" data-id="<?= $cat['idcategoria'] ?>">
-                            <i class="fas fa-folder me-2"></i><?= $cat['categoria'] ?>
-                        </button>
-                    <?php endforeach; ?>
-                </div>
+                <?php endforeach; ?>
             </div>
         </div>
     </div>
