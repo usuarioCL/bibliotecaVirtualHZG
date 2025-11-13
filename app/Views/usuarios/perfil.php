@@ -15,9 +15,6 @@
                     </h1>
                     <p class="text-muted mb-0">Información personal y de cuenta</p>
                 </div>
-                <a href="/" class="btn btn-outline-primary">
-                    <i class="fas fa-arrow-left me-2"></i>Volver al Inicio
-                </a>
             </div>
         </div>
     </div>
@@ -188,50 +185,6 @@
             </div>
         </div>
     </div>
-
-    <!-- Acciones Rápidas -->
-    <div class="row mt-4">
-        <div class="col-12">
-            <div class="card shadow-sm border-0">
-                <div class="card-header bg-light">
-                    <h5 class="mb-0">
-                        <i class="fas fa-bolt me-2 text-warning"></i>Acciones Rápidas
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="row g-3">
-                        <div class="col-md-3">
-                            <a href="/catalogo" class="btn btn-outline-primary w-100">
-                                <i class="fas fa-book-open d-block fs-3 mb-2"></i>
-                                <small>Ver Catálogo</small>
-                            </a>
-                        </div>
-                        <div class="col-md-3">
-                            <a href="<?= site_url('catalogo/mis-prestamos') ?>" class="btn btn-outline-success w-100">
-                                <i class="fas fa-book d-block fs-3 mb-2"></i>
-                                <small>Mis Préstamos</small>
-                            </a>
-                        </div>
-                        <div class="col-md-3">
-                            <a href="<?= site_url('catalogo/favoritos') ?>" class="btn btn-outline-danger w-100">
-                                <i class="fas fa-heart d-block fs-3 mb-2"></i>
-                                <small>Favoritos</small>
-                            </a>
-                        </div>
-                        <div class="col-md-3">
-                            <a href="<?= site_url('notificaciones/historial') ?>" class="btn btn-outline-info w-100">
-                                <i class="fas fa-bell d-block fs-3 mb-2"></i>
-                                <small>Notificaciones</small>
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
 </div>
 
-<!-- Bootstrap JS -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js" integrity="sha384-HwwvtgBNo3bZJJLYd8oVXjrBZt8cqVSpeBNS5n7C8IVInixGAoxmnlMuBnhbgrkm" crossorigin="anonymous"></script>
-</body>
-</html>
+<?= $footer ?>

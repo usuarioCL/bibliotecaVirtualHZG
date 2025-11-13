@@ -957,6 +957,7 @@ class UsuarioController extends Controller
             $data = [
                 'header' => view('layouts/header'),
                 'navbar' => view('layouts/navbar'),
+                'footer' => view('layouts/footer'),
                 'usuario' => $usuario
             ];
 
