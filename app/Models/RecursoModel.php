@@ -299,9 +299,9 @@ class RecursoModel extends Model
         return $recursosUnicos;
     }
 
-    public function obtenerLibrosPopulares($limite = 6)
+    public function obtenerRecursosRecientes($limite = 12)
     {
-        // Primero obtener los recursos sin autores para evitar duplicados
+        // Obtener los recursos agregados recientemente ordenados por ID descendente
         $recursos = $this->select('
             recursos.idrecurso,
             recursos.titulo,
@@ -328,9 +328,52 @@ class RecursoModel extends Model
             ->join('tiporecursos', 'tiporecursos.idtiporecurso = recursos.idtiporecurso', 'left')
             ->join('recursos_fisicos rf', 'rf.idrecurso = recursos.idrecurso', 'left')
             ->join('recursos_digitales rd', 'rd.idrecurso = recursos.idrecurso', 'left')
-            // Sin filtro de estado para mostrar todos los recursos
-            ->orderBy('recursos.anio', 'DESC')
             ->orderBy('recursos.idrecurso', 'DESC')
+            ->limit($limite)
+            ->findAll();
+        
+        // Agregar autores y eliminar duplicados
+        $recursos = $this->agregarAutoresARecursos($recursos);
+        $recursosUnicos = $this->eliminarDuplicadosPorId($recursos);
+        
+        return $recursosUnicos;
+    }
+
+    public function obtenerLibrosPopulares($limite = 6)
+    {
+        // Obtener recursos con conteo de préstamos y favoritos
+        $recursos = $this->select('
+            recursos.idrecurso,
+            recursos.titulo,
+            recursos.anio,
+            recursos.numpaginas,
+            recursos.isbn,
+            recursos.numedicion,
+            recursos.estado,
+            recursos.stock,
+            recursos.nivel,
+            recursos.idsubcategoria,
+            recursos.ideditorial,
+            recursos.idtiporecurso,
+            subcategorias.subcategoria, 
+            categorias.categoria,
+            editoriales.editorial,
+            tiporecursos.tiporecurso,
+            COALESCE(rf.portada, rd.portada) as portada,
+            rd.archivo,
+            (COALESCE(COUNT(DISTINCT p.idprestamo), 0) + COALESCE(COUNT(DISTINCT f.idfavorito), 0)) as popularidad
+        ')
+            ->join('subcategorias', 'subcategorias.idsubcategoria = recursos.idsubcategoria', 'left')
+            ->join('categorias', 'categorias.idcategoria = subcategorias.idcategoria', 'left')
+            ->join('editoriales', 'editoriales.ideditorial = recursos.ideditorial', 'left')
+            ->join('tiporecursos', 'tiporecursos.idtiporecurso = recursos.idtiporecurso', 'left')
+            ->join('recursos_fisicos rf', 'rf.idrecurso = recursos.idrecurso', 'left')
+            ->join('recursos_digitales rd', 'rd.idrecurso = recursos.idrecurso', 'left')
+            ->join('prestamos p', 'p.idrecurso = recursos.idrecurso', 'left')
+            ->join('favoritos f', 'f.idrecurso = recursos.idrecurso', 'left')
+            ->groupBy('recursos.idrecurso, recursos.titulo, recursos.anio, recursos.numpaginas, recursos.isbn, recursos.numedicion, recursos.estado, recursos.stock, recursos.nivel, recursos.idsubcategoria, recursos.ideditorial, recursos.idtiporecurso, subcategorias.subcategoria, categorias.categoria, editoriales.editorial, tiporecursos.tiporecurso, rf.portada, rd.portada, rd.archivo')
+            ->orderBy('popularidad', 'DESC')
+            ->orderBy('recursos.anio', 'DESC')
             ->limit($limite)
             ->findAll();
         

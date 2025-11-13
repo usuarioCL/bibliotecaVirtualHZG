@@ -20,8 +20,10 @@ class Home extends Controller
         $categorias = $categoriaModel->findAll();
         //Obtener recursos destacados (los más recientes por ahora)
         $recursosDestacados = $recursoModel->obtenerRecursosDestacados(8);
-        //Obtener todos los recursos disponibles
-        $librosPopulares = $recursoModel->obtenerTodosLosRecursos();
+        //Obtener recursos agregados recientemente para el carrusel (últimos 12)
+        $recursosRecientes = $recursoModel->obtenerRecursosRecientes(12);
+        //Obtener recursos populares para el carrusel (últimos 12 ordenados por año)
+        $recursosPopulares = $recursoModel->obtenerLibrosPopulares(12);
 
         $data = ['header' => view('layouts/header'),
                  'footer' => view('layouts/footer'),
@@ -29,7 +31,8 @@ class Home extends Controller
                  'niveles' => $niveles,
                  'categorias' => $categorias,
                  'recursosDestacados' => $recursosDestacados,
-                 'librosPopulares' => $librosPopulares];
+                 'recursosRecientes' => $recursosRecientes,
+                 'recursosPopulares' => $recursosPopulares];
         return view('paginaPrincipal', $data);
     }
 

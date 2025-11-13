@@ -26,18 +26,59 @@
     <div class="row <?= isset($header) ? '' : 'p-3' ?>">
         <!-- Portada del libro -->
         <div class="col-md-4 mb-4">
-            <div class="card">
+            <div class="card position-relative">
+                <?php 
+                // Determinar si es un recurso digital
+                $esDigital = false;
+                
+                if (isset($recurso['tiporecurso']) && stripos($recurso['tiporecurso'], 'digital') !== false) {
+                    $esDigital = true;
+                } elseif (isset($recurso['idtiporecurso']) && $recurso['idtiporecurso'] == 2) {
+                    $esDigital = true;
+                } elseif (isset($recurso['rutaarchivo']) && !empty($recurso['rutaarchivo'])) {
+                    $esDigital = true;
+                } elseif (isset($recurso['archivo']) && !empty($recurso['archivo'])) {
+                    $esDigital = true;
+                }
+                ?>
+                
+                <!-- Badge tipo recurso -->
+                <div class="position-absolute top-0 start-0 m-2" style="z-index: 10;">
+                    <?php if ($esDigital): ?>
+                        <span class="badge bg-info text-white">
+                            <i class="fas fa-file-pdf me-1"></i>Digital
+                        </span>
+                    <?php else: ?>
+                        <span class="badge bg-primary text-white">
+                            <i class="fas fa-book me-1"></i>Físico
+                        </span>
+                    <?php endif; ?>
+                </div>
+                
                 <div class="card-body text-center">
                     <?php if (!empty($recurso['portada'])): ?>
                         <img src="<?= base_url(esc($recurso['portada'])) ?>?v=<?= time() ?>" 
                              alt="Portada de <?= esc($recurso['titulo']) ?>" 
                              class="img-fluid rounded shadow-sm detalles-portada"
-                             onerror="console.error('Error cargando imagen:', this.src); this.src='<?= base_url('img/portada_default.png') ?>'"
+                             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
                              onload="console.log('Imagen cargada correctamente:', this.src)">
+                        <div class="d-none flex-column align-items-center justify-content-center bg-light rounded p-5" style="min-height: 300px;">
+                            <?php if ($esDigital): ?>
+                                <i class="fas fa-file-pdf fa-5x text-info mb-3"></i>
+                            <?php else: ?>
+                                <i class="fas fa-book fa-5x text-muted mb-3"></i>
+                            <?php endif; ?>
+                            <p class="text-muted">Sin portada disponible</p>
+                        </div>
                     <?php else: ?>
-                        <img src="<?= base_url('img/portada_default.png') ?>" 
-                             alt="Sin portada" 
-                             class="img-fluid rounded shadow-sm detalles-portada">
+                        <div class="d-flex flex-column align-items-center justify-content-center bg-light rounded p-5" style="min-height: 300px;">
+                            <?php if ($esDigital): ?>
+                                <i class="fas fa-file-pdf fa-5x text-info mb-3"></i>
+                            <?php else: ?>
+                                <i class="fas fa-book fa-5x text-muted mb-3"></i>
+                            <?php endif; ?>
+                            <p class="text-muted">Sin portada disponible</p>
+                        </div>
                     <?php endif; ?>
                 </div>
             </div>

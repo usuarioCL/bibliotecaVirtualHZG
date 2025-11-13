@@ -12,7 +12,8 @@
     
     <!-- Sección de Recursos -->
     <?= view('partials/recursos_grid', [
-        'librosPopulares' => $librosPopulares
+        'recursosRecientes' => $recursosRecientes,
+        'recursosPopulares' => $recursosPopulares
     ]) ?>
 </div>
 
