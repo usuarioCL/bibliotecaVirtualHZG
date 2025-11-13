@@ -102,7 +102,7 @@ CREATE TABLE recursos_fisicos (
 CREATE TABLE recursos_digitales (
     idrecurso INT PRIMARY KEY,
     portada VARCHAR(200), -- opcional: imagen de la carátula
-    archivo VARCHAR(200) NOT NULL, -- ruta del PDF/EPUB
+    archivo VARCHAR(200) NULL, -- ruta del PDF/EPUB (opcional para permitir recursos sin archivo)
     FOREIGN KEY (idrecurso) REFERENCES recursos(idrecurso)
 );
 
