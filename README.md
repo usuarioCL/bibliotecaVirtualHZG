@@ -1,68 +1,148 @@
-# CodeIgniter 4 Application Starter
+# Biblioteca Virtual HZG
 
-## What is CodeIgniter?
+**Sistema de Gestión de Biblioteca Virtual** desarrollado con CodeIgniter 4 y MySQL.
 
-CodeIgniter is a PHP full-stack web framework that is light, fast, flexible and secure.
-More information can be found at the [official site](https://codeigniter.com).
+## Descripción
 
-This repository holds a composer-installable app starter.
-It has been built from the
-[development repository](https://github.com/codeigniter4/CodeIgniter4).
+Sistema completo para la gestión de una biblioteca virtual que permite administrar recursos bibliográficos (físicos y digitales), préstamos, usuarios, y favoritos. Diseñado para instituciones educativas que requieren un control eficiente de su material bibliográfico.
 
-More information about the plans for version 4 can be found in [CodeIgniter 4](https://forum.codeigniter.com/forumdisplay.php?fid=28) on the forums.
+## Características Principales
 
-You can read the [user guide](https://codeigniter.com/user_guide/)
-corresponding to the latest version of the framework.
+### Gestión de Recursos
+- Recursos físicos y digitales (libros, revistas, etc.)
+- Clasificación por categorías y subcategorías
+- Control de stock y disponibilidad
+- Gestión de autores y editoriales
+- Ejemplares físicos con códigos únicos
 
-## Installation & updates
+### Sistema de Préstamos
+- Solicitud y gestión de préstamos
+- Control de fechas de vencimiento
+- Renovación de préstamos
+- Historial completo de préstamos
+- Sistema de sanciones automáticas
+- Notificaciones de vencimiento
 
-`composer create-project codeigniter4/appstarter` then `composer update` whenever
-there is a new release of the framework.
+### Gestión de Usuarios
+- Roles: Administrador, Docente, Estudiante
+- Autenticación y autorización
+- Perfil de usuario personalizado
+- Matrículas para estudiantes
+- Importación masiva de usuarios
 
-When updating, check the release notes to see if there are any changes you might need to apply
-to your `app` folder. The affected files can be copied or merged from
-`vendor/codeigniter4/framework/app`.
+### Favoritos y Catálogo
+- Sistema de favoritos personalizado
+- Catálogo interactivo con filtros avanzados
+- Búsqueda por título, autor, ISBN
+- Vista de detalles con modal
+- Recursos digitales con lector PDF integrado
+- Compartir recursos
 
-## Setup
+## Tecnologías
 
-Copy `env` to `.env` and tailor for your app, specifically the baseURL
-and any database settings.
+- **Backend:** CodeIgniter 4 (PHP 8.x)
+- **Base de Datos:** MySQL 8.0+
+- **Frontend:** Bootstrap 5, JavaScript 
+- **Librerías:** 
+  - Dompdf (generación de PDFs)
+  - PhpSpreadsheet (importación de Excel)
+  - SweetAlert2 (alertas interactivas)
+  - FontAwesome (iconos)
 
-## Important Change with index.php
 
-`index.php` is no longer in the root of the project! It has been moved inside the *public* folder,
-for better security and separation of components.
+## Módulos del Sistema
 
-This means that you should configure your web server to "point" to your project's *public* folder, and
-not to the project root. A better practice would be to configure a virtual host to point there. A poor practice would be to point your web server to the project root and expect to enter *public/...*, as the rest of your logic and the
-framework are exposed.
+### 1. **Catálogo** 
+Exploración y búsqueda de recursos bibliográficos con filtros avanzados y vista de detalles.
 
-**Please** read the user guide for a better explanation of how CI4 works!
+### 2. **Préstamos** 
+Gestión completa del ciclo de vida de los préstamos, desde solicitud hasta devolución.
 
-## Repository Management
+### 3. **Favoritos** 
+Biblioteca personal donde los usuarios pueden guardar sus libros preferidos.
 
-We use GitHub issues, in our main repository, to track **BUGS** and to track approved **DEVELOPMENT** work packages.
-We use our [forum](http://forum.codeigniter.com) to provide SUPPORT and to discuss
-FEATURE REQUESTS.
+### 4. **Administración** 
+Panel de control para gestión de recursos, usuarios, y configuración del sistema.
 
-This repository is a "distribution" one, built by our release preparation script.
-Problems with it can be raised on our forum, or as issues in the main repository.
+### 5. **Recursos** 
+CRUD completo de libros y materiales bibliográficos.
 
-## Server Requirements
+### 6. **Usuarios** 
+Gestión de cuentas, roles y permisos.
 
-PHP version 8.1 or higher is required, with the following extensions installed:
+## Características de UI/UX
 
-- [intl](http://php.net/manual/en/intl.requirements.php)
-- [mbstring](http://php.net/manual/en/mbstring.installation.php)
+- Diseño responsive (móvil, tablet y escritorio)
+- Modales para acciones rápidas
+- Tablas interactivas con ordenamiento
+- Badges de estado visual
+- Componentes reutilizables
+- Animaciones suaves
+- Mensajes de confirmación intuitivos
+- Accesibilidad mejorada (ARIA)
 
-> [!WARNING]
-> - The end of life date for PHP 7.4 was November 28, 2022.
-> - The end of life date for PHP 8.0 was November 26, 2023.
-> - If you are still using PHP 7.4 or 8.0, you should upgrade immediately.
-> - The end of life date for PHP 8.1 will be December 31, 2025.
+## Seguridad
 
-Additionally, make sure that the following extensions are enabled in your PHP:
+- Filtros de autenticación (AuthFilter, AdminFilter)
+- Validación de datos en servidor y cliente
+- Control de acceso basado en roles
 
-- json (enabled by default - don't turn it off)
-- [mysqlnd](http://php.net/manual/en/mysqlnd.install.php) if you plan to use MySQL
-- [libcurl](http://php.net/manual/en/curl.requirements.php) if you plan to use the HTTP\CURLRequest library
+## Requisitos del Sistema
+
+- PHP 8.0 o superior
+- MySQL 8.0 o superior
+- Apache/Nginx con mod_rewrite
+- Composer
+
+##  Instalación
+
+1. **Clonar el repositorio**
+```bash
+git clone https://github.com/usuarioCL/bibliotecaVirtualHZG.git
+cd bibliotecaVirtualHZG
+```
+
+2. **Instalar dependencias**
+```bash
+composer install
+```
+
+3. **Configurar base de datos**
+- Crear una base de datos MySQL
+- Copiar `env.exampl` a `.env`
+- Configurar credenciales de base de datos en `.env`
+
+4. **Importar base de datos**
+```bash
+mysql -u usuario -p nombre_bd < app/Database/biblioteca_virtual.sql
+```
+
+5. **Configurar permisos**
+```bash
+chmod -R 777 writable/
+chmod -R 777 public/uploads/
+```
+
+6. **Ejecutar el servidor**
+```bash
+php spark serve
+```
+
+El sistema estará disponible en: `http://localhost:8080`
+
+## 📖 Uso del Sistema
+
+### Para Usuarios
+1. Iniciar sesión con credenciales
+2. Explorar el catálogo de recursos
+3. Agregar libros a favoritos
+4. Solicitar préstamos
+5. Ver historial personal
+
+### Para Administradores
+1. Gestionar recursos bibliográficos
+2. Aprobar/rechazar solicitudes de préstamo
+3. Administrar usuarios
+4. Generar reportes
+5. Configurar el sistema
+
