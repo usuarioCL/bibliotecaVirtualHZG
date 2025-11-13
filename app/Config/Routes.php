@@ -23,6 +23,9 @@ $routes->get('/login', 'LoginController::loginForm'); // Muestra el formulario d
 $routes->post('/login', 'LoginController::login');    // Procesa el login
 $routes->get('/logout', 'LoginController::logout');   // Cierra la sesión
 
+// Perfil de usuario
+$routes->get('/perfil', 'UsuarioController::perfil'); // Ver perfil del usuario actual
+
 // Registro de Usuarios
 $routes->get('/registro', 'RegistroController::RegistroForm'); // Muestra el formulario de registro
 $routes->post('/registro', 'RegistroController::procesarRegistro');    // Procesa el registro

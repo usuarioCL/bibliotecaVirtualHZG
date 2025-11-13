@@ -86,7 +86,7 @@
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end">
                         <li>
-                            <a class="dropdown-item" href="/perfil">
+                            <a class="dropdown-item" href="<?= site_url('perfil') ?>">
                                 <i class="fas fa-user-edit"></i> Mi Perfil
                             </a>
                         </li>
@@ -99,7 +99,7 @@
                         <?php endif; ?>
                         <li><hr class="dropdown-divider"></li>
                         <li>
-                            <a class="dropdown-item" href="/logout">
+                            <a class="dropdown-item" href="<?= site_url('logout') ?>">
                                 <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
                             </a>
                         </li>

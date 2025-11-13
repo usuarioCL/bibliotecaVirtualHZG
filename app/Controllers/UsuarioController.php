@@ -919,4 +919,55 @@ class UsuarioController extends Controller
         }
     }
 
+    /**
+     * Ver perfil del usuario actual
+     */
+    public function perfil()
+    {
+        // Debug: Verificar que el método se está ejecutando
+        log_message('info', '========== PERFIL METHOD CALLED ==========');
+        log_message('info', 'Session logged_in: ' . (session()->get('logged_in') ? 'true' : 'false'));
+        log_message('info', 'Session idusuario: ' . session()->get('idusuario'));
+        
+        // Verificar si el usuario está logueado
+        if (!session()->get('logged_in')) {
+            log_message('info', 'UsuarioController::perfil - Usuario no logueado, redirigiendo a login');
+            return redirect()->to('/login');
+        }
+
+        try {
+            $idUsuario = session()->get('idusuario');
+            log_message('info', 'UsuarioController::perfil - ID Usuario: ' . $idUsuario);
+            
+            // Obtener información completa del usuario
+            $usuario = $this->usuarioModel->getUsuarioCompleto($idUsuario);
+            
+            if (!$usuario) {
+                log_message('error', 'UsuarioController::perfil - Usuario no encontrado con ID: ' . $idUsuario);
+                return redirect()->to('/')->with('error', 'No se pudo cargar el perfil del usuario');
+            }
+
+            log_message('info', 'UsuarioController::perfil - Usuario encontrado: ' . $usuario['nomuser']);
+
+            // Si es estudiante, obtener información de matrícula
+            if ($usuario['nivelacceso'] === 'estudiante') {
+                $usuario['matricula'] = $this->matriculaModel->getMatriculaActiva($usuario['idpersona']);
+            }
+
+            $data = [
+                'header' => view('layouts/header'),
+                'navbar' => view('layouts/navbar'),
+                'usuario' => $usuario
+            ];
+
+            log_message('info', 'UsuarioController::perfil - Cargando vista usuarios/perfil');
+            return view('usuarios/perfil', $data);
+
+        } catch (\Exception $e) {
+            log_message('error', 'Error en UsuarioController::perfil: ' . $e->getMessage());
+            log_message('error', 'Stack trace: ' . $e->getTraceAsString());
+            return redirect()->to('/')->with('error', 'Error al cargar el perfil');
+        }
+    }
+
 }  
