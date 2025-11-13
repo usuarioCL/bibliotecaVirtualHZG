@@ -2,7 +2,8 @@
 <?= $header ?>
 <?= $navbar ?>
 
-<!-- CSS específico de favoritos -->
+<!-- CSS de componentes compartidos y específico de favoritos -->
+<link rel="stylesheet" href="<?= base_url('assets/css/components/prestamos-components.css') ?>">
 <link rel="stylesheet" href="<?= base_url('assets/css/favoritos.css') ?>">
 
 <div class="container mt-4">
@@ -47,6 +48,7 @@
                                 <th scope="col" class="border-0 fw-semibold">Libro</th>
                                 <th scope="col" class="border-0 fw-semibold">Autor</th>
                                 <th scope="col" class="border-0 fw-semibold">Categoría</th>
+                                <th scope="col" class="border-0 fw-semibold">Subcategoría</th>
                                 <th scope="col" class="border-0 fw-semibold">Estado</th>
                                 <th scope="col" class="border-0 fw-semibold text-center">Acciones</th>
                             </tr>
@@ -59,7 +61,18 @@
                                     </td>
                                     <td class="text-muted"><?= formatearNombreAutor($favorito['nomautor']) ?></td>
                                     <td>
-                                        <?= renderBadgeCategorias($favorito['categoria'] ?? null, $favorito['subcategoria'] ?? null) ?>
+                                        <?php if (!empty($favorito['categoria'])): ?>
+                                            <span class="badge bg-secondary"><?= esc($favorito['categoria']) ?></span>
+                                        <?php else: ?>
+                                            <span class="text-muted small">N/A</span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td>
+                                        <?php if (!empty($favorito['subcategoria'])): ?>
+                                            <span class="badge bg-info"><?= esc($favorito['subcategoria']) ?></span>
+                                        <?php else: ?>
+                                            <span class="text-muted small">N/A</span>
+                                        <?php endif; ?>
                                     </td>
                                     <td>
                                         <?= renderBadgeEstadoRecurso($favorito['estado']) ?>

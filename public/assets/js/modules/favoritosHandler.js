@@ -58,6 +58,24 @@ class FavoritosHandler {
             return;
         }
         
+        // Si estamos en la página de favoritos y existe la función quitarFavorito, usarla
+        if (window.location.pathname.includes('favoritos') && typeof window.quitarFavorito === 'function') {
+            // Buscar el idfavorito desde la fila de la tabla
+            const rows = document.querySelectorAll('#favoritosLista tr');
+            for (const row of rows) {
+                const detallesBtn = row.querySelector(`[data-recurso-id="${recursoId}"]`);
+                if (detallesBtn) {
+                    // Buscar el data-favorito-id en la fila
+                    const idfavorito = row.getAttribute('data-favorito-id');
+                    if (idfavorito) {
+                        // Usar la función quitarFavorito existente
+                        window.quitarFavorito(idfavorito, recursoId);
+                        return;
+                    }
+                }
+            }
+        }
+        
         const button = this.getButtonByRecursoId(recursoId);
         
         if (!button) {

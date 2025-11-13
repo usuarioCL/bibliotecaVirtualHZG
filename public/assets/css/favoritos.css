@@ -166,9 +166,14 @@
     padding: 0.35em 0.65em;
 }
 
-/* Botones de acción con mejor espaciado */
+/* Botones de acción con mejor espaciado y tamaño uniforme */
 .d-flex.gap-2 {
     gap: 0.5rem !important;
+}
+
+.d-flex.gap-2 .btn-sm {
+    min-width: 36px;
+    padding: 0.375rem 0.75rem;
 }
 
 /* Portada de libro con mejor aspect ratio */

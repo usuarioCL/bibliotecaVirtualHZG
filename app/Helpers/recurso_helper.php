@@ -173,17 +173,11 @@ if (!function_exists('renderInfoRecurso')) {
     {
         $portada = $recurso['portada'] ?? null;
         $titulo = $recurso['titulo'] ?? 'Sin título';
-        $isbn = $recurso['isbn'] ?? null;
         
         $html = '<div class="d-flex align-items-center">';
         $html .= '<div class="me-3">' . renderPortadaRecurso($portada, $titulo, $portadaSize) . '</div>';
         $html .= '<div>';
         $html .= sprintf('<h6 class="mb-0 fw-semibold">%s</h6>', esc($titulo));
-        
-        if (!empty($isbn)) {
-            $html .= renderISBN($isbn);
-        }
-        
         $html .= '</div>';
         $html .= '</div>';
         
