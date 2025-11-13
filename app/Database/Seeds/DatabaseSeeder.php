@@ -19,8 +19,9 @@ class DatabaseSeeder extends Seeder
             'EditorialSeeder',
             'AutorSeeder',
             'PersonaSeeder',
+            'GrupoSeeder',           
             'UsuarioSeeder',
-            'GrupoSeeder',
+            'MatriculaSeeder',       
             'RecursoSeeder',
         ];
         

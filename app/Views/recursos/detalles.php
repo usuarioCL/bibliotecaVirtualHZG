@@ -199,24 +199,35 @@
                                 
                                 <?php if ($esDigital): ?>
                                     <!-- Botón para recursos digitales -->
-                                    <button class="btn btn-success" onclick="
-                                        // Cerrar modal
-                                        const modal = document.getElementById('libroModal');
-                                        if (modal) {
-                                            const modalInstance = bootstrap.Modal.getInstance(modal);
-                                            if (modalInstance) {
-                                                modalInstance.hide();
+                                    <?php 
+                                    $rutaPDF = $recurso['rutaarchivo'] ?? $recurso['archivo'] ?? '';
+                                    $tienePDF = !empty($rutaPDF) && trim($rutaPDF) !== '';
+                                    ?>
+                                    
+                                    <?php if ($tienePDF): ?>
+                                        <button class="btn btn-success" onclick="
+                                            // Cerrar modal
+                                            const modal = document.getElementById('libroModal');
+                                            if (modal) {
+                                                const modalInstance = bootstrap.Modal.getInstance(modal);
+                                                if (modalInstance) {
+                                                    modalInstance.hide();
+                                                }
                                             }
-                                        }
-                                        // Llamar a leerPDFDirecto después de cerrar el modal
-                                        setTimeout(() => {
-                                            if (typeof leerPDFDirecto === 'function') {
-                                                leerPDFDirecto('<?= base_url($recurso['rutaarchivo'] ?? $recurso['archivo'] ?? '') ?>', '<?= esc($recurso['titulo']) ?>');
-                                            } else {
-                                                window.open('<?= base_url($recurso['rutaarchivo'] ?? $recurso['archivo'] ?? '') ?>', '_blank');
-                                            }}, 300);">
-                                        <i class="fas fa-book-open"></i> Leer
-                                    </button>
+                                            // Llamar a leerPDFDirecto después de cerrar el modal
+                                            setTimeout(() => {
+                                                if (typeof leerPDFDirecto === 'function') {
+                                                    leerPDFDirecto('<?= base_url($rutaPDF) ?>', '<?= esc($recurso['titulo']) ?>');
+                                                } else {
+                                                    window.open('<?= base_url($rutaPDF) ?>', '_blank');
+                                                }}, 300);">
+                                            <i class="fas fa-book-open"></i> Leer
+                                        </button>
+                                    <?php else: ?>
+                                        <button class="btn btn-secondary" disabled title="Este recurso digital no tiene un archivo PDF disponible">
+                                            <i class="fas fa-exclamation-circle"></i> PDF No Disponible
+                                        </button>
+                                    <?php endif; ?>
                                 <?php else: ?>
                                     <!-- Botón para recursos físicos -->
                                     <?php if ($recurso['estado'] === 'disponible' && $recurso['stock'] > 0): ?>
