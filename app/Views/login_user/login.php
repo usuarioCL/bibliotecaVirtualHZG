@@ -65,41 +65,25 @@
             transform: translateY(-2px);
             box-shadow: 0 8px 25px rgba(185, 28, 28, 0.3);
         }
-        .back-button {
-            position: fixed;
-            top: 20px;
-            left: 20px;
-            z-index: 1000;
-            width: 50px;
-            height: 50px;
-            background: rgba(185, 28, 28, 0.9);
-            border: 2px solid rgba(255,255,255,0.2);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-decoration: none;
+        .btn-back-home {
+            background: white;
+            border: 2px solid var(--institutional-red);
+            color: var(--institutional-red);
+            border-radius: 12px;
+            padding: 14px;
+            font-weight: 600;
+            font-size: 16px;
             transition: all 0.3s ease;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
         }
-        .back-button:hover {
-            background: rgba(185, 28, 28, 1);
-            transform: scale(1.1);
-            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
-        }
-        .back-button i {
+        .btn-back-home:hover {
+            background: var(--institutional-red);
             color: white;
-            font-size: 18px;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(185, 28, 28, 0.3);
         }
     </style>
 </head>
 <body>
-    <!-- Botón volver atrás -->
-    <a href="<?= base_url('/') ?>" class="back-button" title="Volver a la página principal">
-        <i class="fas fa-arrow-left"></i>
-    </a>
-
     <div class="login-container">
         <!-- Header minimalista -->
         <div class="login-header">
@@ -145,6 +129,10 @@
                     <i class="fas fa-sign-in-alt me-2"></i>Iniciar Sesión
                 </button>
             </form>
+
+            <a href="<?= base_url('/') ?>" class="btn btn-back-home w-100 fw-semibold mt-3 text-decoration-none">
+                <i class="fas fa-home me-2"></i>Volver
+            </a>
 
             <!-- Footer minimalista -->
             <div class="text-center mt-4 pt-3" style="border-top: 1px solid #e9ecef;">

@@ -44,8 +44,14 @@ class LoginController extends BaseController
                     'logged_in'  => true
                 ]);
 
-            // Redirigir todos los roles a la página principal
-            return redirect()->to('/');
+            // Redirigir según el nivel de acceso
+            if ($usuario['nivelacceso'] == 'admin') {
+                // Administrador va al dashboard
+                return redirect()->to('/admin');
+            } else {
+                // Otros usuarios van a la página principal
+                return redirect()->to('/');
+            }
             }
         }
 
