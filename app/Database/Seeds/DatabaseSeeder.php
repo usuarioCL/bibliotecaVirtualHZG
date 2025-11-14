@@ -23,6 +23,7 @@ class DatabaseSeeder extends Seeder
             'UsuarioSeeder',
             'MatriculaSeeder',       
             'RecursoSeeder',
+            'SancionSeeder',
         ];
         
         foreach ($seeders as $seeder) {

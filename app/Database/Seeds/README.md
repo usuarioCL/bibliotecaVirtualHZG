@@ -15,6 +15,7 @@ Este directorio contiene los seeders para poblar la base de datos con datos de p
 - **UsuarioSeeder.php** - Usuarios con diferentes roles
 - **GrupoSeeder.php** - Grupos/clases académicas
 - **RecursoSeeder.php** - Libros físicos y digitales
+- **SancionSeeder.php** - Tipos de sanciones y sanciones de prueba
 
 ### Script SQL Alternativo
 
