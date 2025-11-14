@@ -3,6 +3,9 @@
 
 USE biblioteca_virtual;
 
+-- php spark db:seed DatabaseSeeder
+-- php spark
+
 -- Modificar la columna para permitir NULL
 ALTER TABLE recursos_digitales 
 MODIFY COLUMN archivo VARCHAR(200) NULL COMMENT 'Ruta del PDF/EPUB (opcional)';
@@ -11,3 +14,4 @@ MODIFY COLUMN archivo VARCHAR(200) NULL COMMENT 'Ruta del PDF/EPUB (opcional)';
 DESCRIBE recursos_digitales;
 
 SELECT 'Columna archivo ahora permite valores NULL' AS Resultado;
+
