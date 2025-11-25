@@ -358,3 +358,293 @@ CREATE TABLE notificaciones (
     -- AGREGADO 2025-10-28: Índice para consultas de sanciones
     INDEX idx_sancion (idsancion)
 );
+
+-- Personas
+INSERT INTO personas (apellidos, nombres, tipodoc, numerodoc, telefono, direccion, email, genero) VALUES
+('Pérez', 'Juan', 'DNI', '12345678', '987654321', 'Av. Lima 123', 'juanperez@mail.com', 'Masculino'),
+('García', 'María', 'DNI', '23456789', '987111222', 'Jr. Arequipa 456', 'maria@mail.com', 'Femenino'),
+('Lopez', 'Carlos', 'CE', '87654321', '965432198', 'Av. Grau 789', 'carlos@mail.com', 'Masculino'),
+('Torres', 'Ana', 'Pasaporte', 'A1234567', '999888777', 'Calle Unión 321', 'ana@mail.com', 'Femenino');
+
+-- Usuarios
+INSERT INTO usuarios (nomuser, passuser, nivelacceso, idpersona) VALUES
+('admin1', 'hashpass1', 'admin', 1),
+('docente1', 'hashpass2', 'docente', 2),
+('estu1', 'hashpass3', 'estudiante', 3),
+('estu2', 'hashpass4', 'estudiante', 4);
+
+-- Grupos
+INSERT INTO grupos (aniolectivo, grado, seccion, nivel) VALUES
+(2025, '1', 'A', 'Primaria'),
+(2025, '2', 'B', 'Primaria'),
+(2025, '3', 'C', 'Secundaria'),
+(2025, '4', 'A', 'Secundaria');
+
+-- Matriculas
+INSERT INTO matriculas (idgrupo, idpersona, fechamatricula, estadomatricula) VALUES
+(1, 1, '2025-03-01', TRUE),
+(2, 2, '2025-03-02', TRUE),    
+(3, 3, '2025-03-03', TRUE),
+(4, 4, '2025-03-04', TRUE);
+
+-- TipoRecursos
+INSERT INTO tiporecursos (tiporecurso) VALUES
+('Libro Físico'),
+('Libro Digital');
+-- Categorias
+INSERT INTO categorias (categoria) VALUES
+('Literatura'),
+('Matemáticas'),
+('Informática'),
+('Historia');
+
+-- Subcategorias
+INSERT INTO subcategorias (subcategoria, idcategoria) VALUES
+('Novela', 1),
+('Álgebra', 2),
+('Programación', 3),
+('Historia del Perú', 4);
+
+-- Editoriales
+INSERT INTO editoriales (editorial) VALUES
+('Alfaguara'),
+('Santillana'),
+('O’Reilly Media'),
+('UNMSM Press');
+
+-- Recursos 
+INSERT INTO recursos (titulo, anio, numpaginas, isbn, numedicion, estado, stock, nivel, idsubcategoria, ideditorial, idtiporecurso) VALUES
+('Cien Años de Soledad', 1967, 471, '1234567890123', 'Primera edición', 'disponible', 5, 'Secundaria', 1, 1, 1),  -- físico
+('Liebre y la tortuga', 2013, 1600, '3456789012345', 'Guide', 'disponible', 3, 'Inicial', 3, 3, 2);     -- digital
+
+-- Recursos fisicos
+INSERT INTO recursos_fisicos (idrecurso, portada, encuadernacion) VALUES
+(1, 'uploads/portadas/fisico/100años.jpg', 'Tapa dura');
+
+
+-- Recursos digitales
+INSERT INTO recursos_digitales (idrecurso, portada, archivo) VALUES
+(2, 'uploads/portadas/digital/large.jpg', 'uploads/digitales/archivos/liebretortuga.pdf');
+
+
+-- Autores
+INSERT INTO autores (apeautor, nomautor, nacionalidad) VALUES
+('García Márquez', 'Gabriel', 'Colombiana'),
+('Lutz', 'Mark', 'Estadounidense'),
+('Contreras', 'Carlos', 'Peruana'),
+('Smith', 'John', 'Británica');
+
+-- Detalle Autores 
+INSERT INTO detautores (idautor, idrecurso) VALUES
+(1, 1),
+(2, 2);
+
+-- Prestamos 
+INSERT INTO prestamos (idmatricula, idusuario, idrecurso, fechaprestamo, fechadevolucion) VALUES
+(1, 1, 1, '2025-04-01 10:00:00', '2025-04-10 10:00:00'),
+(2, 2, 2, '2025-04-02 11:00:00', '2025-04-11 11:00:00');
+
+-- Solicitudes 
+INSERT INTO solicitud (validado, idprestamo) VALUES
+(TRUE, 1),
+(FALSE, 2);
+
+
+-- Tipo sanciones
+INSERT INTO tiposancion (tiposancion) VALUES
+('Retraso en devolución'),
+('Pérdida de material'),
+('Daño al material'),
+('Incumplimiento de normas'),
+('Comportamiento inadecuado');
+
+-- Sanciones
+INSERT INTO sanciones (idtiposancion, idpersona, detallesancion, fecha_sancion, fecha_inicio, fecha_vencimiento, estado_sancion, duracion_dias, usuario_registra, observaciones) VALUES
+(1, 1, 'Retraso de 3 días en devolución de libro', '2025-01-15', '2025-01-15', '2025-02-15', 'activa', 31, 1, 'Sanción aplicada por retraso en devolución'),
+(2, 2, 'Libro perdido - No devuelto', '2025-01-20', '2025-01-20', NULL, 'activa', NULL, 1, 'Material no devuelto en fecha límite'),
+(3, 3, 'Páginas dañadas del libro', '2025-01-25', '2025-01-25', '2025-02-25', 'cumplida', 31, 1, 'Sanción cumplida - material reparado'),
+(4, 4, 'Incumplió reglamento de biblioteca', '2025-02-01', '2025-02-01', '2025-03-01', 'activa', 28, 1, 'Violación de normas de la biblioteca');
+
+-- Ubicaciones 
+INSERT INTO ubicaciones (ubicacion, idrecurso) VALUES
+('Estante A1', 1),
+('Estante B2', 2);
+
+-- Comentarios 
+INSERT INTO comentarios (comentario, idusuario, idrecurso) VALUES
+('Excelente libro', 1, 1),
+('Muy útil para clases', 2, 2);
+
+-- Reacciones 
+INSERT INTO reacciones (tiporeaccion, idusuario, idrecurso) VALUES
+('like', 1, 1),
+('estrella', 2, 2);
+
+-- Compartidos
+INSERT INTO compartidos (idusuario, idrecurso) VALUES
+(1, 1),
+(2, 2);
+
+-- Favoritos
+INSERT INTO favoritos (idusuario, idrecurso) VALUES
+(1, 1),
+(2, 2);
+
+-- Historial de acciones de usuarios
+CREATE INDEX idx_historial_usuario_actor ON historial_usuarios(usuario_actor);
+CREATE INDEX idx_historial_usuario_afectado ON historial_usuarios(usuario_afectado);
+CREATE INDEX idx_historial_fecha ON historial_usuarios(fecha_accion);
+CREATE INDEX idx_historial_accion ON historial_usuarios(accion);
+CREATE INDEX idx_historial_tipo_usuario ON historial_usuarios(tipo_usuario);
+
+-- Datos de ejemplo para demostración
+INSERT INTO historial_usuarios (accion, usuario_actor, usuario_afectado, tipo_usuario, detalles) VALUES
+('Usuario creado', 'admin', 'juan.perez', 'estudiante', 'Nuevo estudiante registrado en el sistema'),
+('Usuario creado', 'admin', 'maria.garcia', 'docente', 'Nuevo docente registrado en el sistema'),
+('Usuario creado', 'carlos.lopez', 'carlos.lopez', 'docente', 'Información personal actualizada');
+
+
+DELIMITER //
+
+CREATE PROCEDURE GenerarCodigoEjemplar(
+    IN p_idrecurso INT,
+    OUT p_codigo_ejemplar VARCHAR(20)
+)
+BEGIN
+    DECLARE v_titulo VARCHAR(150);
+    DECLARE v_prefijo VARCHAR(4);
+    DECLARE v_siguiente_numero INT;
+    DECLARE v_codigo VARCHAR(20);
+    
+    SELECT titulo INTO v_titulo 
+    FROM recursos 
+    WHERE idrecurso = p_idrecurso;
+    
+    SET v_prefijo = LOWER(REPLACE(SUBSTRING(v_titulo, 1, 4), ' ', ''));
+    
+    IF LENGTH(v_prefijo) < 4 THEN
+        SET v_prefijo = LOWER(REPLACE(v_titulo, ' ', ''));
+    END IF;
+    
+    SELECT COALESCE(MAX(CAST(SUBSTRING(codigo_ejemplar, LENGTH(v_prefijo) + 2) AS UNSIGNED)), 0) + 1
+    INTO v_siguiente_numero
+    FROM ejemplares_fisicos 
+    WHERE codigo_ejemplar LIKE CONCAT(v_prefijo, '-%')
+    AND idrecurso = p_idrecurso;
+    
+    SET v_codigo = CONCAT(v_prefijo, '-', LPAD(v_siguiente_numero, 3, '0'));
+    
+    SET p_codigo_ejemplar = v_codigo;
+END //
+DELIMITER ;
+
+DELIMITER //
+
+CREATE PROCEDURE CrearEjemplaresParaRecurso(
+    IN p_idrecurso INT,
+    IN p_cantidad INT
+)
+BEGIN
+    DECLARE v_contador INT DEFAULT 1;
+    DECLARE v_codigo_ejemplar VARCHAR(20);
+    DECLARE v_exit_handler INT DEFAULT 0;
+    
+    DECLARE CONTINUE HANDLER FOR SQLEXCEPTION SET v_exit_handler = 1;
+    
+    IF NOT EXISTS (SELECT 1 FROM recursos WHERE idrecurso = p_idrecurso) THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'El recurso especificado no existe';
+    END IF;
+    
+    WHILE v_contador <= p_cantidad AND v_exit_handler = 0 DO
+
+        CALL GenerarCodigoEjemplar(p_idrecurso, v_codigo_ejemplar);
+        
+        INSERT INTO ejemplares_fisicos (idrecurso, codigo_ejemplar, estado_ejemplar, estado_fisico, fecha_ultima_revision)
+        VALUES (p_idrecurso, v_codigo_ejemplar, 'disponible', 'excelente', CURRENT_DATE);
+        
+        SET v_contador = v_contador + 1;
+    END WHILE;
+    
+    IF v_exit_handler = 1 THEN
+        ROLLBACK;
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Error al crear ejemplares';
+    END IF;
+END //
+
+DELIMITER ;
+
+
+CREATE VIEW vista_ejemplares_completos AS
+SELECT 
+    e.idejemplar,
+    e.idrecurso,
+    e.codigo_ejemplar,
+    e.estado_ejemplar,
+    e.estado_fisico,
+    e.ubicacion,
+    e.observaciones,
+    e.fecha_ingreso,
+    e.fecha_ultima_revision,
+    e.activo,
+    r.titulo,
+    r.anio,
+    r.isbn,
+    r.numedicion,
+    ed.editorial,
+    c.categoria,
+    s.subcategoria,
+    t.tiporecurso
+FROM ejemplares_fisicos e
+INNER JOIN recursos r ON e.idrecurso = r.idrecurso
+INNER JOIN editoriales ed ON r.ideditorial = ed.ideditorial
+INNER JOIN subcategorias s ON r.idsubcategoria = s.idsubcategoria
+INNER JOIN categorias c ON s.idcategoria = c.idcategoria
+INNER JOIN tiporecursos t ON r.idtiporecurso = t.idtiporecurso
+WHERE e.activo = TRUE;
+
+
+DELIMITER //
+
+CREATE TRIGGER tr_actualizar_stock_after_insert
+AFTER INSERT ON ejemplares_fisicos
+FOR EACH ROW
+BEGIN
+    UPDATE recursos 
+    SET stock = (
+        SELECT COUNT(*) 
+        FROM ejemplares_fisicos 
+        WHERE idrecurso = NEW.idrecurso 
+        AND activo = TRUE
+    )
+    WHERE idrecurso = NEW.idrecurso;
+END //
+
+CREATE TRIGGER tr_actualizar_stock_after_update
+AFTER UPDATE ON ejemplares_fisicos
+FOR EACH ROW
+BEGIN
+    UPDATE recursos 
+    SET stock = (
+        SELECT COUNT(*) 
+        FROM ejemplares_fisicos 
+        WHERE idrecurso = NEW.idrecurso 
+        AND activo = TRUE
+    )
+    WHERE idrecurso = NEW.idrecurso;
+END //
+
+CREATE TRIGGER tr_actualizar_stock_after_delete
+AFTER DELETE ON ejemplares_fisicos
+FOR EACH ROW
+BEGIN
+    UPDATE recursos 
+    SET stock = (
+        SELECT COUNT(*) 
+        FROM ejemplares_fisicos 
+        WHERE idrecurso = OLD.idrecurso 
+        AND activo = TRUE
+    )
+    WHERE idrecurso = OLD.idrecurso;
+END //
+
+DELIMITER ;
