@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use CodeIgniter\Controller;
+use Config\Services;
 
 class RecursoDigitalController extends BaseController
 {
@@ -15,9 +16,28 @@ class RecursoDigitalController extends BaseController
 
     public function index(): string
     {
-        // Consulta para obtener recursos digitales con información completa
-        $query = $this->db->query("
-            SELECT 
+        $perPage = 8;
+        $page = (int) ($this->request->getGet('page') ?? 1);
+        $page = $page > 0 ? $page : 1;
+
+        $countBuilder = $this->db->table('recursos r')
+            ->join('recursos_digitales d', 'r.idrecurso = d.idrecurso')
+            ->join('editoriales e', 'r.ideditorial = e.ideditorial')
+            ->join('subcategorias s', 'r.idsubcategoria = s.idsubcategoria')
+            ->join('categorias c', 's.idcategoria = c.idcategoria')
+            ->join('tiporecursos t', 'r.idtiporecurso = t.idtiporecurso');
+
+        $total = $countBuilder->countAllResults();
+
+        $lastPage = $total > 0 ? (int) ceil($total / $perPage) : 1;
+        if ($page > $lastPage) {
+            $page = $lastPage;
+        }
+
+        $offset = ($page - 1) * $perPage;
+
+        $dataBuilder = $this->db->table('recursos r')
+            ->select('
                 r.idrecurso,
                 r.titulo,
                 r.anio,
@@ -27,23 +47,32 @@ class RecursoDigitalController extends BaseController
                 t.tiporecurso,
                 d.archivo,
                 d.portada
-            FROM recursos r
-            INNER JOIN recursos_digitales d ON r.idrecurso = d.idrecurso
-            INNER JOIN editoriales e ON r.ideditorial = e.ideditorial
-            INNER JOIN subcategorias s ON r.idsubcategoria = s.idsubcategoria
-            INNER JOIN categorias c ON s.idcategoria = c.idcategoria
-            INNER JOIN tiporecursos t ON r.idtiporecurso = t.idtiporecurso
-            ORDER BY r.idrecurso ASC
-        ");
+            ')
+            ->join('recursos_digitales d', 'r.idrecurso = d.idrecurso')
+            ->join('editoriales e', 'r.ideditorial = e.ideditorial')
+            ->join('subcategorias s', 'r.idsubcategoria = s.idsubcategoria')
+            ->join('categorias c', 's.idcategoria = c.idcategoria')
+            ->join('tiporecursos t', 'r.idtiporecurso = t.idtiporecurso');
 
-        $data['recursos_digitales'] = $query->getResult();
+        $data['recursos_digitales'] = $dataBuilder
+            ->orderBy('r.idrecurso', 'ASC')
+            ->limit($perPage, $offset)
+            ->get()
+            ->getResult();
 
-        // Si NO es AJAX, agregar layouts
-        if (!$this->request->isAJAX()) {
-            $data['navbar'] = view('layouts/navbar');
-            $data['header'] = view('layouts/header');
-            $data['footer'] = view('layouts/footer');
+        $pager = Services::pager();
+        $data['pager_links'] = $pager->makeLinks($page, $perPage, $total);
+        $data['total_recursos'] = $total;
+        $data['pagina_actual'] = $page;
+        $data['per_page'] = $perPage;
+
+        if ($this->request->isAJAX()) {
+            return view('recursos_digitales/listar', $data);
         }
+
+        $data['navbar'] = view('layouts/navbar');
+        $data['header'] = view('layouts/header');
+        $data['footer'] = view('layouts/footer');
 
         return view('recursos_digitales/listar', $data);
     }

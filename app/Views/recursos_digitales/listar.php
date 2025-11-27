@@ -115,6 +115,77 @@
                 </tbody>
             </table>
         </div>
+        <?php
+            $itemsPorPagina = max(1, $per_page ?? 8);
+            $paginaActual = max(1, $pagina_actual ?? 1);
+            $totalRegistros = $total_recursos ?? 0;
+            $inicio = $totalRegistros > 0 ? ($paginaActual - 1) * $itemsPorPagina + 1 : 0;
+            $fin = $totalRegistros > 0 ? min($totalRegistros, $paginaActual * $itemsPorPagina) : 0;
+            $totalPaginas = (int) ceil($totalRegistros / $itemsPorPagina);
+        ?>
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-2 mt-3">
+            <div class="text-muted small">
+                <?php if ($totalRegistros > 0): ?>
+                    Mostrando <?= $inicio ?>-<?= $fin ?> de <?= $totalRegistros ?> recursos digitales
+                <?php else: ?>
+                    No hay registros para paginar
+                <?php endif; ?>
+            </div>
+            <?php if ($totalPaginas > 1): ?>
+                <?php
+                    $request = service('request');
+                    $basePath = service('uri')->getPath();
+                    $baseUrl = base_url($basePath);
+                    $queryParams = $request->getGet();
+                    unset($queryParams['page']);
+                    $buildUrl = static function (string $base, array $params): string {
+                        return $params ? $base . '?' . http_build_query($params) : $base;
+                    };
+                ?>
+                <nav aria-label="Paginación de recursos digitales" class="pagination-wrapper recursos-digitales-pagination-container">
+                    <ul class="pagination recursos-digitales-pagination mb-0">
+                        <?php
+                            $prevDisabled = $paginaActual <= 1;
+                            $prevParams = $queryParams;
+                            if (!$prevDisabled) {
+                                $prevParams['page'] = $paginaActual - 1;
+                            }
+                            $prevUrl = $prevDisabled ? 'javascript:void(0);' : $buildUrl($baseUrl, $prevParams);
+                        ?>
+                        <li class="page-item <?= $prevDisabled ? 'disabled' : '' ?>">
+                            <a class="page-link" href="<?= $prevUrl ?>" data-page="<?= max(1, $paginaActual - 1) ?>" aria-label="Anterior">
+                                <span aria-hidden="true">&laquo;</span>
+                            </a>
+                        </li>
+                        <?php for ($page = 1; $page <= $totalPaginas; $page++): ?>
+                            <?php
+                                $pageParams = $queryParams;
+                                $pageParams['page'] = $page;
+                                $pageUrl = $buildUrl($baseUrl, $pageParams);
+                            ?>
+                            <li class="page-item <?= $page === $paginaActual ? 'active' : '' ?>">
+                                <a class="page-link" href="<?= $pageUrl ?>" data-page="<?= $page ?>" aria-current="<?= $page === $paginaActual ? 'page' : 'false' ?>">
+                                    <?= $page ?>
+                                </a>
+                            </li>
+                        <?php endfor; ?>
+                        <?php
+                            $nextDisabled = $paginaActual >= $totalPaginas;
+                            $nextParams = $queryParams;
+                            if (!$nextDisabled) {
+                                $nextParams['page'] = $paginaActual + 1;
+                            }
+                            $nextUrl = $nextDisabled ? 'javascript:void(0);' : $buildUrl($baseUrl, $nextParams);
+                        ?>
+                        <li class="page-item <?= $nextDisabled ? 'disabled' : '' ?>">
+                            <a class="page-link" href="<?= $nextUrl ?>" data-page="<?= min($totalPaginas, $paginaActual + 1) ?>" aria-label="Siguiente">
+                                <span aria-hidden="true">&raquo;</span>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            <?php endif; ?>
+        </div>
     </div>
 </div>
 
@@ -685,6 +756,65 @@ function cerrarModalPDF() {
     // Limpiar URL actual
     currentPDFUrl = '';
 }
+
+// =====================================
+// Paginación AJAX dentro del dashboard
+// =====================================
+(function(){
+    if (window.__recursosDigitalesPaginationBound) {
+        return;
+    }
+    window.__recursosDigitalesPaginationBound = true;
+
+    document.addEventListener('click', function(event) {
+        var target = event.target;
+
+        // Navegar hasta el enlace dentro de la paginación
+        while (target && target !== document && !(target instanceof HTMLAnchorElement)) {
+            target = target.parentElement;
+        }
+
+        if (!target || !(target instanceof HTMLAnchorElement)) {
+            return;
+        }
+
+        if (!target.closest('.pagination')) {
+            return;
+        }
+
+        var contenedor = document.getElementById('contenedor-principal');
+        if (!contenedor) {
+            // No estamos dentro del dashboard, dejar comportamiento normal
+            return;
+        }
+
+        event.preventDefault();
+        var url = target.getAttribute('href');
+        if (!url) {
+            return;
+        }
+
+        contenedor.innerHTML = '<div class="text-center py-5">Cargando recursos...</div>';
+
+        fetch(url, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(function(response) {
+            if (!response.ok) {
+                throw new Error('Error al cargar la página');
+            }
+            return response.text();
+        })
+        .then(function(html) {
+            contenedor.innerHTML = html;
+        })
+        .catch(function() {
+            contenedor.innerHTML = '<div class="text-danger text-center py-5">No se pudo cargar la página solicitada.</div>';
+        });
+    });
+})();
 </script>
 
 </div>

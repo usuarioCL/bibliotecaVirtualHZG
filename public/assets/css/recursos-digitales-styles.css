@@ -181,6 +181,72 @@
     gap: 0.5rem;
 }
 
+/* ===== PAGINACIÓN PERSONALIZADA ===== */
+.pagination-wrapper.recursos-digitales-pagination-container {
+    display: inline-flex;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(255, 254, 249, 0.92));
+    border-radius: 999px;
+    padding: 0.4rem 0.55rem;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(241, 243, 248, 0.9);
+}
+
+.pagination.recursos-digitales-pagination {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.4rem 0.6rem;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 999px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(233, 236, 239, 0.9);
+    margin-bottom: 0;
+}
+
+.pagination.recursos-digitales-pagination .page-item {
+    margin: 0;
+}
+
+.pagination.recursos-digitales-pagination .page-link {
+    border: none;
+    border-radius: 999px !important;
+    min-width: 36px;
+    height: 36px;
+    padding: 0 0.9rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #495057;
+    background: transparent;
+    transition: all 0.2s ease-in-out;
+}
+
+.pagination.recursos-digitales-pagination .page-link:hover {
+    background: rgba(245, 56, 96, 0.12);
+    color: #f53860;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(245, 56, 96, 0.2);
+}
+
+.pagination.recursos-digitales-pagination .page-item.active .page-link {
+    background: linear-gradient(135deg, #f53860, #ff8f70);
+    color: #fff;
+    font-weight: 600;
+    box-shadow: 0 6px 15px rgba(245, 56, 96, 0.35);
+}
+
+.pagination.recursos-digitales-pagination .page-item.disabled .page-link,
+.pagination.recursos-digitales-pagination .page-item.disabled .page-link:hover {
+    opacity: 0.45;
+    cursor: not-allowed;
+    background: transparent;
+    color: #adb5bd;
+    box-shadow: none;
+    transform: none;
+}
+
 /* ===== VISOR DE PDF ===== */
 #pdfContainer {
     position: relative;
