@@ -144,5 +144,23 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Limpiar espacios en blanco al enviar el formulario
+        document.querySelector('form').addEventListener('submit', function(e) {
+            const usernameInput = document.getElementById('username');
+            const passwordInput = document.getElementById('password');
+            
+            // Limpiar espacios al inicio y final
+            usernameInput.value = usernameInput.value.trim();
+            passwordInput.value = passwordInput.value.trim();
+            
+            // Validar que no estén vacíos después del trim
+            if (!usernameInput.value || !passwordInput.value) {
+                e.preventDefault();
+                alert('Por favor complete todos los campos');
+                return false;
+            }
+        });
+    </script>
 </body>
 </html>

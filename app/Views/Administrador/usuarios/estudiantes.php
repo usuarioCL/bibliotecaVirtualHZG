@@ -25,7 +25,7 @@
                         <i class="ti ti-filter"></i> Filtrar
                     </button>
                     <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modalNuevoEstudiante">
-                        <i class="ti ti-plus"></i> Matricular Estudiante
+                        <i class="ti ti-plus"></i> Registrar Estudiante
                     </button>
                 </div>
             </div>

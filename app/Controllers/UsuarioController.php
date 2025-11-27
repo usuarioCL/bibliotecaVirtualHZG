@@ -146,16 +146,16 @@ class UsuarioController extends Controller
             $db->transStart();
 
             try {
-                // 1. Crear la persona primero
+                // 1. Crear la persona primero (limpiando espacios en blanco)
                 $datosPersona = [
-                    'apellidos' => $this->request->getPost('apellidos'),
-                    'nombres' => $this->request->getPost('nombres'),
-                    'tipodoc' => $this->request->getPost('tipodoc'),
-                    'numerodoc' => $this->request->getPost('numerodoc'),
-                    'telefono' => $this->request->getPost('telefono'),
-                    'direccion' => $this->request->getPost('direccion'),
-                    'email' => $this->request->getPost('email'),
-                    'genero' => $this->request->getPost('genero')
+                    'apellidos' => trim($this->request->getPost('apellidos')),
+                    'nombres' => trim($this->request->getPost('nombres')),
+                    'tipodoc' => trim($this->request->getPost('tipodoc')),
+                    'numerodoc' => trim($this->request->getPost('numerodoc')),
+                    'telefono' => trim($this->request->getPost('telefono')),
+                    'direccion' => trim($this->request->getPost('direccion')),
+                    'email' => trim($this->request->getPost('email')),
+                    'genero' => trim($this->request->getPost('genero'))
                 ];
 
                 // Insertar persona
@@ -165,16 +165,29 @@ class UsuarioController extends Controller
 
                 $idpersona = $this->personaModel->getInsertID();
 
-                // 2. Crear el usuario con la persona recién creada
+                // 2. Crear el usuario con la persona recién creada (limpiando espacios)
                 $datosUsuario = [
-                    'nomuser' => $this->request->getPost('nomuser'),
-                    'passuser' => $this->request->getPost('passuser'),
-                    'nivelacceso' => $this->request->getPost('nivelacceso'),
+                    'nomuser' => trim($this->request->getPost('nomuser')),
+                    'passuser' => trim($this->request->getPost('passuser')),
+                    'nivelacceso' => trim($this->request->getPost('nivelacceso')),
                     'idpersona' => $idpersona
                 ];
 
+                // LOG: Datos antes de crear usuario
+                log_message('info', '=== CREACIÓN DE USUARIO ===');
+                log_message('info', 'Usuario: ' . $datosUsuario['nomuser']);
+                log_message('info', 'Contraseña recibida (sin hash): ' . $datosUsuario['passuser']);
+                log_message('info', 'Nivel de acceso: ' . $datosUsuario['nivelacceso']);
+                log_message('info', 'ID Persona: ' . $idpersona);
+
                 // Usar el método de validación del modelo
                 $resultado = $this->usuarioModel->crearUsuarioConValidacion($datosUsuario);
+
+                // LOG: Resultado de la creación
+                log_message('info', 'Resultado de creación: ' . ($resultado['exito'] ? 'ÉXITO' : 'FALLÓ'));
+                if ($resultado['exito']) {
+                    log_message('info', 'ID de usuario creado: ' . $resultado['id']);
+                }
 
                 if (!$resultado['exito']) {
                     throw new Exception($resultado['mensaje']);

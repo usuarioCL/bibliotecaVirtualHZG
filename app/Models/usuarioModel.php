@@ -93,7 +93,14 @@ class UsuarioModel extends Model
 
         // Encriptar contraseña
         if (isset($data['passuser'])) {
+            $passwordOriginal = $data['passuser'];
             $data['passuser'] = password_hash($data['passuser'], PASSWORD_DEFAULT);
+            
+            // LOG: Contraseña hasheada
+            log_message('info', '=== HASHEO DE CONTRASEÑA ===');
+            log_message('info', 'Contraseña original: ' . $passwordOriginal);
+            log_message('info', 'Contraseña hasheada: ' . $data['passuser']);
+            log_message('info', 'Algoritmo: PASSWORD_DEFAULT');
         }
 
         // Intentar crear el usuario

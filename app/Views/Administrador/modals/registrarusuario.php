@@ -91,14 +91,14 @@
                         </div>
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label for="passuser" class="form-label">Contraseña <small class="text-muted">(auto-generada)</small></label>
+                                <label for="passuser" class="form-label">Contraseña <small class="text-muted">(predeterminada)</small></label>
                                 <div class="input-group">
-                                    <input type="password" class="form-control" id="passuser" name="passuser" required minlength="6" placeholder="Se generará automáticamente" readonly>
-                                    <button class="btn btn-outline-secondary" type="button" id="togglePassword" title="Mostrar/Ocultar contraseña" onclick="togglePasswordVisibility()">
+                                    <input type="password" class="form-control" id="passuser" name="passuser" required minlength="6" placeholder="123456" readonly>
+                                    <button class="btn btn-outline-secondary" type="button" id="togglePassword" title="Mostrar/Ocultar contraseña" onclick="(function(){ var p = document.getElementById('passuser'); var i = document.getElementById('eyeIcon'); if(p && i){ p.type = p.type === 'password' ? 'text' : 'password'; i.className = p.type === 'text' ? 'ti ti-eye-off' : 'ti ti-eye'; } })()">
                                         <i class="ti ti-eye" id="eyeIcon"></i>
                                     </button>
                                 </div>
-                                <div class="form-text">Se genera automáticamente con el DNI</div>
+                                <div class="form-text">Contraseña predeterminada: <strong>123456</strong></div>
                             </div>
                         </div>
                     </div>
@@ -172,12 +172,12 @@ function generarUsuarioYEmailInline() {
                 // Generar email con DNI: dni@bibliohzg.pe
                 const email = `${dniValue}@bibliohzg.pe`;
                 
-                // Generar contraseña con DNI: HZG + DNI (ej: HZG12345678)
-                const password = `${dniValue}`;
+                // Contraseña predeterminada: 123456
+                const password = '123456';
 
                 console.log('✅ Usuario generado:', usuario);
                 console.log('✅ Email generado:', email);
-                console.log('✅ Contraseña generada:', password);
+                console.log('✅ Contraseña predeterminada:', password);
 
                 nomuser.value = usuario;
                 emailField.value = email;
@@ -202,7 +202,7 @@ function generarUsuarioYEmailInline() {
             }
         } else if (!nombresValue || !apellidosValue || !dniValue) {
             // Limpiar campos si alguno está vacío, pero solo si fueron generados automáticamente
-            if (emailField.value.includes('@bibliohzg.pe') && passwordField.value.includes('HZG')) {
+            if (emailField.value.includes('@bibliohzg.pe') && passwordField.value === '123456') {
                 nomuser.value = '';
                 emailField.value = '';
                 passwordField.value = '';
@@ -364,63 +364,10 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
         
-        // 6. Configurar botón de mostrar/ocultar contraseña
-        const togglePasswordBtn = document.getElementById('togglePassword');
-        if (togglePasswordBtn) {
-            console.log('✅ Botón de contraseña encontrado, configurando listener');
-            togglePasswordBtn.addEventListener('click', function(e) {
-                console.log('🔘 Click detectado en botón de contraseña');
-                e.preventDefault();
-                e.stopPropagation();
-                togglePasswordVisibility();
-            });
-        } else {
-            console.warn('⚠️ Botón de contraseña no encontrado');
-        }
-        
         console.log('✅ Todos los event listeners configurados');
     }
     
     configurarModal();
-});
-
-// Listener adicional para contenido cargado vía AJAX
-document.addEventListener('click', function(e) {
-    // Listener para el botón de mostrar/ocultar contraseña (delegación de eventos)
-    // Detecta clic en el botón o en el icono dentro del botón
-    if (e.target && (e.target.id === 'togglePassword' || e.target.closest('#togglePassword'))) {
-        console.log('🔄 Click en botón de contraseña detectado vía delegación');
-        e.preventDefault();
-        togglePasswordVisibility();
-        return;
-    }
-    
-    // Listener para abrir modal vía AJAX
-    if (e.target && e.target.getAttribute('data-bs-target') === '#modalNuevoUsuario') {
-        console.log('🔄 Modal abierto vía AJAX, reconfigurando...');
-        setTimeout(() => {
-            const modal = document.getElementById('modalNuevoUsuario');
-            if (modal) {
-                // Asegurar que los listeners estén activos
-                modal.addEventListener('hidden.bs.modal', function(e) {
-                    console.log('🔥 MODAL CERRADO VÍA AJAX');
-                    limpiarModalCompleto();
-                });
-                
-                // Reconfigurar botón de contraseña
-                const togglePasswordBtn = document.getElementById('togglePassword');
-                if (togglePasswordBtn) {
-                    console.log('🔄 Reconfigurando botón de contraseña vía AJAX');
-                    togglePasswordBtn.addEventListener('click', function(e) {
-                        console.log('🔘 Click detectado en botón de contraseña (AJAX)');
-                        e.preventDefault();
-                        e.stopPropagation();
-                        togglePasswordVisibility();
-                    });
-                }
-            }
-        }, 300);
-    }
 });
 
 // Función para mostrar/ocultar contraseña
@@ -557,7 +504,7 @@ function registrarPersonaYUsuario() {
                     <div class="text-start">
                         <p><strong>Usuario:</strong> ${data.usuario}</p>
                         <p><strong>Email:</strong> ${data.email}</p>
-                        <p><strong>Contraseña:</strong> ${data.numero_documento} <small class="text-muted">(DNI)</small></p>
+                        <p><strong>Contraseña:</strong> 123456 <small class="text-muted">(predeterminada)</small></p>
                         <p><strong>Nivel:</strong> <span class="badge bg-primary">${data.nivel_acceso}</span></p>
                         ${infoAdicional}
                     </div>

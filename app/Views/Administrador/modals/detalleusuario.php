@@ -58,10 +58,14 @@
                             <p><strong>ID Usuario:</strong> <span id="detalle-idusuario"></span></p>
                         </div>
                         <div class="col-md-6">
-                            <p><strong>Última Conexión:</strong> <span id="detalle-ultima-conexion">No registrada</span></p>
+                            <p><strong>Contraseña Predeterminada:</strong> <span class="badge bg-info">123456</span></p>
                             <p><strong>Estado Cuenta:</strong> <span id="detalle-estado-cuenta">Activa</span></p>
                             <p><strong>Tipo Documento:</strong> <span id="detalle-tipodoc"></span></p>
                         </div>
+                    </div>
+                    <div class="alert alert-info mb-0 mt-2">
+                        <i class="ti ti-info-circle me-2"></i>
+                        <small><strong>Nota:</strong> La contraseña predeterminada para todos los usuarios es <code>123456</code>. Se recomienda cambiarla al primer acceso.</small>
                     </div>
 
                     <!-- Información específica por tipo de usuario -->

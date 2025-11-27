@@ -11,8 +11,12 @@
             <form id="formNuevoEstudiante">
                 <div class="modal-body">
                     <div class="alert alert-info">
-                        <i class="ti ti-info-circle"></i>
+                        <i class="ti ti-info-circle me-2"></i>
                         Complete la información del estudiante y seleccione el grupo al que pertenecerá.
+                    </div>
+                    <div class="alert alert-success">
+                        <i class="ti ti-key me-2"></i>
+                        <strong>Credenciales de acceso:</strong> Se creará automáticamente un usuario con contraseña predeterminada <code class="bg-white px-2 py-1 rounded">123456</code>
                     </div>
 
                     <div class="row">
@@ -95,7 +99,7 @@
                         <i class="ti ti-x"></i> Cancelar
                     </button>
                     <button type="button" class="btn btn-primary" onclick="matricularEstudiante()">
-                        <i class="ti ti-check"></i> Matricular Estudiante
+                        <i class="ti ti-check"></i> Registrar Estudiante
                     </button>
                 </div>
             </form>

@@ -239,7 +239,7 @@ class MatriculaController extends BaseController
                     
                     $usuarioData = [
                         'nomuser' => $usuario_generado,
-                        'passuser' => password_hash('123456', PASSWORD_DEFAULT), // Password temporal
+                        'passuser' => password_hash('123456', PASSWORD_DEFAULT), // Password predeterminada
                         'nivelacceso' => 'estudiante',
                         'idpersona' => $idpersona
                     ];
@@ -247,6 +247,11 @@ class MatriculaController extends BaseController
                     if (!$usuarioModel->insert($usuarioData)) {
                         throw new \Exception('Error al crear usuario automático');
                     }
+                    
+                    // Guardar usuario generado para retornarlo
+                    $usuarioGenerado = $usuario_generado;
+                } else {
+                    $usuarioGenerado = $usuarioExistente['nomuser'];
                 }
             }
 
@@ -302,6 +307,8 @@ class MatriculaController extends BaseController
             return $this->response->setJSON([
                 'status' => 'success',
                 'message' => 'Estudiante matriculado exitosamente (incluye usuario automático)',
+                'usuario' => $usuarioGenerado ?? 'No disponible',
+                'password' => '123456',
                 'data' => [
                     'idmatricula' => $idmatricula,
                     'codigo_matricula' => str_pad($idmatricula, 5, '0', STR_PAD_LEFT),
