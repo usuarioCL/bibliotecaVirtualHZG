@@ -33,7 +33,7 @@ class RecursoDigitalController extends BaseController
             INNER JOIN subcategorias s ON r.idsubcategoria = s.idsubcategoria
             INNER JOIN categorias c ON s.idcategoria = c.idcategoria
             INNER JOIN tiporecursos t ON r.idtiporecurso = t.idtiporecurso
-            ORDER BY r.titulo ASC
+            ORDER BY r.idrecurso ASC
         ");
 
         $data['recursos_digitales'] = $query->getResult();
