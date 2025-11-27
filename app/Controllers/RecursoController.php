@@ -35,6 +35,10 @@ class RecursoController extends Controller
             'busqueda' => $this->request->getGet('busqueda')
         ];
 
+        $perPage = 15;
+        $page = (int) ($this->request->getGet('page') ?? 1);
+        $page = $page > 0 ? $page : 1;
+
         // Obtener todos los recursos con información completa
         $recursos = $recurso->obtenerRecursosCompletos();
 
@@ -71,9 +75,16 @@ class RecursoController extends Controller
             });
         }
 
-        $datos['recursos'] = array_values($recursos); // Reindexar array
+        $datos['total_recursos'] = count($recursos);
+
+        $offset = ($page - 1) * $perPage;
+        $recursosPagina = array_slice($recursos, $offset, $perPage);
+
+        $datos['recursos'] = array_values($recursosPagina);
         $datos['filtros'] = $filtros;
-        
+        $datos['pagina_actual'] = $page;
+        $datos['per_page'] = $perPage;
+
         // Obtener años únicos para el filtro
         $aniosUnicos = array_unique(array_column($recurso->obtenerRecursosCompletos(), 'anio'));
         sort($aniosUnicos);
