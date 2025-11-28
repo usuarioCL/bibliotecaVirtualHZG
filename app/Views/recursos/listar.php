@@ -524,6 +524,45 @@ $(document).ready(function() {
         });
     });
 
+    // Interceptar paginación para cargar contenido vía AJAX en el contenedor del dashboard
+    $(document).on('click', '.pagination.recursos-digitales-pagination .page-link', function(e) {
+        var href = $(this).attr('href');
+        if (!href) return; // sin URL, no hacemos nada
+        var $contenedor = $('#contenedor-principal');
+        if ($contenedor.length === 0) {
+            // Si no existe el contenedor (acceso directo), dejar navegación normal
+            return;
+        }
+        e.preventDefault();
+        // Spinner de carga
+        $contenedor.html(`
+            <div class="text-center py-5">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Cargando...</span>
+                </div>
+                <p class="mt-3">Cargando página...</p>
+            </div>
+        `);
+        // Cargar por AJAX solo el cuerpo de recursos
+        $.ajax({
+            url: href,
+            method: 'GET',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .done(function(html) {
+            $contenedor.html(html);
+            // Actualizar URL sin recargar (mantener estado de navegación)
+            if (window.history && history.pushState) {
+                history.pushState({}, '', href);
+            }
+            // Ir al inicio del contenedor
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        })
+        .fail(function() {
+            $contenedor.html('<div class="text-danger text-center py-5">No se pudo cargar la página solicitada.</div>');
+        });
+    });
+
     // Delegar click en Editar para cargar la vista de edición sin recargar la página
     $(document).on('click', '.ajax-edit', function(e) {
         e.preventDefault();

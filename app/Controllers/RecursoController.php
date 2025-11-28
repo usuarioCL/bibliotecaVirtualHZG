@@ -110,6 +110,12 @@ class RecursoController extends Controller
         $datos['editoriales'] = model('EditorialModel')->findAll();
         $datos['tiposrecurso'] = model('TiporecursoModel')->findAll();
 
+        // Si viene por AJAX (paginación dentro del dashboard), devolver solo la vista
+        if ($this->request->isAJAX()) {
+            return view('recursos/listar', $datos);
+        }
+
+        // Caso contrario, incluir layout completo para navegación directa
         $datos['navbar'] = view('layouts/navbar');
         $datos['header'] = view('layouts/header');
         $datos['footer'] = view('layouts/footer');
