@@ -9,12 +9,14 @@
         color: #000 !important;
         font-weight: 600 !important;
     }
+
     .sanction-status.status-cumplida,
     .status-cumplida {
         background-color: #198754 !important;
         color: white !important;
         font-weight: 600 !important;
     }
+
     .sanction-status.status-activa,
     .status-activa {
         background-color: #dc3545 !important;
@@ -94,26 +96,26 @@
                 <label class="form-label">Estado</label>
                 <select name="estado" class="form-select">
                     <option value="">Todos los estados</option>
-                    <option value="cumplida" <?= (($filtros['estado'] ?? '') == 'cumplida') ? 'selected' : '' ?>>Cumplida</option>
-                    <option value="cancelada" <?= (($filtros['estado'] ?? '') == 'cancelada') ? 'selected' : '' ?>>Cancelada</option>
-                    <option value="suspendida" <?= (($filtros['estado'] ?? '') == 'suspendida') ? 'selected' : '' ?>>Suspendida</option>
+                    <option value="cumplida" <?= (($filtros['estado'] ?? '') == 'cumplida') ? 'selected' : '' ?>>Cumplida
+                    </option>
+                    <option value="cancelada" <?= (($filtros['estado'] ?? '') == 'cancelada') ? 'selected' : '' ?>>
+                        Cancelada</option>
+                    <option value="suspendida" <?= (($filtros['estado'] ?? '') == 'suspendida') ? 'selected' : '' ?>>
+                        Suspendida</option>
                 </select>
             </div>
             <div class="col-md-3">
                 <label class="form-label">Fecha Desde</label>
-                <input type="date" name="fecha_desde" class="form-control" 
-                       value="<?= $filtros['fecha_desde'] ?? '' ?>">
+                <input type="date" name="fecha_desde" class="form-control" value="<?= $filtros['fecha_desde'] ?? '' ?>">
             </div>
             <div class="col-md-3">
                 <label class="form-label">Fecha Hasta</label>
-                <input type="date" name="fecha_hasta" class="form-control" 
-                       value="<?= $filtros['fecha_hasta'] ?? '' ?>">
+                <input type="date" name="fecha_hasta" class="form-control" value="<?= $filtros['fecha_hasta'] ?? '' ?>">
             </div>
             <div class="col-md-3">
                 <label class="form-label">Buscar</label>
-                <input type="text" name="buscar" class="form-control" 
-                       placeholder="Nombre, apellido o DNI..." 
-                       value="<?= $filtros['buscar'] ?? '' ?>">
+                <input type="text" name="buscar" class="form-control" placeholder="Nombre, apellido o DNI..."
+                    value="<?= $filtros['buscar'] ?? '' ?>">
             </div>
         </div>
         <div class="row mt-5 pt-2">
@@ -132,9 +134,14 @@
 <!-- Tabla de Historial -->
 <div class="card">
     <div class="card-header">
-        <h5 class="card-title mb-0">
-            <i class="ti ti-history me-2"></i>Historial de Sanciones
-        </h5>
+        <div class="d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0">
+                <i class="ti ti-history me-2"></i>Historial de Sanciones
+            </h5>
+            <button type="button" id="btnExportarExcelSanciones" class="btn btn-success btn-sm">
+                <i class="ti ti-file-excel"></i> Exportar Excel
+            </button>
+        </div>
     </div>
     <div class="card-body">
         <?php if (empty($sanciones)): ?>
@@ -147,16 +154,16 @@
             <div class="table-responsive">
                 <table class="table table-hover">
                     <thead>
-                            <tr>
-                                <th>Persona</th>
-                                <th>Tipo</th>
-                                <th>Detalles</th>
-                                <th>Fecha Sanción</th>
-                                <th>Vencimiento</th>
-                                <th>Estado</th>
-                                <th>Registrado por</th>
-                                <th>Acciones</th>
-                            </tr>
+                        <tr>
+                            <th>Persona</th>
+                            <th>Tipo</th>
+                            <th>Detalles</th>
+                            <th>Fecha Sanción</th>
+                            <th>Vencimiento</th>
+                            <th>Estado</th>
+                            <th>Registrado por</th>
+                            <th>Acciones</th>
+                        </tr>
                     </thead>
                     <tbody>
                         <?php foreach ($sanciones as $sancion): ?>
@@ -196,15 +203,14 @@
                                 </td>
                                 <td>
                                     <div class="btn-group btn-group-sm">
-                                        <button class="btn btn-outline-primary" 
-                                                onclick="verSancion(<?= $sancion['idsancion'] ?>)"
-                                                title="Ver detalles">
+                                        <button class="btn btn-outline-primary"
+                                            onclick="verSancion(<?= $sancion['idsancion'] ?>)" title="Ver detalles">
                                             <i class="ti ti-eye"></i>
                                         </button>
                                         <?php if (($sancion['estado_sancion'] ?? '') == 'activa'): ?>
-                                            <button class="btn btn-outline-success" 
-                                                    onclick="cambiarEstado(<?= $sancion['idsancion'] ?>, 'cumplida')"
-                                                    title="Marcar como cumplida">
+                                            <button class="btn btn-outline-success"
+                                                onclick="cambiarEstado(<?= $sancion['idsancion'] ?>, 'cumplida')"
+                                                title="Marcar como cumplida">
                                                 <i class="ti ti-check"></i>
                                             </button>
                                         <?php endif; ?>
@@ -220,14 +226,16 @@
 </div>
 
 <!-- Modal Detalles de Sanción -->
-<div class="modal fade" id="modalDetallesSancion" tabindex="-1" aria-labelledby="modalDetallesSancionLabel" aria-hidden="true">
+<div class="modal fade" id="modalDetallesSancion" tabindex="-1" aria-labelledby="modalDetallesSancionLabel"
+    aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header bg-primary text-white">
                 <h5 class="modal-title" id="modalDetallesSancionLabel">
                     <i class="ti ti-file-description me-2"></i>Detalles de la Sanción
                 </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                    aria-label="Cerrar"></button>
             </div>
             <div class="modal-body" id="detalles-sancion-content">
                 <!-- El contenido se cargará dinámicamente -->
@@ -237,60 +245,60 @@
 </div>
 
 <script>
-// Interceptar el envío del formulario de filtros
-$(document).ready(function() {
-    // Manejar envío del formulario
-    $('#filtros-form').on('submit', function(e) {
-        e.preventDefault(); // Prevenir el envío normal del formulario
-        
-        // Obtener la URL con los parámetros del formulario
-        const formData = $(this).serialize();
-        const url = '<?= base_url('sanciones/historial') ?>?' + formData;
-        
-        // Mostrar indicador de carga
-        $('#contenedor-principal').html('<div class="text-center py-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Cargando...</span></div></div>');
-        
-        // Hacer la petición AJAX
-        $.ajax({
-            url: url,
-            type: 'GET',
-            success: function(data) {
-                $('#contenedor-principal').html(data);
-            },
-            error: function() {
-                $('#contenedor-principal').html('<div class="alert alert-danger">Error al cargar los datos. Por favor, intenta nuevamente.</div>');
-            }
-        });
-    });
-    
-    // Manejar botón limpiar filtros
-    $('#btn-limpiar-filtros').on('click', function(e) {
-        e.preventDefault();
-        
-        // Mostrar indicador de carga
-        $('#contenedor-principal').html('<div class="text-center py-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Cargando...</span></div></div>');
-        
-        // Cargar la vista sin filtros
-        $.ajax({
-            url: '<?= base_url('sanciones/historial') ?>',
-            type: 'GET',
-            success: function(data) {
-                $('#contenedor-principal').html(data);
-            },
-            error: function() {
-                $('#contenedor-principal').html('<div class="alert alert-danger">Error al cargar los datos. Por favor, intenta nuevamente.</div>');
-            }
-        });
-    });
-});
+    // Interceptar el envío del formulario de filtros
+    $(document).ready(function () {
+        // Manejar envío del formulario
+        $('#filtros-form').on('submit', function (e) {
+            e.preventDefault(); // Prevenir el envío normal del formulario
 
-function verSancion(id) {
-    // Abrir el modal
-    const modal = new bootstrap.Modal(document.getElementById('modalDetallesSancion'));
-    modal.show();
-    
-    // Mostrar loading
-    document.getElementById('detalles-sancion-content').innerHTML = `
+            // Obtener la URL con los parámetros del formulario
+            const formData = $(this).serialize();
+            const url = '<?= base_url('sanciones/historial') ?>?' + formData;
+
+            // Mostrar indicador de carga
+            $('#contenedor-principal').html('<div class="text-center py-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Cargando...</span></div></div>');
+
+            // Hacer la petición AJAX
+            $.ajax({
+                url: url,
+                type: 'GET',
+                success: function (data) {
+                    $('#contenedor-principal').html(data);
+                },
+                error: function () {
+                    $('#contenedor-principal').html('<div class="alert alert-danger">Error al cargar los datos. Por favor, intenta nuevamente.</div>');
+                }
+            });
+        });
+
+        // Manejar botón limpiar filtros
+        $('#btn-limpiar-filtros').on('click', function (e) {
+            e.preventDefault();
+
+            // Mostrar indicador de carga
+            $('#contenedor-principal').html('<div class="text-center py-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Cargando...</span></div></div>');
+
+            // Cargar la vista sin filtros
+            $.ajax({
+                url: '<?= base_url('sanciones/historial') ?>',
+                type: 'GET',
+                success: function (data) {
+                    $('#contenedor-principal').html(data);
+                },
+                error: function () {
+                    $('#contenedor-principal').html('<div class="alert alert-danger">Error al cargar los datos. Por favor, intenta nuevamente.</div>');
+                }
+            });
+        });
+    });
+
+    function verSancion(id) {
+        // Abrir el modal
+        const modal = new bootstrap.Modal(document.getElementById('modalDetallesSancion'));
+        modal.show();
+
+        // Mostrar loading
+        document.getElementById('detalles-sancion-content').innerHTML = `
         <div class="text-center py-4">
             <div class="spinner-border text-primary" role="status">
                 <span class="visually-hidden">Cargando...</span>
@@ -298,23 +306,23 @@ function verSancion(id) {
             <p class="mt-2">Cargando detalles...</p>
         </div>
     `;
-    
-    // Obtener detalles de la sanción
-    fetch('<?= base_url('sanciones/ver') ?>/' + id, {
-        method: 'GET',
-        headers: {
-            'X-Requested-With': 'XMLHttpRequest'
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success && data.sancion) {
-            const sancion = data.sancion;
-            const estadoClass = sancion.estado_sancion === 'activa' ? 'bg-danger' : 
-                              sancion.estado_sancion === 'cumplida' ? 'bg-success' : 
-                              sancion.estado_sancion === 'cancelada' ? 'bg-warning' : 'bg-secondary';
-            
-            let html = `
+
+        // Obtener detalles de la sanción
+        fetch('<?= base_url('sanciones/ver') ?>/' + id, {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.sancion) {
+                    const sancion = data.sancion;
+                    const estadoClass = sancion.estado_sancion === 'activa' ? 'bg-danger' :
+                        sancion.estado_sancion === 'cumplida' ? 'bg-success' :
+                            sancion.estado_sancion === 'cancelada' ? 'bg-warning' : 'bg-secondary';
+
+                    let html = `
                 <div class="row">
                     <div class="col-md-6 mb-3">
                         <h6 class="text-muted mb-2"><i class="ti ti-user me-1"></i>Persona Sancionada</h6>
@@ -412,10 +420,10 @@ function verSancion(id) {
                     </button>
                 </div>
             `;
-            
-            document.getElementById('detalles-sancion-content').innerHTML = html;
-        } else {
-            document.getElementById('detalles-sancion-content').innerHTML = `
+
+                    document.getElementById('detalles-sancion-content').innerHTML = html;
+                } else {
+                    document.getElementById('detalles-sancion-content').innerHTML = `
                 <div class="text-center py-4">
                     <i class="ti ti-alert-circle text-danger" style="font-size: 3rem;"></i>
                     <h5 class="text-danger mt-3">Error</h5>
@@ -425,11 +433,11 @@ function verSancion(id) {
                     </button>
                 </div>
             `;
-        }
-    })
-    .catch(error => {
-        console.error('Error al cargar detalles:', error);
-        document.getElementById('detalles-sancion-content').innerHTML = `
+                }
+            })
+            .catch(error => {
+                console.error('Error al cargar detalles:', error);
+                document.getElementById('detalles-sancion-content').innerHTML = `
             <div class="text-center py-4">
                 <i class="ti ti-alert-circle text-danger" style="font-size: 3rem;"></i>
                 <h5 class="text-danger mt-3">Error al cargar detalles</h5>
@@ -439,11 +447,42 @@ function verSancion(id) {
                 </button>
             </div>
         `;
-    });
-}
+            });
+    }
 
-function cambiarEstado(id, estado) {
-    // Aquí iría la lógica para cambiar el estado
-    console.log('Cambiar estado:', id, estado);
-}
+    function cambiarEstado(id, estado) {
+        // Aquí iría la lógica para cambiar el estado
+        console.log('Cambiar estado:', id, estado);
+    }
+</script>
+
+<!-- SweetAlert2 CDN -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<!-- Script para Exportar Excel con SweetAlert2 -->
+<script>
+    $(document).ready(function () {
+        // Evento para exportar historial de sanciones a Excel
+        $('#btnExportarExcelSanciones').on('click', function () {
+            // Mostrar indicador de carga
+            Swal.fire({
+                title: 'Generando archivo Excel...',
+                text: 'Por favor espera mientras se genera el archivo',
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                showConfirmButton: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            // Abrir en nueva ventana para descargar
+            window.location.href = '<?= base_url('/sanciones/historial/exportar-excel') ?>';
+
+            // Cerrar el loading después de un momento
+            setTimeout(() => {
+                Swal.close();
+            }, 1500);
+        });
+    });
 </script>

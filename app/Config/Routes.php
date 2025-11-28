@@ -215,6 +215,7 @@ $routes->post('/sanciones/levantar', 'SancionController::levantarSancion');
 $routes->post('/sanciones/levantar-todas', 'SancionController::levantarTodas');
 $routes->get('/sanciones/estadisticas', 'SancionController::estadisticas');
 $routes->get('/sanciones/exportar-excel', 'SancionController::exportarExcel');
+$routes->get('/sanciones/historial/exportar-excel', 'SancionController::exportarHistorialExcel');
 
 // Sistema de Notificaciones
 $routes->get('/notificaciones/contar', 'NotificacionController::contarNoLeidas');

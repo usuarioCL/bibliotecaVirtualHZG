@@ -490,7 +490,73 @@ class SancionController extends BaseController
             'data' => $sanciones,
             'message' => 'Datos preparados para exportación'
         ]);
+    }    
+    /**
+     * Exportar historial completo de sanciones a Excel (XLSX)
+     */
+    public function exportarHistorialExcel()
+    {
+        try {
+            $filtros = [
+                'estado' => $this->request->getGet('estado') ?? '',
+                'fecha_desde' => $this->request->getGet('fecha_desde') ?? '',
+                'fecha_hasta' => $this->request->getGet('fecha_hasta') ?? '',
+                'buscar' => $this->request->getGet('buscar') ?? ''
+            ];
+            
+            $historial = $this->sancionModel->obtenerHistorialSanciones($filtros);
+            
+            $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+            $sheet = $spreadsheet->getActiveSheet();
+            
+            $encabezados = ['ID', 'Persona', 'Documento', 'Tipo Sanción', 'Detalle',
+                'Fecha Sanción', 'Fecha Inicio', 'Fecha Vencimiento', 'Duración (días)', 'Estado', 'Observaciones'];
+            
+            $columna = 'A';
+            foreach ($encabezados as $encabezado) {
+                $sheet->setCellValue($columna . '1', $encabezado);
+                $sheet->getStyle($columna . '1')->getFont()->setBold(true);
+                $columna++;
+            }
+            
+            $fila = 2;
+            foreach ($historial as $registro) {
+                $rowData = [
+                    $registro['idsancion'] ?? '',
+                    $registro['nombre_completo'] ?? '',
+                    $registro['numerodoc'] ?? '',
+                    $registro['tiposancion'] ?? '',
+                    $registro['detallesancion'] ?? '',
+                    !empty($registro['fecha_sancion']) ? date('d/m/Y', strtotime($registro['fecha_sancion'])) : '',
+                    !empty($registro['fecha_inicio']) ? date('d/m/Y', strtotime($registro['fecha_inicio'])) : '',
+                    !empty($registro['fecha_vencimiento']) ? date('d/m/Y', strtotime($registro['fecha_vencimiento'])) : 'N/A',
+                    $registro['duracion_dias'] ?? 'N/A',
+                    $registro['estado_sancion'] ?? '',
+                    $registro['observaciones'] ?? ''
+                ];
+                $sheet->fromArray($rowData, null, 'A' . $fila);
+                $fila++;
+            }
+            
+            foreach (range('A', 'K') as $col) {
+                $sheet->getColumnDimension($col)->setAutoSize(true);
+            }
+            
+            $filename = 'historial-sanciones-' . date('Ymd-His') . '.xlsx';
+            
+            header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            header('Content-Disposition: attachment; filename="' . $filename . '"');
+            header('Cache-Control: max-age=0');
+            
+            $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+            $writer->save('php://output');
+            exit;
+        } catch (\Exception $e) {
+            log_message('error', 'Error exportando historial de sanciones a Excel: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Error al exportar el historial');
+        }
     }
+
 
     /**
      * Obtener todas las sanciones de una persona específica
