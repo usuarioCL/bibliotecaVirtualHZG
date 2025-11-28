@@ -274,8 +274,25 @@
 $(document).ready(function() {
     // Función para recargar solo la lista de recursos
     function recargarListaRecursos() {
-        // Mostrar indicador de carga en el contenedor principal
-        $('#contenedor-principal').html(`
+        const contenedor = $('#contenedor-principal');
+        
+        // IMPORTANTE: Limpiar TODOS los eventos antes de recargar para evitar congelamiento
+        // 1. Eliminar todos los event listeners de jQuery del contenedor y sus hijos
+        contenedor.find('*').off();
+        contenedor.off();
+        
+        // 2. Detener cualquier MutationObserver activo
+        if (window.__recursosMutationObserver) {
+            window.__recursosMutationObserver.disconnect();
+            delete window.__recursosMutationObserver;
+        }
+        
+        // 3. Limpiar flags de inicialización
+        delete window.__recursosFisicosPaginationBound;
+        delete window.__recursosListInitialized;
+        
+        // 4. Mostrar indicador de carga
+        contenedor.html(`
             <div class="text-center py-5">
                 <div class="spinner-border text-primary" role="status">
                     <span class="visually-hidden">Cargando...</span>
@@ -284,16 +301,16 @@ $(document).ready(function() {
             </div>
         `);
         
-        // Hacer petición AJAX para recargar solo la lista de recursos
+        // 5. Hacer petición AJAX para recargar solo la lista de recursos
         $.get('<?= base_url("recursos") ?>', function(data) {
-            $('#contenedor-principal').html(data);
+            contenedor.html(data);
             
             // Re-inicializar cualquier funcionalidad específica si es necesaria
             if (typeof window.initRecursosList === 'function') {
                 window.initRecursosList();
             }
         }).fail(function() {
-            $('#contenedor-principal').html(`
+            contenedor.html(`
                 <div class="text-danger text-center py-5">
                     <i class="ti ti-alert-circle fs-1 mb-3"></i>
                     <h5>Error al cargar la lista de recursos</h5>

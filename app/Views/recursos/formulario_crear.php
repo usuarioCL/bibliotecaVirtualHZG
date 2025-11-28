@@ -493,8 +493,26 @@ function registrarRecurso()
                         
                         // Cargar la vista de recursos en el contenedor principal del dashboard
                         if (typeof $ !== 'undefined' && $('#contenedor-principal').length > 0) {
+                            // IMPORTANTE: Limpiar TODOS los eventos antes de recargar para evitar congelamiento
+                            const contenedor = $('#contenedor-principal');
+                            
+                            // 1. Eliminar todos los event listeners de jQuery del contenedor y sus hijos
+                            contenedor.find('*').off();
+                            contenedor.off();
+                            
+                            // 2. Detener cualquier MutationObserver activo en el contenedor
+                            if (window.__recursosMutationObserver) {
+                                window.__recursosMutationObserver.disconnect();
+                                delete window.__recursosMutationObserver;
+                            }
+                            
+                            // 3. Limpiar flags de inicialización para permitir re-inicialización
+                            delete window.__recursosFisicosPaginationBound;
+                            delete window.__recursosListInitialized;
+                            
+                            // 4. Ahora sí, cargar el nuevo contenido
                             $.get('<?= base_url('recursos') ?>', function(html){ 
-                                $('#contenedor-principal').html(html); 
+                                contenedor.html(html); 
                             }).fail(function() {
                                 window.location.reload();
                             });
